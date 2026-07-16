@@ -1,0 +1,9 @@
+# Workspace Integration Tests
+
+This directory is for smoke, end-to-end, and release verification across the
+frontend, backend, and official 7DTD process. Component unit tests remain in
+their respective repositories. `docs/test.md` defines the complete test scope
+and release gates.
+
+The application projects have not been initialized, so no tests are runnable
+here yet.
