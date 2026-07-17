@@ -12,3 +12,13 @@
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# .NET build and test output
+.vs/
+**/bin/
+**/obj/
+TestResults/
+backend/.env.local
+backend/src/LSTY.SevenDPanel/config.json
+*.suo
+*.user

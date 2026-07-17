@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>LSTY.SevenDPanel</AssemblyName>
+    <RootNamespace>LSTY.SevenDPanel</RootNamespace>
+    <Deterministic>true</Deterministic>
+    <SevenDaysGameVersion Condition="'$(SevenDaysGameVersion)' == ''">v3.0.1-b4</SevenDaysGameVersion>
+    <SevenDaysReferenceRoot Condition="'$(SevenDaysReferenceRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\7dtd-reference</SevenDaysReferenceRoot>
+    <SevenDaysManagedDirectory>$(SevenDaysReferenceRoot)\$(SevenDaysGameVersion)\runtime\7DaysToDieServer_Data\Managed</SevenDaysManagedDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.3.0" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Owin" Version="5.3.0" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.3.0" />
+    <PackageReference Include="Microsoft.Owin" Version="4.2.3" />
+    <PackageReference Include="Microsoft.Owin.Hosting" Version="4.2.3" />
+    <PackageReference Include="Microsoft.Owin.Host.HttpListener" Version="4.2.3" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(SevenDaysManagedDirectory)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="LogLibrary">
+      <HintPath>$(SevenDaysManagedDirectory)\LogLibrary.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(SevenDaysManagedDirectory)\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>$(SevenDaysManagedDirectory)\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateSevenDaysReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\Assembly-CSharp.dll')"
+      Text="7DTD Assembly-CSharp.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\Newtonsoft.Json.dll')"
+      Text="7DTD Newtonsoft.Json.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\LogLibrary.dll')"
+      Text="7DTD LogLibrary.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\System.Runtime.CompilerServices.Unsafe.dll')"
+      Text="7DTD System.Runtime.CompilerServices.Unsafe.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+  </Target>
+
+  <ItemGroup>
+    <None Include="ModInfo.xml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

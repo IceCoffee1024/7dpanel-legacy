@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+  <Name value="LSTY_SevenDPanel" />
+  <DisplayName value="7DPanel" />
+  <Description value="Self-hosted 7 Days to Die server administration panel." />
+  <Author value="IceCoffee" />
+  <Website value="https://github.com/IceCoffee1024/7dpanel" />
+  <Version value="0.1.0" />
+</xml>
