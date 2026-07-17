@@ -15,6 +15,10 @@ maintaining duplicate product, design, architecture, or test facts.
 
 ## Repository Workflow
 
+- Model essential domain complexity through small, traceable, feedback-driven
+  changes. Minimize accidental complexity with clear ownership, explicit
+  boundaries, simple verifiable designs, and recoverable operations so the
+  team can keep changing the system with confidence.
 - When `.codegraph/` exists at the repository root, use CodeGraph before `rg`
   or direct file reads to understand or locate code. Prefer
   `codegraph explore "<question or symbols>"`; use
@@ -24,22 +28,21 @@ maintaining duplicate product, design, architecture, or test facts.
   rely only on model memory.
 - Use `managing-project-lifecycle` to create, update, and audit project
   documentation.
-- Commit messages follow Conventional Commits. See
-  [CONTRIBUTING.md](CONTRIBUTING.md) for the repository convention and examples.
+- Follow [CONTRIBUTING.md](CONTRIBUTING.md) for Conventional Commit messages
+  and the documentation language policy.
 - Inspect actual code, configuration, and tests before stating implementation
   status. Target documents are not implementation evidence.
 - Preserve existing user changes. Do not modify unrelated files or rewrite or
   delete content whose origin is unclear.
 - Treat `7dtd-reference/` as a private, read-only Git submodule containing
-  compatibility evidence, not product source. Modify it only when a task
-  explicitly includes the external repository; follow its instructions,
-  commit and push its changes there first, then update the product gitlink in
-  a separate product-repository commit.
-- Do not include `7dtd-reference/` in product release artifacts. A future
-  build-time dependency on reference assemblies must be explicitly recorded in
+  compatibility evidence, not product source or release content. Modify it only
+  when a task explicitly includes that repository; follow its instructions,
+  commit and push there first, then update the product gitlink separately. A
+  future build-time dependency on its assemblies must be recorded in
   `docs/architecture.md` and `docs/test.md`.
-- Maintain build, test, and maintenance commands only in `README.md` and
-  `docs/test.md`. Do not duplicate them here or add machine-specific paths.
+- Keep repository-level build and test commands in `README.md` and
+  `docs/test.md`, and helper-script usage in the owning script README. Do not
+  duplicate commands here or add machine-specific paths.
 
 ## Documentation Updates
 
@@ -49,7 +52,8 @@ maintaining duplicate product, design, architecture, or test facts.
 - For navigation, interaction, page-state, or visual-rule changes, update
   `docs/design.md` and assess browser E2E coverage.
 - For component boundaries, lifecycle, data, interfaces, deployment, or
-  dependency-matrix changes, update `docs/architecture.md` and `docs/test.md`.
+  dependency-matrix changes, update `docs/architecture.md` and assess test
+  strategy impact before changing `docs/test.md`.
 - For test environments, commands, automation, or release-gate changes, update
   `docs/test.md` and synchronize runnable commands with `README.md`.
 - For game-version compatibility changes, update `docs/architecture.md` and

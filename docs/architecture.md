@@ -1,13 +1,13 @@
 ---
 state: Draft
-last_updated: "2026-07-17"
+last_updated: "2026-07-18"
 ---
 
 # 7DPanel 系统架构
 
-## Context and Drivers
+## 背景与驱动因素
 
-本文档描述 7DPanel 首版的目标架构。当前 `backend/`、`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚无实现文件，因此本文档不代表功能已经完成。
+本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已包含可构建、可测试的 `net48` 最小运行切片（Mod 生命周期、Katana `/health` 和适配器注册）；其余产品能力尚未实现；`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
 
 架构风险的验证层级、环境和发布门槛见[测试策略](test.md)。
 
@@ -23,7 +23,7 @@ last_updated: "2026-07-17"
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据由根目录私有子模块 `7dtd-reference/` 中的 `v3.0.1-b4/runtime/` 和 `v3.0.1-b4/server-decompiled/` 提供；子模块固定到产品仓库记录的已审查提交，不属于产品源码或发布物。一个不属于本仓库的历史 Mod 项目曾在同类进程中验证 Web API 2、Katana、SQLite 和相关依赖；该结论只用于筛选候选依赖，不能替代本项目的进程内 smoke test，其生命周期和认证设计也不是本项目的目标实现。
 
-## System Boundaries
+## 系统边界
 
 ```mermaid
 flowchart LR
@@ -47,11 +47,11 @@ flowchart LR
 - 浏览器不得直接调用 7DTD 对象或访问 SQLite、存档目录和 Mod 配置文件。
 - 首版只管理当前 Mod 所在的单台 7DTD 服务器，不引入云端控制面或多服代理。
 
-## Components and Responsibilities
+## 组件与职责
 
 ### Mod 生命周期协调器
 
-目标位置：`backend/src/`。
+目标项目：`backend/src/LSTY.SevenDPanel/LSTY.SevenDPanel.csproj`。
 
 - `InitMod` 加载配置和本地数据、检查待恢复标记、注册 Mod 事件，但不启动完整 Web 服务。
 - `GameStartDone` 在确认当前实例是服务端后启动 OWIN、事件管道和计划任务。
@@ -59,13 +59,18 @@ flowchart LR
 - `GameShutdown` 调用同一个幂等关闭流程作为兜底。
 - OWIN Host 的 `IDisposable` 必须由生命周期协调器持有，禁止仅保存在局部变量中。
 
+当前实现证据：`ModMain.cs` 实现 `IModApi.InitMod`，创建 `Hosting.ModHost` 和 `Game.SevenDaysGameLifecycleAdapter`；`ModHost` 使用 `Created/Starting/Running/Draining/Stopped/Faulted` 状态并保持 OWIN Host；适配器在 `GameStartDone` 启动、在 `WorldShuttingDown` 和 `GameShutdown` 调用幂等停止。`InitMod` 本身只注册事件，不启动 HTTP 监听。
+
 依据：游戏自带 `Webserver.WebServer` 同样在 `GameStartDone` 初始化，并在 `WorldShuttingDown` 断开；`IModApi` 本身只有 `InitMod`，没有配对卸载方法。
 
 ### OWIN Host 与 Web API
 
-- Katana Self Host 在 Mono 进程内提供 HTTP 服务，并托管 Web API 2 和编译后的前端静态资源。
+- Katana Self Host 在 Mono 进程内提供 HTTP 服务，并托管 Web API 2。当前最小切片公开 `/health` 和 `/api/v1/health`，静态前端、认证和业务 API 尚未接入。
+- `Web.OwinWebHost` 通过 `WebApp.Start(url, ...)` 创建宿主，并在 `Dispose` 中释放 `IDisposable`；`PanelHostOptions` 从 Mod 目录的 `config.json` 读取端口、绑定地址和协议，缺失时创建默认配置。默认 `bindAddress` 为 `0.0.0.0`，内部转换为 HttpListener 通配前缀并监听 `http://*:18080/`。
+- `config.example.json` 随发布物更新；`config.json` 和 `data/` 属于服主运行数据，不进入项目发布模板，也不提供前端或 API 动态编辑。监听配置在进程启动时读取，修改后重启服务端生效。
+- `PanelHostConfig.CreateDefault()` 是运行时默认值的唯一代码来源；测试会比较它与 `config.example.json`，防止示例模板和安全回退值发生漂移。
 - API 控制器只处理协议、输入验证、权限检查和结果映射，不直接访问 Unity/7DTD 对象。
-- 默认监听回环地址。开放到局域网或公网必须显式配置；公网场景推荐由反向代理终止 TLS。
+- 默认监听所有网络接口。部署方必须通过主机防火墙或云安全组限制来源；公网场景推荐由反向代理终止 TLS。
 - 关服开始后健康端点报告 `draining`，写操作返回服务不可用，不能接受稍后仍可能执行的游戏操作。
 
 ### 身份、权限与审计
@@ -119,7 +124,7 @@ Queued -> Saving -> Committing -> Snapshotting -> Verifying -> Succeeded
 4. 成功或失败结果持久化；失败时优先回滚，且不得删除原备份。
 5. OWIN 在下次 `GameStartDone` 恢复后向用户展示最终结果。
 
-## Data and Interfaces
+## 数据与接口
 
 ### HTTP 接口
 
@@ -158,42 +163,45 @@ SQLite 拥有以下持久状态：
 
 每次升级 7DTD、Mono 或矩阵中的包时，必须重新执行进程内 smoke test：程序集加载、OWIN 启停、路由与 JSON、认证会话、SQLite 建库/迁移/CRUD、主线程往返和正常关服释放。
 
-## Deployment and Operations
+后端工程通过 `SevenDaysGameVersion` 和 `SevenDaysReferenceRoot` MSBuild 属性选择编译基线，默认固定为 `v3.0.1-b4` 子模块路径。构建命令可以使用 `/p:` 显式覆盖；不得使用浮动的 `latest` 路径。`Assembly-CSharp.dll` 和游戏提供的 `Newtonsoft.Json.dll` 设置为非 Copy Local，只作为编译期输入。
 
-- 发布物是包含 Mod DLL、依赖 DLL、平台 SQLite Native 文件、配置模板和编译后前端资源的自托管目录。
+## 部署与运维
+
+- 发布物是包含 Mod DLL、依赖 DLL、平台 SQLite Native 文件、`config.example.json` 和编译后前端资源的自托管目录；不包含服主的 `config.json` 或 `data/`。
 - 发布物组装必须显式排除 `7dtd-reference/` 及其全部内容；子模块只服务于开发期兼容性分析和验证。若未来编译阶段读取其中的参考程序集，必须在构建输入清单中单独声明，且不得将参考资料复制进发布目录。
 - Windows x64 和 Linux x64 分别发布；平台原生文件不得混用，非目标 RID 资产在发布阶段移除。
-- 默认监听回环地址，不提供默认账号密码。8 位初始化码及携带同一凭证的初始化链接只输出到本地服务端控制台，应用日志和审计不得再次记录完整凭证。
+- 默认监听所有网络接口，不提供默认账号密码。8 位初始化码及携带同一凭证的初始化链接只输出到本地服务端控制台，应用日志和审计不得再次记录完整凭证；部署方承担在初始化前限制网络访问的责任。
 - 外部访问推荐使用 HTTPS 反向代理。若用户显式启用明文远程 HTTP，面板必须持续显示安全警告，且 `Secure` Cookie 不能被错误宣称为已启用。
-- 数据库、配置、审计和备份目录必须位于 Mod 可写数据目录，不放入随升级覆盖的程序文件目录。
+- 数据库、实际配置、审计和备份目录必须位于 Mod 可写数据目录，不放入随升级覆盖的程序文件模板；发布更新不得删除或覆盖这些运行数据。
+- 开发期服务端发布、启停和健康检查由[后端脚本指南](../backend/scripts/README.md)管理；这些辅助脚本不属于产品运行时或发布物。
 - 关服顺序是：停止接入、拒绝新主线程任务、停止计划任务、排空有时限的审计/事件队列、释放 OWIN、关闭数据库和日志。
 
-## Quality Attributes
+## 质量属性
 
-### Reliability
+### 可靠性
 
 - 生命周期操作、关服、备份和恢复均为幂等状态机。
 - API 超时不等于游戏操作失败；响应必须区分未开始、已开始但结果未知、成功和失败。
 - 待恢复标记、备份目录记录和用户初始化状态使用原子文件或数据库事务更新。
 
-### Performance
+### 性能
 
 - 主线程只执行有预算的短操作，不进行压缩、数据库查询或网络等待。
 - 日志、审计和自动化队列有界；过载时记录丢弃数量或拒绝请求，不允许无限占用内存。
 - 列表和日志接口分页或使用游标，不一次返回无界数据。
 
-### Security
+### 安全性
 
 - 最小权限角色、服务端会话、CSRF 防护、登录限速和高风险二次确认是发布门槛。
 - 初始化凭证和会话标识使用密码学安全随机数，只持久化摘要；初始化凭证具有 30 分钟有效期和单次原子消费语义。
 - API 不返回存档绝对路径、密码摘要、会话摘要或内部异常堆栈。
 
-### Compatibility
+### 兼容性
 
 - 产品代码以游戏实际 `Managed` 程序集为编译和验证基线，而非 dnSpy 生成工程中的本机 SDK HintPath。
 - 对 7DTD 内部类型的访问集中在游戏适配层；版本升级时优先替换适配层，不让控制器和数据层直接依赖游戏类型。
 
-## Decisions and Trade-offs
+## 决策与权衡
 
 - **Embedded backend:** 后端与 Mod 同进程，部署简单且能直接使用游戏事件，但任何未处理异常、阻塞或内存泄漏都可能影响游戏服务器。
 - **Start after `GameStartDone`:** 比旧项目在 `InitMod` 直接启动更晚，但确保游戏单例就绪并与游戏自带 WebServer 模式一致。
@@ -203,7 +211,7 @@ SQLite 拥有以下持久状态：
 - **Restart-based restore:** 牺牲在线恢复便利性，换取存档文件不被游戏同时打开时的可恢复性。
 - **Pinned reference submodule:** 使用根目录 `7dtd-reference/` 固定兼容性证据的具体提交，避免产品源码复制反编译材料；代价是协作者必须同时拥有两个私有仓库的访问权限。
 
-### Unresolved Risks
+### 未解决风险
 
 - 在线保存提交完成后，游戏可能在后台快照复制期间继续修改存档。必须通过故障注入验证归档一致性；若无法证明，则首版备份需要短暂维护窗口或平台文件系统快照。
 - 必须验证 `InitMod` 阶段应用待恢复备份时，所有目标存档文件尚未被游戏打开；失败时保持待恢复记录和回滚副本。

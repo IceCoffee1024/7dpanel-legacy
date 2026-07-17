@@ -5,5 +5,6 @@ admin frontend, backend, and official 7DTD process. Unit and component tests
 remain in their owning application directories. `docs/test.md` defines the
 complete test scope and release gates.
 
-The application projects have not been initialized, so no tests are runnable
-here yet.
+The backend already has direct tests under `backend/tests/`. No cross-system
+tests are runnable from this directory yet; add them here only when a workflow
+spans application boundaries or requires an official 7DTD process.

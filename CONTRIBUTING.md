@@ -52,8 +52,12 @@ feat(api)!: replace the player action response
   packages.
 - Do not commit local machine paths, credentials, generated secrets, or product
   build outputs.
-- Keep root `docs/` product and system documents in Chinese. Keep all other
-  Markdown, code comments, identifiers, and commit messages in English.
+- Write Markdown files directly under `docs/` (`docs/*.md`) in Chinese. These
+  are the living product, design, architecture, test, and operations documents.
+- Write Markdown outside `docs/` and in every `docs/` subdirectory in English.
+  This includes dated change records under `docs/superpowers/specs/` and
+  `docs/superpowers/plans/`, and incident records under `docs/incidents/`.
+  Keep file names, code comments, identifiers, and commit messages in English.
 
 ## Documentation and Verification
 

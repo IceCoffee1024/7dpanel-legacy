@@ -7,9 +7,12 @@ owners. Its backend runs as a Mod DLL inside the 7DTD Dedicated Server Mono
 process and provides status, player management, logs, backup and restore,
 announcement automation, and auditing through a web interface.
 
-The repository currently defines the product, design, and architecture. The
-application directories have not been initialized with framework code. The
-documents describe target contracts, not completed features.
+The repository defines the product, design, and architecture. The backend has
+a buildable and testable `net48` solution with a minimal Mod lifecycle and
+in-process OWIN health endpoint. Product capabilities beyond that validation
+slice are not implemented. The frontend application directories have not been
+initialized with framework code. The documents describe target contracts, not
+completed features.
 
 ## Repository Layout
 
@@ -19,7 +22,6 @@ frontend/apps/admin/            Web administration application
 frontend/apps/marketing/        Marketing site application
 7dtd-reference/                 Private read-only compatibility reference submodule
 docs/                           Product, design, architecture, and test contracts
-scripts/                        Product repository automation
 tests/                          Cross-system smoke, E2E, and release verification
 tooling/                        Optional AI-assisted development guidance
 ```
@@ -52,10 +54,32 @@ After a normal clone, initialize the pinned reference explicitly with
 
 ## Test and Checks
 
-Application build, unit test, and end-to-end commands do not exist yet. See the
-[test strategy](docs/test.md) for the required verification levels and release
-gates. Commands for maintaining local game reference material belong in the
-external reference repository and are not product-repository commands.
+Initialize the private reference submodule before building the backend. From
+the repository root, run:
+
+```powershell
+dotnet restore backend/7DPanel.sln
+dotnet build backend/7DPanel.sln --configuration Release --no-restore
+dotnet test backend/7DPanel.sln --configuration Release --no-build --no-restore
+```
+
+See the [test strategy](docs/test.md) for the required verification levels and
+release gates. On Windows, use the `.cmd` wrappers as the default entry points:
+
+```bat
+backend\scripts\Publish-Mod.cmd
+backend\scripts\Start-Server.cmd
+backend\scripts\Stop-Server.cmd
+backend\scripts\Test-HealthEndpoint.cmd
+```
+
+The wrappers use Windows PowerShell 5.1, which is included with supported
+Windows installations; PowerShell 7 is not required. The matching `.ps1` files
+expose parameters for automation. See the
+[backend script guide](backend/scripts/README.md) for local configuration,
+publishing, WinRM, scheduled-task startup, graceful shutdown, and health-check
+behavior. Commands for maintaining game reference material belong in the
+external reference repository.
 
 ## AI-Assisted Development
 
@@ -72,3 +96,4 @@ skills, adoption status, and setup references.
 - [Product design](docs/design.md) - information architecture, core flows, states, and visual rules
 - [System architecture](docs/architecture.md) - boundaries, components, data, dependency matrix, and decisions
 - [Test strategy](docs/test.md) - requirement traceability, test levels, environments, and release gates
+- [Backend script guide](backend/scripts/README.md) - publish, server control, and health-check helpers
