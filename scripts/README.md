@@ -1,9 +1,8 @@
-# Workspace Scripts
+# Product Scripts
 
-This directory contains only cross-repository setup, integration verification,
-and release orchestration scripts. Component repositories own their own build
-scripts.
+This directory is reserved for portable product-repository setup, verification,
+maintenance, and release automation. Application-specific scripts stay with
+the application that owns them when appropriate.
 
-There are no runnable scripts yet. Add portable submodule setup and version
-verification scripts after the GitHub repositories exist and the initial
-component commits have been pushed.
+There are no runnable scripts yet. Add scripts only when they provide a real,
+repeatable repository workflow.

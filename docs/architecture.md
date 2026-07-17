@@ -1,13 +1,13 @@
 ---
 state: Draft
-last_updated: "2026-07-16"
+last_updated: "2026-07-17"
 ---
 
 # 7DPanel 系统架构
 
 ## Context and Drivers
 
-本文档描述 7DPanel 首版的目标架构。当前 `7dtd-panel-backend/`、`7dtd-panel-frontend/` 和 `7dtd-marketing/` 尚无实现文件，因此本文档不代表功能已经完成。
+本文档描述 7DPanel 首版的目标架构。当前 `backend/`、`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚无实现文件，因此本文档不代表功能已经完成。
 
 架构风险的验证层级、环境和发布门槛见[测试策略](test.md)。
 
@@ -21,7 +21,7 @@ last_updated: "2026-07-16"
 - `NFR-01` 要求核心能力不依赖产品方云服务。
 - `NFR-02` 要求高风险确认、失败可见且未知状态不得显示为成功。
 
-目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时证据位于 `7dtd-reference/v3.0.1-b4/runtime/`，反编译行为证据位于 `7dtd-reference/v3.0.1-b4/server-decompiled/`。一个不属于本仓库的历史 Mod 项目曾在同类进程中验证 Web API 2、Katana、SQLite 和相关依赖；该结论只用于筛选候选依赖，不能替代本项目的进程内 smoke test，其生命周期和认证设计也不是本项目的目标实现。
+目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据由根目录私有子模块 `7dtd-reference/` 中的 `v3.0.1-b4/runtime/` 和 `v3.0.1-b4/server-decompiled/` 提供；子模块固定到产品仓库记录的已审查提交，不属于产品源码或发布物。一个不属于本仓库的历史 Mod 项目曾在同类进程中验证 Web API 2、Katana、SQLite 和相关依赖；该结论只用于筛选候选依赖，不能替代本项目的进程内 smoke test，其生命周期和认证设计也不是本项目的目标实现。
 
 ## System Boundaries
 
@@ -51,7 +51,7 @@ flowchart LR
 
 ### Mod 生命周期协调器
 
-目标位置：`7dtd-panel-backend/src/`。
+目标位置：`backend/src/`。
 
 - `InitMod` 加载配置和本地数据、检查待恢复标记、注册 Mod 事件，但不启动完整 Web 服务。
 - `GameStartDone` 在确认当前实例是服务端后启动 OWIN、事件管道和计划任务。
@@ -71,11 +71,15 @@ flowchart LR
 ### 身份、权限与审计
 
 - 7DPanel 使用独立本地身份库，不复用 `serveradmin.xml` 中采用无盐 MD5 的原生 Web 用户密码。
-- 首次启动且没有用户时，生成一次性初始化码并输出到服务端控制台；成功创建首个 `Owner` 后立即失效。
-- 首版角色为 `Owner`、`Admin` 和 `Viewer`。权限检查在进入主线程队列前完成。
+- 首次启动且没有用户时，使用密码学安全随机数生成 8 位初始化凭证。控制台以四位分组格式同时输出手动初始化码和携带同一凭证的初始化链接；凭证摘要及 30 分钟到期时间作为一条初始化状态保存，不持久化明文。
+- 手动输入先移除分组连字符并按不区分大小写的规范形式验证。链接和手动输入共享同一验证与消费路径；创建首个 `Owner` 与消费初始化状态必须在同一事务中完成，保证并发请求最多成功一次。
+- 每次服务启动都先检查 `Owner` 是否存在；不存在时生成新的初始化状态并原子替换旧状态。本地服务端控制台提供同一重新生成操作，且只在不存在 `Owner` 时生效。创建首个 `Owner` 后，启动流程和控制台操作都不得再次生成凭证。
+- 首版角色为 `Owner`、`Admin` 和 `Viewer`。授权由具体动作权限驱动，角色映射到权限集合，权限检查在进入主线程队列前完成；未来玩家身份不得复用 `Viewer`。
 - 浏览器会话使用服务端保存的随机不透明标识；Cookie 必须为 `HttpOnly`、适用时为 `Secure`，并采用严格的同站策略。
 - 所有改变游戏、玩家、配置、备份或恢复状态的操作，无论成功、失败或被拒绝，都写入审计记录。
 - Cookie 认证下的状态变更请求必须验证 CSRF Token。密码摘要使用带独立随机盐、可升级参数的 PBKDF2-HMAC-SHA256；参数和算法版本随摘要保存。
+
+玩家登录、积分交易和网页商城不属于首版身份边界。未来若扩展，`Player` 应作为独立身份与授权域，积分余额由专用交易账本维护，管理审计不能替代余额账本。
 
 ### 游戏主线程调度器
 
@@ -128,7 +132,7 @@ Queued -> Saving -> Committing -> Snapshotting -> Verifying -> Succeeded
 
 SQLite 拥有以下持久状态：
 
-- 面板用户、角色、会话和初始化状态。
+- 面板用户、角色、权限映射、会话和初始化状态。
 - 管理员操作与自动化执行审计。
 - 公告、定时任务和固定触发器配置。
 - 备份目录、校验状态和待恢复记录。
@@ -140,7 +144,7 @@ SQLite 拥有以下持久状态：
 | 领域 | 决定版本/来源 | 状态 | 依据与约束 |
 |---|---|---|---|
 | 目标框架 | `.NET Framework 4.8` / `net48` | Adopted | 旧项目已在 Mod 中运行；编译目标不代表可任意使用游戏 Mono 未实现的 API。 |
-| 游戏运行时 | 7DTD `v3.0.1-b4` Mono BCL `4.6.57.0`，`netstandard 2.1.0.0` | Verified | `7dtd-reference/v3.0.1-b4/runtime/` 实际程序集元数据。 |
+| 游戏运行时 | 7DTD `v3.0.1-b4` Mono BCL `4.6.57.0`，`netstandard 2.1.0.0` | Verified | 外部私有 `IceCoffee1024/7dtd-reference` 仓库中 `v3.0.1-b4/runtime/` 的实际程序集元数据。 |
 | Web API 2 | `Microsoft.AspNet.WebApi.OwinSelfHost 5.3.0` | Adopted | 旧项目运行验证。 |
 | Katana/OWIN | `Microsoft.Owin.* 4.2.3` | Adopted | Hosting、HttpListener、StaticFiles 和 Security OAuth 已在旧项目运行验证。 |
 | JSON | 游戏自带 `Newtonsoft.Json 13.0.2` | Adopted | 新项目直接引用游戏程序集且不随 Mod 复制另一版本，避免旧项目 `13.0.4` 与游戏程序集同名同版本绑定的不确定性。 |
@@ -157,8 +161,9 @@ SQLite 拥有以下持久状态：
 ## Deployment and Operations
 
 - 发布物是包含 Mod DLL、依赖 DLL、平台 SQLite Native 文件、配置模板和编译后前端资源的自托管目录。
+- 发布物组装必须显式排除 `7dtd-reference/` 及其全部内容；子模块只服务于开发期兼容性分析和验证。若未来编译阶段读取其中的参考程序集，必须在构建输入清单中单独声明，且不得将参考资料复制进发布目录。
 - Windows x64 和 Linux x64 分别发布；平台原生文件不得混用，非目标 RID 资产在发布阶段移除。
-- 默认监听回环地址，不提供默认账号密码。一次性初始化码只输出到本地服务端控制台。
+- 默认监听回环地址，不提供默认账号密码。8 位初始化码及携带同一凭证的初始化链接只输出到本地服务端控制台，应用日志和审计不得再次记录完整凭证。
 - 外部访问推荐使用 HTTPS 反向代理。若用户显式启用明文远程 HTTP，面板必须持续显示安全警告，且 `Secure` Cookie 不能被错误宣称为已启用。
 - 数据库、配置、审计和备份目录必须位于 Mod 可写数据目录，不放入随升级覆盖的程序文件目录。
 - 关服顺序是：停止接入、拒绝新主线程任务、停止计划任务、排空有时限的审计/事件队列、释放 OWIN、关闭数据库和日志。
@@ -180,7 +185,7 @@ SQLite 拥有以下持久状态：
 ### Security
 
 - 最小权限角色、服务端会话、CSRF 防护、登录限速和高风险二次确认是发布门槛。
-- 初始化码和会话标识使用密码学安全随机数，只持久化摘要，并具有有效期和单次使用语义。
+- 初始化凭证和会话标识使用密码学安全随机数，只持久化摘要；初始化凭证具有 30 分钟有效期和单次原子消费语义。
 - API 不返回存档绝对路径、密码摘要、会话摘要或内部异常堆栈。
 
 ### Compatibility
@@ -196,6 +201,7 @@ SQLite 拥有以下持久状态：
 - **Typed game adapters:** 玩家和公告操作优先使用类型化服务；通用控制台保留为受限高级能力，避免命令字符串成为主要业务接口。
 - **Runtime Newtonsoft.Json:** 选择游戏的 `13.0.2` 减少程序集冲突，但新代码不能依赖仅存在于 `13.0.4` 的行为。
 - **Restart-based restore:** 牺牲在线恢复便利性，换取存档文件不被游戏同时打开时的可恢复性。
+- **Pinned reference submodule:** 使用根目录 `7dtd-reference/` 固定兼容性证据的具体提交，避免产品源码复制反编译材料；代价是协作者必须同时拥有两个私有仓库的访问权限。
 
 ### Unresolved Risks
 

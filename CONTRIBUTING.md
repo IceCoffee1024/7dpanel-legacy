@@ -2,7 +2,7 @@
 
 ## Commit Messages
 
-All repositories in the 7DPanel workspace use
+The 7DPanel product repository uses
 [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```text
@@ -23,7 +23,8 @@ Use one of these types:
 - `revert`: reverts an earlier commit.
 
 Scopes are optional. Use a stable component or subsystem name when it adds
-clarity, such as `frontend`, `backend`, `marketing`, `reference`, or `workspace`.
+clarity, such as `frontend`, `backend`, `marketing`, `docs`, or `repo`. The
+external reference repository follows its own contribution guidance.
 
 Write the description in imperative mood, keep it concise, and do not end it
 with a period. Add a body when the reason or trade-off is not obvious. Mark a
@@ -35,16 +36,20 @@ Examples:
 feat(frontend): add server status panel
 fix(backend): stop OWIN host during shutdown
 docs: clarify the restore workflow
-chore(workspace): update backend submodule
+chore(repo): update repository layout
 feat(api)!: replace the player action response
 ```
 
 ## Repository Workflow
 
-- Commit implementation changes in the component repository that owns them.
-- Push the component commit before making the workspace reference it.
-- When the workspace adopts a new component revision, commit the updated
-  submodule pointer separately in the workspace repository.
+- Keep each commit focused on one concern and use the scope that owns the
+  change when it improves clarity.
+- Treat `7dtd-reference/` as a private reference submodule, not product source.
+  Do not mix changes to its files with product changes. When the reference
+  repository must change, commit and push that repository first, then update
+  the pinned submodule commit in a separate product-repository commit.
+- Do not include submodule contents in product release artifacts or generated
+  packages.
 - Do not commit local machine paths, credentials, generated secrets, or product
   build outputs.
 - Keep root `docs/` product and system documents in Chinese. Keep all other
@@ -58,4 +63,3 @@ feat(api)!: replace the player action response
   when the corresponding project or command does not exist.
 - Keep changes scoped to one concern where practical. Separate unrelated
   documentation, repository maintenance, and implementation changes.
-
