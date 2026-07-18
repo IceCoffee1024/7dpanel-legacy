@@ -43,7 +43,7 @@ Credentials are never stored in either file.
 target, output is written to:
 
 ```text
-backend/src/LSTY.SevenDPanel/bin/Release/net48/publish/
+backend/src/Bootstrap/LSTY.SevenDPanel/bin/Release/net48/publish/
 ```
 
 When `SEVENDPANEL_PUBLISH_DIR` is set, `dotnet publish` writes directly to that

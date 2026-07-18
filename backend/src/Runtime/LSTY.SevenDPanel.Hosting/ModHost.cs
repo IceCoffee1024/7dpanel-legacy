@@ -2,12 +2,7 @@ using System;
 
 namespace LSTY.SevenDPanel.Hosting
 {
-    public interface IPanelWebHost : IDisposable
-    {
-        void Start();
-    }
-
-    public sealed class ModHost : IDisposable
+    public sealed class ModHost : IModRuntime, IDisposable
     {
         private readonly object sync = new object();
         private readonly Func<IPanelWebHost> webHostFactory;

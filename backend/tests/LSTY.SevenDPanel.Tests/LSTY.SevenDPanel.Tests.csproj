@@ -17,11 +17,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj" />
+    <ProjectReference Include="..\..\src\Bootstrap\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj" />
+    <ProjectReference Include="..\..\src\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
+    <ProjectReference Include="..\..\src\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\7dtd-reference\v3.0.1-b4\runtime\7DaysToDieServer_Data\Managed\Newtonsoft.Json.dll</HintPath>
       <Private>true</Private>
     </Reference>
-    <None Include="..\..\src\LSTY.SevenDPanel\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\Bootstrap\LSTY.SevenDPanel\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\Bootstrap\LSTY.SevenDPanel\ModInfo.xml" Link="ModInfo.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

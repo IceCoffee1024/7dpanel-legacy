@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using LSTY.SevenDPanel.Configuration;
 using LSTY.SevenDPanel.Hosting;
 using Newtonsoft.Json;
 using Xunit;
@@ -33,7 +34,7 @@ namespace LSTY.SevenDPanel.Tests
 
             try
             {
-                var options = PanelHostOptions.FromConfigFile(path);
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
 
                 Assert.Equal("http://*:18080/", options.Url);
                 Assert.True(File.Exists(path));
@@ -52,7 +53,7 @@ namespace LSTY.SevenDPanel.Tests
 
             try
             {
-                Assert.Equal("http://127.0.0.1:19090/", PanelHostOptions.FromConfigFile(path).Url);
+                Assert.Equal("http://127.0.0.1:19090/", PanelHostConfigurationLoader.FromConfigFile(path).Url);
             }
             finally
             {

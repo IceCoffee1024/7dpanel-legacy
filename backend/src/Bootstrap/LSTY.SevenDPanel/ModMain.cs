@@ -1,7 +1,9 @@
 using System;
-using LSTY.SevenDPanel.Game;
+using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Lifecycle;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
+using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
+using LSTY.SevenDPanel.Configuration;
 using LSTY.SevenDPanel.Hosting;
-using LSTY.SevenDPanel.Web;
 
 namespace LSTY.SevenDPanel
 {
@@ -13,10 +15,11 @@ namespace LSTY.SevenDPanel
         public void InitMod(Mod modInstance)
         {
             if (host != null) return;
+
             Action<string> log = message => Log.Out("[7DPanel] " + message);
-            var options = PanelHostOptions.FromMod(modInstance, log);
+            var options = PanelHostConfigurationLoader.FromMod(modInstance, log);
             host = new ModHost(
-                () => new OwinWebHost(options.Url),
+                () => new OwinWebHost(options.Url, OwinStartup.Configure),
                 log);
             adapter = new SevenDaysGameLifecycleAdapter(host);
             adapter.Register();

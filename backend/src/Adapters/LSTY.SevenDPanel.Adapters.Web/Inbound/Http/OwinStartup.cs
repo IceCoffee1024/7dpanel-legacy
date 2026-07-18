@@ -1,7 +1,7 @@
 using System.Web.Http;
 using Owin;
 
-namespace LSTY.SevenDPanel.Web
+namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
     public static class OwinStartup
     {

@@ -1,16 +1,16 @@
 using System;
 using LSTY.SevenDPanel.Hosting;
 
-namespace LSTY.SevenDPanel.Game
+namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Lifecycle
 {
     public sealed class SevenDaysGameLifecycleAdapter : IDisposable
     {
-        private readonly ModHost host;
+        private readonly IModRuntime runtime;
         private bool registered;
 
-        public SevenDaysGameLifecycleAdapter(ModHost host)
+        public SevenDaysGameLifecycleAdapter(IModRuntime runtime)
         {
-            this.host = host ?? throw new ArgumentNullException(nameof(host));
+            this.runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         }
 
         public void Register()
@@ -22,9 +22,9 @@ namespace LSTY.SevenDPanel.Game
             registered = true;
         }
 
-        private void OnGameStartDone(ref ModEvents.SGameStartDoneData data) { host.Start(); }
-        private void OnWorldShuttingDown(ref ModEvents.SWorldShuttingDownData data) { host.Stop(); }
-        private void OnGameShutdown(ref ModEvents.SGameShutdownData data) { host.Stop(); }
+        private void OnGameStartDone(ref ModEvents.SGameStartDoneData data) { runtime.Start(); }
+        private void OnWorldShuttingDown(ref ModEvents.SWorldShuttingDownData data) { runtime.Stop(); }
+        private void OnGameShutdown(ref ModEvents.SGameShutdownData data) { runtime.Stop(); }
 
         public void Dispose()
         {

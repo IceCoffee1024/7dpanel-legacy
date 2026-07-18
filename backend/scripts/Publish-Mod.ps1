@@ -16,7 +16,7 @@ if (Test-Path -LiteralPath $EnvironmentFile) {
     }
 }
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$project = Join-Path $repoRoot 'backend\src\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj'
+$project = Join-Path $repoRoot 'backend\src\Bootstrap\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj'
 $projectDirectory = Split-Path $project -Parent
 $configuredPublishPath = $environment['SEVENDPANEL_PUBLISH_DIR']
 if ($configuredPublishPath) {

@@ -1,7 +1,7 @@
-using System.Reflection;
 using System.Web.Http;
+using LSTY.SevenDPanel.Hosting;
 
-namespace LSTY.SevenDPanel.Web
+namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
     [RoutePrefix("")]
     public sealed class HealthController : ApiController
@@ -15,7 +15,7 @@ namespace LSTY.SevenDPanel.Web
             {
                 Status = "ok",
                 Product = ProductInfo.Name,
-                Version = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+                Version = ProductInfo.Version
             });
         }
     }

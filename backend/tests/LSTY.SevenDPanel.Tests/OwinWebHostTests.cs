@@ -3,7 +3,8 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using LSTY.SevenDPanel.Web;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
+using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
@@ -18,7 +19,7 @@ namespace LSTY.SevenDPanel.Tests
             var port = GetAvailablePort();
             var url = "http://127.0.0.1:" + port + "/";
 
-            using (var host = new OwinWebHost(url))
+            using (var host = new OwinWebHost(url, OwinStartup.Configure))
             using (var handler = new HttpClientHandler { UseProxy = false })
             using (var client = new HttpClient(handler))
             {
@@ -29,6 +30,7 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.Contains("\"status\":\"ok\"", body, StringComparison.OrdinalIgnoreCase);
                 Assert.Contains("\"product\":\"7DPanel\"", body, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("\"version\":\"0.1.0\"", body, StringComparison.OrdinalIgnoreCase);
             }
 
             var rebound = new TcpListener(IPAddress.Loopback, port);

@@ -19,6 +19,6 @@
 **/obj/
 TestResults/
 backend/.env.local
-backend/src/LSTY.SevenDPanel/config.json
+backend/src/Bootstrap/LSTY.SevenDPanel/config.json
 *.suo
 *.user
