@@ -9,6 +9,10 @@
 - [docs/test.md](docs/test.md) - requirement traceability, test levels, environments, and release gates.
 - [tooling/README.md](tooling/README.md) - AI tooling status, triggers, and setup references.
 
+## Supporting Design
+
+- [docs/architecture/backend-target-blueprint.md](docs/architecture/backend-target-blueprint.md) - approved target backend flows and production layout. It is not current implementation evidence; promote implemented and verified facts to `docs/architecture.md`.
+
 Define each fact only in its authoritative document. Use links and
 `CAP-##`/`NFR-##` identifiers for cross-document traceability instead of
 maintaining duplicate product, design, architecture, or test facts.
@@ -30,6 +34,10 @@ maintaining duplicate product, design, architecture, or test facts.
   documentation.
 - Follow [CONTRIBUTING.md](CONTRIBUTING.md) for Conventional Commit messages
   and the documentation language policy.
+- All Markdown under `docs/` is Simplified Chinese, including future
+  subdirectories. Preserve code identifiers, paths, commands, API routes,
+  protocol names, library names, and fenced code blocks exactly; source code
+  comments and repository-level Markdown remain English.
 - Inspect actual code, configuration, and tests before stating implementation
   status. Target documents are not implementation evidence.
 - Preserve existing user changes. Do not modify unrelated files or rewrite or
@@ -54,6 +62,9 @@ maintaining duplicate product, design, architecture, or test facts.
 - For component boundaries, lifecycle, data, interfaces, deployment, or
   dependency-matrix changes, update `docs/architecture.md` and assess test
   strategy impact before changing `docs/test.md`.
+- Update `docs/architecture/backend-target-blueprint.md` only when the approved
+  future backend flows, project boundaries, or production file responsibilities
+  change. Never use target entries as evidence that code exists.
 - For test environments, commands, automation, or release-gate changes, update
   `docs/test.md` and synchronize runnable commands with `README.md`.
 - For game-version compatibility changes, update `docs/architecture.md` and

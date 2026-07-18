@@ -7,9 +7,13 @@ last_updated: "2026-07-18"
 
 ## 背景与驱动因素
 
-本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已包含可构建、可测试的 `net48` 最小运行切片（Mod 生命周期、Katana `/health` 和适配器注册）；其余产品能力尚未实现；`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
+本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已将可构建、可测试的 `net48` 最小运行切片拆分为 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目，覆盖 Mod 生命周期、Katana `/health`、配置加载和适配器注册；其余产品能力尚未实现；`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
 
 架构风险的验证层级、环境和发布门槛见[测试策略](test.md)。
+
+后端尚未实现能力的批准目标链路、项目边界和生产文件职责见
+[后端目标架构蓝图](architecture/backend-target-blueprint.md)。该蓝图不代表当前实现；本文件和
+实际代码、配置及测试证据仍是当前系统事实的依据。
 
 架构由 [产品需求文档](PRD.md) 驱动：
 
@@ -49,26 +53,45 @@ flowchart LR
 
 ## 组件与职责
 
+当前最小切片的物理编译边界如下；目录是 VS Code 的导航结构，不依赖 Visual Studio Solution Folder：
+
+| 项目 | 当前职责与实现证据 | 当前依赖 |
+|---|---|---|
+| `backend/src/Bootstrap/LSTY.SevenDPanel/` | 唯一 `IModApi` 入口、配置文件 I/O、具体对象组装和 Mod 发布内容 | Hosting、Web Adapter、SevenDays Adapter、游戏编译期程序集 |
+| `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` 状态机、运行时生命周期契约和已验证的监听选项 | 仅 .NET Framework BCL，不引用 Core 或 Adapter |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | `Inbound/Http` 承接 Web API 路由和健康端点，`Outbound/Hosting` 实现 Katana Self Host | Hosting、Web API/Katana、游戏提供的 JSON 兼容程序集 |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 当前由 `Inbound/Lifecycle` 将 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 转换为 `IModRuntime` 启停调用；后续同时承载游戏事件输入与游戏能力输出 | Hosting、`Assembly-CSharp.dll` |
+
+`Application`、`Domain` 和 Local Adapter 尚未创建；它们只在首个需要对应边界的纵向业务切片中创建。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`，其余产品 DLL 由同一 Mod 目录加载。
+
+Adapter 项目按外部边界命名为 `Web`、`SevenDays` 和 `Local`，项目内第一层使用 `Inbound` 或 `Outbound` 表达调用方向，再按 `Http`、`Lifecycle`、`Players`、`Persistence` 等能力分组。不得在 Adapter 根目录建立混合方向的 `Common`；确有共享需求时必须放入方向和所有权均明确的能力目录。当前 `DependencyRulesTests` 会校验项目引用白名单、Inbound/Outbound 不得交叉引用，以及只有 Bootstrap 可以实现 `IModApi`。
+
+目标 Application 中的 `Common` 只允许稳定的跨能力语义、至少两个真实消费者、没有更明确 Feature 所有者且不依赖外部技术的类型。单一能力模型、扩展方法和通用字符串工具不得进入；后台执行作为独立的 Application 能力建模，不藏入 `Common`。
+
 ### Mod 生命周期协调器
 
-目标项目：`backend/src/LSTY.SevenDPanel/LSTY.SevenDPanel.csproj`。
+当前入口项目：`backend/src/Bootstrap/LSTY.SevenDPanel/LSTY.SevenDPanel.csproj`。
 
 - `InitMod` 加载配置和本地数据、检查待恢复标记、注册 Mod 事件，但不启动完整 Web 服务。
 - `GameStartDone` 在确认当前实例是服务端后启动 OWIN、事件管道和计划任务。
 - `WorldShuttingDown` 先拒绝新请求、停止计划任务、结束待处理操作，再释放 OWIN Host。
 - `GameShutdown` 调用同一个幂等关闭流程作为兜底。
 - OWIN Host 的 `IDisposable` 必须由生命周期协调器持有，禁止仅保存在局部变量中。
+- 后续运行组件通过 Bootstrap 注入的有序 `IHostedComponent` 集合交给 `ModHost`；`ModHost` 只按顺序启动、反向停止这些命令型契约，不包含数据库连接、队列消费或重试策略的具体实现。
 
-当前实现证据：`ModMain.cs` 实现 `IModApi.InitMod`，创建 `Hosting.ModHost` 和 `Game.SevenDaysGameLifecycleAdapter`；`ModHost` 使用 `Created/Starting/Running/Draining/Stopped/Faulted` 状态并保持 OWIN Host；适配器在 `GameStartDone` 启动、在 `WorldShuttingDown` 和 `GameShutdown` 调用幂等停止。`InitMod` 本身只注册事件，不启动 HTTP 监听。
+当前实现证据：Bootstrap 的 `ModMain.cs` 实现 `IModApi.InitMod`，创建 Hosting 的 `ModHost` 和 SevenDays Adapter `Inbound/Lifecycle` 中的 `SevenDaysGameLifecycleAdapter`；`ModHost` 使用 `Created/Starting/Running/Draining/Stopped/Faulted` 状态并保持 OWIN Host；适配器只依赖 `IModRuntime`，在 `GameStartDone` 启动、在 `WorldShuttingDown` 和 `GameShutdown` 调用幂等停止。`InitMod` 本身只注册事件，不启动 HTTP 监听。
+
+2026-07-18 的 Windows 7DTD `v3.0.1-b4` 开发期人工 smoke 使用新多项目发布物验证：Mod Loader 加载 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品程序集，只发现一个 `IModApi`；`GameStartDone` 后 `/health` 返回 7DPanel `0.1.0`；Telnet 正常关服后 OWIN 停止、进程与 18080 端口释放，并可再次启动。该证据只覆盖当前生命周期最小切片，不代表 SQLite、玩家主线程动作、Linux 或完整产品能力已验证。
 
 依据：游戏自带 `Webserver.WebServer` 同样在 `GameStartDone` 初始化，并在 `WorldShuttingDown` 断开；`IModApi` 本身只有 `InitMod`，没有配对卸载方法。
 
 ### OWIN Host 与 Web API
 
 - Katana Self Host 在 Mono 进程内提供 HTTP 服务，并托管 Web API 2。当前最小切片公开 `/health` 和 `/api/v1/health`，静态前端、认证和业务 API 尚未接入。
-- `Web.OwinWebHost` 通过 `WebApp.Start(url, ...)` 创建宿主，并在 `Dispose` 中释放 `IDisposable`；`PanelHostOptions` 从 Mod 目录的 `config.json` 读取端口、绑定地址和协议，缺失时创建默认配置。默认 `bindAddress` 为 `0.0.0.0`，内部转换为 HttpListener 通配前缀并监听 `http://*:18080/`。
+- Web Adapter `Outbound/Hosting` 中的 `OwinWebHost` 通过 `WebApp.Start(url, ...)` 创建宿主，并在 `Dispose` 中释放 `IDisposable`；`Inbound/Http` 中的 `OwinStartup` 和 `HealthController` 承接 HTTP 管线与健康路由。Bootstrap 的 `PanelHostConfigurationLoader` 从 Mod 目录读取或创建 `config.json`，Hosting 的 `PanelHostOptions` 只负责验证并规范化监听选项。默认 `bindAddress` 为 `0.0.0.0`，内部转换为 HttpListener 通配前缀并监听 `http://*:18080/`。
+- `ProductInfo.Name` 和 `ProductInfo.Version` 是健康响应使用的产品元数据来源；测试要求其版本与 Bootstrap 发布的 `ModInfo.xml` 保持一致，禁止从任一 Adapter 程序集反射产品版本。
 - `config.example.json` 随发布物更新；`config.json` 和 `data/` 属于服主运行数据，不进入项目发布模板，也不提供前端或 API 动态编辑。监听配置在进程启动时读取，修改后重启服务端生效。
-- `PanelHostConfig.CreateDefault()` 是运行时默认值的唯一代码来源；测试会比较它与 `config.example.json`，防止示例模板和安全回退值发生漂移。
+- `PanelHostOptions` 的常量是运行时默认值来源，`PanelHostConfig.CreateDefault()` 复用这些常量；测试会比较生成的默认配置与 `config.example.json`，防止示例模板和安全回退值发生漂移。
 - API 控制器只处理协议、输入验证、权限检查和结果映射，不直接访问 Unity/7DTD 对象。
 - 默认监听所有网络接口。部署方必须通过主机防火墙或云安全组限制来源；公网场景推荐由反向代理终止 TLS。
 - 关服开始后健康端点报告 `draining`，写操作返回服务不可用，不能接受稍后仍可能执行的游戏操作。
@@ -77,7 +100,7 @@ flowchart LR
 
 - 7DPanel 使用独立本地身份库，不复用 `serveradmin.xml` 中采用无盐 MD5 的原生 Web 用户密码。
 - 首次启动且没有用户时，使用密码学安全随机数生成 8 位初始化凭证。控制台以四位分组格式同时输出手动初始化码和携带同一凭证的初始化链接；凭证摘要及 30 分钟到期时间作为一条初始化状态保存，不持久化明文。
-- 手动输入先移除分组连字符并按不区分大小写的规范形式验证。链接和手动输入共享同一验证与消费路径；创建首个 `Owner` 与消费初始化状态必须在同一事务中完成，保证并发请求最多成功一次。
+- 手动输入先移除分组连字符并按不区分大小写的规范形式验证。链接和手动输入共享同一验证与消费路径；创建首个 `Owner`、消费初始化状态和创建首个会话由 Identity 能力定义的原子 Store Port 在同一 SQLite 短事务中完成，保证并发请求最多成功一次。Application 不接触连接或事务对象。
 - 每次服务启动都先检查 `Owner` 是否存在；不存在时生成新的初始化状态并原子替换旧状态。本地服务端控制台提供同一重新生成操作，且只在不存在 `Owner` 时生效。创建首个 `Owner` 后，启动流程和控制台操作都不得再次生成凭证。
 - 首版角色为 `Owner`、`Admin` 和 `Viewer`。授权由具体动作权限驱动，角色映射到权限集合，权限检查在进入主线程队列前完成；未来玩家身份不得复用 `Viewer`。
 - 浏览器会话使用服务端保存的随机不透明标识；Cookie 必须为 `HttpOnly`、适用时为 `Secure`，并采用严格的同站策略。
@@ -97,9 +120,12 @@ flowchart LR
 
 ### 后台作业与事件管道
 
-- 备份压缩、日志搜索、SQLite I/O、审计持久化和校验在受控后台工作线程执行。
-- 游戏日志和事件回调只复制最小 DTO 并放入有界队列，回调内不执行数据库、网络或压缩操作。
-- 公告和自动化由后台调度器触发，但最终游戏动作仍通过主线程调度器执行。
+- 后台工作使用单一生命周期所有者、有界命令管线：游戏事件、Scheduler 或 Use Case 投递不可变 Work Item，唯一 Consumer 组件读取后通过有界执行槽交给显式 Dispatcher，每个 Work Item 只调用一个 Application Use Case；长时间备份不得阻塞全部短事件处理，首版不引入广播式发布订阅、通用 Event Bus 或运行时反射注册。
+- Work Item 只携带不可变标识和值，不捕获 Unity/7DTD 活对象、数据库连接或委托。游戏日志和事件回调完成快照和投递后立即返回，不执行数据库、网络或压缩操作。
+- Background Consumer 和唯一 Background Scheduler 是独立 `IHostedComponent`；具体自动化与备份 Trigger 没有生命周期，只负责判断到期项并投递工作。
+- 停止时先注销游戏事件并停止 Scheduler 生产，再完成队列写端，由 Consumer 在截止时间内排空；队列饱和、关闭和单项失败必须产生明确结果，不能终止消费循环。
+- 持久作业先写入 Job Store 再投递，启动时重新发现 `queued/running` 作业并按幂等规则恢复；瞬时游戏事件不承诺跨进程保存，但过载拒绝必须可观测。
+- 公告和自动化最终产生的游戏动作仍通过主线程调度器执行。
 - 每个作业持久化 `queued/running/succeeded/failed/cancelled` 状态、时间和失败原因，支持 `NFR-02` 的状态诚实要求。
 
 ### 备份与恢复
@@ -144,6 +170,10 @@ SQLite 拥有以下持久状态：
 
 备份归档、临时快照和恢复回滚副本存储在数据库外的受控目录。SQLite 只保存路径标识和元数据，不保存大型归档内容。配置文件保存监听地址、数据目录和非敏感运行参数；密码、会话和初始化码不得以明文持久化。
 
+SQLite 初始化时启用并验证 WAL，在每个连接设置经集成测试确定的 `busy_timeout`。低频能力型原子操作在对应 Store 内使用短事务；高频日志和审计写入通过有界、串行的写入协调器降低写锁竞争，并区分不可丢持久写入与可丢日志通道。高风险动作的审计意图必须等待持久化确认后才进入游戏主线程；可丢弃日志过载时可以拒绝或丢弃并累计计数，且不得饿死审计，审计和作业状态不得静默丢弃。
+
+SQLite、待恢复文件标记、备份归档和游戏动作不构成一个数据库事务。跨边界流程使用持久状态、幂等步骤和失败补偿；全局事务运行器不得向 Application 暴露连接、事务对象或隐式数据库上下文。
+
 ### 依赖兼容矩阵
 
 | 领域 | 决定版本/来源 | 状态 | 依据与约束 |
@@ -174,7 +204,7 @@ SQLite 拥有以下持久状态：
 - 外部访问推荐使用 HTTPS 反向代理。若用户显式启用明文远程 HTTP，面板必须持续显示安全警告，且 `Secure` Cookie 不能被错误宣称为已启用。
 - 数据库、实际配置、审计和备份目录必须位于 Mod 可写数据目录，不放入随升级覆盖的程序文件模板；发布更新不得删除或覆盖这些运行数据。
 - 开发期服务端发布、启停和健康检查由[后端脚本指南](../backend/scripts/README.md)管理；这些辅助脚本不属于产品运行时或发布物。
-- 关服顺序是：停止接入、拒绝新主线程任务、停止计划任务、排空有时限的审计/事件队列、释放 OWIN、关闭数据库和日志。
+- 关服顺序是：停止接入、拒绝新主线程任务、按反向注册顺序停止生产型组件、完成队列写端、由 Consumer 在截止时间内排空审计和后台工作、释放 OWIN、关闭数据库和日志。
 
 ## 质量属性
 
@@ -183,11 +213,12 @@ SQLite 拥有以下持久状态：
 - 生命周期操作、关服、备份和恢复均为幂等状态机。
 - API 超时不等于游戏操作失败；响应必须区分未开始、已开始但结果未知、成功和失败。
 - 待恢复标记、备份目录记录和用户初始化状态使用原子文件或数据库事务更新。
+- 数据库、文件系统和游戏副作用之间不声明虚假的全局原子性；中断后必须能从持久状态继续、补偿或报告明确失败。
 
 ### 性能
 
 - 主线程只执行有预算的短操作，不进行压缩、数据库查询或网络等待。
-- 日志、审计和自动化队列有界；过载时记录丢弃数量或拒绝请求，不允许无限占用内存。
+- 日志、审计和自动化队列有界；可丢弃日志过载时记录丢弃数量，审计和作业状态必须背压、拒绝或明确失败，不允许静默丢失或无限占用内存。
 - 列表和日志接口分页或使用游标，不一次返回无界数据。
 
 ### 安全性
@@ -203,12 +234,15 @@ SQLite 拥有以下持久状态：
 
 ## 决策与权衡
 
+- **Explicit Architecture:** 后端使用 Ports and Adapters 的调用方向、Clean Architecture 的依赖规则和按真实不变量选择性采用的 DDD/CQRS；不把示例目录、Aggregate Root、通用 Repository、Event Bus 或 Mediator 作为默认要求。目标设计细节见[后端目标架构蓝图](architecture/backend-target-blueprint.md)。
 - **Embedded backend:** 后端与 Mod 同进程，部署简单且能直接使用游戏事件，但任何未处理异常、阻塞或内存泄漏都可能影响游戏服务器。
 - **Start after `GameStartDone`:** 比旧项目在 `InitMod` 直接启动更晚，但确保游戏单例就绪并与游戏自带 WebServer 模式一致。
 - **Independent identity store:** 不复用原生 MD5 Web 用户，换取更安全、清晰的角色模型，但需要自行负责会话、密码迁移和恢复访问。
 - **Typed game adapters:** 玩家和公告操作优先使用类型化服务；通用控制台保留为受限高级能力，避免命令字符串成为主要业务接口。
 - **Runtime Newtonsoft.Json:** 选择游戏的 `13.0.2` 减少程序集冲突，但新代码不能依赖仅存在于 `13.0.4` 的行为。
 - **Restart-based restore:** 牺牲在线恢复便利性，换取存档文件不被游戏同时打开时的可恢复性。
+- **Bounded background command pipeline:** 使用唯一 Consumer 生命周期组件、显式 Dispatcher、有界 Channel 和有界执行槽换取可预测背压、排空和失败隔离；代价是新增工作项必须显式登记映射。
+- **Capability-scoped atomic stores:** 同一能力内的 SQLite 原子性由业务语义明确的 Store 封装，不提供全局事务运行器；跨数据库、文件和游戏副作用采用状态机与补偿。
 - **Pinned reference submodule:** 使用根目录 `7dtd-reference/` 固定兼容性证据的具体提交，避免产品源码复制反编译材料；代价是协作者必须同时拥有两个私有仓库的访问权限。
 
 ### 未解决风险
