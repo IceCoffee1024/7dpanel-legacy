@@ -33,6 +33,9 @@ maintaining duplicate product, design, architecture, or test facts.
   rely only on model memory.
 - Use `managing-project-lifecycle` to create, update, and audit project
   documentation.
+- Repository instructions and established local conventions override skill
+  templates and defaults. Skills do not authorize creating files or performing
+  Git operations beyond the user's requested scope.
 - Follow [CONTRIBUTING.md](CONTRIBUTING.md) for Conventional Commit messages
   and the documentation language policy.
 - All Markdown under `docs/` is Simplified Chinese, including future
@@ -43,6 +46,8 @@ maintaining duplicate product, design, architecture, or test facts.
   status. Target documents are not implementation evidence.
 - Preserve existing user changes. Do not modify unrelated files or rewrite or
   delete content whose origin is unclear.
+- Do not run `git commit`, `git push`, `git reset`, or `git revert` unless the
+  user explicitly requests that class of Git operation.
 - Treat `7dtd-reference/` as a private, read-only Git submodule containing
   compatibility evidence, not product source or release content. Modify it only
   when a task explicitly includes that repository; follow its instructions,
@@ -54,6 +59,13 @@ maintaining duplicate product, design, architecture, or test facts.
   duplicate commands here or add machine-specific paths.
 
 ## Documentation Updates
+
+- When `managing-project-lifecycle` routes a multi-step change to
+  `docs/superpowers/`, create and obtain approval for
+  `specs/YYYY-MM-DD-<feature>-design.md` before creating
+  `plans/YYYY-MM-DD-<feature>.md`. Each plan must link exactly one primary
+  dated design spec. A request for an inline plan does not authorize creating
+  either file.
 
 - For changes to product goals, scope, capabilities, or externally observable
   behavior, update `docs/PRD.md` first, then assess design, architecture, and
