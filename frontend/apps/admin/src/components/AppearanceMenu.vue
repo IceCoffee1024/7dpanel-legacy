@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useColorMode } from '@vueuse/core'
+import { computed } from 'vue'
 
 defineProps<{
   collapsed?: boolean
@@ -17,7 +17,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   onSelect(event: Event) {
     event.preventDefault()
     colorMode.value = 'light'
-  }
+  },
 }, {
   label: '深色',
   icon: 'i-lucide-moon',
@@ -26,7 +26,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   onSelect(event: Event) {
     event.preventDefault()
     colorMode.value = 'dark'
-  }
+  },
 }, {
   label: '跟随系统',
   icon: 'i-lucide-monitor',
@@ -35,7 +35,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   onSelect(event: Event) {
     event.preventDefault()
     colorMode.value = 'auto'
-  }
+  },
 }]])
 </script>
 

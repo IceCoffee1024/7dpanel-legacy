@@ -1,19 +1,19 @@
-import './assets/css/main.css'
-
-import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
-import { routes, handleHotUpdate } from 'vue-router/auto-routes'
-import { createHead } from '@unhead/vue/client'
 import ui from '@nuxt/ui/vue-plugin'
 
+import { createHead } from '@unhead/vue/client'
+import { createApp } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import { handleHotUpdate, routes } from 'vue-router/auto-routes'
 import App from './App.vue'
+
+import './assets/css/main.css'
 
 const app = createApp(App)
 
 const head = createHead()
 const router = createRouter({
   routes,
-  history: createWebHistory()
+  history: createWebHistory(),
 })
 
 app.use(head)

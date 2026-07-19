@@ -1,12 +1,14 @@
 {
   "name": "@7dpanel/admin",
-  "private": true,
   "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.13.1",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "typecheck": "vue-tsc -p ./tsconfig.app.json"
   },
   "dependencies": {
@@ -18,13 +20,12 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^9.1.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "eslint": "^10.7.0",
-    "eslint-plugin-vue": "^10.9.2",
+    "eslint-plugin-format": "^2.0.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.64.0",
     "vite": "^7.3.6",
     "vue-tsc": "^3.3.7"
-  },
-  "packageManager": "pnpm@11.13.1"
+  }
 }

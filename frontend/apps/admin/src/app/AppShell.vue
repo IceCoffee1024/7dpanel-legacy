@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { NavigationMenuItem } from '@nuxt/ui'
 import { shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
-import type { NavigationMenuItem } from '@nuxt/ui'
 
 const router = useRouter()
 const sidebarOpen = shallowRef(false)
@@ -13,17 +13,17 @@ const navigation = [{
   exact: true,
   onSelect: () => {
     sidebarOpen.value = false
-  }
+  },
 }] satisfies NavigationMenuItem[]
 
 const searchGroups = [{
   id: 'navigation',
   label: '导航',
-  items: navigation
+  items: navigation,
 }]
 
 defineShortcuts({
-  'g-o': () => router.push('/')
+  'g-o': () => router.push('/'),
 })
 </script>
 
