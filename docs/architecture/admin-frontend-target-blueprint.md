@@ -12,8 +12,9 @@ document_role: Target
 
 ## 用途与提升条件
 
-本蓝图为尚未初始化的 Admin 管理面板定义应用边界、运行链路、状态所有权、API 与安全约束、目标目录、
-依赖候选和发布责任。它覆盖 `CAP-01` 至 `CAP-05`、`NFR-01` 和 `NFR-02` 的前端实现边界，
+本蓝图为 Admin 管理面板定义应用边界、运行链路、状态所有权、API 与安全约束、目标目录、
+依赖候选和发布责任。已导入的模板基线和当前代码不能替代目标契约，也不能作为未验证运行链路的实现证据。
+它覆盖 `CAP-01` 至 `CAP-05`、`NFR-01` 和 `NFR-02` 的前端实现边界，
 但不重新定义产品行为或界面设计。
 
 只有相应目录、构建、测试和真实 OWIN 部署证据存在后，才把稳定结论提升到[系统架构](../architecture.md)。
@@ -197,12 +198,11 @@ select target and typed action
 
 ```text
 frontend/
-|-- package.json                                # 私有 workspace 根、聚合脚本和 packageManager
-|-- pnpm-workspace.yaml                         # apps/* 与未来 packages/* 的工作区和 pnpm 配置
-|-- pnpm-lock.yaml                              # 唯一前端依赖锁文件
 |-- apps/
 |   |-- admin/
-|   |   |-- package.json
+|   |   |-- package.json                        # Admin 依赖、脚本和精确 packageManager
+|   |   |-- pnpm-workspace.yaml                 # Admin 自有 pnpm 配置
+|   |   |-- pnpm-lock.yaml                      # Admin 自有依赖锁
 |   |   |-- framework.config.*
 |   |   |-- src/
 |   |   |   |-- main.ts                         # 浏览器入口
@@ -258,21 +258,21 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 能力 | 当前方向或候选 | 状态 | 采用理由或限制 | 决定前必须验证 |
 |---|---|---|---|---|
 | 语言 | TypeScript strict mode | 已批准 | API、权限、状态机和表格数据需要稳定类型边界 | 与所选框架、测试和生成代码的配置一致性 |
-| 包管理与 workspace | pnpm | 已批准 | 统一所有前端应用的严格依赖解析、脚本执行和单一锁文件 | pnpm 精确版本、Node.js 范围、CI 安装和 workspace 配置 |
-| Admin SPA | Vue 3 Composition API + `<script setup lang="ts">` | 优先候选 | 适合长会话、高交互 SPA；官方支持 TypeScript SFC | 团队经验、生态维护、生产包体积和浏览器基线 |
-| 构建 | Vite、`@vitejs/plugin-vue` | 优先候选 | 生成静态输出、支持 base path 和带哈希资源，不要求生产 Node.js | OWIN 部署路径、SPA fallback、manifest、缓存策略和所选 Node.js 基线 |
-| 路由 | Vue Router | 优先候选 | Vue 方案下使用官方 Router，并让筛选和分页进入 URL | 权限元数据、URL 状态、恢复导航和 404 行为 |
-| 文件布局路由 | `vite-plugin-vue-layouts` | 默认不直接安装 | 当前 App Shell 与嵌套路由可以显式表达布局，避免隐式文件约定 | 出现多个稳定布局且手工路由重复产生实际维护成本 |
-| UI 组件 | `@nuxt/ui` standalone Vue 模式、Tailwind CSS | 优先候选 | 当前官方文档支持通过 Vite 插件用于独立 Vue，并提供可访问组件 | 高密度运维表格、主题约束、Tailwind 成本、包体积和键盘行为 |
+| 包管理与 workspace | pnpm；各应用独立管理 | 已批准 | 所有前端应用统一使用 pnpm，但分别拥有依赖图、锁文件、Node.js 兼容范围和发布周期 | 各应用的 pnpm 精确版本、Node.js 范围和 CI 安装；出现真实共享后再评估根 workspace |
+| Admin SPA | Vue 3 Composition API + `<script setup lang="ts">` | Admin 目标采用 | 适合长会话、高交互 SPA；当前应用壳已验证 TypeScript SFC 构建 | 生产包体积、浏览器基线和真实业务切片 |
+| 构建 | Vite、`@vitejs/plugin-vue` | Admin 目标采用 | 生成静态输出、支持 base path 和带哈希资源，不要求生产 Node.js | OWIN 部署路径、SPA fallback、manifest、缓存策略和所选 Node.js 基线 |
+| 路由 | Vue Router 文件路由 | Admin 目标采用 | 使用官方 Vite 插件生成页面路由，并让后续筛选和分页进入 URL | 权限元数据、URL 状态、恢复导航和 404 行为 |
+| 文件布局路由 | `vite-plugin-vue-layouts` | 当前不采用 | 当前只有一个稳定 App Shell，直接包裹 `RouterView` 更简单，也避免引入与当前 Vite、Vue Router peer 范围不兼容的插件 | 出现多个稳定布局且手工布局映射产生实际维护成本 |
+| UI 组件 | `@nuxt/ui` standalone Vue 模式、Tailwind CSS | Admin 目标采用 | 当前官方文档支持通过 Vite 插件用于独立 Vue，应用壳已验证 Dashboard 组件 | 高密度运维表格、主题约束、Tailwind 成本、包体积和键盘行为 |
 | 数据表格 | 优先评估 Nuxt UI Table；高级需求再评估 `@tanstack/vue-table` | 条件候选 | Vue adapter 负责响应式集成；`@tanstack/table-core` 主要用于 vanilla 或自定义 adapter | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
 | 服务端状态 | 薄 API Client；查询缓存库待真实复杂度决定 | 预留 | 避免在需求简单时引入第二套状态模型 | 缓存键、失效、轮询、SSE 协作和 DevTools 价值 |
 | 客户端全局状态 | 不默认引入；出现跨 Feature 客户端状态后评估 Pinia 等方案 | 预留 | 服务端数据不应复制到全局 Store | 所有权、持久化、安全清理和是否有两个真实消费者 |
-| Vue composables | `@vueuse/core` | 条件候选 | 可复用浏览器与响应式能力，但不应包装已有简单 API 只为统一风格 | 每个引入 composable 的真实复用、包体积、SSR 假设和清理行为 |
+| Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
 | SSE | 浏览器原生 `EventSource` | 已批准 | 同源 Cookie 场景无需额外封装依赖 | 游标、补取、退避、会话过期和代理缓冲 |
 | 表单与边界校验 | `zod` | 优先候选 | 初始化、恢复和自动化表单需要类型化 schema 与一致错误映射 | Nuxt UI Form 集成、异步服务端错误、包体积和传输 DTO 映射 |
 | 日历日期 | `@internationalized/date` | 条件候选 | 适合日期、日历和时区语义；仅在计划任务控件直接使用时安装 | 与 Nuxt UI 日期组件的直接使用边界、序列化和服务器时区契约 |
 | 日期格式与计算 | `date-fns` | 条件候选 | 仅用于 `Intl` 和已有日期能力不足的纯函数格式化或计算 | 是否与 `@internationalized/date` 重复、locale 体积和时区语义 |
-| Head 管理 | `@unhead/vue` | 默认不直接安装 | 自托管 Admin 首版可由 Router 和 `document.title` 满足标题需求 | 出现复杂 meta、结构化 head 或框架插件的直接 API 需求 |
+| Head 管理 | `@unhead/vue` | Admin 目标采用 | 当前用于响应颜色模式更新 `theme-color`，保留模板中已经直接使用的轻量集成 | 后续页面标题、meta 所有权和是否仍有直接 API 需求 |
 | 图表 | `@unovis/vue` + `@unovis/ts` | 预留 | 官方 Vue 用法要求 Vue wrapper 与 core 配套；当前设计没有必须图表化的指标 | 先确认业务指标、无图表替代、可访问性、包体积和窄屏表现 |
 | 字符串 case 工具 | `scule` | 默认不直接安装 | 简单标识转换不构成独立运行依赖的充分理由 | 代码直接使用且 BCL/局部函数无法清晰表达的稳定重复需求 |
 | 日志虚拟化 | 默认不引入；达到实测 DOM 与滚动瓶颈后选型 | 默认不采用 | 首先用有界窗口和分页控制复杂度 | 行高、动态内容、键盘访问、复制、搜索和定位 |
@@ -281,16 +281,18 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 
 ### 工程清单约束
 
-用户提供的 `package.json` 片段作为初始化输入，但不在蓝图复制其版本范围和完整 JSON：
+用户提供的 `package.json` 片段和已导入模板作为 Admin 初始化输入，但蓝图不复制其版本范围和完整 JSON：
 
-- `frontend/package.json` 是私有 workspace 根，使用 `packageManager` 固定经过验证的 `pnpm@x.y.z`
-  精确版本，并用 `engines` 声明 Node.js 兼容范围；
-- `frontend/pnpm-workspace.yaml` 声明 `apps/*` 和未来的 `packages/*`，并拥有 pnpm workspace 配置；
-- `frontend/pnpm-lock.yaml` 是唯一前端依赖锁文件且必须提交；不得生成或提交 `package-lock.json`、
-  `yarn.lock`、`bun.lock` 或 `bun.lockb`；
-- `frontend/` 内所有依赖安装、移除、脚本和可执行工具统一使用 `pnpm add`、`pnpm remove`、
-  `pnpm run` 和 `pnpm exec`，不得使用 npm、Yarn 或 Bun 修改依赖图；
-- CI 使用 `pnpm install --frozen-lockfile` 或经当前 pnpm 版本验证的 `pnpm ci`，锁文件漂移必须使构建失败；
+- 所有前端应用必须使用 pnpm，但 Admin、Marketing 和未来 Player 分别拥有自己的 `package.json`、
+  `pnpm-workspace.yaml`、`pnpm-lock.yaml`、精确 `packageManager` 和 Node.js 兼容范围；
+- 当前不创建 `frontend/package.json`、`frontend/pnpm-workspace.yaml` 或根锁文件。只有至少两个应用出现
+  真实共享包、必须协调安装或需要联动发布时，才评估根 workspace；届时不得默认强迫不同框架使用同一发布周期；
+- 每个应用只能在自己的目录内使用 `pnpm add`、`pnpm remove`、`pnpm run` 和 `pnpm exec`
+  修改或执行依赖，不得使用 npm、Yarn 或 Bun 改写其依赖图；
+- 每个应用只提交自己的 pnpm 锁文件，不得在同一应用中生成或提交 `package-lock.json`、`yarn.lock`、
+  `bun.lock` 或 `bun.lockb`；
+- CI 在目标应用目录使用 `pnpm install --frozen-lockfile` 或经该应用当前 pnpm 版本验证的
+  `pnpm ci`，锁文件漂移必须使构建失败；
 - Admin 应用的 `private: true` 和 `type: "module"` 作为工程基线；
 - 工程提供 `dev`、`build`、`preview`、`lint` 和 `typecheck` 能力，精确脚本由实际 `package.json` 拥有；
 - `preview` 只用于本地检查，不是生产服务方式；
@@ -346,7 +348,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 
 ## 尚需验证的证据缺口
 
-- pnpm 精确版本、最低 Node.js 开发版本以及 pnpm 与 Vite、TypeScript、ESLint 的兼容组合；
+- Admin 最低 Node.js 开发版本，以及已固定的 `pnpm@11.13.1` 与 Vite、TypeScript、ESLint 的兼容组合；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩、缓存头和 CSP；
 - REST 错误契约、分页与游标格式、SSE 事件 envelope 和补取窗口；
 - CSRF Token 获取方式、登录限速反馈和初始化凭证 URL 清除时机；
