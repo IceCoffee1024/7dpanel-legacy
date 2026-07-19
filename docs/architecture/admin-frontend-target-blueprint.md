@@ -14,7 +14,7 @@ document_role: Target
 
 本蓝图为 Admin 管理面板定义应用边界、运行链路、状态所有权、API 与安全约束、目标目录、
 依赖候选和发布责任。已导入的模板基线和当前代码不能替代目标契约，也不能作为未验证运行链路的实现证据。
-它覆盖 `CAP-01` 至 `CAP-05`、`NFR-01` 和 `NFR-02` 的前端实现边界，
+它覆盖 `CAP-01` 至 `CAP-05`、`NFR-01`、`NFR-02` 和 `NFR-03` 的前端实现边界，
 但不重新定义产品行为或界面设计。
 
 只有相应目录、构建、测试和真实 OWIN 部署证据存在后，才把稳定结论提升到[系统架构](../architecture.md)。
@@ -88,6 +88,7 @@ shared     -X-> feature business code
 | 搜索、筛选、排序、分页和时间范围 | URL | 可分享、可返回、刷新后恢复 | 只藏在组件内导致导航丢失 |
 | 当前操作者、角色和权限 | 后端会话 | 启动时恢复、控制导航和交互、处理过期 | 仅依据本地角色决定授权 |
 | 表单草稿、对话框和展开状态 | 所属 Feature | 在安全范围内保留和清理 | 将密码、初始化凭证或 CSRF Token 持久化 |
+| 当前界面语言 | `app/i18n` | 解析浏览器语言、不支持时回退 `en`、在 `zh-CN`/`en` 间切换并持久化非敏感偏好 | 由 Feature 各自保存语言或把语言偏好写入服务端业务状态 |
 | 长任务显示状态 | 后端作业与审计 | 跨页面、刷新和重连后恢复 | 只依赖内存 Toast 或单次 HTTP 响应 |
 | 日志流游标和连接状态 | 日志 Feature | 维护最后游标、暂停、补取和缺口 | 把断线期间数据假装为连续实时流 |
 
@@ -118,8 +119,8 @@ shared     -X-> feature business code
 
 - 所有 HTTP 调用经过一个薄的同源 API Client，统一处理 base path、`credentials`、取消、超时、关联标识和错误映射。
 - Feature 定义自己的请求、响应和页面模型；Controllers 的内部异常、数据库字段和文件路径不得泄漏到浏览器。
-- 后端提供稳定契约后，可以评估从 OpenAPI 生成传输类型；生成代码必须隔离，不能成为 Feature 组织方式。
-- 错误结果至少保留稳定错误码、用户可见消息、Correlation ID、适用时的 Audit ID 和可否安全重试。
+- 后端提供稳定、可重复获取的 OpenAPI 契约后，优先评估使用 `@hey-api/openapi-ts` 从本地契约生成传输类型和客户端；生成代码必须隔离，不能成为 Feature 组织方式，也不能要求连接 Hey API 云服务。
+- 错误结果至少保留稳定错误码、Correlation ID、适用时的 Audit ID 和可否安全重试；前端根据稳定错误码生成当前语言的用户消息，不翻译或直接展示任意服务端异常文本。
 - 查询使用 `AbortController` 或框架等效能力取消已经失去消费者的请求。
 
 ### 会话与 CSRF
@@ -211,6 +212,7 @@ frontend/
 |   |   |   |   |-- bootstrap.*                 # 最小启动和会话恢复
 |   |   |   |   |-- router.*                    # 路由、权限元数据和 fallback
 |   |   |   |   |-- providers.*                 # 已选框架插件和错误边界
+|   |   |   |   |-- i18n/                        # 语言解析、消息目录、回退和格式化边界
 |   |   |   |   `-- styles/                     # 应用级 tokens 和基础样式
 |   |   |   |-- pages/                           # 路由级 Feature 组合
 |   |   |   |   |-- SetupPage.*
@@ -258,26 +260,41 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 能力 | 当前方向或候选 | 状态 | 采用理由或限制 | 决定前必须验证 |
 |---|---|---|---|---|
 | 语言 | TypeScript strict mode | 已批准 | API、权限、状态机和表格数据需要稳定类型边界 | 与所选框架、测试和生成代码的配置一致性 |
+| 编译期类型工具 | 优先使用 TypeScript 内置工具类型；不足时评估 `type-fest` | 条件候选 | 仅在具体边界需要高级类型且局部定义容易出错或重复时，按实际使用类型直接导入；不为类型技巧本身增加依赖 | TypeScript 5.9+、ESM 和 strict 兼容性，具体导入类型、可读性、类型检查耗时及升级影响 |
 | 包管理与 workspace | pnpm；各应用独立管理 | 已批准 | 所有前端应用统一使用 pnpm，但分别拥有依赖图、锁文件、Node.js 兼容范围和发布周期 | 各应用的 pnpm 精确版本、Node.js 范围和 CI 安装；出现真实共享后再评估根 workspace |
 | Admin SPA | Vue 3 Composition API + `<script setup lang="ts">` | Admin 目标采用 | 适合长会话、高交互 SPA；当前应用壳已验证 TypeScript SFC 构建 | 生产包体积、浏览器基线和真实业务切片 |
 | 构建 | Vite、`@vitejs/plugin-vue` | Admin 目标采用 | 生成静态输出、支持 base path 和带哈希资源，不要求生产 Node.js | OWIN 部署路径、SPA fallback、manifest、缓存策略和所选 Node.js 基线 |
+| Node.js 配置类型 | `@types/node`（`devDependency`） | 条件候选 | 只有 Vite、Vitest、国际化构建插件等 Node 侧配置直接导入 `node:*` 或使用 `process`、`Buffer`、`NodeJS.*` 时才声明；仅加入 Node 侧 tsconfig，不向浏览器应用类型环境泄漏 | 与正式开发/CI Node.js major、TypeScript 的兼容性，`tsconfig.node.json` 范围、直接使用证据、全局类型污染和跨平台配置检查 |
 | 路由 | Vue Router 文件路由 | Admin 目标采用 | 使用官方 Vite 插件生成页面路由，并让后续筛选和分页进入 URL | 权限元数据、URL 状态、恢复导航和 404 行为 |
 | 文件布局路由 | `vite-plugin-vue-layouts` | 当前不采用 | 当前只有一个稳定 App Shell，直接包裹 `RouterView` 更简单，也避免引入与当前 Vite、Vue Router peer 范围不兼容的插件 | 出现多个稳定布局且手工布局映射产生实际维护成本 |
+| 路由不确定进度 | 默认不引入；出现可感知的路由懒加载等待后评估 `@bprogress/core` 或 `@bprogress/vue`；`nprogress` 当前不采用 | 条件候选 | 顶部进度条只表达导航或代码分块仍在加载，不能代表页面数据、游戏动作、备份或恢复的真实进度；BProgress 是现代 TypeScript 实现，优先于长期停留在旧版本的 NProgress | 实测导航延迟、并发和取消导航、失败清理、防闪烁、主题/CSS、层级、键盘与屏幕阅读器提示、减少动态效果、包体积和 Vue Router 集成 |
 | UI 组件 | `@nuxt/ui` standalone Vue 模式、Tailwind CSS | Admin 目标采用 | 当前官方文档支持通过 Vite 插件用于独立 Vue，应用壳已验证 Dashboard 组件 | 高密度运维表格、主题约束、Tailwind 成本、包体积和键盘行为 |
-| 数据表格 | 优先评估 Nuxt UI Table；高级需求再评估 `@tanstack/vue-table` | 条件候选 | Vue adapter 负责响应式集成；`@tanstack/table-core` 主要用于 vanilla 或自定义 adapter | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
-| 服务端状态 | 薄 API Client；查询缓存库待真实复杂度决定 | 预留 | 避免在需求简单时引入第二套状态模型 | 缓存键、失效、轮询、SSE 协作和 DevTools 价值 |
-| 客户端全局状态 | 不默认引入；出现跨 Feature 客户端状态后评估 Pinia 等方案 | 预留 | 服务端数据不应复制到全局 Store | 所有权、持久化、安全清理和是否有两个真实消费者 |
+| 图标与离线资源 | Nuxt UI `UIcon`、本地 `@iconify-json/lucide`（`devDependency`）和 `@nuxt/ui/vite` 的 `icon.clientBundle` | Admin 目标采用；当前基线已验证 | 核心界面图标必须随静态产物离线可用；当前静态 `i-lucide-*` 用法已通过生产构建和 Chrome DevTools MCP 验证，最终 DOM 使用内联 Lucide SVG，页面运行时只请求同源静态资源且不请求 Iconify API。当前使用 `scan: true` 从已安装集合按源码用法打包，动态名称无法可靠扫描时改用显式 `icons` 清单。Nuxt UI Vite 集成已提供组件与自动导入能力，不直接安装 `unplugin-auto-import` 或 `unplugin-vue-components`。`unplugin-icons` 当前不采用；只有出现必须通过 `~icons/*` 将自定义 SVG 或图标作为 Vue 组件直接导入，且 `UIcon` 无法清晰满足的真实需求时才重新评估 | 动态图标名称的显式清单、新增集合的直接依赖、浏览器包体积和可重复的离线回归门禁 |
+| 数据表格 | 基础表格使用 Nuxt UI Table；应用直接导入分页、排序等 TanStack API 时添加 `@tanstack/vue-table` | 条件候选 | `@nuxt/ui` 已提供基础表格能力；传递依赖不构成应用可直接使用的 API 契约，不默认声明 `@tanstack/table-core` | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
+| API 契约代码生成 | `@hey-api/openapi-ts`（`devDependency`）；生成代码直接导入的运行时客户端包按实际用途声明 | 优先候选 | 仅在后端提供稳定、可重复获取的本地 OpenAPI 契约后采用；生成类型、SDK 和客户端必须输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务，并由可重复脚本和 CI 检查契约或生成结果漂移 | Web API 2 契约生成与 OpenAPI 版本、稳定错误码和分页模型、Fetch 的同源 Cookie/CSRF/取消/超时、插件与锁定工具链兼容性、确定性输出、生成代码审查边界及运行时导入 |
+| 服务端状态 | 薄 API Client；出现真实查询缓存复杂度后评估 `@pinia/colada` | 条件候选 | Pinia Colada 只管理服务器权威数据的查询、去重、缓存、失效和 Mutation；采用后必须先注册 `pinia`，普通 Pinia Store 仍只管理客户端自有状态，不复制查询缓存。SSE 只更新对应查询或触发精确失效 | 至少两个真实查询消费者、缓存键和新鲜度、取消与去重、重试上限、会话过期、`Offline`/`Unknown`、乐观更新与回滚、SSE 补取和失效、DevTools、包体积，以及缺少 `networkMode` 和 `structuralSharing` 对目标流程的影响 |
+| 客户端全局状态 | 优先使用 Feature 局部 composable、provide/inject 或 URL；确有跨路由共享状态时评估 `pinia` | 条件候选 | 只管理客户端自有且有明确生命周期的共享状态，优先使用类型化 Setup Store；不得复制服务器权威数据、替代查询缓存或默认持久化整个 Store | 状态所有者和至少两个真实消费者、Store 边界、会话过期重置、持久化白名单、敏感数据、DevTools、HMR、测试隔离和包体积 |
+| 进程内瞬时事件 | 优先使用 props/emits、显式 Feature API、路由状态和查询失效；确有解耦需求时评估 `mitt` | 条件候选 | 只传递无持久状态、无需权威恢复的应用级通知；必须定义集中式 TypeScript 事件映射，不承载服务器事实、业务命令、权限或长任务结果 | 明确生产者与至少两个独立消费者、订阅释放、重复注册、事件顺序、异常隔离、测试可追踪性及 HMR 行为 |
 | Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
-| SSE | 浏览器原生 `EventSource` | 已批准 | 同源 Cookie 场景无需额外封装依赖 | 游标、补取、退避、会话过期和代理缓冲 |
-| 表单与边界校验 | `zod` | 优先候选 | 初始化、恢复和自动化表单需要类型化 schema 与一致错误映射 | Nuxt UI Form 集成、异步服务端错误、包体积和传输 DTO 映射 |
-| 日历日期 | `@internationalized/date` | 条件候选 | 适合日期、日历和时区语义；仅在计划任务控件直接使用时安装 | 与 Nuxt UI 日期组件的直接使用边界、序列化和服务器时区契约 |
+| SSE | 同源 Cookie 简单链路优先原生 `EventSource`；需要 Fetch 级控制时比较 `event-source-plus` 与 `@microsoft/fetch-event-source` | 原生方案已批准；库为条件候选 | 只有必须检查 HTTP 状态、自定义有上限退避、主动取消/重连或控制请求时才增加依赖；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | 401/403/429/503 与 Content-Type、Last-Event-ID/游标、Cookie/CSRF、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
+| 表单与边界校验 | `valibot` | 优先候选 | 兼容 Nuxt UI Standard Schema，并以模块化 API 控制初始化、恢复和自动化表单的浏览器产物 | Nuxt UI Form 集成、异步服务端错误、传输 DTO 映射和团队使用成本 |
+| 产品文案国际化 | `vue-i18n` | 优先候选 | 统一管理 `zh-CN`、`en` 产品与业务文案、以 `en` 为默认回退和响应式语言切换；不负责组件库或 Valibot 自带消息 | 缺失键检测、按语言拆包、类型安全、CSP 和生产包体积 |
+| Vue I18n 构建期集成 | `@intlify/unplugin-vue-i18n`（`devDependency`） | 条件候选 | 只有语言资源采用 JSON/YAML、SFC `<i18n>` custom block，或实测需要构建期预编译与运行时裁剪时才引入；它扩展而不替代 `vue-i18n`，TypeScript 内联消息不要求该插件 | 与锁定 Vite/Vue/Vue I18n/Node.js 的兼容性、locale include 边界、runtime compiler、懒加载 chunk、HTML 消息安全、构建失败行为和包体积收益 |
+| Nuxt UI 组件语言 | `UApp :locale` | Admin 目标采用 | 让 Nuxt UI 内置文案和区域格式跟随应用当前语言；不能替代产品文案国际化 | `zh-CN`/`en` 映射、切换响应和组件覆盖范围 |
+| Valibot 内置错误翻译 | `@valibot/i18n` | 优先候选 | 多个表单统一使用官方内置 issue 翻译；只按需导入与 `zh-CN`/`en` 对应的官方语言模块或实际使用的子模块，并让 Valibot `lang` 与应用语言同步 | 简体中文 locale 标识、全局配置切换、缺失消息回退、自定义业务错误归属和包体积 |
+| 日历日期 | `@internationalized/date` | 条件候选 | Nuxt UI 内部使用该包；只有 7DPanel 源码直接导入 `CalendarDate`、`CalendarDateTime`、`Time` 或 `ZonedDateTime` 时才声明为直接依赖 | 序列化、服务器时区契约、日期与时刻语义以及 Nuxt UI 表单集成 |
 | 日期格式与计算 | `date-fns` | 条件候选 | 仅用于 `Intl` 和已有日期能力不足的纯函数格式化或计算 | 是否与 `@internationalized/date` 重复、locale 体积和时区语义 |
 | Head 管理 | `@unhead/vue` | Admin 目标采用 | 当前用于响应颜色模式更新 `theme-color`，保留模板中已经直接使用的轻量集成 | 后续页面标题、meta 所有权和是否仍有直接 API 需求 |
 | 图表 | `@unovis/vue` + `@unovis/ts` | 预留 | 官方 Vue 用法要求 Vue wrapper 与 core 配套；当前设计没有必须图表化的指标 | 先确认业务指标、无图表替代、可访问性、包体积和窄屏表现 |
-| 字符串 case 工具 | `scule` | 默认不直接安装 | 简单标识转换不构成独立运行依赖的充分理由 | 代码直接使用且 BCL/局部函数无法清晰表达的稳定重复需求 |
+| 游戏地图与空间交互 | `ol`（OpenLayers） | 条件候选 | 仅在产品批准玩家位置、世界地图或区域编辑等地图流程后采用；适合自定义投影、静态/瓦片底图、矢量覆盖和绘制交互，不因展示单个坐标而引入 | 7DTD X/Z 坐标与图像像素映射、原点和轴方向、世界范围与缩放层级、离线地图资产、性能、可访问性、CSS、包体积和许可证 |
+| OpenLayers 扩展 | `ol-ext`；缺少内置声明时评估 `@types/ol-ext` 到 `npm:@siedlerchr/types-ol-ext` 的别名 | 二级条件候选 | 只有 `ol` 已采用且核心 API 无法清晰满足某个已批准控件、交互、覆盖层或渲染需求时，才按具体模块引入；社区声明仅进入 `devDependencies`，精确版本由实际清单和锁文件拥有 | 与锁定 `ol`/`ol-ext` 版本及实际导入模块的类型兼容性、声明包的 `jspdf` peer、额外 CSS、维护状态、tree-shaking、交互可访问性和无扩展替代方案 |
+| 通用工具函数 | 优先使用原生 JavaScript/TypeScript；出现跨 Feature 的复杂纯函数需求后评估 `es-toolkit` | 条件候选 | 简单数组、对象和字符串转换不构成引入工具库的理由；深比较、深拷贝、防抖或复杂集合操作应避免重复手写 | 至少两个真实消费者、原生实现的正确性与可读性、tree-shaking、浏览器基线和具体函数语义 |
 | 日志虚拟化 | 默认不引入；达到实测 DOM 与滚动瓶颈后选型 | 默认不采用 | 首先用有界窗口和分页控制复杂度 | 行高、动态内容、键盘访问、复制、搜索和定位 |
-| 静态检查 | ESLint、`eslint-plugin-vue`、`typescript-eslint`、`vue-tsc` | 优先候选 | 分别覆盖代码规则、Vue SFC 和独立类型检查 | 版本兼容、flat config、测试文件范围和编辑器/CI 一致性 |
-| 测试 | Vitest、Vue Test Utils、Playwright 等随框架初始化确定 | 条件候选 | 当前候选清单尚未包含测试依赖，但蓝图要求单元、组件和浏览器 E2E | net48 OWIN 测试环境、浏览器矩阵、可访问性、运行时间和 CI 成本 |
+| 静态检查 | ESLint、`@antfu/eslint-config`、`vue-tsc` | Admin 目标采用 | Antfu flat config 统一 JavaScript、TypeScript 和 Vue SFC 规则，`vue-tsc` 独立负责类型检查；项目覆盖规则按所属集成显式配置 | 全工程 lint 基线、type-aware lint 耗时、忽略范围、编辑器/CI 一致性，以及配置不再直接导入后移除 `eslint-plugin-vue`/`typescript-eslint` 的结果 |
+| ESLint formatter | Antfu formatters 与直接 `devDependency` `eslint-plugin-format` | Admin 目标采用 | 统一格式化 CSS、HTML、Markdown 和 Vue `<style>`；精确版本和脚本由应用清单拥有，不把格式化成功等同于类型或业务验证 | 首次自动修复差异、Prettier/dprint 行为、生成文件排除、编辑器保存行为和 CI 非交互执行 |
+| 单元与组件测试运行器 | `vitest` | 优先候选 | 复用 Vite 的 ESM、TypeScript、Vue SFC 和路径解析链路，负责快速单元/组件测试、mock、watch 与可选覆盖率；CI 必须使用一次性 run 模式 | 与锁定 Vite/Node.js 的兼容性、配置归属、路径别名、并行隔离、计时器、覆盖率 provider、watch 与 CI 脚本边界 |
+| Vue 组件测试 | `@vue/test-utils` + `happy-dom`；仅在实际 Web API 兼容缺口出现时回退评估 `jsdom` | 优先候选 | 通过 `mount` 验证 props、slots、可见状态、用户交互和 emit；优先使用更轻量快速的 `happy-dom`，共享挂载器负责 Nuxt UI、Router、i18n 等插件，不默认使用浅挂载或只依赖快照 | 异步更新与清理、Teleport、全局插件、网络/时间 mock、`happy-dom` API 差异、行为导向断言、模拟 DOM 局限，以及需要真实焦点、CSS、视口或 Cookie 时升级到浏览器测试 |
+| 浏览器端到端测试 | Playwright 等在首个完整用户流程中确定 | 条件候选 | 验证真实 OWIN 静态托管、路由、登录、响应式、可访问性和 P0 流程；不与 Vitest 组件测试重复同一内部实现 | 浏览器矩阵、服务启动、测试数据隔离、失败截图/trace、执行时间和 CI 成本 |
 
 ### 工程清单约束
 
@@ -300,6 +317,8 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 - 初始化时补充测试脚本，并在验证 Node.js、pnpm、Vite、TypeScript 和 ESLint 的兼容组合后固定版本；
 - 只有浏览器运行代码直接导入的包进入 `dependencies`；构建、类型检查、lint 和测试工具进入
   `devDependencies`。Tailwind CSS 的最终归类由 Nuxt UI standalone Vue 安装要求和实际构建流程验证；
+- OpenAPI 生成器及仅在生成时运行的插件进入 `devDependencies`；生成代码在浏览器运行时直接导入的客户端包进入 `dependencies`，不得因生成器自身是开发依赖而遗漏运行时直接依赖；
+- Admin 应用仅通过 `import type` 使用的纯类型包（如 `type-fest`）进入 `devDependencies`；若未来可发布共享包的公开声明暴露其类型，再重新评估 dependency 或 peer dependency 边界；
 - 不把传递依赖为了“版本看得见”提升为直接依赖。只有应用直接使用其 API 或必须控制兼容边界时才显式声明。
 
 Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列表都不能因为“常用”而自动引入。实施者若发现
@@ -327,6 +346,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - `CAP-05`：初始化、登录、会话过期、角色导航、服务端 `Forbidden`、CSRF 和审计关联；
 - `NFR-01`：断开公网后核心管理能力可用，生产资源不存在第三方运行依赖；
 - `NFR-02`：所有写操作都能区分排队、执行、成功、失败和未知，不以 HTTP 200 替代游戏结果；
+- `NFR-03`：`zh-CN` 与 `en` 的全部 P0 页面和表单通过 E2E，覆盖浏览器语言匹配、默认回退 `en`、登录前后切换、偏好持久化、缺失键、Valibot 内置错误、Nuxt UI 文案、日期数字格式和稳定服务端错误码映射；
 - 320 CSS 像素、常用桌面和宽屏下无不可达操作、文本遮挡或布局跳动；
 - 键盘、焦点、语义标签、状态非纯颜色表达、减少动态效果和 WCAG 2.2 AA 对比度；
 - 真实 OWIN 静态托管下的深链接刷新、缓存、API 路由隔离、SSE、登录和正常关服；
@@ -348,6 +368,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 
 ## 尚需验证的证据缺口
 
+- Antfu ESLint 迁移尚未建立通过的全工程 lint 基线；需要审查自动修复、解决配置与 pnpm workspace 规则差异，并在无直接导入后移除 `eslint-plugin-vue` 和 `typescript-eslint`；
 - Admin 最低 Node.js 开发版本，以及已固定的 `pnpm@11.13.1` 与 Vite、TypeScript、ESLint 的兼容组合；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩、缓存头和 CSP；
 - REST 错误契约、分页与游标格式、SSE 事件 envelope 和补取窗口；
@@ -355,6 +376,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - 日志典型速率、浏览器保留窗口、渲染预算和是否需要虚拟列表；
 - 生产包体积预算、最低浏览器范围和自动化可访问性门槛；
 - Nuxt UI standalone Vue 在目标密度、响应式表格和键盘操作上的原型证据；
+- `vue-i18n`、Nuxt UI locale 与 `@valibot/i18n` 的语言标识映射、按需加载、缺失键门禁和同步切换原型；
 - Windows/Linux Mod 发布物中的静态资源路径和真实进程 smoke。
 
 这些缺口在首个 Admin 纵向切片的变更设计和实施计划中逐项关闭。未经代码、自动化测试和真实 OWIN 发布验证，
