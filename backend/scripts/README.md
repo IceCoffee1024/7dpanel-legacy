@@ -39,8 +39,17 @@ Credentials are never stored in either file.
 
 ## Publish
 
-`Publish-Mod` runs the standard Release folder profile. With no configured
-target, output is written to:
+Build the Admin application before publishing the Mod:
+
+```powershell
+Set-Location frontend/apps/admin
+pnpm build
+Set-Location ../../..
+```
+
+`Publish-Mod` fails when `dist/index.html` or its generated assets are missing.
+It runs the standard Release folder profile. With no configured target, output
+is written to:
 
 ```text
 backend/src/Bootstrap/LSTY.SevenDPanel/bin/Release/net48/publish/
@@ -48,8 +57,20 @@ backend/src/Bootstrap/LSTY.SevenDPanel/bin/Release/net48/publish/
 
 When `SEVENDPANEL_PUBLISH_DIR` is set, `dotnet publish` writes directly to that
 directory. Publishing is incremental: it does not clear the target and does not
-overwrite the server-owned `config.json` or `data/`. The script removes and
-rejects game-provided assemblies that must not ship with the Mod.
+overwrite the server-owned `config.json` or `data/`. It replaces only the
+published `wwwroot/` directory with `frontend/apps/admin/dist/`, producing this
+runtime layout:
+
+```text
+<ModDirectory>/
+  7DPanel.dll
+  wwwroot/
+    index.html
+    assets/
+```
+
+The script also removes and rejects game-provided assemblies that must not ship
+with the Mod.
 
 ## Start
 

@@ -76,6 +76,29 @@ namespace LSTY.SevenDPanel.Tests
                 "IModApi must only be implemented by the Bootstrap project: " + implementation);
         }
 
+        [Fact]
+        public void Panel_host_start_is_bound_to_mod_initialization()
+        {
+            var modMainPath = Path.Combine(SourceRoot, "Bootstrap", "LSTY.SevenDPanel", "ModMain.cs");
+            var lifecyclePath = Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.SevenDays",
+                "Inbound",
+                "Lifecycle",
+                "SevenDaysGameLifecycleAdapter.cs");
+            var modMainSource = File.ReadAllText(modMainPath);
+            var lifecycleSource = File.ReadAllText(lifecyclePath);
+
+            Assert.Contains("adapter.RegisterAndStart();", modMainSource);
+            Assert.DoesNotContain("GameStartDone", lifecycleSource);
+
+            var registeredIndex = lifecycleSource.IndexOf("registered = true;", StringComparison.Ordinal);
+            var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);
+            Assert.True(registeredIndex >= 0, "Lifecycle adapter must record shutdown registration.");
+            Assert.True(startIndex > registeredIndex, "Lifecycle adapter must register shutdown handlers before starting the panel host.");
+        }
+
         private static void AssertDirectionDoesNotReference(
             string adaptersRoot,
             string direction,

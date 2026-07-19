@@ -18,6 +18,15 @@ if (Test-Path -LiteralPath $EnvironmentFile) {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $project = Join-Path $repoRoot 'backend\src\Bootstrap\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj'
 $projectDirectory = Split-Path $project -Parent
+$adminDistPath = Join-Path $repoRoot 'frontend\apps\admin\dist'
+$adminIndexPath = Join-Path $adminDistPath 'index.html'
+$adminAssetsPath = Join-Path $adminDistPath 'assets'
+if (-not (Test-Path -LiteralPath $adminIndexPath -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $adminAssetsPath -PathType Container) -or
+    -not (Get-ChildItem -LiteralPath $adminAssetsPath -File | Select-Object -First 1)) {
+    throw 'Admin build output is missing or incomplete. Run pnpm build in frontend/apps/admin before publishing.'
+}
+
 $configuredPublishPath = $environment['SEVENDPANEL_PUBLISH_DIR']
 if ($configuredPublishPath) {
     $publishPath = if ([System.IO.Path]::IsPathRooted($configuredPublishPath)) {
@@ -51,6 +60,26 @@ $forbidden = Get-ChildItem -LiteralPath $publishPath -File | Where-Object {
 }
 if ($forbidden) {
     throw "The publish directory contains game-provided assemblies: $($forbidden.Name -join ', ')"
+}
+
+$publishPath = [System.IO.Path]::GetFullPath($publishPath)
+$wwwrootPath = [System.IO.Path]::GetFullPath((Join-Path $publishPath 'wwwroot'))
+if ((Split-Path $wwwrootPath -Parent) -ne $publishPath) {
+    throw "Refusing to replace an unexpected Admin asset path: $wwwrootPath"
+}
+
+if (Test-Path -LiteralPath $wwwrootPath) {
+    Remove-Item -LiteralPath $wwwrootPath -Recurse -Force
+}
+New-Item -ItemType Directory -Path $wwwrootPath | Out-Null
+Get-ChildItem -LiteralPath $adminDistPath -Force | Copy-Item -Destination $wwwrootPath -Recurse -Force
+
+$publishedIndexPath = Join-Path $wwwrootPath 'index.html'
+$publishedAssetsPath = Join-Path $wwwrootPath 'assets'
+if (-not (Test-Path -LiteralPath $publishedIndexPath -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $publishedAssetsPath -PathType Container) -or
+    -not (Get-ChildItem -LiteralPath $publishedAssetsPath -File | Select-Object -First 1)) {
+    throw "Published Admin assets are incomplete under $wwwrootPath"
 }
 
 Write-Host "Published Mod output at $publishPath"

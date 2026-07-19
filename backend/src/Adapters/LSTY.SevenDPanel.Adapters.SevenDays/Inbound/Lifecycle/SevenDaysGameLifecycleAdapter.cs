@@ -13,23 +13,21 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Lifecycle
             this.runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         }
 
-        public void Register()
+        public void RegisterAndStart()
         {
             if (registered) return;
-            ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
             ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);
             ModEvents.GameShutdown.RegisterHandler(OnGameShutdown);
             registered = true;
+            runtime.Start();
         }
 
-        private void OnGameStartDone(ref ModEvents.SGameStartDoneData data) { runtime.Start(); }
         private void OnWorldShuttingDown(ref ModEvents.SWorldShuttingDownData data) { runtime.Stop(); }
         private void OnGameShutdown(ref ModEvents.SGameShutdownData data) { runtime.Stop(); }
 
         public void Dispose()
         {
             if (!registered) return;
-            ModEvents.GameStartDone.UnregisterHandler(OnGameStartDone);
             ModEvents.WorldShuttingDown.UnregisterHandler(OnWorldShuttingDown);
             ModEvents.GameShutdown.UnregisterHandler(OnGameShutdown);
             registered = false;
