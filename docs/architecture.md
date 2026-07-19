@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-18"
+last_updated: "2026-07-19"
 ---
 
 # 7DPanel 系统架构
@@ -14,6 +14,10 @@ last_updated: "2026-07-18"
 后端尚未实现能力的批准目标链路、项目边界和生产文件职责见
 [后端目标架构蓝图](architecture/backend-target-blueprint.md)。该蓝图不代表当前实现；本文件和
 实际代码、配置及测试证据仍是当前系统事实的依据。
+
+尚未初始化的 Admin 管理面板的批准应用边界、状态所有权、运行链路和静态资源发布职责见
+[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。该蓝图不代表当前前端工程存在，
+框架与依赖候选也不构成已采用事实。
 
 架构由 [产品需求文档](PRD.md) 驱动：
 

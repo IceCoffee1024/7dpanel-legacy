@@ -96,5 +96,6 @@ skills, adoption status, and setup references.
 - [Product design](docs/design.md) - information architecture, core flows, states, and visual rules
 - [System architecture](docs/architecture.md) - boundaries, components, data, dependency matrix, and decisions
 - [Backend target architecture blueprint](docs/architecture/backend-target-blueprint.md) - approved future backend flows and production layout, not current implementation evidence
+- [Admin frontend target architecture blueprint](docs/architecture/admin-frontend-target-blueprint.md) - approved future Admin SPA boundaries, runtime flows, and release responsibilities
 - [Test strategy](docs/test.md) - requirement traceability, test levels, environments, and release gates
 - [Backend script guide](backend/scripts/README.md) - publish, server control, and health-check helpers

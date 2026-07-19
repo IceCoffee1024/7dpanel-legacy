@@ -12,6 +12,7 @@
 ## Supporting Design
 
 - [docs/architecture/backend-target-blueprint.md](docs/architecture/backend-target-blueprint.md) - approved target backend flows and production layout. It is not current implementation evidence; promote implemented and verified facts to `docs/architecture.md`.
+- [docs/architecture/admin-frontend-target-blueprint.md](docs/architecture/admin-frontend-target-blueprint.md) - approved target Admin SPA boundaries, state ownership, runtime flows, and release responsibilities. It is not current implementation evidence.
 
 Define each fact only in its authoritative document. Use links and
 `CAP-##`/`NFR-##` identifiers for cross-document traceability instead of
@@ -65,6 +66,9 @@ maintaining duplicate product, design, architecture, or test facts.
 - Update `docs/architecture/backend-target-blueprint.md` only when the approved
   future backend flows, project boundaries, or production file responsibilities
   change. Never use target entries as evidence that code exists.
+- Update `docs/architecture/admin-frontend-target-blueprint.md` only when the
+  approved future Admin application boundaries, state ownership, runtime flows,
+  dependency direction, or production asset responsibilities change.
 - For test environments, commands, automation, or release-gate changes, update
   `docs/test.md` and synchronize runnable commands with `README.md`.
 - For game-version compatibility changes, update `docs/architecture.md` and
