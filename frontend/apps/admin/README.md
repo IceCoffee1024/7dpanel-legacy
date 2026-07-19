@@ -14,6 +14,11 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
+The development server proxies browser requests under `/api` to
+`http://127.0.0.1:18080` by default. Copy `.env.example` to `.env.local` to
+point the proxy at another development backend. The browser client keeps using
+relative `/api` paths, and production builds do not embed the proxy target.
+
 Verify the current application with:
 
 ```powershell
