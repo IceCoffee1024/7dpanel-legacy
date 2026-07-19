@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-ui-template-dashboard-vue",
+  "name": "@7dpanel/admin",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,19 +10,12 @@
     "typecheck": "vue-tsc -p ./tsconfig.app.json"
   },
   "dependencies": {
-    "@internationalized/date": "^3.12.2",
     "@nuxt/ui": "^4.10.0",
-    "@tanstack/table-core": "^8.21.3",
     "@unhead/vue": "^2.1.15",
-    "@unovis/ts": "^1.6.7",
-    "@unovis/vue": "^1.6.7",
     "@vueuse/core": "^14.3.0",
-    "date-fns": "^4.4.0",
-    "scule": "^1.3.0",
     "tailwindcss": "^4.3.2",
     "vue": "^3.5.40",
-    "vue-router": "^5.2.0",
-    "zod": "^4.4.3"
+    "vue-router": "^5.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",
@@ -31,7 +24,6 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.64.0",
     "vite": "^7.3.6",
-    "vite-plugin-vue-layouts": "^0.11.0",
     "vue-tsc": "^3.3.7"
   },
   "packageManager": "pnpm@11.13.1"

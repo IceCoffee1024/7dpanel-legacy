@@ -38,58 +38,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/customers': RouteRecordInfo<
-      '/customers',
-      '/customers',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/inbox': RouteRecordInfo<
-      '/inbox',
-      '/inbox',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/settings': RouteRecordInfo<
-      '/settings',
-      '/settings',
-      Record<never, never>,
-      Record<never, never>,
-      | '/settings/'
-      | '/settings/members'
-      | '/settings/notifications'
-      | '/settings/security'
-    >,
-    '/settings/': RouteRecordInfo<
-      '/settings/',
-      '/settings',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/settings/members': RouteRecordInfo<
-      '/settings/members',
-      '/settings/members',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/settings/notifications': RouteRecordInfo<
-      '/settings/notifications',
-      '/settings/notifications',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/settings/security': RouteRecordInfo<
-      '/settings/security',
-      '/settings/security',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
   }
 
   /**
@@ -106,66 +54,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/index.vue': {
       routes:
         | '/'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/customers.vue': {
-      routes:
-        | '/customers'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/inbox.vue': {
-      routes:
-        | '/inbox'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/settings.vue': {
-      routes:
-        | '/settings'
-        | '/settings/'
-        | '/settings/members'
-        | '/settings/notifications'
-        | '/settings/security'
-      views:
-        | 'default'
-      pathParamNames:
-        | never
-    }
-    'src/pages/settings/index.vue': {
-      routes:
-        | '/settings/'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/settings/members.vue': {
-      routes:
-        | '/settings/members'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/settings/notifications.vue': {
-      routes:
-        | '/settings/notifications'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/settings/security.vue': {
-      routes:
-        | '/settings/security'
       views:
         | never
       pathParamNames:

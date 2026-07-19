@@ -10,9 +10,11 @@ announcement automation, and auditing through a web interface.
 The repository defines the product, design, and architecture. The backend has
 a buildable and testable `net48` solution with a minimal Mod lifecycle and
 in-process OWIN health endpoint. Product capabilities beyond that validation
-slice are not implemented. The frontend application directories have not been
-initialized with framework code. The documents describe target contracts, not
-completed features.
+slice are not implemented. `frontend/apps/admin/` has a buildable Vue, Vite,
+and Nuxt UI product shell with a responsive Overview route, but it is not yet
+connected to the backend health endpoint and has no authentication or
+operational features. The Marketing application has not been initialized.
+Target documents describe approved direction, not completed features.
 
 ## Repository Layout
 

@@ -1,58 +1,40 @@
-# Vue Dashboard Template
+# 7DPanel Admin
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+The self-hosted administration interface for 7DPanel. The current application
+contains the responsive product shell and an Overview route. Backend health,
+authentication, and operational features are introduced as verified vertical
+slices.
 
-Get started with the Vite + Vue dashboard template with multiple pages, collapsible sidebar, keyboard shortcuts, light & dark mode, command palette and more, powered by [Nuxt UI](https://ui.nuxt.com).
+## Development
 
-- [Live demo](https://dashboard-vue-template.nuxt.dev)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/vue)
+Run commands from this directory:
 
-<a href="https://dashboard-vue-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/vue/dashboard-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/vue/dashboard-light.png">
-    <img alt="Vue Dashboard Template" src="https://ui.nuxt.com/assets/templates/vue/dashboard-light.png">
-  </picture>
-</a>
-
-> The dashboard template for Nuxt is on https://github.com/nuxt-ui-templates/dashboard.
-
-## Quick Start
-
-```bash [Terminal]
-npm create nuxt@latest -- --no-modules -t ui-vue/dashboard
-```
-
-## Deploy your own
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=dashboard-vue&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fdashboard-vue&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fvue%2Fdashboard-dark.png&demo-url=https%3A%2F%2Fdashboard-vue-template.nuxt.dev%2F&demo-title=Vue%20Dashboard%20Template&demo-description=A%20dashboard%20template%20with%20multi-column%20layout%20for%20building%20sophisticated%20admin%20interfaces.)
-
-## Setup
-
-Make sure to install the dependencies:
-
-```bash
-pnpm install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:5173`:
-
-```bash
+```powershell
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-## Production
+Verify the current application with:
 
-Build the application for production:
-
-```bash
+```powershell
+pnpm lint
+pnpm typecheck
 pnpm build
 ```
 
-Locally preview production build:
+`pnpm preview` serves the production build for local inspection. Production
+hosting is owned by the 7DPanel Mod and does not use the Vite development or
+preview server.
 
-```bash
-pnpm preview
-```
+## Package Ownership
+
+This application owns its `package.json`, `pnpm-workspace.yaml`,
+`pnpm-lock.yaml`, and pinned pnpm version. A root `frontend/` workspace is
+introduced only after multiple applications have a demonstrated shared-package
+or coordinated-build requirement.
+
+## Template Provenance
+
+The initial application shell was derived from the Nuxt UI Vue Dashboard
+template under the MIT license. The unmodified imported baseline is preserved
+in repository commit `058da3c`; see [LICENSE](LICENSE).

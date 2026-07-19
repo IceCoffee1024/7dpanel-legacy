@@ -24,10 +24,7 @@
     /* Paths */
     "paths": {
       "#build/ui/*": ["./node_modules/.nuxt-ui/ui/*"]
-    },
-    "types": [
-      "vite-plugin-vue-layouts/client"
-    ]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "auto-imports.d.ts", "components.d.ts"],
   "vueCompilerOptions": {

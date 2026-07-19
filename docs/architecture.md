@@ -7,7 +7,7 @@ last_updated: "2026-07-19"
 
 ## 背景与驱动因素
 
-本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已将可构建、可测试的 `net48` 最小运行切片拆分为 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目，覆盖 Mod 生命周期、Katana `/health`、配置加载和适配器注册；其余产品能力尚未实现；`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
+本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已将可构建、可测试的 `net48` 最小运行切片拆分为 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目，覆盖 Mod 生命周期、Katana `/health`、配置加载和适配器注册；其余后端产品能力尚未实现。当前 `frontend/apps/admin/` 已建立可构建的 Vue 3、Vite 和 Nuxt UI 应用壳，包含响应式侧栏、移动导航、命令入口、颜色模式和唯一的概览路由；概览只显示未连接状态，尚未调用后端、托管到 OWIN 或实现认证与业务功能。`frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
 
 架构风险的验证层级、环境和发布门槛见[测试策略](test.md)。
 
@@ -15,9 +15,9 @@ last_updated: "2026-07-19"
 [后端目标架构蓝图](architecture/backend-target-blueprint.md)。该蓝图不代表当前实现；本文件和
 实际代码、配置及测试证据仍是当前系统事实的依据。
 
-尚未初始化的 Admin 管理面板的批准应用边界、状态所有权、运行链路和静态资源发布职责见
-[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。该蓝图不代表当前前端工程存在，
-框架与依赖候选也不构成已采用事实。
+Admin 管理面板尚未实现部分的批准应用边界、状态所有权、运行链路和静态资源发布职责见
+[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。该蓝图不代表目标链路已经实现；
+当前工程事实以本文件、实际代码、锁文件和验证结果为准。
 
 架构由 [产品需求文档](PRD.md) 驱动：
 
