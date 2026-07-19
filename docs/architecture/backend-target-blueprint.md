@@ -125,9 +125,10 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 涉及架构方向变化时先更新本蓝图或对应变更设计，再修改项目清单。实现和真实进程验证完成后，只把持久结论提升到
 [系统架构](../architecture.md)，不把候选状态继续当作当前事实。
 
-`frontend/apps/admin/` 和 `frontend/apps/marketing/` 尚未初始化框架工程，本后端蓝图不预选 npm 包。未来某个前端应用
-形成明确框架和功能边界时，应在该应用的 Target 蓝图或变更设计中使用同样的字段记录候选；其
-`package.json` 和锁文件仍是实际依赖版本的权威来源。
+前端依赖不由本后端蓝图定义。Admin 当前与目标依赖分别以实际 `package.json`、锁文件和
+[Admin 前端目标蓝图](admin-frontend-target-blueprint.md)为准；`frontend/apps/marketing/` 尚未初始化框架工程。
+未来前端应用形成明确框架和功能边界时，应在该应用的 Target 蓝图或变更设计中记录候选，实际版本仍以
+对应 `package.json` 和锁文件为权威来源。
 
 ## 运行时执行模型
 
@@ -137,14 +138,16 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 7DTD Mod Loader
   -> ModMain.InitMod
   -> load configuration and build the object graph
-  -> register SevenDaysGameLifecycleAdapter
-  -> wait for GameStartDone
+  -> register shutdown lifecycle handlers
+  -> ModHost.Start
+       -> start panel-owned infrastructure
+       -> start OWIN
+       -> health reports panel HTTP liveness
 
 GameStartDone
   -> Lifecycle Adapter
-  -> ModHost.Start
-       -> start hosted components in registration order
-       -> start OWIN last
+  -> mark the game runtime ready
+  -> start only components that require live 7DTD state
 
 WorldShuttingDown / GameShutdown
   -> Lifecycle Adapter
@@ -155,7 +158,7 @@ WorldShuttingDown / GameShutdown
        -> dispose OWIN and remaining resources
 ```
 
-`ModHost` 接收命令型生命周期契约。它不负责构造连接、调度器、store、计划器或重试策略。
+`ModHost` 接收命令型生命周期契约。它不负责构造连接、调度器、store、计划器或重试策略。面板 HTTP 存活与游戏运行时就绪是两个独立状态：`InitMod` 可以提供静态页面和不依赖游戏对象的 API，依赖 Unity/7DTD 活对象的组件和用例只能在 `GameStartDone` 后进入可用状态；此前对应 API 返回 `503` 和稳定错误码。
 
 ### 请求与游戏动作链路
 

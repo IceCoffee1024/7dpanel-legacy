@@ -7,7 +7,7 @@ last_updated: "2026-07-19"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含四个产品项目和一个迁移保护测试项目；Release 构建和 18 项 xUnit 测试已通过，远程发布检查确认四个产品 DLL 齐全、游戏提供的程序集已排除且服主配置未覆盖。2026-07-18 已在远程 Windows 7DTD `v3.0.1-b4` 使用新多项目发布物完成开发期人工 smoke：四程序集加载、唯一 ModAPI、`GameStartDone` 后 HTTP 200、Telnet 正常关服、OWIN 与 18080 端口释放及再次启动均通过。该次运行尚未自动化或归档为候选发布证据；SQLite、主线程动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含四个产品项目和一个迁移保护测试项目；Release 构建和 21 项 xUnit 测试已通过，发布检查确认四个产品 DLL、`wwwroot/index.html` 与哈希资源齐全，游戏提供的程序集已排除且发布脚本不覆盖服主配置。2026-07-18 已在远程 Windows 7DTD `v3.0.1-b4` 使用新多项目发布物完成旧启动时序的开发期人工 smoke。2026-07-19 使用同版本真实进程验证 OWIN 在 `GameStartDone` 前启动、精确 camelCase 健康响应、生产 Admin Fresh 页面、正常关服和端口释放；真实 Katana 集成测试另覆盖静态资源、SPA fallback、API 优先级、未知 API 404 和缺失资产时 API 保持可用。SQLite、主线程动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -63,6 +63,8 @@ last_updated: "2026-07-19"
 ### OWIN/Web API 集成测试
 
 - 在进程内启动完整 OWIN 管道，验证路由、输入校验、认证、授权、Cookie 属性、CSRF、统一错误结构、静态资源和 draining 行为。
+- `OwinWebHostTests` 在真实 Katana 主机中验证 `/` 和无扩展名路由返回 Admin `index.html`，哈希资源按静态文件返回，缺失资源保持 404；即使 `wwwroot/api/v1/health` 存在冲突文件，`/api/v1/health` 仍由 Web API 返回健康 JSON，未知 `/api/*` 保持 404。健康 JSON 必须精确使用 `status`、`product`、`version`，大小写不匹配即失败。
+- 生命周期测试验证 `InitMod` 注册关闭处理后立即启动 OWIN，`GameStartDone` 不重复启动；`WorldShuttingDown` 和 `GameShutdown` 仍进入同一个幂等停止流程。
 - 使用同一初始化凭证分别验证手动输入和初始化链接入口；断言任一入口成功创建 `Owner` 后，另一入口与所有并发重复请求均被拒绝。
 - 在不存在 `Owner` 时分别通过控制台操作和宿主重启重新生成，断言新状态原子替换旧状态；创建 `Owner` 后，两条重新生成路径均不得恢复初始化能力。
 - 游戏动作通过可观测的主线程调度器测试实现完成，断言控制器不会直接访问游戏活对象。
@@ -71,13 +73,16 @@ last_updated: "2026-07-19"
 ### 真实 7DTD 进程测试
 
 - 使用未修改的官方 7DTD Dedicated Server `v3.0.1-b4` 运行程序集执行最小 smoke suite。
-- 验证 Mod 加载、`GameStartDone` 启动、控制台初始化码与链接输出、无 `Owner` 重启轮换凭证、已有 `Owner` 重启不输出凭证、HTTP 健康检查、JSON、会话、SQLite、主线程往返、公告、玩家快照、正常关服和端口释放。
+- 验证 Mod 加载后、`GameStartDone` 前 HTTP Host 已可访问；`GameStartDone` 后不会出现重复监听。继续验证控制台初始化码与链接输出、无 `Owner` 重启轮换凭证、已有 `Owner` 重启不输出凭证、精确 camelCase 健康 JSON、会话、SQLite、主线程往返、公告、玩家快照、正常关服和端口释放。
 - 所有支持的游戏版本或依赖矩阵变更都必须重新执行；编译期 publicized 程序集不能代替官方运行时证据。
+
+2026-07-19 的 Windows `v3.0.1-b4` 人工 smoke 已验证当前健康切片：服务端日志在启动后 `3.409` 秒记录 OWIN 启动，`StartGame done` 在 `66.397` 秒；`Test-HealthEndpoint.cmd -TimeoutSeconds 10` 返回 HTTP 200 和 `{"status":"ok","product":"7DPanel","version":"0.1.0"}`；正常关服后进程退出、18080 端口不再监听。该记录尚未自动化或归档为候选发布证据。
 
 ### 浏览器端到端测试
 
 - 覆盖手动输入初始化码和打开初始化链接两种首次 Owner 流程、30 分钟过期提示、重复使用拒绝、登录、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
 - 覆盖 loading、empty、offline、stale、forbidden、failed、unknown 和 draining 状态，确保界面不会把未知结果渲染为成功。
+- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示“服务器运行正常”、`7DPanel`、`v0.1.0` 和成功采样时间，控制台无消息。自动化浏览器 E2E 尚未建立。
 - 对全部 P0 流程和表单分别以 `zh-CN` 与 `en` 运行关键 E2E；覆盖受支持浏览器语言首访、不支持语言回退 `en`、未认证与已认证入口切换、刷新后偏好持久化，以及切换时当前路由、筛选和安全表单输入保持。
 - 验证产品文案、Nuxt UI 内置文案、Valibot 内置错误、日期与数字格式和稳定服务端错误码映射始终使用同一当前语言；缺失键、空白文案、翻译键泄漏和原始服务端异常文本均使测试失败。
 - 验证 Steam ID、玩家名、服务器名、IP、坐标、路径、日志原文、审计标识和协议标识在语言切换前后保持原值，并在 320 CSS 像素宽度下检查英文文本扩展不会遮挡关键操作。
@@ -105,7 +110,7 @@ last_updated: "2026-07-19"
 
 ## 命令与自动化
 
-当前可运行的后端还原、Release 构建和单元测试命令为：
+当前可运行的后端还原、Release 构建和测试命令为：
 
 ```powershell
 dotnet restore backend/7DPanel.sln
@@ -113,17 +118,28 @@ dotnet build backend/7DPanel.sln --configuration Release --no-restore
 dotnet test backend/7DPanel.sln --configuration Release --no-build --no-restore
 ```
 
+Admin 前端门禁在 `frontend/apps/admin/` 执行：
+
+```powershell
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+发布前先完成 Admin 构建，再运行 `backend\scripts\Publish-Mod.cmd`；脚本会校验
+`dist/index.html` 与哈希资源，并只替换发布目录中的 `wwwroot/`。
+
 发布、启动、停止和健康检查脚本的环境变量、参数、WinRM 前置条件及行为统一见
 [后端脚本指南](../backend/scripts/README.md)。这些脚本只提供可重复操作入口，
-不能单独证明真实进程 smoke 通过。验证必须保留 Mod 加载、`GameStartDone`、
-HTTP 200 健康响应、正常关服、端口释放和再次启动成功的服务端日志与命令结果。
+不能单独证明真实进程 smoke 通过。验证必须保留 Mod 加载、`GameStartDone` 前的
+OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成功的服务端日志与命令结果。
 
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
 - SQLite 集成测试、主线程调度测试和真实游戏事件回调测试。
-- 前端依赖锁定、静态检查、单元测试、生产构建和浏览器 E2E。
-- 自动化 Windows/Linux 发布物组装、四个产品 DLL 与内容校验，尤其检查 `Newtonsoft.Json` 重复文件和 SQLite Native RID；项目引用和 Adapter 方向已有本地测试门禁。
-- 自动化发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
+- 前端自动化单元测试和浏览器 E2E；当前已具备依赖锁定、lint、typecheck 和生产构建门禁。
+- 自动化 Windows/Linux 发布物组装、四个产品 DLL 与内容校验，尤其检查 `Newtonsoft.Json` 重复文件和 SQLite Native RID；当前 Windows 发布脚本已校验 Admin `wwwroot`，项目引用和 Adapter 方向已有本地测试门禁。
+- 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
 - 将 Windows `v3.0.1-b4` 真实进程 smoke 自动化并归档服务端日志，同时建立 Linux x64 对应基线。
 
 当前仓库尚未提供自有的文档校验脚本或 CI 任务。开发环境中安装的外部技能可以用于临时审计，但其安装路径属于使用者环境，不是项目的权威命令，不在本文档中固化。待仓库提供可移植的检查入口后，再在此处和根 `README.md` 同步登记。
@@ -150,6 +166,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | 缺口 | 影响与处理 |
 |---|---|
 | 后端当前只实现 Mod 生命周期和健康端点 | Windows `v3.0.1-b4` 的新多项目发布物已完成开发期人工 smoke，但尚未自动化或归档为隔离的候选发布证据；SQLite、游戏主线程动作、Linux 真实进程和完整发布验证仍不可据此宣称通过。 |
+| `/overview` 只有服务端 SPA fallback，没有客户端路由 | OWIN 会为 `/overview` 返回 `index.html`，但当前生成的 Vue Router 路由表只有 `/`，因此应用壳加载后主面板为空；在把 `/overview` 作为公开入口前，应新增客户端路由或将 fallback 验收路径收敛为 `/`，并补浏览器断言。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |
 | `InitMod` 恢复时机尚无真实文件占用证据 | 可能无法在世界加载前替换存档；恢复实现前用 `v3.0.1-b4` 进程验证并记录调用时序。 |

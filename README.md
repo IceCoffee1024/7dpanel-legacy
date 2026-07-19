@@ -8,12 +8,13 @@ process and provides status, player management, logs, backup and restore,
 announcement automation, and auditing through a web interface.
 
 The repository defines the product, design, and architecture. The backend has
-a buildable and testable `net48` solution with a minimal Mod lifecycle and
-in-process OWIN health endpoint. Product capabilities beyond that validation
-slice are not implemented. `frontend/apps/admin/` has a buildable Vue, Vite,
-and Nuxt UI product shell with a responsive Overview route, but it is not yet
-connected to the backend health endpoint and has no authentication or
-operational features. The Marketing application has not been initialized.
+a buildable and testable `net48` solution with a minimal Mod lifecycle,
+in-process OWIN health endpoint, and Admin static-file hosting. The first
+vertical slice connects `frontend/apps/admin/` to the same-origin health
+endpoint and renders loading, fresh, stale, and offline states. Product
+capabilities beyond this validation slice, authentication, and operational
+features are not implemented. The Marketing application has not been
+initialized.
 Target documents describe approved direction, not completed features.
 
 ## Repository Layout

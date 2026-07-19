@@ -7,7 +7,7 @@ last_updated: "2026-07-19"
 
 ## 背景与驱动因素
 
-本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已将可构建、可测试的 `net48` 最小运行切片拆分为 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目，覆盖 Mod 生命周期、Katana `/health`、配置加载和适配器注册；其余后端产品能力尚未实现。当前 `frontend/apps/admin/` 已建立可构建的 Vue 3、Vite 和 Nuxt UI 应用壳，包含响应式侧栏、移动导航、命令入口、颜色模式和唯一的概览路由；概览只显示未连接状态，尚未调用后端、托管到 OWIN 或实现认证与业务功能。`frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
+本文档描述 7DPanel 首版的目标架构。当前 `backend/` 已将可构建、可测试的 `net48` 最小运行切片拆分为 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目，覆盖 Mod 生命周期、Katana `/health`、配置加载和适配器注册；其余后端产品能力尚未实现。当前 `frontend/apps/admin/` 已建立可构建的 Vue 3、Vite 和 Nuxt UI 应用壳，概览页通过类型化同源客户端调用 `/api/v1/health`，由 composable 管理 loading、fresh、stale 和 offline 状态；开发期 Vite 代理支持本地后端，生产代码只使用相对路径。Admin 构建产物由 Mod 的 OWIN StaticFiles 管线从 `wwwroot` 提供，认证和其他业务功能尚未实现。`frontend/apps/marketing/` 尚无框架工程。因此本文档不代表完整产品已经完成。
 
 架构风险的验证层级、环境和发布门槛见[测试策略](test.md)。
 
@@ -64,7 +64,7 @@ flowchart LR
 | `backend/src/Bootstrap/LSTY.SevenDPanel/` | 唯一 `IModApi` 入口、配置文件 I/O、具体对象组装和 Mod 发布内容 | Hosting、Web Adapter、SevenDays Adapter、游戏编译期程序集 |
 | `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` 状态机、运行时生命周期契约和已验证的监听选项 | 仅 .NET Framework BCL，不引用 Core 或 Adapter |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | `Inbound/Http` 承接 Web API 路由和健康端点，`Outbound/Hosting` 实现 Katana Self Host | Hosting、Web API/Katana、游戏提供的 JSON 兼容程序集 |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 当前由 `Inbound/Lifecycle` 将 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 转换为 `IModRuntime` 启停调用；后续同时承载游戏事件输入与游戏能力输出 | Hosting、`Assembly-CSharp.dll` |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 当前由 `Inbound/Lifecycle` 在 Bootstrap 初始化期间注册 `WorldShuttingDown` 和 `GameShutdown`，随后启动 `IModRuntime`；后续同时承载以 `GameStartDone` 为就绪边界的游戏事件输入与游戏能力输出 | Hosting、`Assembly-CSharp.dll` |
 
 `Application`、`Domain` 和 Local Adapter 尚未创建；它们只在首个需要对应边界的纵向业务切片中创建。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`，其余产品 DLL 由同一 Mod 目录加载。
 
@@ -76,23 +76,26 @@ Adapter 项目按外部边界命名为 `Web`、`SevenDays` 和 `Local`，项目�
 
 当前入口项目：`backend/src/Bootstrap/LSTY.SevenDPanel/LSTY.SevenDPanel.csproj`。
 
-- `InitMod` 加载配置和本地数据、检查待恢复标记、注册 Mod 事件，但不启动完整 Web 服务。
-- `GameStartDone` 在确认当前实例是服务端后启动 OWIN、事件管道和计划任务。
+- `InitMod` 加载配置并组装对象图，先注册 `WorldShuttingDown` 和 `GameShutdown` 关闭事件，再启动不依赖游戏活对象的 OWIN Host。
+- `GameStartDone` 是未来游戏运行时就绪边界，只启动依赖 Unity/7DTD 活对象的组件；当前生命周期适配器不订阅该事件，也不会在此时重复启动 OWIN。
 - `WorldShuttingDown` 先拒绝新请求、停止计划任务、结束待处理操作，再释放 OWIN Host。
 - `GameShutdown` 调用同一个幂等关闭流程作为兜底。
 - OWIN Host 的 `IDisposable` 必须由生命周期协调器持有，禁止仅保存在局部变量中。
 - 后续运行组件通过 Bootstrap 注入的有序 `IHostedComponent` 集合交给 `ModHost`；`ModHost` 只按顺序启动、反向停止这些命令型契约，不包含数据库连接、队列消费或重试策略的具体实现。
 
-当前实现证据：Bootstrap 的 `ModMain.cs` 实现 `IModApi.InitMod`，创建 Hosting 的 `ModHost` 和 SevenDays Adapter `Inbound/Lifecycle` 中的 `SevenDaysGameLifecycleAdapter`；`ModHost` 使用 `Created/Starting/Running/Draining/Stopped/Faulted` 状态并保持 OWIN Host；适配器只依赖 `IModRuntime`，在 `GameStartDone` 启动、在 `WorldShuttingDown` 和 `GameShutdown` 调用幂等停止。`InitMod` 本身只注册事件，不启动 HTTP 监听。
+当前实现证据：Bootstrap 的 `ModMain.cs` 实现 `IModApi.InitMod`，创建 Hosting 的 `ModHost` 和 SevenDays Adapter `Inbound/Lifecycle` 中的 `SevenDaysGameLifecycleAdapter`，然后调用 `RegisterAndStart`；适配器只依赖 `IModRuntime`，按“注册两个关闭处理 -> 标记已注册 -> `runtime.Start()`”的顺序启动，并在 `WorldShuttingDown` 和 `GameShutdown` 调用幂等停止。`ModHost` 使用 `Created/Starting/Running/Draining/Stopped/Faulted` 状态并保持 OWIN Host。
 
-2026-07-18 的 Windows 7DTD `v3.0.1-b4` 开发期人工 smoke 使用新多项目发布物验证：Mod Loader 加载 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品程序集，只发现一个 `IModApi`；`GameStartDone` 后 `/health` 返回 7DPanel `0.1.0`；Telnet 正常关服后 OWIN 停止、进程与 18080 端口释放，并可再次启动。该证据只覆盖当前生命周期最小切片，不代表 SQLite、玩家主线程动作、Linux 或完整产品能力已验证。
+2026-07-18 的 Windows 7DTD `v3.0.1-b4` 开发期人工 smoke 是旧启动时序的历史基线：Mod Loader 加载 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品程序集，只发现一个 `IModApi`；`GameStartDone` 后 `/health` 返回 7DPanel `0.1.0`；Telnet 正常关服后 OWIN 停止、进程与 18080 端口释放，并可再次启动。
 
-依据：游戏自带 `Webserver.WebServer` 同样在 `GameStartDone` 初始化，并在 `WorldShuttingDown` 断开；`IModApi` 本身只有 `InitMod`，没有配对卸载方法。
+2026-07-19 的同版本真实进程 smoke 验证了当前时序：OWIN 在进程启动后 `3.409` 秒启动，早于 `StartGame done` 的 `66.397` 秒；`/api/v1/health` 返回精确 camelCase 契约，生产 Admin 在桌面和 `390x844` 视口显示 Fresh，正常关服后进程退出且 18080 端口释放。两次证据都只覆盖当前生命周期和健康概览切片，不代表 SQLite、玩家主线程动作、Linux 或完整产品能力已验证。
+
+依据：`IModApi` 只有 `InitMod`，没有配对卸载方法，因此在启动前注册两个关闭事件。游戏自带 `Webserver.WebServer` 在 `GameStartDone` 初始化，说明该事件适合作为未来游戏活对象就绪边界，但面板 HTTP 存活不依赖该边界。
 
 ### OWIN Host 与 Web API
 
-- Katana Self Host 在 Mono 进程内提供 HTTP 服务，并托管 Web API 2。当前最小切片公开 `/health` 和 `/api/v1/health`，静态前端、认证和业务 API 尚未接入。
-- Web Adapter `Outbound/Hosting` 中的 `OwinWebHost` 通过 `WebApp.Start(url, ...)` 创建宿主，并在 `Dispose` 中释放 `IDisposable`；`Inbound/Http` 中的 `OwinStartup` 和 `HealthController` 承接 HTTP 管线与健康路由。Bootstrap 的 `PanelHostConfigurationLoader` 从 Mod 目录读取或创建 `config.json`，Hosting 的 `PanelHostOptions` 只负责验证并规范化监听选项。默认 `bindAddress` 为 `0.0.0.0`，内部转换为 HttpListener 通配前缀并监听 `http://*:18080/`。
+- Katana Self Host 在 Mono 进程内提供 HTTP 服务，并托管 Web API 2。当前最小切片公开 `/health` 和 `/api/v1/health`，并从 `<ModDirectory>/wwwroot` 提供 Admin `index.html` 与哈希资源；认证和业务 API 尚未接入。
+- Web Adapter `Outbound/Hosting` 中的 `OwinWebHost` 通过 `WebApp.Start(url, ...)` 创建宿主，并在 `Dispose` 中释放 `IDisposable`；`Inbound/Http` 中的 `OwinStartup` 和 `HealthController` 承接 HTTP 管线与健康路由。带资产根目录的启动入口先注册 Web API，再注册 StaticFiles 和仅面向 `GET/HEAD` 文档路由的 SPA fallback，`/api/*` 永远不会回退到 `index.html`；资产目录缺失时保留 API 并记录日志。Bootstrap 的 `PanelHostConfigurationLoader` 从 Mod 目录读取或创建 `config.json`，并把 `modInstance.Path/wwwroot` 传入 Web Adapter；Hosting 的 `PanelHostOptions` 只负责验证并规范化监听选项。默认 `bindAddress` 为 `0.0.0.0`，内部转换为 HttpListener 通配前缀并监听 `http://*:18080/`。
+- `OwinStartup.ConfigureApi` 为 Web API 2 的 `JsonFormatter.SerializerSettings.ContractResolver` 统一配置 `CamelCasePropertyNamesContractResolver`；`status: "ok"` 只表示 7DPanel HTTP Host 可以响应，不表示 7DTD 已完成 `GameStartDone` 或游戏依赖能力可用。
 - `ProductInfo.Name` 和 `ProductInfo.Version` 是健康响应使用的产品元数据来源；测试要求其版本与 Bootstrap 发布的 `ModInfo.xml` 保持一致，禁止从任一 Adapter 程序集反射产品版本。
 - `config.example.json` 随发布物更新；`config.json` 和 `data/` 属于服主运行数据，不进入项目发布模板，也不提供前端或 API 动态编辑。监听配置在进程启动时读取，修改后重启服务端生效。
 - `PanelHostOptions` 的常量是运行时默认值来源，`PanelHostConfig.CreateDefault()` 复用这些常量；测试会比较生成的默认配置与 `config.example.json`，防止示例模板和安全回退值发生漂移。
@@ -152,7 +155,7 @@ Queued -> Saving -> Committing -> Snapshotting -> Verifying -> Succeeded
 2. 系统原子写入待恢复标记，记录备份标识、请求者和校验信息，然后发起安全关服。
 3. 下次 `InitMod`、世界加载前校验标记和备份，保留当前存档的回滚副本，再应用恢复。
 4. 成功或失败结果持久化；失败时优先回滚，且不得删除原备份。
-5. OWIN 在下次 `GameStartDone` 恢复后向用户展示最终结果。
+5. OWIN 在下次 `InitMod` 启动；恢复结果只有在游戏运行时就绪并完成处理后才能向用户展示。
 
 ## 数据与接口
 
@@ -201,7 +204,7 @@ SQLite、待恢复文件标记、备份归档和游戏动作不构成一个数�
 
 ## 部署与运维
 
-- 发布物是包含 Mod DLL、依赖 DLL、平台 SQLite Native 文件、`config.example.json` 和编译后前端资源的自托管目录；不包含服主的 `config.json` 或 `data/`。
+- 发布物是包含 Mod DLL、依赖 DLL、平台 SQLite Native 文件、`config.example.json` 和 `wwwroot/` 编译后前端资源的自托管目录；`Publish-Mod.ps1` 在发布时校验 `frontend/apps/admin/dist/index.html` 与哈希资源后复制资源，不包含服主的 `config.json` 或 `data/`。
 - 发布物组装必须显式排除 `7dtd-reference/` 及其全部内容；子模块只服务于开发期兼容性分析和验证。若未来编译阶段读取其中的参考程序集，必须在构建输入清单中单独声明，且不得将参考资料复制进发布目录。
 - Windows x64 和 Linux x64 分别发布；平台原生文件不得混用，非目标 RID 资产在发布阶段移除。
 - 默认监听所有网络接口，不提供默认账号密码。8 位初始化码及携带同一凭证的初始化链接只输出到本地服务端控制台，应用日志和审计不得再次记录完整凭证；部署方承担在初始化前限制网络访问的责任。
@@ -240,7 +243,7 @@ SQLite、待恢复文件标记、备份归档和游戏动作不构成一个数�
 
 - **Explicit Architecture:** 后端使用 Ports and Adapters 的调用方向、Clean Architecture 的依赖规则和按真实不变量选择性采用的 DDD/CQRS；不把示例目录、Aggregate Root、通用 Repository、Event Bus 或 Mediator 作为默认要求。目标设计细节见[后端目标架构蓝图](architecture/backend-target-blueprint.md)。
 - **Embedded backend:** 后端与 Mod 同进程，部署简单且能直接使用游戏事件，但任何未处理异常、阻塞或内存泄漏都可能影响游戏服务器。
-- **Start after `GameStartDone`:** 比旧项目在 `InitMod` 直接启动更晚，但确保游戏单例就绪并与游戏自带 WebServer 模式一致。
+- **Start HTTP Host in `InitMod`:** 注册关闭事件后立即启动不依赖游戏活对象的 OWIN，使静态页面和面板存活 API 在游戏加载期间即可访问；`GameStartDone` 单独作为未来游戏依赖组件和 API 的就绪边界，就绪前返回 `503` 和稳定错误码。
 - **Independent identity store:** 不复用原生 MD5 Web 用户，换取更安全、清晰的角色模型，但需要自行负责会话、密码迁移和恢复访问。
 - **Typed game adapters:** 玩家和公告操作优先使用类型化服务；通用控制台保留为受限高级能力，避免命令字符串成为主要业务接口。
 - **Runtime Newtonsoft.Json:** 选择游戏的 `13.0.2` 减少程序集冲突，但新代码不能依赖仅存在于 `13.0.4` 的行为。
