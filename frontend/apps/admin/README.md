@@ -19,17 +19,19 @@ The development server proxies browser requests under `/api` to
 point the proxy at another development backend. The browser client keeps using
 relative `/api` paths, and production builds do not embed the proxy target.
 
-Verify the current application with:
+`pnpm preview` serves the production build for local inspection. Production
+hosting is owned by the 7DPanel Mod and does not use the Vite development or
+preview server.
+
+## Verification
+
+Run all current application gates from this directory:
 
 ```powershell
 pnpm lint
 pnpm typecheck
 pnpm build
 ```
-
-`pnpm preview` serves the production build for local inspection. Production
-hosting is owned by the 7DPanel Mod and does not use the Vite development or
-preview server.
 
 ## Package Ownership
 

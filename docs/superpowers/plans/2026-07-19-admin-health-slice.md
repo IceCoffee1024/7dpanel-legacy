@@ -40,9 +40,9 @@
 - `fetchServerHealth(signal?: AbortSignal): Promise<ServerHealth>` 请求 `/api/v1/health`，并拒绝非 `2xx` 或结构不合法的响应。
 - `useServerHealth()` 暴露 `state`、`data`、`error`、`lastSuccessfulAt`、`refresh` 和 `dispose`。
 
-- [x] **步骤 1：先建立响应验证测试或纯函数断言**
+- [x] **步骤 1：实现可独立测试的响应验证边界**
 
-  覆盖合法响应、非 `2xx`、错误 JSON、缺少 `product`、缺少 `version` 和取消请求。当前项目尚未建立浏览器测试运行器时，不为本切片额外引入第二套测试框架；使用现有 lint、typecheck、build 门禁，并保持验证器为可独立测试的纯函数。
+  `parseServerHealth` 以纯函数验证合法响应、缺少 `product`、缺少 `version` 和其他结构错误；`fetchServerHealth` 区分非 `2xx`、错误 JSON、网络失败和取消请求。当前 Admin 没有自动化测试运行器，本切片没有为这些分支建立自动化测试；实际门禁是 lint、typecheck、build 和人工浏览器验证。自动化单元覆盖仍是[测试策略](../../test.md#已知缺口)中的缺口。
 
 - [x] **步骤 2：实现独立于 Vue 的 API Client**
 

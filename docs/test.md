@@ -64,7 +64,7 @@ last_updated: "2026-07-19"
 
 - 在进程内启动完整 OWIN 管道，验证路由、输入校验、认证、授权、Cookie 属性、CSRF、统一错误结构、静态资源和 draining 行为。
 - `OwinWebHostTests` 在真实 Katana 主机中验证 `/` 和无扩展名路由返回 Admin `index.html`，哈希资源按静态文件返回，缺失资源保持 404；即使 `wwwroot/api/v1/health` 存在冲突文件，`/api/v1/health` 仍由 Web API 返回健康 JSON，未知 `/api/*` 保持 404。健康 JSON 必须精确使用 `status`、`product`、`version`，大小写不匹配即失败。
-- 生命周期测试验证 `InitMod` 注册关闭处理后立即启动 OWIN，`GameStartDone` 不重复启动；`WorldShuttingDown` 和 `GameShutdown` 仍进入同一个幂等停止流程。
+- `DependencyRulesTests` 以源码规则验证 Bootstrap 调用 `RegisterAndStart`、生命周期适配器不订阅 `GameStartDone`，并且注册标记先于 `runtime.Start()`；`ModHostTests` 验证宿主启停幂等。当前自动化测试不执行静态 `ModEvents` 回调，两个关闭事件的注册由源码检查确认，正常关服路径由真实进程 smoke 验证。
 - 使用同一初始化凭证分别验证手动输入和初始化链接入口；断言任一入口成功创建 `Owner` 后，另一入口与所有并发重复请求均被拒绝。
 - 在不存在 `Owner` 时分别通过控制台操作和宿主重启重新生成，断言新状态原子替换旧状态；创建 `Owner` 后，两条重新生成路径均不得恢复初始化能力。
 - 游戏动作通过可观测的主线程调度器测试实现完成，断言控制器不会直接访问游戏活对象。
@@ -110,21 +110,11 @@ last_updated: "2026-07-19"
 
 ## 命令与自动化
 
-当前可运行的后端还原、Release 构建和测试命令为：
+当前可运行的后端门禁包括依赖还原、Release 构建和测试；仓库级聚合命令见
+[README 的 Test and Checks](../README.md#test-and-checks)。
 
-```powershell
-dotnet restore backend/7DPanel.sln
-dotnet build backend/7DPanel.sln --configuration Release --no-restore
-dotnet test backend/7DPanel.sln --configuration Release --no-build --no-restore
-```
-
-Admin 前端门禁在 `frontend/apps/admin/` 执行：
-
-```powershell
-pnpm lint
-pnpm typecheck
-pnpm build
-```
+Admin 当前门禁包括 lint、typecheck 和生产构建；工作目录和精确命令见
+[Admin 应用验证说明](../frontend/apps/admin/README.md#verification)。
 
 发布前先完成 Admin 构建，再运行 `backend\scripts\Publish-Mod.cmd`；脚本会校验
 `dist/index.html` 与哈希资源，并只替换发布目录中的 `wwwroot/`。
@@ -142,7 +132,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 - 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
 - 将 Windows `v3.0.1-b4` 真实进程 smoke 自动化并归档服务端日志，同时建立 Linux x64 对应基线。
 
-当前仓库尚未提供自有的文档校验脚本或 CI 任务。开发环境中安装的外部技能可以用于临时审计，但其安装路径属于使用者环境，不是项目的权威命令，不在本文档中固化。待仓库提供可移植的检查入口后，再在此处和根 `README.md` 同步登记。
+当前仓库尚未提供自有的文档校验脚本或 CI 任务。开发环境中安装的外部技能可以用于临时审计，但其安装路径属于使用者环境，不是项目的权威命令，不在本文档中固化。待仓库提供可移植的检查入口后，由最接近的所属 README 登记精确命令，在根 `README.md` 同步聚合入口或链接，并由本文档记录其门禁地位。
 
 CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演练”分层；快速测试用于每次变更，真实进程和恢复演练至少用于候选发布及依赖、游戏版本、生命周期或备份代码变更。
 
@@ -166,6 +156,8 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | 缺口 | 影响与处理 |
 |---|---|
 | 后端当前只实现 Mod 生命周期和健康端点 | Windows `v3.0.1-b4` 的新多项目发布物已完成开发期人工 smoke，但尚未自动化或归档为隔离的候选发布证据；SQLite、游戏主线程动作、Linux 真实进程和完整发布验证仍不可据此宣称通过。 |
+| Admin 健康客户端没有自动化单元测试 | `parseServerHealth`、HTTP/JSON 错误映射、取消和 stale timer 目前只经过类型检查、构建和人工浏览器场景；引入前端测试运行器后应优先补齐这些纯函数与 composable 分支。 |
+| SevenDays 生命周期回调没有可执行的 Adapter 测试 | 当前源码规则确认注册与启动顺序，`ModHostTests` 只覆盖运行时幂等性，真实 smoke 只覆盖正常关服路径；引入可替换事件边界后分别执行 `WorldShuttingDown` 和 `GameShutdown` 回调测试。 |
 | `/overview` 只有服务端 SPA fallback，没有客户端路由 | OWIN 会为 `/overview` 返回 `index.html`，但当前生成的 Vue Router 路由表只有 `/`，因此应用壳加载后主面板为空；在把 `/overview` 作为公开入口前，应新增客户端路由或将 fallback 验收路径收敛为 `/`，并补浏览器断言。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |

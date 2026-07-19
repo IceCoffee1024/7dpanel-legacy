@@ -54,9 +54,12 @@ maintaining duplicate product, design, architecture, or test facts.
   commit and push there first, then update the product gitlink separately. A
   future build-time dependency on its assemblies must be recorded in
   `docs/architecture.md` and `docs/test.md`.
-- Keep repository-level build and test commands in `README.md` and
-  `docs/test.md`, and helper-script usage in the owning script README. Do not
-  duplicate commands here or add machine-specific paths.
+- Keep repository-wide aggregate build and test entry points in `README.md`.
+  Let `docs/test.md` own verification levels, environments, and release gates.
+  Keep exact app, module, and script commands in the closest owning README,
+  and link to them from higher-level documents instead of duplicating command
+  blocks. Repeat only short, stable aggregate commands needed for repository
+  quick start; do not add machine-specific paths.
 
 ## Documentation Updates
 
@@ -81,8 +84,10 @@ maintaining duplicate product, design, architecture, or test facts.
 - Update `docs/architecture/admin-frontend-target-blueprint.md` only when the
   approved future Admin application boundaries, state ownership, runtime flows,
   dependency direction, or production asset responsibilities change.
-- For test environments, commands, automation, or release-gate changes, update
-  `docs/test.md` and synchronize runnable commands with `README.md`.
+- For test environments, automation, or release-gate changes, update
+  `docs/test.md`. For runnable-command changes, update the closest owning
+  README and synchronize repository-wide aggregate entry points or links in
+  `README.md`.
 - For game-version compatibility changes, update `docs/architecture.md` and
   `docs/test.md` from verified external reference evidence. Do not update the
   external reference repository as part of product-repository documentation

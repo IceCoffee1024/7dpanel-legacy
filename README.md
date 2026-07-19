@@ -66,6 +66,10 @@ dotnet build backend/7DPanel.sln --configuration Release --no-restore
 dotnet test backend/7DPanel.sln --configuration Release --no-build --no-restore
 ```
 
+Admin verification requires lint, type checking, and a production build. Run
+the exact commands from the
+[Admin application guide](frontend/apps/admin/README.md#verification).
+
 See the [test strategy](docs/test.md) for the required verification levels and
 release gates. On Windows, use the `.cmd` wrappers as the default entry points:
 
