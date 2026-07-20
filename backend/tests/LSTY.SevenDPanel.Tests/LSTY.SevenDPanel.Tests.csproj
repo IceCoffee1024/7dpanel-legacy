@@ -1,10 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +19,7 @@
     <ProjectReference Include="..\..\src\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
     <ProjectReference Include="..\..\src\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\7dtd-reference\v3.0.1-b4\runtime\7DaysToDieServer_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(SevenDaysManagedDirectory)\Newtonsoft.Json.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <None Include="..\..\src\Bootstrap\LSTY.SevenDPanel\config.example.json" Link="config.example.json" CopyToOutputDirectory="PreserveNewest" />

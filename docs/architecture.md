@@ -115,7 +115,7 @@ GET /
 |---|---|---|---|
 | 目标框架 | `.NET Framework 4.8` / `net48` | Release 构建通过 | 仍受游戏 Mono 可用 API 限制 |
 | 游戏运行时 | 7DTD `v3.0.1-b4` Mono BCL `4.6.57.0` | Windows 真实进程已验证 | 编译参考来自固定 `7dtd-reference` 版本；运行时使用未修改官方服务端 |
-| Web API 2 | Core/Owin/SelfHost `5.3.0`，Client `6.0.0` | Katana 集成测试与真实进程通过 | 仅实现健康 API |
+| Web API 2 | Core/Owin `5.3.0`，Client `6.0.0` | Katana 集成测试与真实进程通过 | 仅实现健康 API；Katana Self Host 由独立 OWIN Hosting 和 HttpListener 包组成 |
 | Katana/OWIN | `Microsoft.Owin`、Hosting、HttpListener、StaticFiles `4.2.3` | 静态托管、路由、启停和真实进程通过 | 当前未引入认证 middleware |
 | JSON | 游戏提供的 `Newtonsoft.Json 13.0.2` | 精确 camelCase 响应已在集成测试和真实进程验证 | 不随 Mod 发布另一份 `Newtonsoft.Json.dll` |
 | Unsafe | 游戏提供的 `System.Runtime.CompilerServices.Unsafe.dll`，编译包 `6.0.0` 排除 runtime | Release 构建和发布检查通过 | Mod 发布物不携带另一份同名程序集 |

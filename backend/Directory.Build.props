@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <Deterministic>true</Deterministic>
+    <SevenDaysGameVersion Condition="'$(SevenDaysGameVersion)' == ''">v3.0.1-b4</SevenDaysGameVersion>
+    <SevenDaysReferenceRoot Condition="'$(SevenDaysReferenceRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\7dtd-reference'))</SevenDaysReferenceRoot>
+    <SevenDaysManagedDirectory Condition="'$(SevenDaysManagedDirectory)' == ''">$(SevenDaysReferenceRoot)\$(SevenDaysGameVersion)\runtime\7DaysToDieServer_Data\Managed</SevenDaysManagedDirectory>
+  </PropertyGroup>
+</Project>

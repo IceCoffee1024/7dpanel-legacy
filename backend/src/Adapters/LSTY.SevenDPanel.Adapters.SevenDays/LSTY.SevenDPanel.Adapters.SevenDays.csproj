@@ -1,12 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
     <AssemblyName>LSTY.SevenDPanel.Adapters.SevenDays</AssemblyName>
     <RootNamespace>LSTY.SevenDPanel.Adapters.SevenDays</RootNamespace>
-    <Deterministic>true</Deterministic>
-    <SevenDaysGameVersion Condition="'$(SevenDaysGameVersion)' == ''">v3.0.1-b4</SevenDaysGameVersion>
-    <SevenDaysReferenceRoot Condition="'$(SevenDaysReferenceRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\7dtd-reference</SevenDaysReferenceRoot>
-    <SevenDaysManagedDirectory>$(SevenDaysReferenceRoot)\$(SevenDaysGameVersion)\runtime\7DaysToDieServer_Data\Managed</SevenDaysManagedDirectory>
   </PropertyGroup>
 
   <ItemGroup>
