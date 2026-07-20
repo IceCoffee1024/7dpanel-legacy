@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Category", "Integration")]
+    [Trait("Host", "InProcessKatana")]
     public sealed class OwinWebHostTests
     {
         [Theory]

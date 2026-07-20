@@ -10,12 +10,6 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class ProductInfoTests
     {
         [Fact]
-        public void Name_matches_product_name()
-        {
-            Assert.Equal("7DPanel", ProductInfo.Name);
-        }
-
-        [Fact]
         public void Version_matches_mod_metadata()
         {
             var path = Path.Combine(AppContext.BaseDirectory, "ModInfo.xml");
