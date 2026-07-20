@@ -114,6 +114,7 @@ GET /
 | 领域 | 当前版本/来源 | 验证状态 | 当前约束 |
 |---|---|---|---|
 | 目标框架 | `.NET Framework 4.8` / `net48` | Release 构建通过 | 仍受游戏 Mono 可用 API 限制 |
+| C# 编译基线 | C# `11.0`，启用 Nullable Reference Types 和 Implicit Usings | Release Rebuild 以零警告通过 | 语言分析与全局 using 只影响编译期；生产运行时仍为游戏 Mono |
 | 游戏运行时 | 7DTD `v3.0.1-b4` Mono BCL `4.6.57.0` | Windows 真实进程已验证 | 编译参考来自固定 `7dtd-reference` 版本；运行时使用未修改官方服务端 |
 | Web API 2 | Core/Owin `5.3.0`，Client `6.0.0` | Katana 集成测试与真实进程通过 | 仅实现健康 API；Katana Self Host 由独立 OWIN Hosting 和 HttpListener 包组成 |
 | Katana/OWIN | `Microsoft.Owin`、Hosting、HttpListener、StaticFiles `4.2.3` | 静态托管、路由、启停和真实进程通过 | 当前未引入认证 middleware |

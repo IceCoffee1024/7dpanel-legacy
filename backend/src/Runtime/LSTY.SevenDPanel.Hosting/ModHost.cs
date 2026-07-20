@@ -7,10 +7,10 @@ namespace LSTY.SevenDPanel.Hosting
         private readonly object sync = new object();
         private readonly Func<IPanelWebHost> webHostFactory;
         private readonly Action<string> log;
-        private IPanelWebHost webHost;
+        private IPanelWebHost? webHost;
         private ModHostState state = ModHostState.Created;
 
-        public ModHost(Func<IPanelWebHost> webHostFactory, Action<string> log = null)
+        public ModHost(Func<IPanelWebHost> webHostFactory, Action<string>? log = null)
         {
             this.webHostFactory = webHostFactory ?? throw new ArgumentNullException(nameof(webHostFactory));
             this.log = log ?? (_ => { });
@@ -23,7 +23,7 @@ namespace LSTY.SevenDPanel.Hosting
 
         public void Start()
         {
-            IPanelWebHost candidate = null;
+            IPanelWebHost? candidate = null;
             lock (sync)
             {
                 if (state == ModHostState.Running || state == ModHostState.Starting)
@@ -68,7 +68,7 @@ namespace LSTY.SevenDPanel.Hosting
 
         public void Stop()
         {
-            IPanelWebHost candidate = null;
+            IPanelWebHost? candidate = null;
             lock (sync)
             {
                 if (state == ModHostState.Draining || state == ModHostState.Stopped || state == ModHostState.Faulted)

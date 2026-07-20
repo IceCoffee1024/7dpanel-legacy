@@ -9,7 +9,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting
     {
         private readonly string url;
         private readonly Action<IAppBuilder> configure;
-        private IDisposable host;
+        private IDisposable? host;
 
         public OwinWebHost(string url, Action<IAppBuilder> configure)
         {

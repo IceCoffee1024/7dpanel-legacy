@@ -51,7 +51,7 @@ namespace LSTY.SevenDPanel.Tests
         {
             public int StartCount { get; private set; }
             public int DisposeCount { get; private set; }
-            public Exception StartException { get; set; }
+            public Exception? StartException { get; set; }
 
             public void Start()
             {

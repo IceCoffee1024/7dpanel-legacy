@@ -145,9 +145,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.DoesNotContain("Status", propertyNames);
             Assert.DoesNotContain("Product", propertyNames);
             Assert.DoesNotContain("Version", propertyNames);
-            Assert.Equal("ok", (string)payload["status"]);
-            Assert.Equal("7DPanel", (string)payload["product"]);
-            Assert.Equal("0.1.0", (string)payload["version"]);
+            Assert.Equal("ok", (string?)payload["status"]);
+            Assert.Equal("7DPanel", (string?)payload["product"]);
+            Assert.Equal("0.1.0", (string?)payload["version"]);
         }
 
         private static int GetAvailablePort()

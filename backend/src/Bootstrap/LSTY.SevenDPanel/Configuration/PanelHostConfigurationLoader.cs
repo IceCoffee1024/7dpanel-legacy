@@ -7,7 +7,7 @@ namespace LSTY.SevenDPanel.Configuration
 {
     public static class PanelHostConfigurationLoader
     {
-        public static PanelHostOptions FromMod(Mod modInstance, Action<string> log = null)
+        public static PanelHostOptions FromMod(Mod? modInstance, Action<string>? log = null)
         {
             if (modInstance == null || string.IsNullOrWhiteSpace(modInstance.Path))
             {
@@ -27,11 +27,11 @@ namespace LSTY.SevenDPanel.Configuration
             return FromConfigFile(Path.Combine(modDirectory, "config.json"), log);
         }
 
-        public static PanelHostOptions FromConfigFile(string configPath, Action<string> log = null)
+        public static PanelHostOptions FromConfigFile(string configPath, Action<string>? log = null)
         {
             try
             {
-                PanelHostConfig config;
+                PanelHostConfig? config;
                 if (File.Exists(configPath))
                 {
                     config = JsonConvert.DeserializeObject<PanelHostConfig>(File.ReadAllText(configPath));

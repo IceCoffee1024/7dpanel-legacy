@@ -68,6 +68,7 @@ namespace LSTY.SevenDPanel.Tests
             var example = JsonConvert.DeserializeObject<PanelHostConfig>(File.ReadAllText(examplePath));
             var defaults = PanelHostConfig.CreateDefault();
 
+            Assert.NotNull(example);
             Assert.Equal(defaults.Port, example.Port);
             Assert.Equal(defaults.BindAddress, example.BindAddress);
             Assert.Equal(defaults.Scheme, example.Scheme);

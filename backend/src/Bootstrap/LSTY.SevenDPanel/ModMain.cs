@@ -10,10 +10,10 @@ namespace LSTY.SevenDPanel
 {
     public sealed class ModMain : IModApi
     {
-        private ModHost host;
-        private SevenDaysGameLifecycleAdapter adapter;
+        private ModHost? host;
+        private SevenDaysGameLifecycleAdapter? adapter;
 
-        public void InitMod(Mod modInstance)
+        public void InitMod(Mod? modInstance)
         {
             if (host != null) return;
 

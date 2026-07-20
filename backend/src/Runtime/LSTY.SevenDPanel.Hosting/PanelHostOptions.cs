@@ -42,19 +42,17 @@ namespace LSTY.SevenDPanel.Hosting
 
         public string Url { get; }
 
-        public static PanelHostOptions FromBinding(int port, string bindAddress, string scheme)
+        public static PanelHostOptions FromBinding(int port, string? bindAddress, string? scheme)
         {
             if (port < 1 || port > 65535)
             {
                 throw new InvalidDataException("Port must be between 1 and 65535.");
             }
 
-            var normalizedScheme = string.IsNullOrWhiteSpace(scheme)
-                ? DefaultScheme
-                : scheme.Trim().ToLowerInvariant();
-            var normalizedAddress = string.IsNullOrWhiteSpace(bindAddress)
-                ? DefaultBindAddress
-                : bindAddress.Trim();
+            var normalizedScheme = (scheme ?? string.Empty).Trim().ToLowerInvariant();
+            if (normalizedScheme.Length == 0) normalizedScheme = DefaultScheme;
+            var normalizedAddress = (bindAddress ?? string.Empty).Trim();
+            if (normalizedAddress.Length == 0) normalizedAddress = DefaultBindAddress;
             if (normalizedScheme != Uri.UriSchemeHttp && normalizedScheme != Uri.UriSchemeHttps)
             {
                 throw new InvalidDataException("Scheme must be http or https.");

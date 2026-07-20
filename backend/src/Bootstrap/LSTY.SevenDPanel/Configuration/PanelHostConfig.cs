@@ -5,8 +5,8 @@ namespace LSTY.SevenDPanel.Configuration
     public sealed class PanelHostConfig
     {
         public int Port { get; set; }
-        public string BindAddress { get; set; }
-        public string Scheme { get; set; }
+        public string? BindAddress { get; set; }
+        public string? Scheme { get; set; }
 
         public static PanelHostConfig CreateDefault()
         {

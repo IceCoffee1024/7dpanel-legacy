@@ -7,7 +7,7 @@ last_updated: "2026-07-20"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含四个产品项目和一个迁移保护测试项目；Release 构建和 20 项 xUnit 测试已通过，发布检查确认四个产品 DLL、`wwwroot/index.html` 与哈希资源齐全，游戏提供的程序集已排除且发布脚本不覆盖服主配置。2026-07-18 已在远程 Windows 7DTD `v3.0.1-b4` 使用新多项目发布物完成旧启动时序的开发期人工 smoke。2026-07-19 使用同版本真实进程验证 OWIN 在 `GameStartDone` 前启动、精确 camelCase 健康响应、生产 Admin Fresh 页面、正常关服和端口释放；真实 Katana 集成测试另覆盖静态资源、SPA fallback、API 优先级、未知 API 404 和缺失资产时 API 保持可用。SQLite、主线程动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含四个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings 后，Release Rebuild 以零警告通过，20 项 xUnit 测试全部通过。发布检查确认四个产品 DLL、`wwwroot/index.html` 与哈希资源齐全，游戏提供的程序集已排除且发布脚本不覆盖服主配置。2026-07-18 已在远程 Windows 7DTD `v3.0.1-b4` 使用新多项目发布物完成旧启动时序的开发期人工 smoke。2026-07-19 使用同版本真实进程验证 OWIN 在 `GameStartDone` 前启动、精确 camelCase 健康响应、生产 Admin Fresh 页面、正常关服和端口释放；真实 Katana 集成测试另覆盖静态资源、SPA fallback、API 优先级、未知 API 404 和缺失资产时 API 保持可用。SQLite、主线程动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -99,7 +99,7 @@ last_updated: "2026-07-20"
 
 | 环境 | 用途 | 最低要求 |
 |---|---|---|
-| 开发/CI .NET 环境 | 单元、SQLite、文件系统和 OWIN/API 集成测试 | 能构建 `net48`；平台与具体镜像在工程初始化时锁定 |
+| 开发/CI .NET 环境 | 单元、SQLite、文件系统和 OWIN/API 集成测试 | 能以 C# `11.0` 构建 `net48`，并启用 Nullable Reference Types 和 Implicit Usings；平台与具体镜像在工程初始化时锁定 |
 | Admin 前端开发/CI Node.js 环境 | Admin lint、应用与 Node 配置 typecheck、Vite `8.1.5`/Rolldown 生产构建 | 推荐 Node.js `24+`；`package.json` 精确兼容范围为 `^20.19.0 || ^22.13.0 || >=24.0.0`，使用 `pnpm@11.13.1` 和冻结锁文件 |
 | Windows x64 真实服务端 | 发布 smoke、E2E、性能和恢复演练 | 官方 7DTD Dedicated Server `v3.0.1-b4`、隔离端口、临时世界 |
 | Linux x64 真实服务端 | Native 兼容、发布 smoke、E2E 和恢复演练 | 官方 `v3.0.1-b4` Mono 运行时、区分大小写文件系统、临时世界 |

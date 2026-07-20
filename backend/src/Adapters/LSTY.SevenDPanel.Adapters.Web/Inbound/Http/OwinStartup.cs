@@ -16,7 +16,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             ConfigureApi(app);
         }
 
-        public static void Configure(IAppBuilder app, string assetRoot, Action<string> log = null)
+        public static void Configure(IAppBuilder app, string? assetRoot, Action<string>? log = null)
         {
             ConfigureApi(app);
 
