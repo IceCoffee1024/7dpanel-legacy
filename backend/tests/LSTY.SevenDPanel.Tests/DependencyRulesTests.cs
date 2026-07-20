@@ -90,13 +90,22 @@ namespace LSTY.SevenDPanel.Tests
             var modMainSource = File.ReadAllText(modMainPath);
             var lifecycleSource = File.ReadAllText(lifecyclePath);
 
-            Assert.Contains("adapter.RegisterAndStart();", modMainSource);
-            Assert.DoesNotContain("GameStartDone", lifecycleSource);
+            Assert.Contains("candidateAdapter.RegisterAndStart();", modMainSource);
+            Assert.Contains("events.SubscribeGameStartDone", lifecycleSource);
+
+            var registerIndex = modMainSource.IndexOf("candidateAdapter.RegisterAndStart();", StringComparison.Ordinal);
+            var publishHostIndex = modMainSource.IndexOf("host = candidateHost;", StringComparison.Ordinal);
+            var publishAdapterIndex = modMainSource.IndexOf("adapter = candidateAdapter;", StringComparison.Ordinal);
+            Assert.True(registerIndex >= 0, "Bootstrap must start the candidate lifecycle adapter.");
+            Assert.True(publishHostIndex > registerIndex, "Bootstrap must publish the host only after lifecycle registration succeeds.");
+            Assert.True(publishAdapterIndex > registerIndex, "Bootstrap must publish the adapter only after lifecycle registration succeeds.");
+            Assert.Contains("candidateAdapter.Dispose();", modMainSource);
+            Assert.Contains("candidateHost.Dispose();", modMainSource);
 
             var registeredIndex = lifecycleSource.IndexOf("registered = true;", StringComparison.Ordinal);
             var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);
-            Assert.True(registeredIndex >= 0, "Lifecycle adapter must record shutdown registration.");
-            Assert.True(startIndex > registeredIndex, "Lifecycle adapter must register shutdown handlers before starting the panel host.");
+            Assert.True(registeredIndex >= 0, "Lifecycle adapter must record lifecycle registration.");
+            Assert.True(startIndex > registeredIndex, "Lifecycle adapter must register all lifecycle handlers before starting the panel host.");
         }
 
         private static void AssertDirectionDoesNotReference(

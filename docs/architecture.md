@@ -7,7 +7,7 @@ last_updated: "2026-07-20"
 
 ## 背景与驱动因素
 
-本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目组成，覆盖 Mod 初始化与关闭、监听配置、Katana OWIN、健康 API 和 Admin 静态资源托管。当前 Admin 是 Vue 3、Vite 和 Nuxt UI 应用，只有 `/` 客户端路由，并通过类型化同源客户端读取 `/api/v1/health`。认证、玩家、日志、SQLite、备份、公告、审计、游戏主线程调度和后台作业均未实现。
+本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Web Adapter 和 SevenDays Adapter 四个产品项目组成，覆盖 Mod 初始化与关闭、独立游戏就绪边界、监听配置、Katana OWIN、健康 API、Admin 静态资源托管和尚未接入产品链路的主线程调度原语。当前 Admin 是 Vue 3、Vite 和 Nuxt UI 应用，只有 `/` 客户端路由，并通过类型化同源客户端读取 `/api/v1/health`。认证、玩家、日志、SQLite、备份、公告、审计、可调用的游戏状态/动作链路和后台作业均未实现。
 
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
@@ -28,12 +28,12 @@ flowchart LR
     Bootstrap --> Config[config.json]
     Bootstrap --> Runtime[ModHost]
     Runtime --> Host
-    GameEvents[WorldShuttingDown / GameShutdown] --> Lifecycle[SevenDays Lifecycle Adapter]
+    GameEvents[GameStartDone / WorldShuttingDown / GameShutdown] --> Lifecycle[SevenDays Lifecycle Adapter]
     Lifecycle --> Runtime
 ```
 
 - 后端 DLL 和 Admin 构建资源随同一个 Mod 目录部署，并在 7DTD 进程内提供 HTTP 服务。
-- 7DTD 拥有 Mod 生命周期；当前 SevenDays Adapter 只把两个关闭事件转换为 `IModRuntime.Stop()`。
+- 7DTD 拥有 Mod 生命周期；当前 SevenDays Adapter 把 `GameStartDone` 转换为 `IModRuntime.MarkGameReady()`，并把两个关闭事件转换为 `IModRuntime.Stop()`。
 - 浏览器只能访问静态资源和健康 API，不能直接访问 7DTD 对象或 Mod 配置文件。
 - 当前没有身份、权限、数据库、游戏状态读取或写操作边界；健康 `ok` 不能推导游戏已经就绪或可管理。
 - 首版目标仍是单服自托管，但当前切片只验证所在 Mod 进程的 HTTP 存活。
@@ -43,9 +43,9 @@ flowchart LR
 | 项目或应用 | 当前职责与实现证据 | 当前依赖 |
 |---|---|---|
 | `backend/src/Bootstrap/LSTY.SevenDPanel/` | 唯一 `IModApi` 入口、配置文件 I/O、对象组装、Admin 资源根目录选择和 Mod 发布入口 | Hosting、Web Adapter、SevenDays Adapter、游戏编译期程序集 |
-| `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` 状态机、`IModRuntime`、`IPanelWebHost`、监听选项和产品元数据 | .NET Framework BCL |
+| `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` 状态机、独立 `GameReadinessState`、`IModRuntime`、`IPanelWebHost`、监听选项和产品元数据 | .NET Framework BCL |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | Web API 健康路由、全局 JSON 配置、Katana Self Host、StaticFiles 和 SPA fallback | Hosting、Web API/Katana、游戏提供的 JSON 兼容程序集 |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 注册 `WorldShuttingDown`、`GameShutdown`，在初始化阶段启动并在关闭事件中停止 `IModRuntime` | Hosting、`Assembly-CSharp.dll` |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离三个静态生命周期事件；在初始化阶段启动 `IModRuntime`；提供有界 request/reply 主线程调度器和 `ThreadManager` bridge | Hosting、`Assembly-CSharp.dll` |
 | `frontend/apps/admin/` | 响应式应用壳、唯一 `/` 路由、健康 API Client、`useServerHealth` 和 Overview 状态呈现 | Vue 3、Vue Router、Nuxt UI、Vite |
 
 当前没有 Application、Domain 或 Local Adapter 项目。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
@@ -53,14 +53,21 @@ flowchart LR
 ### Mod 生命周期
 
 1. `ModMain.InitMod` 读取或创建监听配置，并从 `modInstance.Path` 派生 `<ModDirectory>/wwwroot`。
-2. Bootstrap 创建 `ModHost`、`OwinWebHost` 和 `SevenDaysGameLifecycleAdapter`。
-3. `RegisterAndStart` 先注册 `WorldShuttingDown` 与 `GameShutdown`，设置已注册标记，再调用 `runtime.Start()`。
-4. `ModHost.Start` 创建并启动一个 OWIN Host；重复启动保持幂等，启动异常使状态进入 `Faulted` 并释放候选 Host。
-5. 任一关闭事件调用 `ModHost.Stop`。当前实现短暂进入内部 `Draining` 状态后立即释放 OWIN，再进入 `Stopped`；没有可被 HTTP 客户端观察的 draining 响应。
+2. Bootstrap 先在局部变量中创建 `ModHost`、`OwinWebHost` 和 `SevenDaysGameLifecycleAdapter`，完成注册与启动后才发布字段；异常路径 best-effort 清理候选对象并保留原异常。
+3. `RegisterAndStart` 依次通过 `ISevenDaysLifecycleEvents` 注册 `WorldShuttingDown`、`GameShutdown` 和 `GameStartDone`，全部成功后再调用 `runtime.Start()`。注册失败按逆序注销；`runtime.Start()` 抛出时还会 best-effort 调用 `runtime.Stop()`，清理失败不遮蔽原始启动异常。
+4. `SevenDaysModEvents` 在 SevenDays Adapter 程序集内保存精确游戏 delegate，返回幂等订阅 token 负责注销，保持 `ModEvents.RegisterHandler` 对调用程序集的识别语义。
+5. `ModHost.Start` 创建并启动一个 OWIN Host；重复启动保持幂等，启动异常使状态进入 `Faulted` 并释放候选 Host。并发 `Stop` 完成后，晚到的启动成功或异常都不能覆盖终止状态。
+6. `GameStartDone` 把独立游戏就绪状态从 `Loading` 推进到 `Ready`；任一关闭事件先把它推进到终态 `Stopping`，再调用 `ModHost.Stop` 释放 OWIN。并发或晚到的就绪事件不能覆盖 `Stopping`；当前仍没有可被 HTTP 客户端观察的 readiness 或 draining 响应。
 
-当前适配器不订阅 `GameStartDone`。未来依赖 Unity/7DTD 活对象的组件需要独立游戏就绪边界，但该边界尚未实现，不能从当前健康端点推断。
+2026-07-18 的 Windows 7DTD `v3.0.1-b4` 人工 smoke 是旧启动时序的历史基线。2026-07-19 的同版本真实进程 smoke 验证 OWIN 在 `GameStartDone` 前启动。2026-07-20 在引入事件隔离与就绪状态后再次验证：OWIN 在启动后 `8.576` 秒启动，`StartGame done` 在 `119.732` 秒出现，日志没有 ModEvent 注册或回调错误；正常关服记录 OWIN stopped，进程退出且 18080 端口释放。测试层级和证据限制见[测试策略](test.md)。
 
-2026-07-18 的 Windows 7DTD `v3.0.1-b4` 人工 smoke 是旧启动时序的历史基线。2026-07-19 的同版本真实进程 smoke 验证当前时序：OWIN 在启动后 `3.409` 秒启动，早于 `StartGame done` 的 `66.397` 秒；正常关服后进程退出且 18080 端口释放。测试层级和证据限制见[测试策略](test.md)。
+### 7DTD 主线程调度边界
+
+- `SevenDaysMainThreadScheduler` 用可配置容量保护自有 FIFO；容量包含排队、运行中以及尚未由 pump 移除的取消/超时 tombstone，不能通过反复取消绕过上限。
+- 调度器只向 `ThreadManager.AddSingleTaskMainThread` 投递一个低基数 pump，每个 pump 最多执行一个有效请求；仍有请求时再投递下一 pump，避免在同一帧主动清空项目队列。
+- 请求结果区分 `Succeeded`、`Failed`、`Unavailable`、`Canceled`、`TimedOut` 和 `Unknown`。排队取消或超时保证委托未执行；执行开始后的取消、超时或停止返回 `Unknown`，不能据此安全重试有副作用操作。
+- 委托异常由调度器捕获，不交给游戏宿主吞掉；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。dispatcher 投递失败会停止调度器并明确拒绝已接受和后续请求。
+- 该调度器及 `ThreadManagerMainThreadDispatcher` 已编译并有确定性单元测试，但 Bootstrap 尚未创建或启动它，也没有 Controller、Use Case 或状态查询消费它。生产容量、每帧预算和监控阈值必须先由官方 Windows/Linux 进程性能基线决定；现有 `/api/v1/health` 不承载游戏状态。
 
 ### OWIN、Web API 与静态资源
 
@@ -131,15 +138,17 @@ GET /
 - 发布脚本是增量的，不清空整个 Mod 目录；已有 `config.json` 和 `data/` 保持不变。
 - Windows 7DTD `v3.0.1-b4` 已完成开发期真实进程 smoke。Linux 发布与运行尚未验证，不能宣称支持已完成。
 - 开发期发布、启停和健康检查入口见[后端脚本指南](../backend/scripts/README.md)。辅助脚本不属于产品运行时。
-- 当前关服流程只调用幂等 `ModHost.Stop` 并释放 OWIN；队列排空、数据库关闭和可观察 draining 都尚不存在。
+- 当前生产关服流程只调用幂等 `ModHost.Stop` 并释放 OWIN；主线程调度器尚未接入 composition root，因此生产队列排空、数据库关闭和可观察 draining 都尚不存在。
 
 ## 质量属性
 
 ### 可靠性
 
-- `ModHost` 的重复启停、启动失败回收和停止后禁止重启已有单元测试。
+- `ModHost` 的重复启停、启动失败回收、停止后禁止重启、启动/停止竞态和游戏就绪终态已有单元测试。
 - OWIN 集成测试使用真实 Katana Host 验证端口释放、API/静态资源优先级、SPA fallback、缺失资源和缺失资产目录。
-- `DependencyRulesTests` 用源码规则保护当前项目依赖、唯一 `IModApi` 和初始化启动顺序；它不替代真实 ModEvents 回调测试。
+- `SevenDaysGameLifecycleAdapterTests` 通过可替换事件边界执行三个回调，并覆盖订阅顺序、逆序回滚、异常保留与订阅所有权；真实静态 `ModEvents` wrapper 仍由官方进程 smoke 提供兼容证据。
+- 主线程调度器的确定性测试覆盖 FIFO、单 pump、容量、tombstone、排队与运行中取消/超时、停止、委托异常以及 dispatcher/deadline 失败。
+- `DependencyRulesTests` 用源码规则保护当前项目依赖、Adapter 方向、唯一 `IModApi` 和 Bootstrap candidate 发布顺序。
 - 健康客户端保留最后成功样本并明确标记 stale/offline，不把失败或过期结果显示为 fresh。
 
 ### 安全性
@@ -165,8 +174,8 @@ GET /
 
 ### 未解决风险
 
-- SevenDays 生命周期适配器直接依赖静态 `ModEvents`，当前没有可执行的事件回调单元测试；初始化顺序由源码规则、`ModHost` 单测和真实进程 smoke 共同覆盖。
-- `GameStartDone` 游戏就绪状态、就绪前 `503`、可观察 draining 和写请求拒绝均是目标设计，尚未实现。
+- `GameStartDone` 内部就绪状态已实现，但尚未投影到认证后的服务器状态查询；就绪前 `503`、可观察 draining 和写请求拒绝仍是目标设计。
+- 主线程调度器尚未接入生命周期和产品用例，生产容量、帧预算、指标以及官方 Windows/Linux 主线程往返证据仍缺失。
 - 默认全接口明文监听且没有认证；在身份与 TLS 边界实现前，不应直接暴露到不受信任网络。
 - Linux x64 运行和发布尚无本项目证据。
 - 编译使用的 publicized `Assembly-CSharp.dll` 与官方运行时材料职责不同；升级游戏版本时必须重新验证构建和真实进程行为。

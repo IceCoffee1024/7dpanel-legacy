@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using LSTY.SevenDPanel.Hosting;
 using Xunit;
 
@@ -47,19 +49,170 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(ModHostState.Stopped, host.State);
         }
 
+        [Fact]
+        public void Start_does_not_mark_the_game_ready()
+        {
+            var webHost = new FakeWebHost();
+            var host = new ModHost(() => webHost);
+
+            host.Start();
+
+            Assert.Equal(ModHostState.Running, host.State);
+            Assert.Equal(GameReadinessState.Loading, host.GameReadiness);
+        }
+
+        [Fact]
+        public void Mark_game_ready_is_idempotent_and_does_not_restart_the_web_host()
+        {
+            var webHost = new FakeWebHost();
+            var host = new ModHost(() => webHost);
+            host.Start();
+
+            host.MarkGameReady();
+            host.MarkGameReady();
+
+            Assert.Equal(GameReadinessState.Ready, host.GameReadiness);
+            Assert.Equal(1, webHost.StartCount);
+        }
+
+        [Fact]
+        public void Game_ready_before_start_is_preserved()
+        {
+            var webHost = new FakeWebHost();
+            var host = new ModHost(() => webHost);
+
+            host.MarkGameReady();
+            host.Start();
+
+            Assert.Equal(GameReadinessState.Ready, host.GameReadiness);
+            Assert.Equal(ModHostState.Running, host.State);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Stop_moves_game_readiness_to_stopping(bool markReady)
+        {
+            var host = new ModHost(() => new FakeWebHost());
+            host.Start();
+            if (markReady) host.MarkGameReady();
+
+            host.Stop();
+
+            Assert.Equal(GameReadinessState.Stopping, host.GameReadiness);
+        }
+
+        [Fact]
+        public void Stop_wins_over_late_game_ready()
+        {
+            var host = new ModHost(() => new FakeWebHost());
+            host.Start();
+            host.Stop();
+
+            host.MarkGameReady();
+
+            Assert.Equal(GameReadinessState.Stopping, host.GameReadiness);
+        }
+
+        [Fact]
+        public async Task Stop_wins_over_concurrent_game_ready()
+        {
+            var host = new ModHost(() => new FakeWebHost());
+            host.Start();
+
+            await Task.WhenAll(
+                Task.Run(host.MarkGameReady, TestContext.Current.CancellationToken),
+                Task.Run(host.Stop, TestContext.Current.CancellationToken));
+
+            Assert.Equal(GameReadinessState.Stopping, host.GameReadiness);
+        }
+
+        [Fact]
+        public async Task Stop_while_start_is_blocked_prevents_late_running_publication()
+        {
+            var webHost = new FakeWebHost(blockStart: true);
+            var host = new ModHost(() => webHost);
+            var startTask = Task.Run(host.Start, TestContext.Current.CancellationToken);
+
+            try
+            {
+                Assert.True(webHost.WaitUntilStartEntered(
+                    TimeSpan.FromSeconds(5),
+                    TestContext.Current.CancellationToken));
+                host.Stop();
+                Assert.Equal(ModHostState.Stopped, host.State);
+            }
+            finally
+            {
+                webHost.AllowStartToComplete();
+                await startTask;
+            }
+
+            Assert.Equal(ModHostState.Stopped, host.State);
+            Assert.Equal(1, webHost.StartCount);
+            Assert.Equal(1, webHost.DisposeCount);
+        }
+
+        [Fact]
+        public async Task Stop_while_start_is_blocked_prevents_late_faulted_publication()
+        {
+            var webHost = new FakeWebHost(blockStart: true)
+            {
+                StartException = new InvalidOperationException("failed")
+            };
+            var host = new ModHost(() => webHost);
+            var startTask = Task.Run(host.Start, TestContext.Current.CancellationToken);
+
+            try
+            {
+                Assert.True(webHost.WaitUntilStartEntered(
+                    TimeSpan.FromSeconds(5),
+                    TestContext.Current.CancellationToken));
+                host.Stop();
+                Assert.Equal(ModHostState.Stopped, host.State);
+            }
+            finally
+            {
+                webHost.AllowStartToComplete();
+                await startTask;
+            }
+
+            Assert.Equal(ModHostState.Stopped, host.State);
+            Assert.Equal(1, webHost.StartCount);
+            Assert.Equal(1, webHost.DisposeCount);
+        }
+
         private sealed class FakeWebHost : IPanelWebHost
         {
-            public int StartCount { get; private set; }
-            public int DisposeCount { get; private set; }
+            private readonly ManualResetEventSlim startEntered = new ManualResetEventSlim();
+            private readonly ManualResetEventSlim allowStartToComplete = new ManualResetEventSlim();
+            private readonly bool blockStart;
+            private int startCount;
+            private int disposeCount;
+
+            public FakeWebHost(bool blockStart = false)
+            {
+                this.blockStart = blockStart;
+            }
+
+            public int StartCount => Volatile.Read(ref startCount);
+            public int DisposeCount => Volatile.Read(ref disposeCount);
             public Exception? StartException { get; set; }
+
+            public bool WaitUntilStartEntered(TimeSpan timeout, CancellationToken cancellationToken) =>
+                startEntered.Wait(timeout, cancellationToken);
+
+            public void AllowStartToComplete() => allowStartToComplete.Set();
 
             public void Start()
             {
-                StartCount++;
+                Interlocked.Increment(ref startCount);
+                startEntered.Set();
+                if (blockStart) allowStartToComplete.Wait();
                 if (StartException != null) throw StartException;
             }
 
-            public void Dispose() { DisposeCount++; }
+            public void Dispose() { Interlocked.Increment(ref disposeCount); }
         }
     }
 }

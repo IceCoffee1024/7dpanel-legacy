@@ -22,11 +22,22 @@ namespace LSTY.SevenDPanel
             var assetRoot = modInstance == null || string.IsNullOrWhiteSpace(modInstance.Path)
                 ? null
                 : Path.Combine(modInstance.Path, "wwwroot");
-            host = new ModHost(
+            var candidateHost = new ModHost(
                 () => new OwinWebHost(options.Url, app => OwinStartup.Configure(app, assetRoot, log)),
                 log);
-            adapter = new SevenDaysGameLifecycleAdapter(host);
-            adapter.RegisterAndStart();
+            var candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateHost);
+            try
+            {
+                candidateAdapter.RegisterAndStart();
+                host = candidateHost;
+                adapter = candidateAdapter;
+            }
+            catch
+            {
+                try { candidateAdapter.Dispose(); } catch { }
+                try { candidateHost.Dispose(); } catch { }
+                throw;
+            }
             Log.Out("[7DPanel] Mod initialized. URL: " + options.Url);
         }
     }

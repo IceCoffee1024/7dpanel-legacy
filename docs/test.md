@@ -7,7 +7,7 @@ last_updated: "2026-07-20"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含四个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings 后，Release Rebuild 以零警告通过，20 项 xUnit 测试全部通过。发布检查确认四个产品 DLL、`wwwroot/index.html` 与哈希资源齐全，游戏提供的程序集已排除且发布脚本不覆盖服主配置。2026-07-18 已在远程 Windows 7DTD `v3.0.1-b4` 使用新多项目发布物完成旧启动时序的开发期人工 smoke。2026-07-19 使用同版本真实进程验证 OWIN 在 `GameStartDone` 前启动、精确 camelCase 健康响应、生产 Admin Fresh 页面、正常关服和端口释放；真实 Katana 集成测试另覆盖静态资源、SPA fallback、API 优先级、未知 API 404 和缺失资产时 API 保持可用。SQLite、主线程动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含四个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings 后，Release Rebuild 以零警告通过，49 项 xUnit 测试全部通过。发布检查确认四个产品 DLL、`wwwroot/index.html` 与哈希资源齐全，游戏提供的程序集已排除且发布脚本不覆盖服主配置。2026-07-20 使用远程 Windows 7DTD `v3.0.1-b4` 真实进程验证新的事件隔离与 `GameStartDone` 就绪边界、OWIN 提前启动、精确 camelCase 健康响应、生产 Admin Fresh 页面、正常关服和端口释放；真实 Katana 集成测试另覆盖静态资源、SPA fallback、API 优先级、未知 API 404 和缺失资产时 API 保持可用。内部有界主线程调度器已有确定性单元测试，但尚未接入生产生命周期或产品用例；SQLite、真实主线程动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -48,6 +48,7 @@ last_updated: "2026-07-20"
 ### 单元测试
 
 - 后端单元测试采用 xUnit v3。无共享状态的测试允许并行；占用固定端口、SQLite 文件、游戏进程或静态游戏状态的测试必须使用测试集合隔离或显式禁止并行。
+- 当前自动化覆盖 `ModHost` 启停/就绪状态和并发终止竞态、生命周期 Adapter 的三个可执行回调与失败回滚，以及主线程调度器的 FIFO、单 pump、容量、取消、超时、停止、异常和依赖失败语义。
 - 覆盖初始化凭证字符集与四位分组、大小写和连字符规范化、30 分钟边界、单次消费、并发创建、重新生成替换旧状态和已有 `Owner` 时拒绝生成，以及权限矩阵、状态新鲜度、统一错误映射、幂等键、调度规则、后台工作项到唯一 Use Case 的映射、托管组件启停顺序、备份/恢复状态机和会话策略。
 - 使用虚拟时钟、确定性任务调度和游戏适配器替身；不把需要真实 Mono、SQLite 或文件系统的行为伪装成单元测试结论。
 
@@ -64,7 +65,7 @@ last_updated: "2026-07-20"
 
 - 在进程内启动完整 OWIN 管道，验证路由、输入校验、认证、授权、Cookie 属性、CSRF、统一错误结构、静态资源和 draining 行为。
 - `OwinWebHostTests` 在真实 Katana 主机中验证 `/` 和无扩展名路由返回 Admin `index.html`，哈希资源按静态文件返回，缺失资源保持 404；即使 `wwwroot/api/v1/health` 存在冲突文件，`/api/v1/health` 仍由 Web API 返回健康 JSON，未知 `/api/*` 保持 404。健康 JSON 必须精确使用 `status`、`product`、`version`，大小写不匹配即失败。
-- `DependencyRulesTests` 以源码规则验证 Bootstrap 调用 `RegisterAndStart`、生命周期适配器不订阅 `GameStartDone`，并且注册标记先于 `runtime.Start()`；`ModHostTests` 验证宿主启停幂等。当前自动化测试不执行静态 `ModEvents` 回调，两个关闭事件的注册由源码检查确认，正常关服路径由真实进程 smoke 验证。
+- `DependencyRulesTests` 以源码规则验证 Bootstrap 使用局部 candidate 调用 `RegisterAndStart` 后才发布字段，并保护 Adapter 方向和唯一 `IModApi`；`SevenDaysGameLifecycleAdapterTests` 通过事件 seam 执行 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 回调，验证订阅顺序、逆序回滚、异常保留及 Dispose 只拥有订阅。真实静态 `ModEvents` 注册仍由官方进程 smoke 验证。
 - 使用同一初始化凭证分别验证手动输入和初始化链接入口；断言任一入口成功创建 `Owner` 后，另一入口与所有并发重复请求均被拒绝。
 - 在不存在 `Owner` 时分别通过控制台操作和宿主重启重新生成，断言新状态原子替换旧状态；创建 `Owner` 后，两条重新生成路径均不得恢复初始化能力。
 - 游戏动作通过可观测的主线程调度器测试实现完成，断言控制器不会直接访问游戏活对象。
@@ -79,6 +80,8 @@ last_updated: "2026-07-20"
 2026-07-19 的 Windows `v3.0.1-b4` 人工 smoke 已验证当前健康切片：服务端日志在启动后 `3.409` 秒记录 OWIN 启动，`StartGame done` 在 `66.397` 秒；`Test-HealthEndpoint.cmd -TimeoutSeconds 10` 返回 HTTP 200 和 `{"status":"ok","product":"7DPanel","version":"0.1.0"}`；正常关服后进程退出、18080 端口不再监听。该记录尚未自动化或归档为候选发布证据。
 
 2026-07-20 使用 Vite `8.1.5`/Rolldown 重新构建并发布同一远程环境，健康端点、哈希资源、Overview 页面、颜色模式和正常关服均通过，停止后 listener 不可用。该记录尚未自动化或归档为候选发布证据。
+
+2026-07-20 在引入 `ISevenDaysLifecycleEvents`、`GameStartDone` 就绪状态和生命周期竞态修复后再次执行完整远程流程。OWIN 在启动后 `8.576` 秒启动，`StartGame done` 在 `119.732` 秒出现；日志没有 `Error while executing ModEvent` 或调用程序集无法识别警告。`/health` 返回精确三字段 JSON，Chromium 中 Overview 为 Fresh，主要静态资源和 `/api/v1/health` 均为 200；`/favicon.ico` 仍是既有 404。正常关服记录 `7DPanel OWIN host stopped`，进程退出且 listener 不可用。该证据仍是开发期人工 smoke，尚未自动化或归档为候选发布证据。
 
 ### 浏览器端到端测试
 
@@ -160,9 +163,9 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 | 缺口 | 影响与处理 |
 |---|---|
-| 后端当前只实现 Mod 生命周期和健康端点 | Windows `v3.0.1-b4` 的新多项目发布物已完成开发期人工 smoke，但尚未自动化或归档为隔离的候选发布证据；SQLite、游戏主线程动作、Linux 真实进程和完整发布验证仍不可据此宣称通过。 |
+| 后端当前只实现 Mod 生命周期、健康端点和未接入产品链路的主线程调度原语 | Windows `v3.0.1-b4` 的新生命周期已完成开发期人工 smoke，但尚未自动化或归档为隔离的候选发布证据；SQLite、生产主线程往返、游戏状态/动作、Linux 真实进程和完整发布验证仍不可据此宣称通过。 |
 | Admin 健康客户端没有自动化单元测试 | `parseServerHealth`、HTTP/JSON 错误映射、取消和 stale timer 目前只经过类型检查、构建和人工浏览器场景；引入前端测试运行器后应优先补齐这些纯函数与 composable 分支。 |
-| SevenDays 生命周期回调没有可执行的 Adapter 测试 | 当前源码规则确认注册与启动顺序，`ModHostTests` 只覆盖运行时幂等性，真实 smoke 只覆盖正常关服路径；引入可替换事件边界后分别执行 `WorldShuttingDown` 和 `GameShutdown` 回调测试。 |
+| 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |
 | `/overview` 只有服务端 SPA fallback，没有客户端路由 | OWIN 会为 `/overview` 返回 `index.html`，但当前生成的 Vue Router 路由表只有 `/`，因此应用壳加载后主面板为空；在把 `/overview` 作为公开入口前，应新增客户端路由或将 fallback 验收路径收敛为 `/`，并补浏览器断言。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |

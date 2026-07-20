@@ -9,6 +9,7 @@ namespace LSTY.SevenDPanel.Hosting
         private readonly Action<string> log;
         private IPanelWebHost? webHost;
         private ModHostState state = ModHostState.Created;
+        private GameReadinessState gameReadiness = GameReadinessState.Loading;
 
         public ModHost(Func<IPanelWebHost> webHostFactory, Action<string>? log = null)
         {
@@ -19,6 +20,11 @@ namespace LSTY.SevenDPanel.Hosting
         public ModHostState State
         {
             get { lock (sync) return state; }
+        }
+
+        public GameReadinessState GameReadiness
+        {
+            get { lock (sync) return gameReadiness; }
         }
 
         public void Start()
@@ -39,7 +45,7 @@ namespace LSTY.SevenDPanel.Hosting
                 candidate.Start();
                 lock (sync)
                 {
-                    if (state == ModHostState.Draining)
+                    if (state != ModHostState.Starting)
                     {
                         webHost = null;
                     }
@@ -59,10 +65,19 @@ namespace LSTY.SevenDPanel.Hosting
                 lock (sync)
                 {
                     webHost = null;
-                    state = ModHostState.Faulted;
+                    if (state == ModHostState.Starting) state = ModHostState.Faulted;
                 }
                 log("7DPanel OWIN host failed to start: " + ex);
                 try { if (candidate != null) candidate.Dispose(); } catch { }
+            }
+        }
+
+        public void MarkGameReady()
+        {
+            lock (sync)
+            {
+                if (gameReadiness != GameReadinessState.Stopping)
+                    gameReadiness = GameReadinessState.Ready;
             }
         }
 
@@ -71,6 +86,7 @@ namespace LSTY.SevenDPanel.Hosting
             IPanelWebHost? candidate = null;
             lock (sync)
             {
+                gameReadiness = GameReadinessState.Stopping;
                 if (state == ModHostState.Draining || state == ModHostState.Stopped || state == ModHostState.Faulted)
                     return;
                 if (state == ModHostState.Created)
