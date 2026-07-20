@@ -11,6 +11,7 @@
     "paths": {
       "#build/ui": ["./node_modules/.nuxt-ui/ui"]
     },
+    "types": ["node"],
     "allowImportingTsExtensions": true,
 
     /* Linting */
@@ -22,6 +23,7 @@
     "noEmit": true,
     "isolatedModules": true,
     "skipLibCheck": true
+
   },
   "include": ["vite.config.ts"]
 }

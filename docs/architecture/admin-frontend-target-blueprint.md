@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-19"
+last_updated: "2026-07-20"
 document_role: Target
 ---
 
@@ -261,10 +261,10 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 |---|---|---|---|---|
 | 语言 | TypeScript strict mode | 已批准 | API、权限、状态机和表格数据需要稳定类型边界 | 与所选框架、测试和生成代码的配置一致性 |
 | 编译期类型工具 | 优先使用 TypeScript 内置工具类型；不足时评估 `type-fest` | 条件候选 | 仅在具体边界需要高级类型且局部定义容易出错或重复时，按实际使用类型直接导入；不为类型技巧本身增加依赖 | TypeScript 5.9+、ESM 和 strict 兼容性，具体导入类型、可读性、类型检查耗时及升级影响 |
-| 包管理与 workspace | pnpm；各应用独立管理 | 已批准 | 所有前端应用统一使用 pnpm，但分别拥有依赖图、锁文件、Node.js 兼容范围和发布周期 | 各应用的 pnpm 精确版本、Node.js 范围和 CI 安装；出现真实共享后再评估根 workspace |
+| 包管理与 workspace | pnpm；各应用独立管理 | 已批准 | 所有前端应用统一使用 pnpm，但分别拥有依赖图、锁文件、Node.js 兼容范围和发布周期 | 各应用的 pnpm 精确版本、`package.json` 的 Node.js 范围和 CI 安装；出现真实共享后再评估根 workspace |
 | Admin SPA | Vue 3 Composition API + `<script setup lang="ts">` | Admin 目标采用 | 适合长会话、高交互 SPA；当前应用壳已验证 TypeScript SFC 构建 | 生产包体积、浏览器基线和真实业务切片 |
-| 构建 | Vite、`@vitejs/plugin-vue` | Admin 目标采用 | 生成静态输出、支持 base path 和带哈希资源，不要求生产 Node.js | OWIN 部署路径、SPA fallback、manifest、缓存策略和所选 Node.js 基线 |
-| Node.js 配置类型 | `@types/node`（`devDependency`） | 条件候选 | 只有 Vite、Vitest、国际化构建插件等 Node 侧配置直接导入 `node:*` 或使用 `process`、`Buffer`、`NodeJS.*` 时才声明；仅加入 Node 侧 tsconfig，不向浏览器应用类型环境泄漏 | 与正式开发/CI Node.js major、TypeScript 的兼容性，`tsconfig.node.json` 范围、直接使用证据、全局类型污染和跨平台配置检查 |
+| 构建 | Vite 8、Rolldown/Oxc、`@vitejs/plugin-vue` | Admin 目标采用 | 生成静态输出、支持 base path 和带哈希资源，不要求生产 Node.js；Vite 8 使用 Rolldown/Oxc 统一生产构建与转换，开发和 CI 推荐使用 Node.js `24+` | OWIN 部署路径、SPA fallback、manifest、缓存策略、Rolldown 插件兼容性、构建产物体积和 Node.js 兼容范围 |
+| Node.js 配置类型 | `@types/node@24`（`devDependency`） | 已采用；当前边界已验证 | `vite.config.ts` 直接导入 `node:process` 并使用 `process.cwd()`；仅加入 Node 侧 `tsconfig.node.json`，其范围只包含 Vite 配置，不向浏览器应用类型环境泄漏 | `package.json` 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` 的工具链兼容范围；CI 固定 Node.js `24+`，并继续检查 TypeScript、`tsconfig.node.json`、直接使用证据和跨平台配置 |
 | 路由 | Vue Router 文件路由 | Admin 目标采用 | 使用官方 Vite 插件生成页面路由，并让后续筛选和分页进入 URL | 权限元数据、URL 状态、恢复导航和 404 行为 |
 | 文件布局路由 | `vite-plugin-vue-layouts` | 当前不采用 | 当前只有一个稳定 App Shell，直接包裹 `RouterView` 更简单，也避免引入与当前 Vite、Vue Router peer 范围不兼容的插件 | 出现多个稳定布局且手工布局映射产生实际维护成本 |
 | 路由不确定进度 | 默认不引入；出现可感知的路由懒加载等待后评估 `@bprogress/core` 或 `@bprogress/vue`；`nprogress` 当前不采用 | 条件候选 | 顶部进度条只表达导航或代码分块仍在加载，不能代表页面数据、游戏动作、备份或恢复的真实进度；BProgress 是现代 TypeScript 实现，优先于长期停留在旧版本的 NProgress | 实测导航延迟、并发和取消导航、失败清理、防闪烁、主题/CSS、层级、键盘与屏幕阅读器提示、减少动态效果、包体积和 Vue Router 集成 |
@@ -314,7 +314,7 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 - 工程提供 `dev`、`build`、`preview`、`lint` 和 `typecheck` 能力，精确脚本由实际 `package.json` 拥有；
 - `preview` 只用于本地检查，不是生产服务方式；
 - Vite 的 `build` 不替代 `vue-tsc` 类型检查，提交和发布门禁必须同时执行 lint、typecheck、测试和生产构建；
-- 初始化时补充测试脚本，并在验证 Node.js、pnpm、Vite、TypeScript 和 ESLint 的兼容组合后固定版本；
+- Admin 开发和 CI 以 Node.js `24+` 为基线；`package.json` 声明 `^20.19.0 || ^22.13.0 || >=24.0.0` 以保留 Vite 8 与 ESLint 的精确兼容范围，并使用锁定的 pnpm、Vite 8/Rolldown、TypeScript 和 ESLint 组合；
 - 只有浏览器运行代码直接导入的包进入 `dependencies`；构建、类型检查、lint 和测试工具进入
   `devDependencies`。Tailwind CSS 的最终归类由 Nuxt UI standalone Vue 安装要求和实际构建流程验证；
 - OpenAPI 生成器及仅在生成时运行的插件进入 `devDependencies`；生成代码在浏览器运行时直接导入的客户端包进入 `dependencies`，不得因生成器自身是开发依赖而遗漏运行时直接依赖；
@@ -369,7 +369,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 ## 尚需验证的证据缺口
 
 - Antfu ESLint 迁移尚未建立通过的全工程 lint 基线；需要审查自动修复、解决配置与 pnpm workspace 规则差异，并在无直接导入后移除 `eslint-plugin-vue` 和 `typescript-eslint`；
-- Admin 最低 Node.js 开发版本，以及已固定的 `pnpm@11.13.1` 与 Vite、TypeScript、ESLint 的兼容组合；
+- Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩、缓存头和 CSP；
 - REST 错误契约、分页与游标格式、SSE 事件 envelope 和补取窗口；
 - CSRF Token 获取方式、登录限速反馈和初始化凭证 URL 清除时机；

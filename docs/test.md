@@ -78,6 +78,8 @@ last_updated: "2026-07-20"
 
 2026-07-19 的 Windows `v3.0.1-b4` 人工 smoke 已验证当前健康切片：服务端日志在启动后 `3.409` 秒记录 OWIN 启动，`StartGame done` 在 `66.397` 秒；`Test-HealthEndpoint.cmd -TimeoutSeconds 10` 返回 HTTP 200 和 `{"status":"ok","product":"7DPanel","version":"0.1.0"}`；正常关服后进程退出、18080 端口不再监听。该记录尚未自动化或归档为候选发布证据。
 
+2026-07-20 使用 Vite `8.1.5`/Rolldown 重新构建并发布同一远程环境，健康端点、哈希资源、Overview 页面、颜色模式和正常关服均通过，停止后 listener 不可用。该记录尚未自动化或归档为候选发布证据。
+
 ### 浏览器端到端测试
 
 - 覆盖手动输入初始化码和打开初始化链接两种首次 Owner 流程、30 分钟过期提示、重复使用拒绝、登录、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
@@ -98,6 +100,7 @@ last_updated: "2026-07-20"
 | 环境 | 用途 | 最低要求 |
 |---|---|---|
 | 开发/CI .NET 环境 | 单元、SQLite、文件系统和 OWIN/API 集成测试 | 能构建 `net48`；平台与具体镜像在工程初始化时锁定 |
+| Admin 前端开发/CI Node.js 环境 | Admin lint、应用与 Node 配置 typecheck、Vite `8.1.5`/Rolldown 生产构建 | 推荐 Node.js `24+`；`package.json` 精确兼容范围为 `^20.19.0 || ^22.13.0 || >=24.0.0`，使用 `pnpm@11.13.1` 和冻结锁文件 |
 | Windows x64 真实服务端 | 发布 smoke、E2E、性能和恢复演练 | 官方 7DTD Dedicated Server `v3.0.1-b4`、隔离端口、临时世界 |
 | Linux x64 真实服务端 | Native 兼容、发布 smoke、E2E 和恢复演练 | 官方 `v3.0.1-b4` Mono 运行时、区分大小写文件系统、临时世界 |
 | 浏览器矩阵 | 管理流程 E2E | 至少覆盖一个 Chromium 稳定版；扩大支持范围前补充对应浏览器 |
@@ -113,7 +116,9 @@ last_updated: "2026-07-20"
 当前可运行的后端门禁包括依赖还原、Release 构建和测试；仓库级聚合命令见
 [README 的 Test and Checks](../README.md#test-and-checks)。
 
-Admin 当前门禁包括 lint、typecheck 和生产构建；工作目录和精确命令见
+Admin 当前门禁包括 lint、typecheck 和 Vite `8.1.5`/Rolldown 生产构建，开发/CI 基线为 Node.js `24+`；其中
+typecheck 同时运行 `vue-tsc -p ./tsconfig.app.json` 和
+`tsc -p ./tsconfig.node.json`，工作目录和精确命令见
 [Admin 应用验证说明](../frontend/apps/admin/README.md#verification)。
 
 发布前先完成 Admin 构建，再运行 `backend\scripts\Publish-Mod.cmd`；脚本会校验
@@ -127,7 +132,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
 - SQLite 集成测试、主线程调度测试和真实游戏事件回调测试。
-- 前端自动化单元测试和浏览器 E2E；当前已具备依赖锁定、lint、typecheck 和生产构建门禁。
+- 前端自动化单元测试和浏览器 E2E；当前已具备依赖锁定、lint、typecheck、Vite 8 生产构建和真实 OWIN smoke 门禁。
 - 自动化 Windows/Linux 发布物组装、四个产品 DLL 与内容校验，尤其检查 `Newtonsoft.Json` 重复文件和 SQLite Native RID；当前 Windows 发布脚本已校验 Admin `wwwroot`，项目引用和 Adapter 方向已有本地测试门禁。
 - 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
 - 将 Windows `v3.0.1-b4` 真实进程 smoke 自动化并归档服务端日志，同时建立 Linux x64 对应基线。
@@ -164,3 +169,4 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | `InitMod` 恢复时机尚无真实文件占用证据 | 可能无法在世界加载前替换存档；恢复实现前用 `v3.0.1-b4` 进程验证并记录调用时序。 |
 | Linux x64 的 SQLite Native 与完整依赖矩阵只有旧项目经验 | 不足以作为本项目发布证据；在声明 Linux 支持或首个候选发布前建立 Linux x64 进程内 smoke 基线。 |
 | 浏览器支持范围尚未形成产品决定 | 首版暂以 Chromium 稳定版建立 E2E 基线；扩大公开支持范围时更新本节和发布门槛。 |
+| Vite 8 生产构建仍有大 chunk 警告 | 当前最大 JS chunk 约 `684 KB`，超过 Vite 默认的 `500 KB` 提示；在产品包体积预算确定后评估 `build.rolldownOptions.output.codeSplitting` 或页面拆分，不将此警告误记为构建失败。 |

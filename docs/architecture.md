@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-07-19"
+last_updated: "2026-07-20"
 ---
 
 # 7DPanel 系统架构
@@ -119,7 +119,7 @@ GET /
 | Katana/OWIN | `Microsoft.Owin`、Hosting、HttpListener、StaticFiles `4.2.3` | 静态托管、路由、启停和真实进程通过 | 当前未引入认证 middleware |
 | JSON | 游戏提供的 `Newtonsoft.Json 13.0.2` | 精确 camelCase 响应已在集成测试和真实进程验证 | 不随 Mod 发布另一份 `Newtonsoft.Json.dll` |
 | Unsafe | 游戏提供的 `System.Runtime.CompilerServices.Unsafe.dll`，编译包 `6.0.0` 排除 runtime | Release 构建和发布检查通过 | Mod 发布物不携带另一份同名程序集 |
-| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Nuxt UI `4.10.0`、Vite `7.3.6`、pnpm `11.13.1` | lint、typecheck、生产构建和 Chromium 人工检查通过 | 精确解析结果以 Admin 锁文件为准；当前没有自动化单元或浏览器 E2E |
+| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | lint、typecheck、生产构建、Vite 8 真实 OWIN smoke 和 Chromium 人工检查通过 | Node.js 只用于开发和构建，生产静态托管不需要 Node.js；`@types/node` 仅服务于 `vite.config.ts` 的 Node 侧 `tsconfig`，typecheck 同时覆盖应用和 Node 配置；精确解析结果以 Admin 锁文件为准，当前没有自动化单元或浏览器 E2E |
 
 未来 SQLite、迁移、队列、DI、日志、身份和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
 
