@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-19"
+last_updated: "2026-07-20"
 ---
 
 # 7DPanel 后端目标架构蓝图
@@ -95,7 +95,7 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 
 ## 依赖策略与候选库
 
-[系统架构中的依赖兼容矩阵](../architecture.md#依赖兼容矩阵)是已经选定的后端运行基线及精确版本的权威来源。
+[系统架构中的依赖兼容矩阵](../architecture.md#当前依赖兼容矩阵)是已经选定的后端运行基线及精确版本的权威来源。
 本节只保存目标能力与候选技术之间的决策线索，不复制版本号，也不构成安装指令。实际安装结果和精确版本分别以
 `.csproj`、`package.json` 及其锁文件为准；安装命令和包管理操作属于对应实施计划或工程说明。
 
@@ -114,16 +114,23 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 | 数据库迁移 | Local Adapter / Persistence | `dbup-core`、`dbup-sqlite` | 已批准 | 首个可演进 SQLite schema | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径 |
 | 有界后台队列 | Local Adapter / Runtime | `System.Threading.Channels` | 已批准 | 首个后台 consumer 或持久作业 | 容量、背压、公平性、异常传播、排空和 Mono 兼容性 |
 | 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection` | 已批准 | 手工对象图无法清晰维护首个完整纵向切片 | 生命周期、释放顺序、反射或动态代码需求、发布体积和关服行为 |
-| 运行日志 | Local Adapter / Logging | `NLog` | 已批准 | 首个结构化日志与滚动文件需求 | 异步目标排空、文件占用、容量上限、异常隔离，并确认其不能替代审计 |
+| Mod 运行日志 | Bootstrap / SevenDays Adapter | 7DTD 提供的 `LogLibrary`（`Log.Out`、`Log.Warning`、`Log.Error`、`Log.Exception`） | 已采用 | 7DTD 日志 API 或目标版本发生变化 | 目标程序集加载、输出行为、异常记录和关服生命周期 |
+| 控制台日志采集 | SevenDays Adapter / ConsoleLogs | `LogLibrary.LogCallbacksExtended` + 7DPanel 有界队列 | 已批准 | 首个控制台日志切片（`CAP-02`） | 回调耗时、顺序、订阅与取消订阅、过载丢弃计数、Mono 兼容性和版本差异 |
 | 密码摘要 | Local Adapter / Identity | BCL PBKDF2-HMAC-SHA256 | 已批准 | 首个 Owner 身份切片 | 游戏 Mono 支持的 API、参数版本化、随机盐、耗时上限和升级策略 |
 | 备份压缩与校验 | Local Adapter / Backups | 优先使用 BCL；第三方库待证据驱动选择 | 预留 | BCL 无法满足流式处理、格式、性能或恢复兼容要求 | 内存峰值、大文件、损坏检测、路径穿越、许可证、维护状态和跨平台行为 |
 | 定时任务 | Local Adapter / Scheduling | 内部 hosted scheduler，不引入通用调度框架 | 默认不采用 | 出现持久日历、时区、错过触发补偿或分布式调度等真实需求 | 与持久作业状态的职责边界、关服排空、恢复语义和依赖成本 |
-| 用例分派与对象映射 | Application / Adapters | 显式 dispatcher 和手工映射，不引入 Mediator 或自动映射库 | 默认不采用 | 重复代码已形成稳定模式，且显式实现的维护成本有测试证据 | 隐式控制流、反射、调试成本、性能、AOT/Mono 限制和边界泄漏 |
+| 用例分派与对象映射 | Application / Adapters | 显式 dispatcher 和手工映射为默认；`Mapster` 作为稳定边界映射重复出现后的候选 | 候选 | 首个真实 DTO/Domain/View 映射切片形成多个稳定映射对，且重复代码维护成本有测试证据 | 优先评估代码生成或显式配置；映射配置启动期校验；验证隐式控制流、反射、调试成本、性能、AOT/Mono 限制、发布体积和边界泄漏 |
+| 映射表达式编译优化 | Application / Adapters / Bootstrap | `FastExpressionCompiler` 仅作为 `Mapster` 运行时表达式编译的可选优化，不单独引入 | 预留 | 已采用 `Mapster` 且代表性基准证明 `Expression.Compile` 成为实际瓶颈 | 验证 `CompileFast` 等价性、目标 Unity Mono、动态代码/AOT 限制、启动与分配成本、失败回退和游戏主线程首次编译行为 |
 
 当某个纵向切片准备实现时，必须重新检查候选库的维护状态、许可证、安全公告、传递依赖、原生资产、
 发布体积以及目标 `net48`/Unity Mono 兼容性。若当时存在更合适且证据更充分的库，实施者应先说明替代方案及权衡；
 涉及架构方向变化时先更新本蓝图或对应变更设计，再修改项目清单。实现和真实进程验证完成后，只把持久结论提升到
 [系统架构](../architecture.md)，不把候选状态继续当作当前事实。
+
+`Mapster` 进入候选并不表示当前安装或默认采用。只有在首个真实映射切片中出现多个稳定映射对，
+并且测试证据表明手工实现的维护成本已经成为问题时，才应将其加入具体项目。
+`FastExpressionCompiler` 不是对象映射库；除非采用 `Mapster` 后的代表性基准证明运行时表达式编译需要优化，
+否则保持不安装。
 
 前端依赖不由本后端蓝图定义。Admin 当前与目标依赖分别以实际 `package.json`、锁文件和
 [Admin 前端目标蓝图](admin-frontend-target-blueprint.md)为准；`frontend/apps/marketing/` 尚未初始化框架工程。
