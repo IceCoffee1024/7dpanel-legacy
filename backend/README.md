@@ -16,9 +16,10 @@ a consolidated bounded in-process server-event stream, Katana self-hosting,
 `/health` plus `/api/v1/health`, unified API Problem Details, a
 configuration-seeded SQLite `Owner`, SQLite-backed Basic authentication,
 persistent opaque Bearer tokens, and the authenticated
-`/api/v1/events/stream`. User/role
-management, main-thread game actions, and other product capabilities are not
-implemented yet.
+`/api/v1/events/stream`. The authenticated read-only `version` command is the
+first verified main-thread Application slice. User/role management,
+state-changing game actions, arbitrary console commands, and other product
+capabilities are not implemented yet.
 
 Bootstrap compiles against the game-provided `0_TFP_Harmony/0Harmony.dll` and
 applies one scoped `Assembly.Location` compatibility patch before runtime

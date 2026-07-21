@@ -1,6 +1,7 @@
 ---
 state: Draft
 last_updated: "2026-07-21"
+document_role: Target
 ---
 
 # 7DPanel 后端目标架构蓝图

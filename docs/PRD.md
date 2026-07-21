@@ -1,5 +1,5 @@
 ---
-status: Draft
+state: Current
 last_updated: "2026-07-21"
 ---
 

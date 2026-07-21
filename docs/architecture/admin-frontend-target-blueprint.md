@@ -127,9 +127,9 @@ shared     -X-> feature business code
 
 - 产品不采用 Cookie 认证。Admin 只通过 `Authorization` Header 发送 Basic 或 Bearer 身份，不把 Token 放入 URL，也不设计 CSRF Token；如果未来引入浏览器自动附带的认证机制，必须重新评估 CSRF 边界。
 - 当前和目标 Bearer 客户端都只在应用内存中保存访问 Token，不写入 `localStorage`、`sessionStorage`、URL、日志或错误报告。页面刷新后默认重新认证；未来 SQLite 身份切片如需 Token 持久化、刷新或浏览器恢复，必须先形成独立设计和撤销边界。
-- 初始化链接中的一次性凭证读取后立即通过 History API 从地址栏和历史记录中移除；页面不得加载第三方资源，
-  避免凭证通过 Referer 或遥测泄漏。
-- 登录、初始化和会话过期页面不得根据错误信息泄露账号是否存在。
+- 配置引导凭据只通过登录表单进入请求，不写入 URL、浏览器持久存储、日志或遥测；页面不得加载第三方资源，
+  避免认证数据通过 Referer 或外部脚本泄漏。
+- 登录、认证配置异常和会话过期页面不得根据错误信息泄露账号是否存在。
 - 路由守卫和隐藏按钮只改善体验；服务端授权拒绝始终映射为明确的 `Forbidden` 页面或局部状态。
 
 ### SSE 与补取
@@ -150,14 +150,15 @@ shared     -X-> feature business code
 ```text
 load static shell
   -> fetch bootstrap/session state
-  -> no Owner: setup route
+  -> bootstrap Owner unavailable: configuration-required route
   -> existing session: authorized app shell
   -> no session: login route
   -> fetch current server and task summaries
 ```
 
 应用启动只阻塞建立身份边界所需的最小请求。其他页面数据按路由加载；一个非关键查询失败不得让整个管理面板白屏。
-初始化成功后凭证立即失效并进入 Owner 会话。会话过期时保留可安全恢复的 URL 与草稿，但清除密码、初始化凭证、
+当前过渡阶段不提供浏览器内首个 Owner 初始化。服务端成功同步配置引导 `Owner` 后，用户通过登录页建立会话；同步
+失败时配置提示页不得提供匿名降级或远程用户创建。会话过期时保留可安全恢复的 URL 与草稿，但清除密码、
 Bearer Token 和危险确认状态。
 
 ### 查询与页面导航
@@ -216,7 +217,7 @@ frontend/
 |   |   |   |   |-- i18n/                        # 语言解析、消息目录、回退和格式化边界
 |   |   |   |   `-- styles/                     # 应用级 tokens 和基础样式
 |   |   |   |-- pages/                           # 路由级 Feature 组合
-|   |   |   |   |-- SetupPage.*
+|   |   |   |   |-- ConfigurationRequiredPage.*
 |   |   |   |   |-- LoginPage.*
 |   |   |   |   |-- DashboardPage.*
 |   |   |   |   |-- PlayersPage.*
@@ -332,8 +333,9 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - 构建 base path 由最终 OWIN 挂载位置决定，禁止写死开发主机、端口、绝对磁盘路径或公网域名。
 - JS、CSS 和媒体使用内容哈希并可长期缓存；HTML shell 使用可重新验证或短缓存策略，避免引用已经删除的资源。
 - API 和 SSE 响应不进入 Service Worker 离线缓存。首版不默认启用 PWA 或 Service Worker，防止管理状态过期。
-- 发布检查必须确认入口 HTML、全部引用资源和四个后端产品 DLL 齐全，且不包含源码、测试、开发服务器配置、
-  Marketing 产物、`config.json`、`data/` 或外部 CDN 依赖。
+- 发布检查必须确认入口 HTML、全部引用资源，以及 Bootstrap、Application、Hosting、Web、SevenDays 和
+  Persistence 六个产品 DLL 齐全，且不包含源码、测试、开发服务器配置、Marketing 产物、`config.json`、
+  `data/` 或外部 CDN 依赖。
 - 前端与后端的兼容性至少由产品版本、API 契约测试和同一发布物 smoke 证明；不得只凭两边分别构建成功。
 
 ## 质量属性与验证门槛
@@ -344,7 +346,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - `CAP-02`：玩家查询、危险动作确认、重复提交、`Unknown` 结果、日志 SSE 断线和补取；
 - `CAP-03`：备份状态、恢复确认、关服、浏览器重开、重启后最终结果和回滚失败；
 - `CAP-04`：公告预览、固定触发器编辑、启停、最近执行结果和去重显示；
-- `CAP-05`：初始化、登录、Bearer Token 到期、角色导航、服务端 `Forbidden` 和审计关联；
+- `CAP-05`：引导 `Owner` 登录、认证配置异常、Bearer Token 到期、角色导航、服务端 `Forbidden` 和审计关联；
 - `NFR-01`：断开公网后核心管理能力可用，生产资源不存在第三方运行依赖；
 - `NFR-02`：所有写操作都能区分排队、执行、成功、失败和未知，不以 HTTP 200 替代游戏结果；
 - `NFR-03`：`zh-CN` 与 `en` 的全部 P0 页面和表单通过 E2E，覆盖浏览器语言匹配、默认回退 `en`、登录前后切换、偏好持久化、缺失键、Valibot 内置错误、Nuxt UI 文案、日期数字格式和稳定服务端错误码映射；
@@ -374,7 +376,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩、缓存头和 CSP；
 - REST 分页与查询游标仍待定义；Problem Details、认证 SSE 路由、Welcome/命名事件、`Last-Event-ID`、gap 和补取窗口已有后端契约，但前端类型映射、Header Bearer 生命周期、有界重连和浏览器验证尚未实现；
-- Bearer Token 持久化、刷新与浏览器恢复策略、登录限速反馈和初始化凭证 URL 清除时机；
+- Bearer Token 持久化、刷新与浏览器恢复策略，以及登录限速和认证配置异常反馈；
 - 日志典型速率、浏览器保留窗口、渲染预算和是否需要虚拟列表；
 - 生产包体积预算、最低浏览器范围和自动化可访问性门槛；
 - Nuxt UI standalone Vue 在目标密度、响应式表格和键盘操作上的原型证据；

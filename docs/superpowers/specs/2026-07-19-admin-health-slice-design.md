@@ -1,12 +1,14 @@
 ---
-state: Draft
+state: Current
 document_role: Change Record
-last_updated: "2026-07-19"
+last_updated: "2026-07-21"
 ---
 
 # Admin 健康概览与 OWIN 静态托管设计规格
 
 > 本规格描述一个独立的前端纵向切片，不代表当前功能已经实现。当前产品、界面和架构事实分别以 [PRD](../../PRD.md)、[界面设计](../../design.md) 和 [系统架构](../../architecture.md) 为准；Admin 目标边界见 [Admin 前端目标蓝图](../../architecture/admin-frontend-target-blueprint.md)。
+
+> 后续状态（2026-07-21）：本切片已经完成并作为历史 Change Record 保留。当前实现、发布清单和验证事实以系统架构、测试策略及所属 README 为准；本文不随以后新增的认证、Application 或 Persistence 切片重写。
 
 ## 目标
 

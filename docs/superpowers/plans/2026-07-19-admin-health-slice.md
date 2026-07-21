@@ -1,6 +1,15 @@
+---
+state: Current
+document_role: Implementation Plan
+primary_spec: ../specs/2026-07-19-admin-health-slice-design.md
+last_updated: "2026-07-21"
+---
+
 # Admin 健康概览与 OWIN 静态托管实施计划
 
 > **面向智能体执行者：** 实施时必须使用 `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans`。以下步骤使用复选框跟踪。
+
+> 后续状态（2026-07-21）：本计划已经执行完成并作为历史 Change Record 保留。后续切片已增加 Application 和 Persistence Adapter；当前发布清单以[系统架构](../../architecture.md)和[测试策略](../../test.md)为准。本文中的四个产品 DLL、提交步骤和当时验证命令只描述本切片实施时的任务，不是当前操作授权或发布门禁。
 
 **对应规格：** [Admin 健康概览与 OWIN 静态托管设计规格](../specs/2026-07-19-admin-health-slice-design.md)
 

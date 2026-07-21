@@ -1,6 +1,7 @@
 ---
 state: Current
 document_role: Implementation Plan
+primary_spec: ../specs/2026-07-20-authenticated-server-events-design.md
 last_updated: "2026-07-21"
 ---
 

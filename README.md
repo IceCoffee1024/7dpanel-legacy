@@ -8,13 +8,15 @@ process and provides status, player management, logs, backup and restore,
 announcement automation, and auditing through a web interface.
 
 The repository defines the product, design, and architecture. The backend has
-a buildable and testable `net48` solution with a minimal Mod lifecycle,
-in-process OWIN health endpoint, and Admin static-file hosting. The first
-vertical slice connects `frontend/apps/admin/` to the same-origin health
-endpoint and renders loading, fresh, stale, and offline states. Product
-capabilities beyond this validation slice, authentication, and operational
-features are not implemented. The Marketing application has not been
-initialized.
+a buildable and testable `net48` solution with the Mod lifecycle, in-process
+OWIN hosting, SQLite-backed bootstrap Owner authentication, persistent opaque
+Bearer tokens, authenticated named SSE, and a read-only `version` command that
+runs through the game main thread. The Admin application currently connects
+only to the anonymous same-origin health endpoint and renders loading, fresh,
+stale, and offline states; it does not yet consume login, Bearer, SSE, or the
+console command API. Full user management, state-changing game actions,
+players, backups, announcements, and auditing are not implemented. The
+Marketing application has not been initialized.
 Target documents describe approved direction, not completed features.
 
 ## Repository Layout
