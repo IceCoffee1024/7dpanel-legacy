@@ -11,11 +11,12 @@ The repository defines the product, design, and architecture. The backend has
 a buildable and testable `net48` solution with the Mod lifecycle, in-process
 OWIN hosting, SQLite-backed bootstrap Owner authentication, persistent opaque
 Bearer tokens, authenticated named SSE, and a read-only `version` command that
-runs through the game main thread. The Admin application currently connects
+runs through the game main thread. The backend also exposes an Owner-only
+online-player snapshot query through that typed main-thread boundary. The Admin application currently connects
 only to the anonymous same-origin health endpoint and renders loading, fresh,
 stale, and offline states; it does not yet consume login, Bearer, SSE, or the
 console command API. Full user management, state-changing game actions,
-players, backups, announcements, and auditing are not implemented. The
+player UI/actions, backups, announcements, and auditing are not implemented. The
 Marketing application has not been initialized.
 Target documents describe approved direction, not completed features.
 

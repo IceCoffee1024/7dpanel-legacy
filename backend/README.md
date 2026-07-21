@@ -17,7 +17,10 @@ a consolidated bounded in-process server-event stream, Katana self-hosting,
 configuration-seeded SQLite `Owner`, SQLite-backed Basic authentication,
 persistent opaque Bearer tokens, and the authenticated
 `/api/v1/events/stream`. The authenticated read-only `version` command is the
-first verified main-thread Application slice. User/role management,
+first verified main-thread Application slice. `GET /api/v1/players/online`
+adds an Owner-only snapshot with entity id, name, opaque platform identities,
+ping, level, health, and capture time; it excludes IP, location, ban state,
+combat statistics, and offline history. User/role management,
 state-changing game actions, arbitrary console commands, and other product
 capabilities are not implemented yet.
 

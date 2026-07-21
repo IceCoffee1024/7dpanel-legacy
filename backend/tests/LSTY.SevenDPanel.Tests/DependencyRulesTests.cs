@@ -103,6 +103,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("events.SubscribeGameStartDone", lifecycleSource);
             Assert.Contains("services.AddSingleton(_ => new ConsoleLogService(log));", providerFactorySource);
             Assert.Contains("services.AddScoped<ServerEventSseSession>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SevenDaysOnlinePlayerQuery>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IOnlinePlayerQuery>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<GetOnlinePlayersUseCase>();", providerFactorySource);
             Assert.Contains("ValidateOnBuild = true", providerFactorySource);
             Assert.Contains("ValidateScopes = true", providerFactorySource);
 

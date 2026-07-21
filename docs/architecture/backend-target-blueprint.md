@@ -299,6 +299,8 @@ Bearer Token 对客户端保持不透明，数据库只保存高熵 secret 的�
 
 ### 在线玩家
 
+当前已实现 Owner-only 的只读纵向切片：`GetOnlinePlayersUseCase`、`IOnlinePlayerQuery`、`SevenDaysOnlinePlayerQuery` 和 `PlayersController` 通过独立 single-flight 在游戏主线程复制精简快照。以下 `ViewPlayers` 权限与通用角色授权仍是用户管理落地后的 Target，不是当前实现事实。
+
 ```text
 GET /api/v1/players/online
   -> authentication

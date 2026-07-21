@@ -11,7 +11,9 @@ using System.Web.Http;
 using System.Web.Http.Hosting;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
+using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
@@ -179,6 +181,11 @@ namespace LSTY.SevenDPanel.Tests
             Assert.IsType<SevenDaysRestrictedConsoleGateway>(
                 provider.GetRequiredService<IRestrictedConsoleGateway>());
             Assert.NotNull(provider.GetRequiredService<ExecuteConsoleCommandUseCase>());
+            var onlinePlayerQuery = provider.GetRequiredService<SevenDaysOnlinePlayerQuery>();
+            Assert.Same(
+                onlinePlayerQuery,
+                provider.GetRequiredService<IOnlinePlayerQuery>());
+            Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
 
             try
             {

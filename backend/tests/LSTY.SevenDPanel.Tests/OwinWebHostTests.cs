@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
+using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
@@ -232,6 +233,217 @@ namespace LSTY.SevenDPanel.Tests
                     response,
                     "console_command_busy",
                     "/api/v1/console/commands");
+            }
+        }
+
+        [Fact]
+        public async Task Online_players_requires_authentication()
+        {
+            var query = new TestOnlinePlayerQuery();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, onlinePlayerQuery: query);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreatePlayersRequest(url))
+            {
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "authentication_required",
+                    "/api/v1/players/online");
+                Assert.Equal(0, query.CallCount);
+            }
+        }
+
+        [Fact]
+        public async Task Owner_with_empty_snapshot_returns_200_and_empty_array()
+        {
+            var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
+                new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
+                Array.Empty<PlayerSnapshot>()));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, onlinePlayerQuery: query);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreatePlayersRequest(url))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal(
+                    new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
+                    (DateTimeOffset?)payload["capturedAtUtc"]);
+                Assert.Equal(0, ((JArray?)payload["players"])?.Count ?? 0);
+                Assert.Equal(1, query.CallCount);
+            }
+        }
+
+        [Fact]
+        public async Task Owner_with_multiple_players_returns_camel_case_fields_and_sorted_results()
+        {
+            var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
+                new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
+                new[]
+                {
+                    new PlayerSnapshot(
+                        42,
+                        "Zed",
+                        new PlayerPlatformIdentity("steam-2", "Steam"),
+                        new PlayerPlatformIdentity("cross-2", "Epic"),
+                        100,
+                        20,
+                        90),
+                    new PlayerSnapshot(
+                        7,
+                        "Alice",
+                        new PlayerPlatformIdentity("steam-1", "Steam"),
+                        null,
+                        40,
+                        18,
+                        95)
+                }));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, onlinePlayerQuery: query);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreatePlayersRequest(url))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+                var players = (JArray)payload["players"]!;
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.True(players.All(item => ((JObject)item).Properties().Select(property => property.Name).OrderBy(name => name).SequenceEqual(new[]
+                {
+                    "crossplatformIdentity",
+                    "entityId",
+                    "health",
+                    "level",
+                    "name",
+                    "ping",
+                    "platformIdentity"
+                })), "unexpected player property names");
+                Assert.Equal(
+                    new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
+                    (DateTimeOffset?)payload["capturedAtUtc"]);
+                Assert.Equal(2, players.Count);
+                Assert.Equal(7, (int?)players[0]["entityId"]);
+                Assert.Equal(42, (int?)players[1]["entityId"]);
+                Assert.Equal("Alice", (string?)players[0]["name"]);
+                Assert.Equal("steam-1", (string?)players[0]["platformIdentity"]?["combinedId"]);
+                Assert.Equal("Steam", (string?)players[0]["platformIdentity"]?["platform"]);
+                Assert.Equal("cross-2", (string?)players[1]["crossplatformIdentity"]?["combinedId"]);
+                Assert.Equal("Epic", (string?)players[1]["crossplatformIdentity"]?["platform"]);
+                Assert.Equal(40, (int?)players[0]["ping"]);
+                Assert.Equal(90, (int?)players[1]["health"]);
+            }
+        }
+
+        [Fact]
+        public async Task Game_not_ready_rejects_online_player_query()
+        {
+            var query = new TestOnlinePlayerQuery();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                gameReadiness: GameReadinessState.Loading,
+                onlinePlayerQuery: query);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreatePlayersRequest(url))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "game_not_ready",
+                    "/api/v1/players/online");
+                Assert.Equal(0, query.CallCount);
+            }
+        }
+
+        [Theory]
+        [InlineData(typeof(OnlinePlayerQueryBusyException), "online_player_query_busy")]
+        [InlineData(typeof(TimeoutException), "game_thread_timeout")]
+        [InlineData(typeof(OnlinePlayerSnapshotUnavailableException), "online_player_snapshot_unavailable")]
+        public async Task Online_player_query_errors_return_stable_problem_details(
+            Type exceptionType,
+            string expectedCode)
+        {
+            var query = new TestOnlinePlayerQuery(exceptionType);
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, onlinePlayerQuery: query);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreatePlayersRequest(url))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    expectedCode,
+                    "/api/v1/players/online");
+                Assert.Equal(1, query.CallCount);
             }
         }
 
@@ -878,6 +1090,13 @@ namespace LSTY.SevenDPanel.Tests
             };
         }
 
+        private static HttpRequestMessage CreatePlayersRequest(string url)
+        {
+            return new HttpRequestMessage(
+                HttpMethod.Get,
+                url + "api/v1/players/online");
+        }
+
         private static FormUrlEncodedContent CreateTokenContent(string password) =>
             new FormUrlEncodedContent(new[]
             {
@@ -912,7 +1131,8 @@ namespace LSTY.SevenDPanel.Tests
             ServerEventHub hub,
             bool allowInsecureHttp = true,
             IRestrictedConsoleGateway? consoleGateway = null,
-            GameReadinessState gameReadiness = GameReadinessState.Ready)
+            GameReadinessState gameReadiness = GameReadinessState.Ready,
+            IOnlinePlayerQuery? onlinePlayerQuery = null)
         {
             var services = new ServiceCollection();
             var authentication = enableConsoleLogStream
@@ -933,6 +1153,8 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton(
                 consoleGateway ?? new TestRestrictedConsoleGateway());
             services.AddSingleton<ExecuteConsoleCommandUseCase>();
+            services.AddSingleton<IOnlinePlayerQuery>(onlinePlayerQuery ?? new TestOnlinePlayerQuery());
+            services.AddSingleton<GetOnlinePlayersUseCase>();
             var authenticationStore = new TestPanelAuthenticationStore();
             services.AddSingleton<IPanelCredentialStore>(authenticationStore);
             services.AddSingleton<IPanelAccessTokenStore>(authenticationStore);
@@ -942,6 +1164,38 @@ namespace LSTY.SevenDPanel.Tests
                 ValidateOnBuild = true,
                 ValidateScopes = true
             });
+        }
+
+        private sealed class TestOnlinePlayerQuery : IOnlinePlayerQuery
+        {
+            private readonly OnlinePlayersSnapshot? snapshot;
+            private readonly Exception? failure;
+
+            public TestOnlinePlayerQuery()
+            {
+            }
+
+            public TestOnlinePlayerQuery(OnlinePlayersSnapshot snapshot)
+            {
+                this.snapshot = snapshot;
+            }
+
+            public TestOnlinePlayerQuery(Type exceptionType)
+            {
+                failure = (Exception)Activator.CreateInstance(exceptionType)!;
+            }
+
+            public int CallCount { get; private set; }
+
+            public Task<OnlinePlayersSnapshot> GetOnlineAsync(CancellationToken cancellationToken)
+            {
+                CallCount++;
+                if (failure != null)
+                    return Task.FromException<OnlinePlayersSnapshot>(failure);
+                return Task.FromResult(snapshot ?? new OnlinePlayersSnapshot(
+                    DateTimeOffset.UtcNow,
+                    Array.Empty<PlayerSnapshot>()));
+            }
         }
 
         private sealed class TestRestrictedConsoleGateway : IRestrictedConsoleGateway
