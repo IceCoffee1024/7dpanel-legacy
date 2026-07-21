@@ -1,5 +1,12 @@
 {
   "port": 18080,
   "bindAddress": "0.0.0.0",
-  "scheme": "http"
+  "scheme": "http",
+  "authentication": {
+    "enabled": true,
+    "username": "username",
+    "password": "password",
+    "accessTokenLifetimeMinutes": 30,
+    "allowInsecureHttp": true
+  }
 }

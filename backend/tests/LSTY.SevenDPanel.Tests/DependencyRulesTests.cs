@@ -80,6 +80,12 @@ namespace LSTY.SevenDPanel.Tests
         public void Panel_host_start_is_bound_to_mod_initialization()
         {
             var modMainPath = Path.Combine(SourceRoot, "Bootstrap", "LSTY.SevenDPanel", "ModMain.cs");
+            var providerFactoryPath = Path.Combine(
+                SourceRoot,
+                "Bootstrap",
+                "LSTY.SevenDPanel",
+                "DependencyInjection",
+                "PanelServiceProviderFactory.cs");
             var lifecyclePath = Path.Combine(
                 SourceRoot,
                 "Adapters",
@@ -88,24 +94,88 @@ namespace LSTY.SevenDPanel.Tests
                 "Lifecycle",
                 "SevenDaysGameLifecycleAdapter.cs");
             var modMainSource = File.ReadAllText(modMainPath);
+            var providerFactorySource = File.ReadAllText(providerFactoryPath);
             var lifecycleSource = File.ReadAllText(lifecyclePath);
 
             Assert.Contains("candidateAdapter.RegisterAndStart();", modMainSource);
+            Assert.Contains("PanelServiceProviderFactory.CreateRuntime(", modMainSource);
+            Assert.DoesNotContain("enableUnauthenticatedDevelopmentConsoleLogStream", modMainSource, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("events.SubscribeGameStartDone", lifecycleSource);
+            Assert.Contains("services.AddSingleton(_ => new ConsoleLogService(log));", providerFactorySource);
+            Assert.Contains("services.AddScoped<ServerEventSseSession>();", providerFactorySource);
+            Assert.Contains("ValidateOnBuild = true", providerFactorySource);
+            Assert.Contains("ValidateScopes = true", providerFactorySource);
 
+            var candidateRuntimeIndex = modMainSource.IndexOf("var candidateRuntime = PanelServiceProviderFactory.CreateRuntime(", StringComparison.Ordinal);
+            var candidateAdapterIndex = modMainSource.IndexOf("var candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateRuntime);", StringComparison.Ordinal);
             var registerIndex = modMainSource.IndexOf("candidateAdapter.RegisterAndStart();", StringComparison.Ordinal);
-            var publishHostIndex = modMainSource.IndexOf("host = candidateHost;", StringComparison.Ordinal);
+            var publishRuntimeIndex = modMainSource.IndexOf("runtime = candidateRuntime;", StringComparison.Ordinal);
             var publishAdapterIndex = modMainSource.IndexOf("adapter = candidateAdapter;", StringComparison.Ordinal);
             Assert.True(registerIndex >= 0, "Bootstrap must start the candidate lifecycle adapter.");
-            Assert.True(publishHostIndex > registerIndex, "Bootstrap must publish the host only after lifecycle registration succeeds.");
+            Assert.True(candidateRuntimeIndex >= 0 && candidateAdapterIndex > candidateRuntimeIndex,
+                "Bootstrap must build the validated service provider before lifecycle registration.");
+            Assert.True(publishRuntimeIndex > registerIndex, "Bootstrap must publish the runtime only after lifecycle registration succeeds.");
             Assert.True(publishAdapterIndex > registerIndex, "Bootstrap must publish the adapter only after lifecycle registration succeeds.");
             Assert.Contains("candidateAdapter.Dispose();", modMainSource);
-            Assert.Contains("candidateHost.Dispose();", modMainSource);
+            Assert.Contains("candidateRuntime.Dispose();", modMainSource);
 
             var registeredIndex = lifecycleSource.IndexOf("registered = true;", StringComparison.Ordinal);
             var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);
             Assert.True(registeredIndex >= 0, "Lifecycle adapter must record lifecycle registration.");
             Assert.True(startIndex > registeredIndex, "Lifecycle adapter must register all lifecycle handlers before starting the panel host.");
+        }
+
+        [Fact]
+        public void Microsoft_dependency_injection_packages_follow_composition_boundary()
+        {
+            var projects = Directory
+                .GetFiles(SourceRoot, "*.csproj", SearchOption.AllDirectories)
+                .Select(path => new
+                {
+                    Path = path,
+                    Packages = XDocument.Load(path)
+                        .Descendants("PackageReference")
+                        .Select(element => (string)element.Attribute("Include"))
+                        .Where(include => !string.IsNullOrWhiteSpace(include))
+                        .ToArray()
+                })
+                .ToArray();
+
+            var implementationOwner = Assert.Single(
+                projects,
+                project => project.Packages.Contains("Microsoft.Extensions.DependencyInjection"));
+            Assert.True(IsIn(implementationOwner.Path, "Bootstrap", "LSTY.SevenDPanel"));
+
+            var abstractionsOwner = Assert.Single(
+                projects,
+                project => project.Packages.Contains("Microsoft.Extensions.DependencyInjection.Abstractions"));
+            Assert.True(IsIn(abstractionsOwner.Path, "Adapters", "LSTY.SevenDPanel.Adapters.Web"));
+
+            Assert.DoesNotContain(projects, project =>
+                (IsIn(project.Path, "Runtime") ||
+                 IsIn(project.Path, "Adapters", "LSTY.SevenDPanel.Adapters.SevenDays")) &&
+                project.Packages.Any(package =>
+                    package.StartsWith("Microsoft.Extensions.DependencyInjection", StringComparison.Ordinal)));
+        }
+
+        [Fact]
+        public void Publish_script_enforces_console_log_dependency_boundary()
+        {
+            var publishScript = File.ReadAllText(Path.Combine(
+                RepositoryRoot,
+                "backend",
+                "scripts",
+                "Publish-Mod.ps1"));
+
+            Assert.Contains("'UnityEngine.CoreModule.dll'", publishScript);
+            Assert.Contains("$requiredNames", publishScript);
+            Assert.Contains("'System.Threading.Channels.dll'", publishScript);
+            Assert.Contains("'System.Threading.Tasks.Extensions.dll'", publishScript);
+            Assert.Contains("'Microsoft.Extensions.DependencyInjection.dll'", publishScript);
+            Assert.Contains("'Microsoft.Extensions.DependencyInjection.Abstractions.dll'", publishScript);
+            Assert.Contains("'Microsoft.Bcl.AsyncInterfaces.dll'", publishScript);
+            Assert.Contains("'System.Runtime.CompilerServices.Unsafe.dll'", publishScript);
+            Assert.Contains("Missing required managed dependencies", publishScript);
         }
 
         private static void AssertDirectionDoesNotReference(

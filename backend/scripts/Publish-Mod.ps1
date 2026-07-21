@@ -46,7 +46,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE."
 }
 
-$forbiddenNames = @('Assembly-CSharp.dll', 'Newtonsoft.Json.dll', 'LogLibrary.dll', 'System.Runtime.CompilerServices.Unsafe.dll')
+$forbiddenNames = @(
+    'Assembly-CSharp.dll',
+    'Microsoft.Bcl.AsyncInterfaces.dll',
+    'Newtonsoft.Json.dll',
+    'LogLibrary.dll',
+    'UnityEngine.CoreModule.dll',
+    'System.Runtime.CompilerServices.Unsafe.dll'
+)
 $gameAssemblies = Get-ChildItem -LiteralPath $publishPath -File | Where-Object {
     $_.Name -in $forbiddenNames
 }
@@ -60,6 +67,20 @@ $forbidden = Get-ChildItem -LiteralPath $publishPath -File | Where-Object {
 }
 if ($forbidden) {
     throw "The publish directory contains game-provided assemblies: $($forbidden.Name -join ', ')"
+}
+
+$requiredNames = @(
+    'Microsoft.Extensions.DependencyInjection.dll',
+    'Microsoft.Extensions.DependencyInjection.Abstractions.dll',
+    'Microsoft.Owin.Security.OAuth.dll',
+    'System.Threading.Channels.dll',
+    'System.Threading.Tasks.Extensions.dll'
+)
+$missingRequired = $requiredNames | Where-Object {
+    -not (Test-Path -LiteralPath (Join-Path $publishPath $_) -PathType Leaf)
+}
+if ($missingRequired) {
+    throw "Missing required managed dependencies from publish output: $($missingRequired -join ', ')"
 }
 
 $publishPath = [System.IO.Path]::GetFullPath($publishPath)

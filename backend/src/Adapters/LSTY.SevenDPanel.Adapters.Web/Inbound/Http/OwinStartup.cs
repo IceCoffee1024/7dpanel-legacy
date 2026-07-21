@@ -1,9 +1,17 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Web.Http;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
+using LSTY.SevenDPanel.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
 using Microsoft.Owin.StaticFiles;
+using Microsoft.Owin.Security;
+using Microsoft.Owin.Security.OAuth;
 using Newtonsoft.Json.Serialization;
 using Owin;
 
@@ -11,14 +19,25 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
     public static class OwinStartup
     {
-        public static void Configure(IAppBuilder app)
+        public static void Configure(
+            IAppBuilder app,
+            IServiceProvider serviceProvider,
+            string? assetRoot = null,
+            Action<string>? log = null)
         {
-            ConfigureApi(app);
-        }
+            if (serviceProvider == null)
+                throw new ArgumentNullException(nameof(serviceProvider));
 
-        public static void Configure(IAppBuilder app, string? assetRoot, Action<string>? log = null)
-        {
-            ConfigureApi(app);
+            app.Use<RequestCorrelationMiddleware>();
+            app.Use<ApiProblemDetailsMiddleware>(log);
+            var authentication = serviceProvider
+                .GetRequiredService<PanelHostOptions>()
+                .Authentication;
+            if (authentication.Enabled)
+                app.Use<AuthenticationRateLimitMiddleware>(new AuthenticationAttemptLimiter());
+            app.Use<ScopedServiceProviderMiddleware>(serviceProvider);
+            ConfigureAuthentication(app, authentication);
+            ConfigureApi(app, serviceProvider);
 
             if (string.IsNullOrWhiteSpace(assetRoot) || !Directory.Exists(assetRoot))
             {
@@ -54,9 +73,52 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             });
         }
 
-        private static void ConfigureApi(IAppBuilder app)
+        private static void ConfigureAuthentication(
+            IAppBuilder app,
+            PanelAuthenticationOptions authentication)
+        {
+            if (!authentication.Enabled) return;
+
+            var verifier = new PanelCredentialVerifier(authentication);
+            var accessTokens = new InMemoryAccessTokenProvider();
+            if (app.Properties.TryGetValue("host.OnAppDisposing", out var candidate) &&
+                candidate is CancellationToken appDisposing)
+            {
+                appDisposing.Register(accessTokens.Dispose);
+            }
+
+            app.UseOAuthAuthorizationServer(new OAuthAuthorizationServerOptions
+            {
+                AllowInsecureHttp = authentication.AllowInsecureHttp,
+                TokenEndpointPath = new PathString("/api/v1/auth/token"),
+                AccessTokenExpireTimeSpan = authentication.AccessTokenLifetime,
+                AccessTokenFormat = RejectingAuthenticationTicketFormat.Instance,
+                AccessTokenProvider = accessTokens,
+                AuthorizationCodeFormat = RejectingAuthenticationTicketFormat.Instance,
+                Provider = new PanelOAuthAuthorizationServerProvider(authentication, verifier),
+                RefreshTokenFormat = RejectingAuthenticationTicketFormat.Instance
+            });
+            app.Use<BasicAuthenticationMiddleware>(new BasicAuthenticationOptions(
+                "7DPanel",
+                authentication.AllowInsecureHttp,
+                verifier.Verify));
+            app.UseOAuthBearerAuthentication(new OAuthBearerAuthenticationOptions
+            {
+                AuthenticationMode = AuthenticationMode.Active,
+                AccessTokenFormat = RejectingAuthenticationTicketFormat.Instance,
+                AccessTokenProvider = accessTokens,
+                Realm = "7DPanel"
+            });
+        }
+
+        private static void ConfigureApi(
+            IAppBuilder app,
+            IServiceProvider serviceProvider)
         {
             var config = new HttpConfiguration();
+            config.DependencyResolver = new MicrosoftDependencyResolver(serviceProvider);
+            config.MessageHandlers.Insert(0, new OwinScopeBridgingHandler());
+            config.MessageHandlers.Add(new ApiProblemDetailsHandler());
             config.MapHttpAttributeRoutes();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =

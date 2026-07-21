@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-20"
+last_updated: "2026-07-21"
 ---
 
 # 7DPanel 后端目标架构蓝图
@@ -32,17 +32,18 @@ last_updated: "2026-07-20"
 - Inbound adapters 将 HTTP、7DTD 回调、控制台命令和计划任务转换为应用调用。
 - Outbound adapters 为 7DTD、SQLite、文件、密码学和进程能力实现端口。
 - Bootstrap 是唯一同时了解接口和具体实现的组合根。
-- Hosting 负责进程生命周期协调，但不包含业务规则。
+- Hosting 提供技术中立的运行时命令、状态和 Web Host 生命周期契约；Bootstrap 与具体 adapter 显式组合生产资源。
 - 输入端口接口是可选的；当接口不提供替换价值时，用例类本身可以作为稳定的输入边界。
 - Aggregate Roots、通用 repositories、通用 Event Bus、Mediator 和可编程规则引擎都不是默认选择。
 - 新项目、目录和抽象必须对应真实的职责、依赖、部署、不变量或复用边界。
+- 横向基础设施应与首个非测试运行时消费者在同一个获批纵向切片中出现。只有真实外部边界、跨项目依赖方向、第二个运行时实现或消费者、已经形成的重复，或明确批准的近期消费者才能例外；测试替换本身不是生产抽象的理由。
 
 ### 分层
 
 | 层 | 所有职责 | 可以依赖 | 不得依赖 |
 |---|---|---|---|
 | Bootstrap / Composition | Mod 入口、配置 I/O、对象图、部署内容 | 所有具体构造信息 | 业务规则 |
-| Hosting | 长生命周期组件的启动、排空、停止和释放 | BCL 与 Hosting 契约 | Application、Domain、具体 adapters |
+| Hosting | 技术中立的运行时命令、状态和 Web Host 生命周期 | BCL 与 Hosting 契约 | Application、Domain、具体 adapters |
 | Application | 用例、授权协调、结果、读模型、输出端口 | Domain 与 Application 类型 | OWIN、SQLite、文件、Unity、7DTD 类型 |
 | Domain | 必要的策略、不变量和状态转换 | BCL 与 Domain 类型 | Application、Hosting、adapters |
 | Inbound Adapters | 将协议和回调转换为用例调用 | Application 公共类型和最小 Hosting 契约 | Outbound 实现 |
@@ -110,12 +111,13 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 | 能力或场景 | 目标边界 | 当前方向或候选 | 状态 | 引入或复审触发条件 | 实现前必须验证 |
 |---|---|---|---|---|---|
 | Web API 与 OWIN Self Host | Web Adapter | `Microsoft.AspNet.WebApi.*`、`Microsoft.Owin.*` | 已采用 | 升级 7DTD、Mono、HTTP 管线或当前包基线 | `net48` 与游戏 Mono 进程内加载、路由、关闭释放、程序集冲突和安全公告 |
+| 过渡认证与生产 SSE | Web Adapter / Bootstrap | `Microsoft.Owin.Security.OAuth` + 自有 Basic middleware + 配置身份 | 已采用；待最终身份替换 | 首个 SQLite/Header Bearer 身份切片或认证公开面变化 | 不透明 Token、到期/容量、限流、统一 Problem Details、Header-only Bearer、连接配额、命名事件和真实 Mono 加载；产品不采用 Cookie 认证，当前实现边界见[系统架构](../architecture.md#owinweb-api-与静态资源) |
 | 本地 SQLite 与原生运行时 | Local Adapter / Persistence | `Microsoft.Data.Sqlite`、`SQLitePCLRaw.lib.e_sqlite3` | 已批准 | 首个身份、审计或作业持久化切片 | Windows/Linux x64 原生资产、WAL、并发写入、发布边界和正常关服 |
 | 数据库迁移 | Local Adapter / Persistence | `dbup-core`、`dbup-sqlite` | 已批准 | 首个可演进 SQLite schema | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径 |
 | 有界后台队列 | Local Adapter / Runtime | `System.Threading.Channels` | 已批准 | 首个后台 consumer 或持久作业 | 容量、背压、公平性、异常传播、排空和 Mono 兼容性 |
-| 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection` | 已批准 | 手工对象图无法清晰维护首个完整纵向切片 | 生命周期、释放顺序、反射或动态代码需求、发布体积和关服行为 |
+| 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection 6.0.2`、Abstractions `6.0.0` | 已采用 | 目标游戏 Mono、宿主 Bcl AsyncInterfaces 或对象生命周期边界变化 | Bootstrap 唯一根 Provider、显式注册、`ValidateOnBuild`/`ValidateScopes`、OWIN 单请求 scope、Web API non-owning bridge、先停运行时再释放 Provider、发布体积和关服行为；当前实现证据见[系统架构](../architecture.md#owinweb-api-与静态资源) |
 | Mod 运行日志 | Bootstrap / SevenDays Adapter | 7DTD 提供的 `LogLibrary`（`Log.Out`、`Log.Warning`、`Log.Error`、`Log.Exception`） | 已采用 | 7DTD 日志 API 或目标版本发生变化 | 目标程序集加载、输出行为、异常记录和关服生命周期 |
-| 控制台日志采集 | SevenDays Adapter / ConsoleLogs | `LogLibrary.LogCallbacksExtended` + 7DPanel 有界队列 | 已批准 | 首个控制台日志切片（`CAP-02`） | 回调耗时、顺序、订阅与取消订阅、过载丢弃计数、Mono 兼容性和版本差异 |
+| 控制台日志采集 | SevenDays Adapter / ConsoleLogs | `LogLibrary.LogCallbacksExtended` + `System.Threading.Channels` 有界队列 | 已采用 | 7DTD 日志 API、游戏版本或当前容量基线变化 | 回调耗时、顺序、订阅与取消订阅、过载丢弃计数、Mono 兼容性和版本差异；当前实现证据见[系统架构](../architecture.md#7dtd-控制台日志采集边界) |
 | 密码摘要 | Local Adapter / Identity | BCL PBKDF2-HMAC-SHA256 | 已批准 | 首个 Owner 身份切片 | 游戏 Mono 支持的 API、参数版本化、随机盐、耗时上限和升级策略 |
 | 备份压缩与校验 | Local Adapter / Backups | 优先使用 BCL；第三方库待证据驱动选择 | 预留 | BCL 无法满足流式处理、格式、性能或恢复兼容要求 | 内存峰值、大文件、损坏检测、路径穿越、许可证、维护状态和跨平台行为 |
 | 定时任务 | Local Adapter / Scheduling | 内部 hosted scheduler，不引入通用调度框架 | 默认不采用 | 出现持久日历、时区、错过触发补偿或分布式调度等真实需求 | 与持久作业状态的职责边界、关服排空、恢复语义和依赖成本 |
@@ -146,9 +148,9 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
   -> ModMain.InitMod
   -> load configuration and build the object graph
   -> register shutdown lifecycle handlers
-  -> ModHost.Start
-       -> start panel-owned infrastructure
-       -> start OWIN
+  -> ConsoleLogRuntime.Start
+       -> ConsoleLogService.Start
+       -> ModHost.Start -> start OWIN
        -> health reports panel HTTP liveness
 
 GameStartDone
@@ -158,14 +160,12 @@ GameStartDone
 
 WorldShuttingDown / GameShutdown
   -> Lifecycle Adapter
-  -> ModHost.Stop, idempotently
-       -> reject new work
-       -> stop hosted components in reverse order
-       -> drain within deadlines
-       -> dispose OWIN and remaining resources
+  -> ConsoleLogRuntime.Stop, idempotently
+       -> unsubscribe and drain ConsoleLogService
+       -> ModHost.Stop -> dispose OWIN
 ```
 
-`ModHost` 接收命令型生命周期契约。它不负责构造连接、调度器、store、计划器或重试策略。面板 HTTP 存活与游戏运行时就绪是两个独立状态：`InitMod` 可以提供静态页面和不依赖游戏对象的 API，依赖 Unity/7DTD 活对象的组件和用例只能在 `GameStartDone` 后进入可用状态；此前对应 API 返回 `503` 和稳定错误码。
+`IModRuntime` 是命令型生命周期契约。当前由薄的 `ConsoleLogRuntime` 显式组合日志服务与 `ModHost`，不建立通用组件注册表。未来出现数据库、后台 consumer 或 scheduler 时，先在组合根中明确所有权和停止顺序；只有重复协调已经形成可证明成本时才提取通用生命周期。面板 HTTP 存活与游戏运行时就绪是两个独立状态：`InitMod` 可以提供静态页面和不依赖游戏对象的 API，依赖 Unity/7DTD 活对象的组件和用例只能在 `GameStartDone` 后进入可用状态；此前对应 API 返回 `503` 和稳定错误码。
 
 ### 请求与游戏动作链路
 
@@ -199,6 +199,18 @@ Background worker
 
 HTTP 和后台 worker 不得直接访问活动的游戏对象。游戏线程不得执行数据库查询、压缩、网络等待或无界文件复制。
 
+控制台日志使用独立的尽力而为通道，不进入通用后台工作 dispatcher：
+
+```text
+Log.LogCallbacksExtended
+  -> immutable ConsoleLogEntry
+  -> bounded Channel.TryWrite
+  -> one tracked consumer
+  -> bounded current-process live window
+```
+
+日志回调只复制游戏提供的字段并尝试非阻塞入队。它不得执行文件、SQLite、网络或同步事件广播，也不得为每条日志创建 `Task.Run`。队满时允许拒绝普通日志，但必须准确计数；consumer 就绪后才能订阅，关闭时先注销生产者，再完成写入侧并限时排空。详细设计见[控制台日志服务设计规格](../superpowers/specs/2026-07-20-console-log-pipeline-design.md)。
+
 ### 后台工作
 
 ```text
@@ -223,9 +235,9 @@ Game Event / Scheduler / Use Case
 
 - SQLite 初始化并验证 WAL 模式，并为每个连接应用经过测试的 `busy_timeout`。
 - 低频原子操作使用短事务，由能力专属的 store adapter 隐藏事务细节。
-- 高频审计和日志写入使用有界串行协调器，并分为不可丢弃和尽力而为两条通道。
+- 高频审计写入使用独立的有界串行协调器，不得与可丢弃的控制台日志共享容量。
 - 高风险游戏动作只有在审计意图得到持久确认后，才能进入主线程队列。
-- 尽力而为的日志在过载时可以被拒绝，但必须记录丢弃数量，日志流量不得饿死审计。
+- 原始控制台日志不复制到 SQLite。7DTD 每次进程启动生成的日志文件承担原始持久证据；7DPanel 只维护当前进程的有界内存窗口。日志过载可以被拒绝，但必须记录丢弃数量，且不得饿死审计。
 - SQLite、待恢复文件、归档和游戏动作不属于同一个事务。跨边界流程使用持久状态、幂等步骤和补偿。
 - Application 永远不会接收数据库连接、事务对象或 ambient database context。
 
@@ -249,10 +261,12 @@ POST /api/v1/setup
        -> atomically consume setup state
        -> create first Owner
        -> create first session
-  -> return the one-time plaintext session token in a secure cookie
+  -> return the one-time plaintext opaque Bearer token in the response body
 ```
 
 并发初始化请求最多只有一个成功。认证 middleware 将会话映射为操作者；每个用例仍然必须执行权限检查。
+
+当前系统为先建立生产 SSE 的认证、错误和限流边界，暂时从服主 `config.json` 读取配置凭据，并按 `NFR-04` 在框架搭建阶段提供已知默认值 `username` / `password` 和明文 HTTP 例外，再通过 Basic 或 password grant 映射为临时 `Owner`。该身份没有 SQLite 用户、密码摘要、持久 Token、refresh token 或用户管理能力；实现本节首个 Owner 链路时，必须整体替换配置凭据、已知默认值和进程内 Token，迁移到 SQLite 身份与 `Authorization` Header Bearer，而不是并存两套长期身份来源。产品不采用 Cookie 认证；Token 持久化、刷新和浏览器恢复策略由该身份切片设计。替换后恢复加密传输要求，并保持稳定的 401/403 Problem Details、角色 claims 和受保护 Controller 边界，具体当前事实见[系统架构](../architecture.md#本地配置与状态)。
 
 ### 在线玩家
 
@@ -273,7 +287,7 @@ GET /api/v1/players/online
 
 ```text
 POST /api/v1/players/{id}/kick
-  -> authentication and CSRF
+  -> Header authentication and authorization
   -> KickPlayerUseCase
   -> authorize and validate confirmation
   -> persist audit intent
@@ -346,7 +360,9 @@ Next Mod initialization, before world load
 
 ### 日志、审计与关服
 
-控制台日志和审计搜索返回基于游标分页的读模型。Controllers 不拼接 SQL，也不暴露内部路径和异常堆栈。
+控制台日志查询只读取当前进程的有界内存窗口，使用进程内单调 sequence 排序和补取；服务端重启后窗口与 sequence 重新开始。7DTD 日志文件继续承担跨重启原始证据，本目标不要求把日志正文复制进 SQLite。审计搜索仍读取持久化、不可静默丢弃的游标分页读模型。Controllers 不拼接 SQL，也不暴露内部路径和异常堆栈。
+
+当前实现已把旧开发日志流收敛为认证的 `GET /api/v1/events/stream`：受限 `ServerEventHub` 为每个客户端建立独立有界 mailbox，`console-log`、`game-ready` 和 `server-stopping` 共享当前进程 sequence，连接先发送 Welcome，建流前错误使用稳定 Problem Details。它仍不是通用领域 Event Bus，也没有持久日志查询或跨进程游标。目标日志页面继续使用 gap 和窗口补取，慢客户端不能阻塞主 consumer；最终 SQLite/Header Bearer 身份替换临时配置身份时应保持该流契约，并重新验证连接审计、Token 撤销和角色权限。
 
 ```text
 WorldShuttingDown / GameShutdown
@@ -376,17 +392,17 @@ backend/
 |   |   |-- Configuration/
 |   |   |   |-- PanelHostConfig.cs               # 序列化配置契约
 |   |   |   `-- PanelHostConfigurationLoader.cs # 配置 I/O 和选项映射
-|   |   |-- Composition/
-|   |   |   `-- PanelCompositionRoot.cs          # 唯一具体对象图
+|   |   |-- DependencyInjection/
+|   |   |   |-- PanelServiceProviderFactory.cs  # 唯一根 Provider 组合根
+|   |   |   `-- ServiceProviderRuntime.cs       # 运行时停止后释放根 Provider
 |   |   `-- Properties/PublishProfiles/
 |   |       `-- FolderProfile.pubxml             # Mod 目录发布
 |   |
 |   |-- Runtime/LSTY.SevenDPanel.Hosting/
 |   |   |-- LSTY.SevenDPanel.Hosting.csproj      # 技术中立的生命周期库
-|   |   |-- ModHost.cs                           # 有序启动、排空、反向停止
+|   |   |-- ModHost.cs                           # OWIN Host 生命周期与状态
 |   |   |-- ModHostState.cs                      # 从 Created 到 Faulted 的状态
 |   |   |-- IModRuntime.cs                       # 生命周期 adapter 命令契约
-|   |   |-- IHostedComponent.cs                  # 长生命周期组件契约
 |   |   |-- IPanelWebHost.cs                     # Web 宿主生命周期契约
 |   |   |-- RuntimeHealth.cs                     # 对外可见的运行时健康状态
 |   |   |-- PanelHostOptions.cs                  # 已验证的不可变监听选项
@@ -499,12 +515,16 @@ backend/
 |   |   |-- Inbound/Http/
 |   |   |   |-- OwinStartup.cs                   # OWIN 入站管线
 |   |   |   |-- HealthController.cs              # 运行时健康端点
-|   |   |   |-- PanelDependencyResolver.cs       # 用例到 controllers 的解析
+|   |   |   |-- ServerEventsController.cs        # 认证命名 SSE 入口
+|   |   |   |-- ServerEventSseSession.cs         # 每请求订阅与 SSE 写出
 |   |   |   |-- ApiResultMapper.cs               # 结果到 HTTP 的映射
+|   |   |   |-- DependencyInjection/
+|   |   |   |   |-- MicrosoftDependencyResolver.cs # Web API root/fallback scope
+|   |   |   |   |-- ScopedServiceProviderMiddleware.cs # OWIN 请求 scope 所有者
+|   |   |   |   `-- OwinScopeBridgingHandler.cs # Web API non-owning bridge
 |   |   |   |-- Middleware/
 |   |   |   |   |-- CorrelationMiddleware.cs    # 请求和审计 id
 |   |   |   |   |-- SessionAuthenticationMiddleware.cs
-|   |   |   |   |-- CsrfProtectionMiddleware.cs
 |   |   |   |   |-- DrainingGateMiddleware.cs
 |   |   |   |   `-- ExceptionMappingMiddleware.cs
 |   |   |   |-- Identity/
@@ -542,6 +562,13 @@ backend/
 |   |   |   |-- Lifecycle/SevenDaysGameLifecycleAdapter.cs
 |   |   |   |-- ConsoleCommands/SevenDaysConsoleCommandAdapter.cs
 |   |   |   `-- Events/SevenDaysGameEventAdapter.cs
+|   |   |-- Runtime/ConsoleLogs/
+|   |   |   |-- ConsoleLogService.cs             # 服务及与 ModHost 的生命周期组合
+|   |   |   |-- ConsoleLogEntry.cs
+|   |   |   |-- ConsoleLogType.cs
+|   |   |   |-- ServerEventLiveWindow.cs
+|   |   |   |-- ServerEventWindowReadResult.cs
+|   |   |   `-- ServerEventHub.cs                # 生产事件流的每客户端有界 mailbox
 |   |   `-- Outbound/
 |   |       |-- Console/SevenDaysLocalConsole.cs
 |   |       |-- ServerStatus/SevenDaysServerStatusQuery.cs
@@ -612,6 +639,8 @@ backend/
 
 - 用于在线玩家快照和类型化玩家动作的稳定 `v3.0.1-b4` API；
 - `ThreadManager.AddSingleTaskMainThread` 的取消、异常和关服行为；
+- 控制台日志真实容量饱和与 Linux Unity Mono 行为；Windows `v3.0.1-b4` 的 `Log.LogCallbacksExtended`、`System.Threading.Channels`、正常负载和关服排空已有当前证据；
+- SQLite 身份下不透明 Bearer Token 的持久化、到期、撤销、刷新和浏览器恢复策略；产品不采用 Cookie 认证；
 - 世界保存完成信号和归档一致性窗口；
 - 在目标世界文件打开前执行待恢复操作；
 - Linux x64 上的 SQLite 原生资源和完整依赖矩阵。

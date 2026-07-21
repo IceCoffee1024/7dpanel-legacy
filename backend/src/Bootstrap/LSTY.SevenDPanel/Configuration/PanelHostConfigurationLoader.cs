@@ -48,7 +48,12 @@ namespace LSTY.SevenDPanel.Configuration
                     throw new InvalidDataException("The configuration document is empty.");
                 }
 
-                return PanelHostOptions.FromBinding(config.Port, config.BindAddress, config.Scheme);
+                var authentication = CreateAuthenticationOptions(config.Authentication, log);
+                return PanelHostOptions.FromBinding(
+                    config.Port,
+                    config.BindAddress,
+                    config.Scheme,
+                    authentication);
             }
             catch (Exception ex)
             {
@@ -63,6 +68,27 @@ namespace LSTY.SevenDPanel.Configuration
                 PanelHostOptions.DefaultPort,
                 PanelHostOptions.DefaultBindAddress,
                 PanelHostOptions.DefaultScheme);
+        }
+
+        private static PanelAuthenticationOptions CreateAuthenticationOptions(
+            PanelAuthenticationConfig? config,
+            Action<string>? log)
+        {
+            config ??= PanelAuthenticationConfig.CreateDefault();
+            try
+            {
+                return PanelAuthenticationOptions.FromBinding(
+                    config.Enabled,
+                    config.Username,
+                    config.Password,
+                    config.AccessTokenLifetimeMinutes,
+                    config.AllowInsecureHttp);
+            }
+            catch (InvalidDataException ex)
+            {
+                log?.Invoke("Invalid 7DPanel authentication configuration; authentication disabled: " + ex.Message);
+                return PanelAuthenticationOptions.Disabled;
+            }
         }
     }
 }

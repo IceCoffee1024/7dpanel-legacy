@@ -5,6 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.2" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
     <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.SevenDays\LSTY.SevenDPanel.Adapters.SevenDays.csproj" />
@@ -35,6 +38,12 @@
     <Error
       Condition="!Exists('$(SevenDaysManagedDirectory)\LogLibrary.dll')"
       Text="7DTD LogLibrary.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\Microsoft.Bcl.AsyncInterfaces.dll')"
+      Text="7DTD Microsoft.Bcl.AsyncInterfaces.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\System.Runtime.CompilerServices.Unsafe.dll')"
+      Text="7DTD System.Runtime.CompilerServices.Unsafe.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
   </Target>
 
   <ItemGroup>

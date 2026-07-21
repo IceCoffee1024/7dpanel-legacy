@@ -14,6 +14,9 @@ namespace LSTY.SevenDPanel.Tests
         {
             var options = new PanelHostOptions("http://127.0.0.1:18080");
             Assert.Equal("http://127.0.0.1:18080/", options.Url);
+            Assert.False(options.Authentication.Enabled);
+            Assert.Equal(string.Empty, options.Authentication.Username);
+            Assert.Equal(string.Empty, options.Authentication.Password);
         }
 
         [Theory]
@@ -37,6 +40,11 @@ namespace LSTY.SevenDPanel.Tests
                 var options = PanelHostConfigurationLoader.FromConfigFile(path);
 
                 Assert.Equal("http://*:18080/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.Equal("username", options.Authentication.Username);
+                Assert.Equal("password", options.Authentication.Password);
+                Assert.Equal(TimeSpan.FromMinutes(30), options.Authentication.AccessTokenLifetime);
+                Assert.True(options.Authentication.AllowInsecureHttp);
                 Assert.True(File.Exists(path));
             }
             finally
@@ -46,14 +54,63 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public void Config_file_can_define_port_bind_address_and_scheme()
+        public void Config_file_can_define_host_and_authentication()
         {
             var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
-            File.WriteAllText(path, "{\"Port\":19090,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"}");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19090,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{" +
+                "\"Enabled\":true,\"Username\":\" admin \",\"Password\":\"pass:word\"," +
+                "\"AccessTokenLifetimeMinutes\":45,\"AllowInsecureHttp\":true}}");
 
             try
             {
-                Assert.Equal("http://127.0.0.1:19090/", PanelHostConfigurationLoader.FromConfigFile(path).Url);
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+                Assert.Equal("http://127.0.0.1:19090/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.Equal("admin", options.Authentication.Username);
+                Assert.Equal("pass:word", options.Authentication.Password);
+                Assert.Equal(TimeSpan.FromMinutes(45), options.Authentication.AccessTokenLifetime);
+                Assert.True(options.Authentication.AllowInsecureHttp);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Theory]
+        [InlineData("", "password", 30)]
+        [InlineData("admin", "", 30)]
+        [InlineData("admin", "password", 4)]
+        [InlineData("admin", "password", 1441)]
+        public void Invalid_authentication_is_disabled_without_replacing_host_binding(
+            string username,
+            string password,
+            int lifetimeMinutes)
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19091,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{" +
+                "\"Enabled\":true,\"Username\":" + JsonConvert.SerializeObject(username) + "," +
+                "\"Password\":" + JsonConvert.SerializeObject(password) + "," +
+                "\"AccessTokenLifetimeMinutes\":" + lifetimeMinutes + ",\"AllowInsecureHttp\":true}}");
+            string? message = null;
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path, value => message = value);
+
+                Assert.Equal("http://127.0.0.1:19091/", options.Url);
+                Assert.False(options.Authentication.Enabled);
+                Assert.Equal(string.Empty, options.Authentication.Username);
+                Assert.Equal(string.Empty, options.Authentication.Password);
+                Assert.Contains("authentication", message, StringComparison.OrdinalIgnoreCase);
+                if (username.Length > 0) Assert.DoesNotContain(username, message ?? string.Empty);
+                if (password.Length > 0) Assert.DoesNotContain(password, message ?? string.Empty);
             }
             finally
             {
@@ -72,6 +129,15 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(defaults.Port, example.Port);
             Assert.Equal(defaults.BindAddress, example.BindAddress);
             Assert.Equal(defaults.Scheme, example.Scheme);
+            Assert.NotNull(example.Authentication);
+            Assert.NotNull(defaults.Authentication);
+            Assert.Equal(defaults.Authentication.Enabled, example.Authentication.Enabled);
+            Assert.Equal(defaults.Authentication.Username, example.Authentication.Username);
+            Assert.Equal(defaults.Authentication.Password, example.Authentication.Password);
+            Assert.Equal(
+                defaults.Authentication.AccessTokenLifetimeMinutes,
+                example.Authentication.AccessTokenLifetimeMinutes);
+            Assert.Equal(defaults.Authentication.AllowInsecureHttp, example.Authentication.AllowInsecureHttp);
         }
     }
 }

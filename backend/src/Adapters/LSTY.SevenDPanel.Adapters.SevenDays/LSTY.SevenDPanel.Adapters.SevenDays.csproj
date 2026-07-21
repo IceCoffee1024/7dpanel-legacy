@@ -6,8 +6,18 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
+    <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
     <Reference Include="Assembly-CSharp">
       <HintPath>$(SevenDaysManagedDirectory)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="LogLibrary">
+      <HintPath>$(SevenDaysManagedDirectory)\LogLibrary.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(SevenDaysManagedDirectory)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
@@ -16,5 +26,11 @@
     <Error
       Condition="!Exists('$(SevenDaysManagedDirectory)\Assembly-CSharp.dll')"
       Text="7DTD Assembly-CSharp.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\LogLibrary.dll')"
+      Text="7DTD LogLibrary.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error
+      Condition="!Exists('$(SevenDaysManagedDirectory)\UnityEngine.CoreModule.dll')"
+      Text="7DTD UnityEngine.CoreModule.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
   </Target>
 </Project>

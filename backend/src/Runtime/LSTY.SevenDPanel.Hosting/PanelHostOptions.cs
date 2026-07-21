@@ -10,11 +10,15 @@ namespace LSTY.SevenDPanel.Hosting
         public const string DefaultBindAddress = "0.0.0.0";
         public const string DefaultScheme = "http";
 
-        public PanelHostOptions(string url) : this(url, false)
+        public PanelHostOptions(string url)
+            : this(url, false, PanelAuthenticationOptions.Disabled)
         {
         }
 
-        private PanelHostOptions(string url, bool allowWildcardHost)
+        private PanelHostOptions(
+            string url,
+            bool allowWildcardHost,
+            PanelAuthenticationOptions authentication)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -26,6 +30,7 @@ namespace LSTY.SevenDPanel.Hosting
                  url.StartsWith("https://*:", StringComparison.OrdinalIgnoreCase)))
             {
                 Url = url.EndsWith("/", StringComparison.Ordinal) ? url : url + "/";
+                Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
                 return;
             }
 
@@ -38,11 +43,17 @@ namespace LSTY.SevenDPanel.Hosting
             Url = parsed.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
                 ? parsed.AbsoluteUri
                 : parsed.AbsoluteUri + "/";
+            Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
         }
 
         public string Url { get; }
+        public PanelAuthenticationOptions Authentication { get; }
 
-        public static PanelHostOptions FromBinding(int port, string? bindAddress, string? scheme)
+        public static PanelHostOptions FromBinding(
+            int port,
+            string? bindAddress,
+            string? scheme,
+            PanelAuthenticationOptions? authentication = null)
         {
             if (port < 1 || port > 65535)
             {
@@ -61,7 +72,8 @@ namespace LSTY.SevenDPanel.Hosting
             var listenerHost = normalizedAddress == "0.0.0.0" ? "*" : normalizedAddress;
             return new PanelHostOptions(
                 normalizedScheme + "://" + listenerHost + ":" + port + "/",
-                listenerHost == "*");
+                listenerHost == "*",
+                authentication ?? PanelAuthenticationOptions.Disabled);
         }
     }
 }

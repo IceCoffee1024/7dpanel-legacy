@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-20"
+last_updated: "2026-07-21"
 document_role: Target
 ---
 
@@ -14,7 +14,7 @@ document_role: Target
 
 本蓝图为 Admin 管理面板定义应用边界、运行链路、状态所有权、API 与安全约束、目标目录、
 依赖候选和发布责任。已导入的模板基线和当前代码不能替代目标契约，也不能作为未验证运行链路的实现证据。
-它覆盖 `CAP-01` 至 `CAP-05`、`NFR-01`、`NFR-02` 和 `NFR-03` 的前端实现边界，
+它覆盖 `CAP-01` 至 `CAP-05`、`NFR-01` 至 `NFR-04` 的前端实现边界，
 但不重新定义产品行为或界面设计。
 
 只有相应目录、构建、测试和真实 OWIN 部署证据存在后，才把稳定结论提升到[系统架构](../architecture.md)。
@@ -39,7 +39,7 @@ Admin、Marketing 和未来 Player Portal 可以采用不同框架、发布方�
 Browser
   -> same-origin Admin SPA
        -> REST /api/v1
-       -> SSE  /api/v1/stream
+       -> SSE  /api/v1/events/stream
   -> OWIN static-file hosting and SPA fallback
   -> Web API / Application
 ```
@@ -87,7 +87,7 @@ shared     -X-> feature business code
 | 服务器、玩家、备份、任务和审计 | 后端 | 查询、缓存、显示采样时间、按契约失效 | 把缓存值改写为新的权威事实 |
 | 搜索、筛选、排序、分页和时间范围 | URL | 可分享、可返回、刷新后恢复 | 只藏在组件内导致导航丢失 |
 | 当前操作者、角色和权限 | 后端会话 | 启动时恢复、控制导航和交互、处理过期 | 仅依据本地角色决定授权 |
-| 表单草稿、对话框和展开状态 | 所属 Feature | 在安全范围内保留和清理 | 将密码、初始化凭证或 CSRF Token 持久化 |
+| 表单草稿、对话框和展开状态 | 所属 Feature | 在安全范围内保留和清理 | 将密码、初始化凭证或 Bearer Token 持久化 |
 | 当前界面语言 | `app/i18n` | 解析浏览器语言、不支持时回退 `en`、在 `zh-CN`/`en` 间切换并持久化非敏感偏好 | 由 Feature 各自保存语言或把语言偏好写入服务端业务状态 |
 | 长任务显示状态 | 后端作业与审计 | 跨页面、刷新和重连后恢复 | 只依赖内存 Toast 或单次 HTTP 响应 |
 | 日志流游标和连接状态 | 日志 Feature | 维护最后游标、暂停、补取和缺口 | 把断线期间数据假装为连续实时流 |
@@ -117,17 +117,16 @@ shared     -X-> feature business code
 
 ### API Client
 
-- 所有 HTTP 调用经过一个薄的同源 API Client，统一处理 base path、`credentials`、取消、超时、关联标识和错误映射。
+- 所有 HTTP 调用经过一个薄的同源 API Client，统一处理 base path、`Authorization` Header、取消、超时、关联标识和错误映射。
 - Feature 定义自己的请求、响应和页面模型；Controllers 的内部异常、数据库字段和文件路径不得泄漏到浏览器。
 - 后端提供稳定、可重复获取的 OpenAPI 契约后，优先评估使用 `@hey-api/openapi-ts` 从本地契约生成传输类型和客户端；生成代码必须隔离，不能成为 Feature 组织方式，也不能要求连接 Hey API 云服务。
 - 错误结果至少保留稳定错误码、Correlation ID、适用时的 Audit ID 和可否安全重试；前端根据稳定错误码生成当前语言的用户消息，不翻译或直接展示任意服务端异常文本。
 - 查询使用 `AbortController` 或框架等效能力取消已经失去消费者的请求。
 
-### 会话与 CSRF
+### Header 认证与 Token 生命周期
 
-- 会话使用服务端保存的随机不透明标识和 `HttpOnly` Cookie；前端不得读取或复制会话 Token。
-- 状态变更请求携带后端签发的 CSRF Token。Token 只保留在当前应用生命周期所需范围，不写入
-  `localStorage`、URL、日志或错误报告。
+- 产品不采用 Cookie 认证。Admin 只通过 `Authorization` Header 发送 Basic 或 Bearer 身份，不把 Token 放入 URL，也不设计 CSRF Token；如果未来引入浏览器自动附带的认证机制，必须重新评估 CSRF 边界。
+- 当前和目标 Bearer 客户端都只在应用内存中保存访问 Token，不写入 `localStorage`、`sessionStorage`、URL、日志或错误报告。页面刷新后默认重新认证；未来 SQLite 身份切片如需 Token 持久化、刷新或浏览器恢复，必须先形成独立设计和撤销边界。
 - 初始化链接中的一次性凭证读取后立即通过 History API 从地址栏和历史记录中移除；页面不得加载第三方资源，
   避免凭证通过 Referer 或遥测泄漏。
 - 登录、初始化和会话过期页面不得根据错误信息泄露账号是否存在。
@@ -135,7 +134,9 @@ shared     -X-> feature business code
 
 ### SSE 与补取
 
-- 首版优先使用浏览器原生 `EventSource` 和同源 Cookie，不为了封装 SSE 默认增加 npm 依赖。
+- 当前后端过渡阶段只接受 `Authorization` Header 中的 Basic/Bearer，不接受 URL Token；因此首个 Admin SSE 切片必须使用能设置 Header、读取 401/403/429/503、主动取消并限制重连的 Fetch 型客户端，不能用原生 `EventSource` 或 QueryString Token 绕过安全边界。
+- SQLite 身份落地后仍使用 Header Bearer，因此 SSE 保持 Fetch 型实现；原生 `EventSource` 不能设置 `Authorization` Header，不进入目标方案。
+- 每次连接先消费不推进游标的 `welcome`，再处理 replay/live；当前命名事件为 `console-log`、`game-ready` 和 `server-stopping`，`gap` 表示窗口或慢客户端缺口。
 - 每条事件包含可排序游标、事件类型和服务器时间；前端按游标去重，不使用到达时间伪造顺序。
 - 断线后保留当前日志和最后接收时间，使用最后游标重连或调用 REST 补取。
 - 服务端无法补齐保留窗口外记录时，页面插入明确缺口，不把两段日志拼成连续事实。
@@ -157,7 +158,7 @@ load static shell
 
 应用启动只阻塞建立身份边界所需的最小请求。其他页面数据按路由加载；一个非关键查询失败不得让整个管理面板白屏。
 初始化成功后凭证立即失效并进入 Owner 会话。会话过期时保留可安全恢复的 URL 与草稿，但清除密码、初始化凭证、
-CSRF Token 和危险确认状态。
+Bearer Token 和危险确认状态。
 
 ### 查询与页面导航
 
@@ -271,12 +272,12 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | UI 组件 | `@nuxt/ui` standalone Vue 模式、Tailwind CSS | Admin 目标采用 | 当前官方文档支持通过 Vite 插件用于独立 Vue，应用壳已验证 Dashboard 组件 | 高密度运维表格、主题约束、Tailwind 成本、包体积和键盘行为 |
 | 图标与离线资源 | Nuxt UI `UIcon`、本地 `@iconify-json/lucide`（`devDependency`）和 `@nuxt/ui/vite` 的 `icon.clientBundle` | Admin 目标采用；当前基线已验证 | 核心界面图标必须随静态产物离线可用；当前静态 `i-lucide-*` 用法已通过生产构建和 Chrome DevTools MCP 验证，最终 DOM 使用内联 Lucide SVG，页面运行时只请求同源静态资源且不请求 Iconify API。当前使用 `scan: true` 从已安装集合按源码用法打包，动态名称无法可靠扫描时改用显式 `icons` 清单。Nuxt UI Vite 集成已提供组件与自动导入能力，不直接安装 `unplugin-auto-import` 或 `unplugin-vue-components`。`unplugin-icons` 当前不采用；只有出现必须通过 `~icons/*` 将自定义 SVG 或图标作为 Vue 组件直接导入，且 `UIcon` 无法清晰满足的真实需求时才重新评估 | 动态图标名称的显式清单、新增集合的直接依赖、浏览器包体积和可重复的离线回归门禁 |
 | 数据表格 | 基础表格使用 Nuxt UI Table；应用直接导入分页、排序等 TanStack API 时添加 `@tanstack/vue-table` | 条件候选 | `@nuxt/ui` 已提供基础表格能力；传递依赖不构成应用可直接使用的 API 契约，不默认声明 `@tanstack/table-core` | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
-| API 契约代码生成 | `@hey-api/openapi-ts`（`devDependency`）；生成代码直接导入的运行时客户端包按实际用途声明 | 优先候选 | 仅在后端提供稳定、可重复获取的本地 OpenAPI 契约后采用；生成类型、SDK 和客户端必须输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务，并由可重复脚本和 CI 检查契约或生成结果漂移 | Web API 2 契约生成与 OpenAPI 版本、稳定错误码和分页模型、Fetch 的同源 Cookie/CSRF/取消/超时、插件与锁定工具链兼容性、确定性输出、生成代码审查边界及运行时导入 |
+| API 契约代码生成 | `@hey-api/openapi-ts`（`devDependency`）；生成代码直接导入的运行时客户端包按实际用途声明 | 优先候选 | 仅在后端提供稳定、可重复获取的本地 OpenAPI 契约后采用；生成类型、SDK 和客户端必须输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务，并由可重复脚本和 CI 检查契约或生成结果漂移 | Web API 2 契约生成与 OpenAPI 版本、稳定错误码和分页模型、Fetch 的 Header Bearer/取消/超时、插件与锁定工具链兼容性、确定性输出、生成代码审查边界及运行时导入 |
 | 服务端状态 | 薄 API Client；出现真实查询缓存复杂度后评估 `@pinia/colada` | 条件候选 | Pinia Colada 只管理服务器权威数据的查询、去重、缓存、失效和 Mutation；采用后必须先注册 `pinia`，普通 Pinia Store 仍只管理客户端自有状态，不复制查询缓存。SSE 只更新对应查询或触发精确失效 | 至少两个真实查询消费者、缓存键和新鲜度、取消与去重、重试上限、会话过期、`Offline`/`Unknown`、乐观更新与回滚、SSE 补取和失效、DevTools、包体积，以及缺少 `networkMode` 和 `structuralSharing` 对目标流程的影响 |
 | 客户端全局状态 | 优先使用 Feature 局部 composable、provide/inject 或 URL；确有跨路由共享状态时评估 `pinia` | 条件候选 | 只管理客户端自有且有明确生命周期的共享状态，优先使用类型化 Setup Store；不得复制服务器权威数据、替代查询缓存或默认持久化整个 Store | 状态所有者和至少两个真实消费者、Store 边界、会话过期重置、持久化白名单、敏感数据、DevTools、HMR、测试隔离和包体积 |
 | 进程内瞬时事件 | 优先使用 props/emits、显式 Feature API、路由状态和查询失效；确有解耦需求时评估 `mitt` | 条件候选 | 只传递无持久状态、无需权威恢复的应用级通知；必须定义集中式 TypeScript 事件映射，不承载服务器事实、业务命令、权限或长任务结果 | 明确生产者与至少两个独立消费者、订阅释放、重复注册、事件顺序、异常隔离、测试可追踪性及 HMR 行为 |
 | Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
-| SSE | 同源 Cookie 简单链路优先原生 `EventSource`；需要 Fetch 级控制时比较 `event-source-plus` 与 `@microsoft/fetch-event-source` | 原生方案已批准；库为条件候选 | 只有必须检查 HTTP 状态、自定义有上限退避、主动取消/重连或控制请求时才增加依赖；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | 401/403/429/503 与 Content-Type、Last-Event-ID/游标、Cookie/CSRF、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
+| SSE | Header Bearer 全阶段使用 Fetch 型客户端；实现时比较无依赖 Fetch parser、`event-source-plus` 与 `@microsoft/fetch-event-source` | Fetch 型边界已批准；具体库为条件候选 | 必须设置 `Authorization` Header、检查 401/403/429/503、主动取消并限制重连，禁止 QueryString Token；产品不采用 Cookie 认证，原生 `EventSource` 不进入目标方案；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | Content-Type、Welcome/命名事件、Last-Event-ID/游标、Header Bearer 生命周期、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
 | 表单与边界校验 | `valibot` | 优先候选 | 兼容 Nuxt UI Standard Schema，并以模块化 API 控制初始化、恢复和自动化表单的浏览器产物 | Nuxt UI Form 集成、异步服务端错误、传输 DTO 映射和团队使用成本 |
 | 产品文案国际化 | `vue-i18n` | 优先候选 | 统一管理 `zh-CN`、`en` 产品与业务文案、以 `en` 为默认回退和响应式语言切换；不负责组件库或 Valibot 自带消息 | 缺失键检测、按语言拆包、类型安全、CSP 和生产包体积 |
 | Vue I18n 构建期集成 | `@intlify/unplugin-vue-i18n`（`devDependency`） | 条件候选 | 只有语言资源采用 JSON/YAML、SFC `<i18n>` custom block，或实测需要构建期预编译与运行时裁剪时才引入；它扩展而不替代 `vue-i18n`，TypeScript 内联消息不要求该插件 | 与锁定 Vite/Vue/Vue I18n/Node.js 的兼容性、locale include 边界、runtime compiler、懒加载 chunk、HTML 消息安全、构建失败行为和包体积收益 |
@@ -293,7 +294,7 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 静态检查 | ESLint、`@antfu/eslint-config`、`vue-tsc` | Admin 目标采用 | Antfu flat config 统一 JavaScript、TypeScript 和 Vue SFC 规则，`vue-tsc` 独立负责类型检查；项目覆盖规则按所属集成显式配置 | 全工程 lint 基线、type-aware lint 耗时、忽略范围、编辑器/CI 一致性，以及配置不再直接导入后移除 `eslint-plugin-vue`/`typescript-eslint` 的结果 |
 | ESLint formatter | Antfu formatters 与直接 `devDependency` `eslint-plugin-format` | Admin 目标采用 | 统一格式化 CSS、HTML、Markdown 和 Vue `<style>`；精确版本和脚本由应用清单拥有，不把格式化成功等同于类型或业务验证 | 首次自动修复差异、Prettier/dprint 行为、生成文件排除、编辑器保存行为和 CI 非交互执行 |
 | 单元与组件测试运行器 | `vitest` | 优先候选 | 复用 Vite 的 ESM、TypeScript、Vue SFC 和路径解析链路，负责快速单元/组件测试、mock、watch 与可选覆盖率；CI 必须使用一次性 run 模式 | 与锁定 Vite/Node.js 的兼容性、配置归属、路径别名、并行隔离、计时器、覆盖率 provider、watch 与 CI 脚本边界 |
-| Vue 组件测试 | `@vue/test-utils` + `happy-dom`；仅在实际 Web API 兼容缺口出现时回退评估 `jsdom` | 优先候选 | 通过 `mount` 验证 props、slots、可见状态、用户交互和 emit；优先使用更轻量快速的 `happy-dom`，共享挂载器负责 Nuxt UI、Router、i18n 等插件，不默认使用浅挂载或只依赖快照 | 异步更新与清理、Teleport、全局插件、网络/时间 mock、`happy-dom` API 差异、行为导向断言、模拟 DOM 局限，以及需要真实焦点、CSS、视口或 Cookie 时升级到浏览器测试 |
+| Vue 组件测试 | `@vue/test-utils` + `happy-dom`；仅在实际 Web API 兼容缺口出现时回退评估 `jsdom` | 优先候选 | 通过 `mount` 验证 props、slots、可见状态、用户交互和 emit；优先使用更轻量快速的 `happy-dom`，共享挂载器负责 Nuxt UI、Router、i18n 等插件，不默认使用浅挂载或只依赖快照 | 异步更新与清理、Teleport、全局插件、网络/时间 mock、`happy-dom` API 差异、行为导向断言、模拟 DOM 局限，以及需要真实焦点、CSS 或视口时升级到浏览器测试 |
 | 浏览器端到端测试 | Playwright 等在首个完整用户流程中确定 | 条件候选 | 验证真实 OWIN 静态托管、路由、登录、响应式、可访问性和 P0 流程；不与 Vitest 组件测试重复同一内部实现 | 浏览器矩阵、服务启动、测试数据隔离、失败截图/trace、执行时间和 CI 成本 |
 
 ### 工程清单约束
@@ -343,10 +344,11 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - `CAP-02`：玩家查询、危险动作确认、重复提交、`Unknown` 结果、日志 SSE 断线和补取；
 - `CAP-03`：备份状态、恢复确认、关服、浏览器重开、重启后最终结果和回滚失败；
 - `CAP-04`：公告预览、固定触发器编辑、启停、最近执行结果和去重显示；
-- `CAP-05`：初始化、登录、会话过期、角色导航、服务端 `Forbidden`、CSRF 和审计关联；
+- `CAP-05`：初始化、登录、Bearer Token 到期、角色导航、服务端 `Forbidden` 和审计关联；
 - `NFR-01`：断开公网后核心管理能力可用，生产资源不存在第三方运行依赖；
 - `NFR-02`：所有写操作都能区分排队、执行、成功、失败和未知，不以 HTTP 200 替代游戏结果；
 - `NFR-03`：`zh-CN` 与 `en` 的全部 P0 页面和表单通过 E2E，覆盖浏览器语言匹配、默认回退 `en`、登录前后切换、偏好持久化、缺失键、Valibot 内置错误、Nuxt UI 文案、日期数字格式和稳定服务端错误码映射；
+- `NFR-04`：默认凭据可在批准的明文 HTTP 边界完成登录，Bearer 只进入 `Authorization` Header 和应用内存，错误、到期及 QueryString Token 被拒绝，且客户端不使用 Cookie 认证；
 - 320 CSS 像素、常用桌面和宽屏下无不可达操作、文本遮挡或布局跳动；
 - 键盘、焦点、语义标签、状态非纯颜色表达、减少动态效果和 WCAG 2.2 AA 对比度；
 - 真实 OWIN 静态托管下的深链接刷新、缓存、API 路由隔离、SSE、登录和正常关服；
@@ -371,8 +373,8 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - Antfu ESLint 迁移尚未建立通过的全工程 lint 基线；需要审查自动修复、解决配置与 pnpm workspace 规则差异，并在无直接导入后移除 `eslint-plugin-vue` 和 `typescript-eslint`；
 - Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩、缓存头和 CSP；
-- REST 错误契约、分页与游标格式、SSE 事件 envelope 和补取窗口；
-- CSRF Token 获取方式、登录限速反馈和初始化凭证 URL 清除时机；
+- REST 分页与查询游标仍待定义；Problem Details、认证 SSE 路由、Welcome/命名事件、`Last-Event-ID`、gap 和补取窗口已有后端契约，但前端类型映射、Header Bearer 生命周期、有界重连和浏览器验证尚未实现；
+- Bearer Token 持久化、刷新与浏览器恢复策略、登录限速反馈和初始化凭证 URL 清除时机；
 - 日志典型速率、浏览器保留窗口、渲染预算和是否需要虚拟列表；
 - 生产包体积预算、最低浏览器范围和自动化可访问性门槛；
 - Nuxt UI standalone Vue 在目标密度、响应式表格和键盘操作上的原型证据；

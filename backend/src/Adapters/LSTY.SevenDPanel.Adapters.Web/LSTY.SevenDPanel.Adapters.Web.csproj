@@ -8,9 +8,12 @@
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.3.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Owin" Version="5.3.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Owin" Version="4.2.3" />
     <PackageReference Include="Microsoft.Owin.Hosting" Version="4.2.3" />
     <PackageReference Include="Microsoft.Owin.Host.HttpListener" Version="4.2.3" />
+    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.3" />
     <PackageReference Include="Microsoft.Owin.StaticFiles" Version="4.2.3" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
@@ -24,11 +27,8 @@
   </ItemGroup>
 
   <Target Name="ValidateSevenDaysWebReferences" BeforeTargets="ResolveAssemblyReferences">
-    <Error
-      Condition="!Exists('$(SevenDaysManagedDirectory)\Newtonsoft.Json.dll')"
-      Text="7DTD Newtonsoft.Json.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
-    <Error
-      Condition="!Exists('$(SevenDaysManagedDirectory)\System.Runtime.CompilerServices.Unsafe.dll')"
-      Text="7DTD System.Runtime.CompilerServices.Unsafe.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error Condition="!Exists('$(SevenDaysManagedDirectory)\Newtonsoft.Json.dll')" Text="7DTD Newtonsoft.Json.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error Condition="!Exists('$(SevenDaysManagedDirectory)\System.Runtime.CompilerServices.Unsafe.dll')" Text="7DTD System.Runtime.CompilerServices.Unsafe.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
+    <Error Condition="!Exists('$(SevenDaysManagedDirectory)\Microsoft.Bcl.AsyncInterfaces.dll')" Text="7DTD Microsoft.Bcl.AsyncInterfaces.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
   </Target>
 </Project>
