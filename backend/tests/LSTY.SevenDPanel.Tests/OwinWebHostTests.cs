@@ -12,6 +12,7 @@ using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using LSTY.SevenDPanel.Hosting;
+using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin.Security.DataProtection;
@@ -737,6 +738,9 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton<IServerEventStream>(hub);
             services.AddSingleton<IPanelRuntimeStatus>(
                 new TestPanelRuntimeStatus(ModHostState.Running, GameReadinessState.Ready));
+            var authenticationStore = new TestPanelAuthenticationStore();
+            services.AddSingleton<IPanelCredentialStore>(authenticationStore);
+            services.AddSingleton<IPanelAccessTokenStore>(authenticationStore);
             services.AddScoped<ServerEventSseSession>();
             return services.BuildServiceProvider(new ServiceProviderOptions
             {
@@ -755,6 +759,78 @@ namespace LSTY.SevenDPanel.Tests
 
             public ModHostState State { get; }
             public GameReadinessState GameReadiness { get; }
+        }
+
+        private sealed class TestPanelAuthenticationStore :
+            IPanelCredentialStore,
+            IPanelAccessTokenStore
+        {
+            private readonly object sync = new object();
+            private readonly Dictionary<string, StoredAccessToken> tokens =
+                new Dictionary<string, StoredAccessToken>(StringComparer.Ordinal);
+            private readonly PanelUserIdentity identity =
+                new PanelUserIdentity("test-owner-subject", "test-owner");
+
+            public bool TryVerify(
+                string username,
+                string password,
+                out PanelUserIdentity panelIdentity)
+            {
+                panelIdentity = null!;
+                if (!string.Equals(username, identity.Username, StringComparison.Ordinal) ||
+                    !string.Equals(password, "test-password", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                panelIdentity = identity;
+                return true;
+            }
+
+            public bool TryGetActive(string subject, out PanelUserIdentity panelIdentity)
+            {
+                panelIdentity = null!;
+                if (!string.Equals(subject, identity.Subject, StringComparison.Ordinal))
+                    return false;
+
+                panelIdentity = identity;
+                return true;
+            }
+
+            public string Issue(
+                PanelUserIdentity panelIdentity,
+                DateTimeOffset issuedUtc,
+                DateTimeOffset expiresUtc)
+            {
+                var token = "test-token-" + Guid.NewGuid().ToString("N");
+                lock (sync)
+                {
+                    tokens.Add(
+                        token,
+                        new StoredAccessToken(panelIdentity, issuedUtc, expiresUtc));
+                }
+
+                return token;
+            }
+
+            public bool TryValidate(
+                string token,
+                DateTimeOffset utcNow,
+                out StoredAccessToken accessToken)
+            {
+                lock (sync)
+                {
+                    accessToken = null!;
+                    if (!tokens.TryGetValue(token, out var candidate) ||
+                        candidate.ExpiresUtc <= utcNow)
+                    {
+                        return false;
+                    }
+
+                    accessToken = candidate;
+                    return true;
+                }
+            }
         }
 
         private sealed class ThrowingDataProtectionProvider : IDataProtectionProvider

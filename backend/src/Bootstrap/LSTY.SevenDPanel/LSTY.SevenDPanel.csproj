@@ -5,15 +5,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.2" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
+    <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Persistence.Sqlite\LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.SevenDays\LSTY.SevenDPanel.Adapters.SevenDays.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>$(SevenDaysHarmonyDirectory)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>$(SevenDaysManagedDirectory)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
@@ -26,9 +32,28 @@
       <HintPath>$(SevenDaysManagedDirectory)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Microsoft.CSharp">
+      <Private>true</Private>
+      <HintPath>$(SystemRoot)\Microsoft.NET\Framework64\v4.0.30319\Microsoft.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Emit">
+      <Private>true</Private>
+      <HintPath>$(SystemRoot)\Microsoft.NET\Framework64\v4.0.30319\System.Reflection.Emit.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Dynamic">
+      <Private>true</Private>
+      <HintPath>$(SystemRoot)\Microsoft.NET\Framework64\v4.0.30319\System.Dynamic.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations">
+      <Private>true</Private>
+      <HintPath>$(SystemRoot)\Microsoft.NET\Framework64\v4.0.30319\System.ComponentModel.DataAnnotations.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Target Name="ValidateSevenDaysBootstrapReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error
+      Condition="!Exists('$(SevenDaysHarmonyDirectory)\0Harmony.dll')"
+      Text="7DTD 0_TFP_Harmony/0Harmony.dll was not found under $(SevenDaysHarmonyDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
     <Error
       Condition="!Exists('$(SevenDaysManagedDirectory)\Assembly-CSharp.dll')"
       Text="7DTD Assembly-CSharp.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
@@ -38,16 +63,14 @@
     <Error
       Condition="!Exists('$(SevenDaysManagedDirectory)\LogLibrary.dll')"
       Text="7DTD LogLibrary.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
-    <Error
-      Condition="!Exists('$(SevenDaysManagedDirectory)\Microsoft.Bcl.AsyncInterfaces.dll')"
-      Text="7DTD Microsoft.Bcl.AsyncInterfaces.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
-    <Error
-      Condition="!Exists('$(SevenDaysManagedDirectory)\System.Runtime.CompilerServices.Unsafe.dll')"
-      Text="7DTD System.Runtime.CompilerServices.Unsafe.dll was not found under $(SevenDaysManagedDirectory). Initialize the reference submodule or override SevenDaysGameVersion and SevenDaysReferenceRoot." />
   </Target>
 
   <ItemGroup>
     <None Include="ModInfo.xml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(SystemRoot)\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.InteropServices.RuntimeInformation.dll"
+          Visible="false"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

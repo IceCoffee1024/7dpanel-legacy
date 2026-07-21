@@ -35,9 +35,17 @@ only the values needed by the selected environment:
 
 Runtime listener settings belong to the deployed Mod's `config.json`, not to
 `.env.local`. Use `-EnvironmentFile` to select another local environment file.
-Credentials are never stored in either file.
+Authentication credentials belong only in the server-owned `config.json`; they
+are never stored in `.env.local` or an alternate environment file.
 
 ## Publish
+
+The current publish helper assembles the Windows and Linux x64 SQLite runtime
+layout. Local output validation covers both RID directories, but the standard
+Batteries combination is verified in a Windows `v3.0.1-b4` process; Linux
+still requires a real-process smoke. The target server must retain the game-provided
+`Mods/0_TFP_Harmony/0Harmony.dll`; 7DPanel compiles against that assembly and
+does not publish its own copy.
 
 Build the Admin application before publishing the Mod:
 
@@ -64,13 +72,54 @@ runtime layout:
 ```text
 <ModDirectory>/
   7DPanel.dll
+  Dapper.dll
+  dbup-core.dll
+  dbup-sqlite.dll
+  LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll
+  Microsoft.Bcl.AsyncInterfaces.dll
+  Microsoft.CSharp.dll
+  Microsoft.Data.Sqlite.dll
+  SQLitePCLRaw.batteries_v2.dll
+  SQLitePCLRaw.batteries_v2.dll.config
+  SQLitePCLRaw.core.dll
+  SQLitePCLRaw.provider.dynamic_cdecl.dll
+  System.ComponentModel.DataAnnotations.dll
+  System.Dynamic.dll
+  System.Reflection.Emit.dll
+  System.Runtime.CompilerServices.Unsafe.dll
+  System.Runtime.InteropServices.RuntimeInformation.dll
+  runtimes/
+    win-x64/
+      native/
+        e_sqlite3.dll
+    linux-x64/
+      native/
+        libe_sqlite3.so
   wwwroot/
     index.html
     assets/
 ```
 
-The script also removes and rejects game-provided assemblies that must not ship
-with the Mod.
+The script keeps the Windows and Linux native assets under their RID
+directories and removes any root `e_sqlite3.dll` because the 7DTD Mod loader
+scans root `.dll` files as managed assemblies. `Microsoft.Data.Sqlite` uses the
+standard `SQLitePCLRaw.bundle_e_sqlite3` Batteries initialization; the Mod does
+not preload native exports, install a provider, or create a ResourceManager
+shim. `SQLitePCLRaw.batteries_v2.dll.config` supplies the Linux x64 `libdl.so.2`
+mapping. The five Framework64 compatibility assemblies are deliberately placed
+in the Mod root so normal managed assembly probing can find them.
+Before SQLite composition, 7DPanel uses the game-provided Harmony to restore
+`Assembly.Location` only for in-memory-loaded assemblies owned by the current
+Mod. Startup fails before opening the database when that compatibility patch
+cannot produce a location.
+
+The script removes and rejects game-provided assemblies plus obsolete
+`System.Data.SQLite.dll` and `SQLite.Interop.dll` assets. The managed
+`Microsoft.Bcl.AsyncInterfaces.dll` and
+`System.Runtime.CompilerServices.Unsafe.dll` versions resolved by the Mod are
+published intentionally and are required by the publish validation. Exact
+package and assembly versions are owned by the
+[current dependency compatibility matrix](../../docs/architecture.md#当前依赖兼容矩阵).
 
 ## Start
 
@@ -170,7 +219,14 @@ backend\scripts\Test-HealthEndpoint.cmd -ExpectUnavailable -TimeoutSeconds 5
 
 A successful cycle has all of these results:
 
-- Publish completes without a game-provided assembly in the Mod directory.
+- Publish completes with Dapper, DbUp, `Microsoft.Data.Sqlite`, SQLitePCLRaw
+  Batteries/core/dynamic provider, the five Framework64 compatibility
+  assemblies, `Microsoft.Bcl.AsyncInterfaces.dll`,
+  `System.Runtime.CompilerServices.Unsafe.dll`,
+  `runtimes/win-x64/native/e_sqlite3.dll`, and
+  `runtimes/linux-x64/native/libe_sqlite3.so`. No native `e_sqlite3.dll`,
+  `0Harmony.dll`, other game-provided assembly, `System.Data.SQLite.dll`, or
+  `SQLite.Interop.dll` remains in the Mod root.
 - Start returns `Started` or `AlreadyRunning` with the game process ID.
 - The running health check returns HTTP 200.
 - Stop returns `Stopped` or `AlreadyStopped`; remote mode leaves the scheduled

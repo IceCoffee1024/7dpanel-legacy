@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSTY.SevenDPanel", "src\Boo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSTY.SevenDPanel.Hosting", "src\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj", "{9877842A-738F-4B28-A901-C2F7E42807FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSTY.SevenDPanel.Adapters.Persistence.Sqlite", "src\Adapters\LSTY.SevenDPanel.Adapters.Persistence.Sqlite\LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj", "{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSTY.SevenDPanel.Adapters.Web", "src\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj", "{6DF79563-343F-4D88-9408-57F16113A627}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSTY.SevenDPanel.Adapters.SevenDays", "src\Adapters\LSTY.SevenDPanel.Adapters.SevenDays\LSTY.SevenDPanel.Adapters.SevenDays.csproj", "{EC215E64-9C15-4FFB-97AA-D344EFC0A826}"
@@ -59,6 +61,18 @@ Global
 		{9877842A-738F-4B28-A901-C2F7E42807FD}.Release|x64.Build.0 = Release|Any CPU
 		{9877842A-738F-4B28-A901-C2F7E42807FD}.Release|x86.ActiveCfg = Release|Any CPU
 		{9877842A-738F-4B28-A901-C2F7E42807FD}.Release|x86.Build.0 = Release|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Debug|x86.Build.0 = Debug|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Release|x64.Build.0 = Release|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Release|x86.ActiveCfg = Release|Any CPU
+		{D4E0D31D-8EA7-40FD-90B0-0E05AA991A54}.Release|x86.Build.0 = Release|Any CPU
 		{6DF79563-343F-4D88-9408-57F16113A627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6DF79563-343F-4D88-9408-57F16113A627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DF79563-343F-4D88-9408-57F16113A627}.Debug|x64.ActiveCfg = Debug|Any CPU

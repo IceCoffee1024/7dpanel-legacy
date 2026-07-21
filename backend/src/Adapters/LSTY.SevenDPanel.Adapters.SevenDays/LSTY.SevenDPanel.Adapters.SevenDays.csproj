@@ -7,7 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
     <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <Reference Include="Assembly-CSharp">
       <HintPath>$(SevenDaysManagedDirectory)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>

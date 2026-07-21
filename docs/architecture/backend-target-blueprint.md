@@ -58,25 +58,26 @@ LSTY.SevenDPanel.Domain                         no product references
             ^
             |
 LSTY.SevenDPanel.Application                    Domain only
-       ^             ^              ^
-       |             |              |
-Adapters.Web   Adapters.SevenDays   Adapters.Local
-       ^             ^              ^
-       +-------------+--------------+
-                     |
-             LSTY.SevenDPanel                    Bootstrap
+       ^             ^                  ^                    ^
+       |             |                  |                    |
+Adapters.Web   Adapters.SevenDays   Adapters.Persistence.Sqlite   Adapters.Local
+       ^             ^                  ^                    ^
+       +-------------+------------------+--------------------+
+                                  |
+                          LSTY.SevenDPanel              Bootstrap
 
 LSTY.SevenDPanel.Hosting                         independent runtime contracts
-       ^                    ^                    ^
-       |                    |                    |
-Adapters.Web       Adapters.SevenDays      Adapters.Local
-       ^                    ^                    ^
-       +--------------------+--------------------+
-                            |
-                    LSTY.SevenDPanel
+       ^             ^                  ^                    ^
+       |             |                  |                    |
+Adapters.Web   Adapters.SevenDays   Adapters.Persistence.Sqlite   Adapters.Local
+       ^             ^                  ^                    ^
+       +-------------+------------------+--------------------+
+                                  |
+                          LSTY.SevenDPanel
 ```
 
-Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目内第一层使用 `Inbound` 或 `Outbound`，
+Adapter 项目按外部边界命名：`Web`、`SevenDays`、`Persistence.Sqlite` 和 `Local`。数据库及 migration 由
+`Persistence.Sqlite` 拥有；文件系统、时钟和后台运行资源由 `Local` 拥有。项目内第一层使用 `Inbound` 或 `Outbound`，
 再按 `Http`、`Lifecycle`、`Players` 或 `Persistence` 等能力分组。Adapter 根目录不得包含混合调用方向的 `Common` 目录。
 
 `Application/Common` 同样不是工具杂物抽屉。只有当类型具有稳定的跨能力语义、至少两个真实消费者、
@@ -88,7 +89,7 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 
 - 在线玩家、服务器状态和日志使用不可变快照；
 - 用例负责协调授权、审计和类型化游戏端口；
-- 身份、会话、作业、审计、备份和自动化分别使用有明确用途的 store port；
+- 身份、访问 Token、作业、审计、备份和自动化分别使用有明确用途的 store port；
 - Domain 仅承载权限映射、备份与恢复转换、自动化去重或其他真实不变量所需的策略；
 - 对必须在一次 SQLite 事务中变化的记录，使用能力范围内的原子 store 方法。
 
@@ -111,14 +112,16 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 | 能力或场景 | 目标边界 | 当前方向或候选 | 状态 | 引入或复审触发条件 | 实现前必须验证 |
 |---|---|---|---|---|---|
 | Web API 与 OWIN Self Host | Web Adapter | `Microsoft.AspNet.WebApi.*`、`Microsoft.Owin.*` | 已采用 | 升级 7DTD、Mono、HTTP 管线或当前包基线 | `net48` 与游戏 Mono 进程内加载、路由、关闭释放、程序集冲突和安全公告 |
-| 过渡认证与生产 SSE | Web Adapter / Bootstrap | `Microsoft.Owin.Security.OAuth` + 自有 Basic middleware + 配置身份 | 已采用；待最终身份替换 | 首个 SQLite/Header Bearer 身份切片或认证公开面变化 | 不透明 Token、到期/容量、限流、统一 Problem Details、Header-only Bearer、连接配额、命名事件和真实 Mono 加载；产品不采用 Cookie 认证，当前实现边界见[系统架构](../architecture.md#owinweb-api-与静态资源) |
-| 本地 SQLite 与原生运行时 | Local Adapter / Persistence | `Microsoft.Data.Sqlite`、`SQLitePCLRaw.lib.e_sqlite3` | 已批准 | 首个身份、审计或作业持久化切片 | Windows/Linux x64 原生资产、WAL、并发写入、发布边界和正常关服 |
-| 数据库迁移 | Local Adapter / Persistence | `dbup-core`、`dbup-sqlite` | 已批准 | 首个可演进 SQLite schema | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径 |
+| Mod 内存程序集定位 | Bootstrap | 游戏提供的 `0_TFP_Harmony` + 受限 `Assembly.Location` postfix | 已采用并通过 Windows 真实进程；Linux 待验证 | 7DTD Mod Loader、Harmony 或程序集加载方式变化 | 只修正当前 Mod 内原位置为空的程序集，先于 SQLite/OWIN 组合；7DPanel 不发布 Harmony，不覆盖已有位置或其他 Mod |
+| 持久认证与生产 SSE | Web Adapter / Persistence Adapter / Bootstrap | `Microsoft.Owin.Security.OAuth` + 自有 Basic middleware + SQLite 用户与 Header-only 不透明 Bearer | 引导 `Owner`、持久 Token 与 SSE 复验已采用 | 用户管理、角色或认证公开面变化 | Basic 与 password grant 读取同一持久用户、Token 撤销与到期、统一 Problem Details、Header-only Bearer、连接配额、SSE 周期复验、命名事件和真实 Mono 加载；产品不采用 Cookie、CSRF Token 或 refresh token，当前实现边界见[系统架构](../architecture.md#owinweb-api-与静态资源) |
+| 本地 SQLite 与原生运行时 | Persistence Adapter / Bootstrap | `Microsoft.Data.Sqlite`、`SQLitePCLRaw.bundle_e_sqlite3`/`e_sqlite3` | 认证数据库和标准 Batteries 已采用并通过 Windows 真实进程；Linux 待验证 | 首个审计、作业持久化或平台支持变化 | `<ModDirectory>/data/7dpanel.db` 的创建与权限、五个 Framework64 宿主兼容程序集、Windows/Linux x64 原生资产、WAL、并发写入、发布边界和正常关服 |
+| 业务 SQL | Persistence Adapter | `Dapper` | 已采用 | 首个新增持久能力或 Dapper 版本变化 | 参数绑定、事务所有权、连接生命周期、并发写入和目标 Mono 加载；不得承担 schema 迁移 |
+| 数据库迁移 | Persistence Adapter | `DbUp`（`dbup-core`、`dbup-sqlite`） | 已采用 | 新 migration、升级/恢复策略或 DbUp 版本变化 | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径；不得承载运行时业务查询 |
 | 有界后台队列 | Local Adapter / Runtime | `System.Threading.Channels` | 已批准 | 首个后台 consumer 或持久作业 | 容量、背压、公平性、异常传播、排空和 Mono 兼容性 |
-| 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection 6.0.2`、Abstractions `6.0.0` | 已采用 | 目标游戏 Mono、宿主 Bcl AsyncInterfaces 或对象生命周期边界变化 | Bootstrap 唯一根 Provider、显式注册、`ValidateOnBuild`/`ValidateScopes`、OWIN 单请求 scope、Web API non-owning bridge、先停运行时再释放 Provider、发布体积和关服行为；当前实现证据见[系统架构](../architecture.md#owinweb-api-与静态资源) |
+| 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection`、Abstractions | 已采用；当前版本线已通过 Windows Mono 复验 | 目标游戏 Mono、`Microsoft.Bcl.AsyncInterfaces`、`System.Runtime.CompilerServices.Unsafe` 或对象生命周期边界变化 | Bootstrap 唯一根 Provider、显式注册、`ValidateOnBuild`/`ValidateScopes`、OWIN 单请求 scope、Web API non-owning bridge、先停运行时再释放 Provider、发布体积和关服行为；当前实现证据见[系统架构](../architecture.md#owinweb-api-与静态资源) |
 | Mod 运行日志 | Bootstrap / SevenDays Adapter | 7DTD 提供的 `LogLibrary`（`Log.Out`、`Log.Warning`、`Log.Error`、`Log.Exception`） | 已采用 | 7DTD 日志 API 或目标版本发生变化 | 目标程序集加载、输出行为、异常记录和关服生命周期 |
 | 控制台日志采集 | SevenDays Adapter / ConsoleLogs | `LogLibrary.LogCallbacksExtended` + `System.Threading.Channels` 有界队列 | 已采用 | 7DTD 日志 API、游戏版本或当前容量基线变化 | 回调耗时、顺序、订阅与取消订阅、过载丢弃计数、Mono 兼容性和版本差异；当前实现证据见[系统架构](../architecture.md#7dtd-控制台日志采集边界) |
-| 密码摘要 | Local Adapter / Identity | BCL PBKDF2-HMAC-SHA256 | 已批准 | 首个 Owner 身份切片 | 游戏 Mono 支持的 API、参数版本化、随机盐、耗时上限和升级策略 |
+| 密码摘要 | Persistence Adapter / Identity | BCL PBKDF2-HMAC-SHA256 | 引导 `Owner` 已采用 | 摘要参数、凭据迁移或平台支持变化 | 游戏 Mono 支持的 API、参数版本化、随机盐、耗时上限和升级策略 |
 | 备份压缩与校验 | Local Adapter / Backups | 优先使用 BCL；第三方库待证据驱动选择 | 预留 | BCL 无法满足流式处理、格式、性能或恢复兼容要求 | 内存峰值、大文件、损坏检测、路径穿越、许可证、维护状态和跨平台行为 |
 | 定时任务 | Local Adapter / Scheduling | 内部 hosted scheduler，不引入通用调度框架 | 默认不采用 | 出现持久日历、时区、错过触发补偿或分布式调度等真实需求 | 与持久作业状态的职责边界、关服排空、恢复语义和依赖成本 |
 | 用例分派与对象映射 | Application / Adapters | 显式 dispatcher 和手工映射为默认；`Mapster` 作为稳定边界映射重复出现后的候选 | 候选 | 首个真实 DTO/Domain/View 映射切片形成多个稳定映射对，且重复代码维护成本有测试证据 | 优先评估代码生成或显式配置；映射配置启动期校验；验证隐式控制流、反射、调试成本、性能、AOT/Mono 限制、发布体积和边界泄漏 |
@@ -146,11 +149,17 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays` 和 `Local`。项目�
 ```text
 7DTD Mod Loader
   -> ModMain.InitMod
-  -> load configuration and build the object graph
-  -> register shutdown lifecycle handlers
+  -> store ModInstance and patch empty Assembly.Location for this Mod
+  -> load configuration and resolve <ModDirectory>/data/7dpanel.db
+  -> build the object graph
+  -> register shutdown and game-ready lifecycle handlers
   -> ConsoleLogRuntime.Start
        -> ConsoleLogService.Start
-       -> ModHost.Start -> start OWIN
+       -> ModHost.Start
+            -> initialize SQLite provider and run DbUp migrations
+            -> synchronize the bootstrap Owner
+            -> on success, start OWIN
+            -> on failure, report panel Faulted and keep 7DTD running
        -> health reports panel HTTP liveness
 
 GameStartDone
@@ -165,7 +174,7 @@ WorldShuttingDown / GameShutdown
        -> ModHost.Stop -> dispose OWIN
 ```
 
-`IModRuntime` 是命令型生命周期契约。当前由薄的 `ConsoleLogRuntime` 显式组合日志服务与 `ModHost`，不建立通用组件注册表。未来出现数据库、后台 consumer 或 scheduler 时，先在组合根中明确所有权和停止顺序；只有重复协调已经形成可证明成本时才提取通用生命周期。面板 HTTP 存活与游戏运行时就绪是两个独立状态：`InitMod` 可以提供静态页面和不依赖游戏对象的 API，依赖 Unity/7DTD 活对象的组件和用例只能在 `GameStartDone` 后进入可用状态；此前对应 API 返回 `503` 和稳定错误码。
+`IModRuntime` 是命令型生命周期契约。当前由薄的 `ConsoleLogRuntime` 显式组合日志服务与 `ModHost`，不建立通用组件注册表。未来增加后台 consumer、scheduler 或新的数据库资源时，先在组合根中明确所有权和停止顺序；只有重复协调已经形成可证明成本时才提取通用生命周期。面板 HTTP 存活与游戏运行时就绪是两个独立状态：`InitMod` 可以提供静态页面和不依赖游戏对象的 API，依赖 Unity/7DTD 活对象的组件和用例只能在 `GameStartDone` 后进入可用状态；此前对应 API 返回 `503` 和稳定错误码。
 
 ### 请求与游戏动作链路
 
@@ -233,6 +242,10 @@ Game Event / Scheduler / Use Case
 
 ### 持久化与事务
 
+- 生产数据库固定为 `<ModDirectory>/data/7dpanel.db`；Bootstrap 负责从 Mod 根目录解析该位置并创建受控数据目录，Application 和 Web Adapter 不接收物理路径。
+- `Microsoft.Data.Sqlite` 是 SQLite provider；Dapper 只负责参数化的运行时业务 SQL，DbUp 只负责按顺序执行嵌入迁移，三者不得互相替代职责。
+- 每次 Mod 启动都必须在同步引导身份和启动 OWIN 前完成迁移。迁移失败时记录可排查错误并让面板进入不可用状态，不启动 OWIN，也不主动终止 7DTD 进程。
+- Bootstrap 在组合 SQLite 前使用游戏 `0_TFP_Harmony` 恢复当前 Mod 内存程序集的空 `Assembly.Location`；发布项目负责把 Framework64 宿主兼容程序集放入 Mod 根目录，Persistence Adapter 负责把 Windows/Linux x64 SQLite native 放入各自 RID 子目录。Mod 根目录不得保留会被 7DTD 当作托管程序集扫描的 native `e_sqlite3.dll`，也不得复制 `0Harmony.dll`。运行时使用 `SQLitePCLRaw.bundle_e_sqlite3` 的标准 Batteries 初始化，不维护自定义 native loader、ResourceManager shim 或显式 provider 绑定，也不从开发机 NuGet 缓存或仓库路径动态加载。
 - SQLite 初始化并验证 WAL 模式，并为每个连接应用经过测试的 `busy_timeout`。
 - 低频原子操作使用短事务，由能力专属的 store adapter 隐藏事务细节。
 - 高频审计写入使用独立的有界串行协调器，不得与可丢弃的控制台日志共享容量。
@@ -243,30 +256,45 @@ Game Event / Scheduler / Use Case
 
 ## 目标业务链路
 
-### 启动与首个 Owner
+### 启动、引导 Owner 与登录
 
 ```text
 ModMain
   -> configuration loader
-  -> database migration
-  -> apply pending restore before world files open
-  -> ensure setup credential when no Owner exists
-  -> local console prints one-time code and setup URL
-  -> register lifecycle callbacks
+  -> resolve <ModDirectory>/data/7dpanel.db
+  -> build the object graph and register lifecycle callbacks
+  -> start the composed runtime
+       -> apply pending restore before world files open when that slice exists
+       -> initialize Microsoft.Data.Sqlite provider
+       -> run DbUp migrations
+            -> failure: record the panel startup fault, skip OWIN, keep 7DTD running
+       -> synchronize config username/password to the one bootstrap Owner
+            -> stable Subject = owner
+            -> create or update; never create a second bootstrap user
+       -> start OWIN
 
-POST /api/v1/setup
-  -> validate setup code
-  -> hash password and session token
-  -> IIdentityProvisioningStore
-       -> atomically consume setup state
-       -> create first Owner
-       -> create first session
-  -> return the one-time plaintext opaque Bearer token in the response body
+HTTP Basic or OAuth password grant
+  -> load the persisted user by login name
+  -> verify the submitted password and current enabled state
+  -> rebuild claims from the current persisted user
+  -> Basic request continues with those claims, or password grant issues Bearer
+
+Bearer login result
+  -> generate token id + high-entropy secret
+  -> persist token id, secret hash, Subject, issue time, and expiry
+  -> return the opaque token once; never persist the plaintext secret
+
+Authorization: Bearer <opaque-token>
+  -> split token id and secret
+  -> load token record and current user
+  -> compare the submitted secret hash
+  -> reject expired or revoked token and disabled or missing user
+  -> rebuild claims from the current user; fail closed on every invalid state
 ```
 
-并发初始化请求最多只有一个成功。认证 middleware 将会话映射为操作者；每个用例仍然必须执行权限检查。
+`config.json` 只在本过渡阶段承担引导数据来源；它不是绕过 SQLite 的第二套认证后端。每次启动的同步以稳定 `Subject=owner` 定位同一个 `Owner`，配置用户名或密码变化只更新该身份。Basic 与 OAuth password grant 随后都读取 SQLite 当前记录；用户禁用或数据读取失败必须拒绝认证。
 
-当前系统为先建立生产 SSE 的认证、错误和限流边界，暂时从服主 `config.json` 读取配置凭据，并按 `NFR-04` 在框架搭建阶段提供已知默认值 `username` / `password` 和明文 HTTP 例外，再通过 Basic 或 password grant 映射为临时 `Owner`。该身份没有 SQLite 用户、密码摘要、持久 Token、refresh token 或用户管理能力；实现本节首个 Owner 链路时，必须整体替换配置凭据、已知默认值和进程内 Token，迁移到 SQLite 身份与 `Authorization` Header Bearer，而不是并存两套长期身份来源。产品不采用 Cookie 认证；Token 持久化、刷新和浏览器恢复策略由该身份切片设计。替换后恢复加密传输要求，并保持稳定的 401/403 Problem Details、角色 claims 和受保护 Controller 边界，具体当前事实见[系统架构](../architecture.md#本地配置与状态)。
+Bearer Token 对客户端保持不透明，数据库只保存高熵 secret 的摘要，token id 只承担记录定位。Token 只允许出现在 `Authorization` Header，不接受 QueryString 或 Cookie；产品不建立 Cookie 会话，因此不引入 CSRF Token，也不签发 refresh token。过渡期没有用户管理 API；等后续用户管理能力可以安全维护至少一个 `Owner` 后，再删除配置同步、已知默认凭据和相应引导代码。每个用例仍然必须独立执行权限检查，并保持稳定的 401/403 Problem Details，具体当前事实见[系统架构](../architecture.md#本地配置与状态)。
 
 ### 在线玩家
 
@@ -362,7 +390,9 @@ Next Mod initialization, before world load
 
 控制台日志查询只读取当前进程的有界内存窗口，使用进程内单调 sequence 排序和补取；服务端重启后窗口与 sequence 重新开始。7DTD 日志文件继续承担跨重启原始证据，本目标不要求把日志正文复制进 SQLite。审计搜索仍读取持久化、不可静默丢弃的游标分页读模型。Controllers 不拼接 SQL，也不暴露内部路径和异常堆栈。
 
-当前实现已把旧开发日志流收敛为认证的 `GET /api/v1/events/stream`：受限 `ServerEventHub` 为每个客户端建立独立有界 mailbox，`console-log`、`game-ready` 和 `server-stopping` 共享当前进程 sequence，连接先发送 Welcome，建流前错误使用稳定 Problem Details。它仍不是通用领域 Event Bus，也没有持久日志查询或跨进程游标。目标日志页面继续使用 gap 和窗口补取，慢客户端不能阻塞主 consumer；最终 SQLite/Header Bearer 身份替换临时配置身份时应保持该流契约，并重新验证连接审计、Token 撤销和角色权限。
+当前实现已把旧开发日志流收敛为认证的 `GET /api/v1/events/stream`：受限 `ServerEventHub` 为每个客户端建立独立有界 mailbox，`console-log`、`game-ready` 和 `server-stopping` 共享当前进程 sequence，连接先发送 Welcome，建流前错误使用稳定 Problem Details。它仍不是通用领域 Event Bus，也没有持久日志查询或跨进程游标。目标日志页面继续使用 gap 和窗口补取，慢客户端不能阻塞主 consumer；SQLite/Header Bearer 已替换进程内临时身份，后续仍需补齐连接审计、可调用的 Token 撤销入口和角色权限。
+
+Bearer SSE 在建流前完成一次完整认证，并保留原始 Header Token 和当前用户 `Subject` 作为复验上下文。当前 `ServerEventSseSession` 以独立截止时间调度复验：即使事件持续到达，重读 Token 与用户状态的间隔也不超过 15 秒；Token 更早到期时以到期时间为边界。Token 记录被删除、Token 过期或用户被禁用时停止写出并关闭连接。未来优化不得退回为只在建流时认证。
 
 ```text
 WorldShuttingDown / GameShutdown
@@ -387,6 +417,8 @@ backend/
 |   |-- Bootstrap/LSTY.SevenDPanel/
 |   |   |-- LSTY.SevenDPanel.csproj              # net48 Mod 入口和发布项目
 |   |   |-- ModMain.cs                           # 唯一 IModApi 入口
+|   |   |-- Compatibility/
+|   |   |   `-- AssemblyLocationPatch.cs        # 当前 Mod 内存程序集物理位置
 |   |   |-- ModInfo.xml                          # 7DTD Mod 元数据
 |   |   |-- config.example.json                  # 可分发的宿主配置示例
 |   |   |-- Configuration/
@@ -419,22 +451,16 @@ backend/
 |   |   |   |-- IBackgroundWorkQueue.cs          # 有界队列生命周期契约
 |   |   |   `-- BackgroundWorkDispatcher.cs      # 工作项到用例的映射
 |   |   |-- Identity/
-|   |   |   |-- EnsureSetupCredentialUseCase.cs  # 不存在 Owner 时的初始化状态
-|   |   |   |-- CreateOwnerUseCase.cs            # 首个 Owner 和会话
-|   |   |   |-- LoginUseCase.cs                  # 密码和会话流程
-|   |   |   |-- LogoutUseCase.cs                 # 撤销当前会话
-|   |   |   |-- ListUsersUseCase.cs              # Owner 用户列表
-|   |   |   |-- UpdateUserRoleUseCase.cs         # 带审计的角色更新
+|   |   |   |-- SynchronizeBootstrapOwnerUseCase.cs # 启动时同步稳定 Subject=owner
+|   |   |   |-- LoginUseCase.cs                  # 密码和 Bearer Token 流程
+|   |   |   |-- LogoutUseCase.cs                 # 撤销当前 Bearer Token
 |   |   |   |-- AuthorizationService.cs          # 操作者和权限协调
 |   |   |   |-- Models/AuthenticatedActor.cs     # 不可变操作者快照
 |   |   |   `-- Ports/
 |   |   |       |-- IIdentityStore.cs            # 用户和密码摘要
-|   |   |       |-- ISessionStore.cs             # 会话摘要和过期时间
-|   |   |       |-- ISetupStateStore.cs          # 一次性初始化状态
-|   |   |       |-- IIdentityProvisioningStore.cs # 首个 Owner 的原子操作
+|   |   |       |-- IAccessTokenStore.cs         # Token 摘要、到期和撤销
 |   |   |       |-- IPasswordHasher.cs           # 版本化密码摘要
-|   |   |       |-- ISecureTokenGenerator.cs     # 初始化和会话随机数
-|   |   |       `-- ILocalConsole.cs             # 仅本地显示的初始化说明
+|   |   |       `-- ISecureTokenGenerator.cs     # Token id 和高熵 secret
 |   |   |-- ServerStatus/
 |   |   |   |-- GetServerStatusUseCase.cs        # 已授权的当前状态
 |   |   |   |-- Models/ServerStatusView.cs       # 感知新鲜度的读模型
@@ -528,9 +554,7 @@ backend/
 |   |   |   |   |-- DrainingGateMiddleware.cs
 |   |   |   |   `-- ExceptionMappingMiddleware.cs
 |   |   |   |-- Identity/
-|   |   |   |   |-- SetupController.cs
 |   |   |   |   |-- SessionsController.cs
-|   |   |   |   |-- UsersController.cs
 |   |   |   |   `-- IdentityContracts.cs
 |   |   |   |-- ServerStatus/
 |   |   |   |   |-- ServerStatusController.cs
@@ -585,6 +609,23 @@ backend/
 |   |       |   `-- SevenDaysServerShutdown.cs
 |   |       `-- Runtime/SevenDaysMainThreadScheduler.cs
 |   |
+|   |-- Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/
+|   |   |-- LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj
+|   |   |-- Identity/
+|   |   |   |-- SqliteIdentityStore.cs
+|   |   |   |-- SqliteAccessTokenStore.cs
+|   |   |   |-- Pbkdf2PasswordHasher.cs
+|   |   |   `-- CryptoTokenGenerator.cs
+|   |   |-- Audit/SqliteAuditTrail.cs
+|   |   |-- Automation/SqliteAutomationStore.cs
+|   |   |-- Backups/SqliteBackupCatalog.cs
+|   |   `-- Persistence/
+|   |       |-- SqliteConnectionFactory.cs
+|   |       |-- SqliteWriteCoordinator.cs
+|   |       |-- DatabaseMigrator.cs              # DbUp 启动迁移边界
+|   |       |-- SqliteJobStore.cs
+|   |       `-- Migrations/                      # 按顺序嵌入的 DbUp SQL 脚本
+|   |
 |   `-- Adapters/LSTY.SevenDPanel.Adapters.Local/
 |       |-- LSTY.SevenDPanel.Adapters.Local.csproj
 |       |-- Inbound/
@@ -597,28 +638,10 @@ backend/
 |           |-- Runtime/
 |           |   |-- SystemClock.cs
 |           |   `-- BoundedBackgroundWorkQueue.cs
-|           |-- Identity/
-|           |   |-- SqliteIdentityProvisioningStore.cs
-|           |   |-- SqliteIdentityStore.cs
-|           |   |-- SqliteSessionStore.cs
-|           |   |-- SqliteSetupStateStore.cs
-|           |   |-- Pbkdf2PasswordHasher.cs
-|           |   `-- CryptoTokenGenerator.cs
-|           |-- Audit/SqliteAuditTrail.cs
-|           |-- Automation/SqliteAutomationStore.cs
-|           |-- Backups/
-|           |   |-- SqliteBackupCatalog.cs
-|           |   |-- FileSystemBackupArchiveStore.cs
-|           |   `-- JsonPendingRestoreStore.cs
-|           `-- Persistence/
-|               |-- SqliteConnectionFactory.cs
-|               |-- SqliteWriteCoordinator.cs
-|               |-- DatabaseMigrator.cs
-|               |-- SqliteJobStore.cs
-|               |-- AtomicFileWriter.cs
-|               `-- Migrations/
-|                   |-- Migration001Initial.cs
-|                   `-- Migration002Operations.cs
+|           `-- Backups/
+|               |-- FileSystemBackupArchiveStore.cs
+|               |-- JsonPendingRestoreStore.cs
+|               `-- AtomicFileWriter.cs
 ```
 
 ## 架构复审触发条件
@@ -640,10 +663,13 @@ backend/
 - 用于在线玩家快照和类型化玩家动作的稳定 `v3.0.1-b4` API；
 - `ThreadManager.AddSingleTaskMainThread` 的取消、异常和关服行为；
 - 控制台日志真实容量饱和与 Linux Unity Mono 行为；Windows `v3.0.1-b4` 的 `Log.LogCallbacksExtended`、`System.Threading.Channels`、正常负载和关服排空已有当前证据；
-- SQLite 身份下不透明 Bearer Token 的持久化、到期、撤销、刷新和浏览器恢复策略；产品不采用 Cookie 认证；
+- `Admin`/`Viewer` 用户管理、可调用的 Token 撤销入口、审计和最终移除配置引导仍需实现；产品不采用 Cookie、CSRF Token 或 refresh token；
+- 引导 `Owner`、持久 Token 和 SSE 周期复验已有自动化；当前标准 Batteries/SQLitePCLRaw `2.1.12`、`Microsoft.Bcl.AsyncInterfaces` 和 `System.Runtime.CompilerServices.Unsafe` 发布物已有 Windows 7DTD 进程证据，但仍缺 Linux 证据；
+- 游戏 `0_TFP_Harmony 2.13.0.0` 的 `Assembly.Location` 补丁已有编译、源码顺序、发布排除和 Windows 真实进程证据，但仍缺 Linux 证据；
+- 迁移失败时不启动 OWIN 且不终止 7DTD 进程的真实宿主行为；
 - 世界保存完成信号和归档一致性窗口；
 - 在目标世界文件打开前执行待恢复操作；
-- Linux x64 上的 SQLite 原生资源和完整依赖矩阵。
+- Windows/Linux x64 发布物中的 SQLite native asset、五个 Framework64 宿主兼容程序集、固定数据库路径和完整依赖矩阵；两平台本地发布布局已验证，Windows 真实进程已通过，Linux 仍待验证。
 
 这些缺口归入[系统架构](../architecture.md)和[测试策略](../test.md)中的当前风险与验证记录；
 本蓝图不会把它们标记为已验证。

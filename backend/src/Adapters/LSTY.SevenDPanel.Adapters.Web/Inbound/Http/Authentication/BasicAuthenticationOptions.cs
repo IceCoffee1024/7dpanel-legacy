@@ -1,4 +1,3 @@
-using System;
 using Microsoft.Owin.Security;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
@@ -8,17 +7,17 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
         public BasicAuthenticationOptions(
             string realm,
             bool allowInsecureHttp,
-            Func<string, string, bool> verifier)
+            PanelCredentialVerifier verifier)
             : base("Basic")
         {
             Realm = realm ?? throw new ArgumentNullException(nameof(realm));
             AllowInsecureHttp = allowInsecureHttp;
-            Verifier = verifier ?? throw new ArgumentNullException(nameof(verifier));
+            Verifier = verifier ?? throw new System.ArgumentNullException(nameof(verifier));
             AuthenticationMode = AuthenticationMode.Active;
         }
 
         public string Realm { get; }
         public bool AllowInsecureHttp { get; }
-        public Func<string, string, bool> Verifier { get; }
+        public PanelCredentialVerifier Verifier { get; }
     }
 }

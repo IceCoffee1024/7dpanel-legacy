@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Threading;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
@@ -35,6 +36,16 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     "Last-Event-ID must be a non-negative integer.");
             }
 
+            if (!TryReadAuthorization(out var subject, out var bearerToken) ||
+                !session.TryAuthorize(subject, bearerToken))
+            {
+                return ApiProblemDetailsFactory.CreateResponse(
+                    Request,
+                    HttpStatusCode.Unauthorized,
+                    "authentication_invalid",
+                    "The current authentication is no longer valid.");
+            }
+
             if (!session.TryReserve())
             {
                 return ApiProblemDetailsFactory.CreateResponse(
@@ -58,6 +69,29 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     cancellationToken),
                 "text/event-stream");
             return response;
+        }
+
+        private bool TryReadAuthorization(out string subject, out string? bearerToken)
+        {
+            subject = string.Empty;
+            bearerToken = null;
+            if (!(User?.Identity is ClaimsIdentity identity)) return false;
+
+            subject = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            if (subject.Length == 0) return false;
+
+            var authorization = Request.Headers.Authorization;
+            if (authorization != null &&
+                string.Equals(
+                    authorization.Scheme,
+                    "Bearer",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                bearerToken = authorization.Parameter;
+                if (string.IsNullOrWhiteSpace(bearerToken)) return false;
+            }
+
+            return true;
         }
 
         private bool TryReadLastEventId(out long? afterSequence)

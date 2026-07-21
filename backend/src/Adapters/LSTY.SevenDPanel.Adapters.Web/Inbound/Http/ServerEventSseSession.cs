@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Hosting;
+using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -25,18 +26,73 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         private readonly IServerEventStream serverEvents;
         private readonly IPanelRuntimeStatus runtimeStatus;
+        private readonly IPanelCredentialStore credentialStore;
+        private readonly IPanelAccessTokenStore accessTokenStore;
+        private readonly Func<DateTimeOffset> utcNow;
+        private readonly TimeSpan authorizationValidationInterval;
         private IServerEventSubscription? subscription;
         private WelcomeEventData? welcome;
+        private string? authorizationSubject;
+        private string? bearerToken;
+        private DateTimeOffset nextAuthorizationValidationUtc;
+        private int authorizationAttempted;
         private int reservationAttempted;
         private int writeStarted;
         private int disposed;
 
         public ServerEventSseSession(
             IServerEventStream serverEvents,
-            IPanelRuntimeStatus runtimeStatus)
+            IPanelRuntimeStatus runtimeStatus,
+            IPanelCredentialStore credentialStore,
+            IPanelAccessTokenStore accessTokenStore)
+            : this(
+                serverEvents,
+                runtimeStatus,
+                credentialStore,
+                accessTokenStore,
+                () => DateTimeOffset.UtcNow,
+                HeartbeatInterval)
+        {
+        }
+
+        internal ServerEventSseSession(
+            IServerEventStream serverEvents,
+            IPanelRuntimeStatus runtimeStatus,
+            IPanelCredentialStore credentialStore,
+            IPanelAccessTokenStore accessTokenStore,
+            Func<DateTimeOffset> utcNow,
+            TimeSpan authorizationValidationInterval)
         {
             this.serverEvents = serverEvents ?? throw new ArgumentNullException(nameof(serverEvents));
             this.runtimeStatus = runtimeStatus ?? throw new ArgumentNullException(nameof(runtimeStatus));
+            this.credentialStore = credentialStore ?? throw new ArgumentNullException(nameof(credentialStore));
+            this.accessTokenStore = accessTokenStore ?? throw new ArgumentNullException(nameof(accessTokenStore));
+            this.utcNow = utcNow ?? throw new ArgumentNullException(nameof(utcNow));
+            if (authorizationValidationInterval <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(authorizationValidationInterval),
+                    "The authorization validation interval must be positive.");
+            }
+
+            this.authorizationValidationInterval = authorizationValidationInterval;
+        }
+
+        public bool TryAuthorize(string subject, string? token)
+        {
+            if (Volatile.Read(ref disposed) != 0)
+                throw new ObjectDisposedException(nameof(ServerEventSseSession));
+            if (Interlocked.Exchange(ref authorizationAttempted, 1) != 0)
+                throw new InvalidOperationException("SSE authorization can only be attempted once.");
+            if (string.IsNullOrWhiteSpace(subject)) return false;
+
+            authorizationSubject = subject;
+            bearerToken = string.IsNullOrWhiteSpace(token) ? null : token;
+            if (RefreshAuthorization()) return true;
+
+            authorizationSubject = null;
+            bearerToken = null;
+            return false;
         }
 
         public bool TryReserve()
@@ -75,6 +131,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             var welcomeSnapshot = welcome;
             if (activeSubscription == null || welcomeSnapshot == null)
                 throw new InvalidOperationException("The SSE subscription must be reserved before writing.");
+            if (Volatile.Read(ref authorizationAttempted) == 0 || authorizationSubject == null)
+                throw new InvalidOperationException("The SSE authorization must be validated before writing.");
 
             try
             {
@@ -105,6 +163,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 foreach (var serverEvent in replay)
                 {
                     if (serverEvent.Sequence <= lastSentSequence) continue;
+                    if (AuthorizationValidationIsDue() && !RefreshAuthorization()) return;
                     await WriteServerEventAsync(
                         output,
                         serverEvent,
@@ -114,6 +173,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    if (AuthorizationValidationIsDue() && !RefreshAuthorization()) return;
                     ServerEvent? serverEvent;
                     using (var heartbeat = CancellationTokenSource.CreateLinkedTokenSource(
                         cancellationToken))
@@ -128,6 +188,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                         catch (OperationCanceledException)
                             when (!cancellationToken.IsCancellationRequested)
                         {
+                            if (!RefreshAuthorization()) return;
                             await WriteTextAsync(
                                 output,
                                 ": keep-alive\n\n",
@@ -149,6 +210,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     }
 
                     if (serverEvent.Sequence <= lastSentSequence) continue;
+                    if (AuthorizationValidationIsDue() && !RefreshAuthorization()) return;
                     await WriteServerEventAsync(
                         output,
                         serverEvent,
@@ -178,7 +240,46 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+            bearerToken = null;
+            authorizationSubject = null;
             Interlocked.Exchange(ref subscription, null)?.Dispose();
+        }
+
+        private bool AuthorizationValidationIsDue() =>
+            utcNow() >= nextAuthorizationValidationUtc;
+
+        private bool RefreshAuthorization()
+        {
+            var subject = authorizationSubject;
+            if (string.IsNullOrEmpty(subject)) return false;
+
+            var now = utcNow();
+            DateTimeOffset? expiresUtc = null;
+            if (bearerToken != null)
+            {
+                if (!accessTokenStore.TryValidate(bearerToken, now, out var storedToken) ||
+                    !string.Equals(
+                        storedToken.Identity.Subject,
+                        subject,
+                        StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                expiresUtc = storedToken.ExpiresUtc;
+            }
+
+            if (!credentialStore.TryGetActive(subject!, out var currentIdentity) ||
+                !string.Equals(currentIdentity.Subject, subject, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var scheduled = now.Add(authorizationValidationInterval);
+            nextAuthorizationValidationUtc = expiresUtc.HasValue && expiresUtc.Value < scheduled
+                ? expiresUtc.Value
+                : scheduled;
+            return true;
         }
 
         private static Task WriteServerEventAsync(

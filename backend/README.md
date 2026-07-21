@@ -13,18 +13,25 @@ project validates compile-time references against the pinned 7DTD game version
 and prevents game-provided assemblies from being copied to build output. The
 current validation slice implements `ModMain`, `ModHost`, the 7DTD lifecycle,
 a consolidated bounded in-process server-event stream, Katana self-hosting,
-`/health` plus `/api/v1/health`, unified API Problem Details, temporary
-configuration-backed Basic/Bearer authentication, and the authenticated
-`/api/v1/events/stream`. Persistent identity, persistent Bearer-token handling,
-main-thread game actions, and other product capabilities are not implemented
-yet.
+`/health` plus `/api/v1/health`, unified API Problem Details, a
+configuration-seeded SQLite `Owner`, SQLite-backed Basic authentication,
+persistent opaque Bearer tokens, and the authenticated
+`/api/v1/events/stream`. User/role
+management, main-thread game actions, and other product capabilities are not
+implemented yet.
+
+Bootstrap compiles against the game-provided `0_TFP_Harmony/0Harmony.dll` and
+applies one scoped `Assembly.Location` compatibility patch before runtime
+composition. This supports assemblies loaded from memory without publishing a
+second Harmony copy inside the 7DPanel Mod.
 
 Bootstrap is the only Microsoft.Extensions.DependencyInjection composition
 root. It owns one validated root provider for the Mod lifetime; the OWIN
 middleware owns one scope per request, and Web API resolves controllers from
 that same scope. The production SSE writer is the first scoped runtime
 service. The root provider is disposed only after the inner runtime and OWIN
-host stop.
+host stop. The same root owns the SQLite connection factory; shutdown clears
+its connection pools after OWIN stops.
 
 Development publish, server-control, and health-check helpers are documented in
 the [script guide](scripts/README.md). Machine-specific values belong in the
@@ -32,7 +39,8 @@ ignored `.env.local`; the tracked `.env.example` defines the available keys.
 
 At runtime, `config.example.json` is the versioned template and `config.json` is
 the server-owned configuration. The Mod creates a default `config.json` when it
-is missing. The publish project never includes the server-owned file or the
+is missing. DbUp creates or upgrades `<ModDirectory>/data/7dpanel.db` before
+OWIN starts. The publish project never includes the server-owned file or the
 `data/` directory.
 
 Runtime defaults are defined by `PanelHostConfig.CreateDefault()`; an automated
@@ -43,19 +51,21 @@ During the current framework-building phase, the `authentication` object is
 enabled by default with the known credentials `username` / `password`, a
 30-minute access-token lifetime, and `allowInsecureHttp: true`. These values are
 present in both the versioned template and a newly generated `config.json`, so
-they are not secrets. Operators can replace them in the server-owned
-`config.json`. Other credentials and access tokens must not enter command
-history, URLs, logs, frontend assets, or version control. The temporary
-configured identity maps to `Owner` and does not replace the planned persistent
-identity and Header-based Bearer model, which will remove these transitional
-defaults. Cookie authentication is not planned.
+they are not secrets. On each start they seed the single SQLite user with
+`Subject=owner`; Basic and password-grant verification then read that persistent
+record. Changing either credential updates the same owner and revokes its prior
+tokens. Other credentials and access tokens must not enter command history,
+URLs, logs, frontend assets, or version control. Cookie, CSRF-token, and refresh
+token authentication are not planned.
 
 `POST /api/v1/auth/token` accepts only the OAuth password grant and issues a
-short-lived process-local opaque Bearer token. `GET /api/v1/events/stream`
-requires either Basic or Bearer authentication, rejects tokens in the query
-string, and emits `welcome`, `console-log`, `game-ready`, and
-`server-stopping` events. Example local checks using environment-held test
-credentials are:
+short-lived opaque Bearer token whose secret is stored only as a SQLite hash.
+Tokens survive a server restart until expiration or revocation.
+`GET /api/v1/events/stream` requires either Basic or Bearer authentication,
+rejects tokens in the query string, and emits `welcome`, `console-log`,
+`game-ready`, and `server-stopping` events. The stream revalidates the current
+user and Bearer token at most every 15 seconds and closes after invalidation.
+Example local checks using environment-held test credentials are:
 
 ```powershell
 $body = @{

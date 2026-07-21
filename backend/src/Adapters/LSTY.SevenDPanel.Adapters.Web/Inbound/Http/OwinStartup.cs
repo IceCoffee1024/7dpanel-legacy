@@ -1,11 +1,11 @@
 using System;
 using System.IO;
-using System.Threading;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using LSTY.SevenDPanel.Hosting;
+using LSTY.SevenDPanel.Hosting.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
@@ -36,7 +36,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             if (authentication.Enabled)
                 app.Use<AuthenticationRateLimitMiddleware>(new AuthenticationAttemptLimiter());
             app.Use<ScopedServiceProviderMiddleware>(serviceProvider);
-            ConfigureAuthentication(app, authentication);
+            ConfigureAuthentication(app, serviceProvider, authentication);
             ConfigureApi(app, serviceProvider);
 
             if (string.IsNullOrWhiteSpace(assetRoot) || !Directory.Exists(assetRoot))
@@ -75,17 +75,17 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         private static void ConfigureAuthentication(
             IAppBuilder app,
+            IServiceProvider serviceProvider,
             PanelAuthenticationOptions authentication)
         {
             if (!authentication.Enabled) return;
 
-            var verifier = new PanelCredentialVerifier(authentication);
-            var accessTokens = new InMemoryAccessTokenProvider();
-            if (app.Properties.TryGetValue("host.OnAppDisposing", out var candidate) &&
-                candidate is CancellationToken appDisposing)
-            {
-                appDisposing.Register(accessTokens.Dispose);
-            }
+            var credentialStore = serviceProvider.GetRequiredService<IPanelCredentialStore>();
+            var accessTokenStore = serviceProvider.GetRequiredService<IPanelAccessTokenStore>();
+            var verifier = new PanelCredentialVerifier(credentialStore);
+            var accessTokens = new PersistentAccessTokenProvider(
+                accessTokenStore,
+                credentialStore);
 
             app.UseOAuthAuthorizationServer(new OAuthAuthorizationServerOptions
             {
@@ -101,7 +101,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             app.Use<BasicAuthenticationMiddleware>(new BasicAuthenticationOptions(
                 "7DPanel",
                 authentication.AllowInsecureHttp,
-                verifier.Verify));
+                verifier));
             app.UseOAuthBearerAuthentication(new OAuthBearerAuthenticationOptions
             {
                 AuthenticationMode = AuthenticationMode.Active,

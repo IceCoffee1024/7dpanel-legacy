@@ -1,15 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Hosting;
+using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
+using LSTY.SevenDPanel.Hosting.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
 using Xunit;
@@ -140,6 +144,54 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(
                 new[] { "runtime failure", "provider failure" },
                 exception.InnerExceptions.Select(failure => failure.Message));
+        }
+
+        [Fact]
+        public void Composition_root_disposes_the_owned_sqlite_connection_factory()
+        {
+            var dataDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-di-tests",
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dataDirectory);
+            var runtime = PanelServiceProviderFactory.CreateRuntime(
+                PanelHostOptions.FromBinding(18080, "127.0.0.1", "http"),
+                dataDirectory,
+                null,
+                _ => { });
+            var providerField = typeof(ServiceProviderRuntime).GetField(
+                "serviceProvider",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(providerField);
+            var provider = Assert.IsAssignableFrom<IServiceProvider>(
+                providerField.GetValue(runtime));
+            var factory = provider.GetRequiredService<SqliteConnectionFactory>();
+            var authenticationStore = provider.GetRequiredService<SqliteAuthenticationStore>();
+
+            Assert.Same(
+                authenticationStore,
+                provider.GetRequiredService<IPanelCredentialStore>());
+            Assert.Same(
+                authenticationStore,
+                provider.GetRequiredService<IPanelAccessTokenStore>());
+
+            try
+            {
+                runtime.Dispose();
+
+                var exception = Record.Exception(() =>
+                {
+                    using var connection = factory.Open();
+                });
+                Assert.IsType<ObjectDisposedException>(exception);
+            }
+            finally
+            {
+                try { runtime.Dispose(); } catch { }
+                factory.Dispose();
+                if (Directory.Exists(dataDirectory))
+                    Directory.Delete(dataDirectory, recursive: true);
+            }
         }
 
         public sealed class ScopedProbeController : ApiController

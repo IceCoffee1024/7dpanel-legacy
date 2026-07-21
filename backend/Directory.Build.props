@@ -7,6 +7,8 @@
     <Deterministic>true</Deterministic>
     <SevenDaysGameVersion Condition="'$(SevenDaysGameVersion)' == ''">v3.0.1-b4</SevenDaysGameVersion>
     <SevenDaysReferenceRoot Condition="'$(SevenDaysReferenceRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\7dtd-reference'))</SevenDaysReferenceRoot>
-    <SevenDaysManagedDirectory Condition="'$(SevenDaysManagedDirectory)' == ''">$(SevenDaysReferenceRoot)\$(SevenDaysGameVersion)\runtime\7DaysToDieServer_Data\Managed</SevenDaysManagedDirectory>
+    <SevenDaysRuntimeDirectory Condition="'$(SevenDaysRuntimeDirectory)' == ''">$(SevenDaysReferenceRoot)\$(SevenDaysGameVersion)\runtime</SevenDaysRuntimeDirectory>
+    <SevenDaysManagedDirectory Condition="'$(SevenDaysManagedDirectory)' == ''">$(SevenDaysRuntimeDirectory)\7DaysToDieServer_Data\Managed</SevenDaysManagedDirectory>
+    <SevenDaysHarmonyDirectory Condition="'$(SevenDaysHarmonyDirectory)' == ''">$(SevenDaysRuntimeDirectory)\Mods\0_TFP_Harmony</SevenDaysHarmonyDirectory>
   </PropertyGroup>
 </Project>

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>LSTY.SevenDPanel.Adapters.Persistence.Sqlite</AssemblyName>
+    <RootNamespace>LSTY.SevenDPanel.Adapters.Persistence.Sqlite</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.79" />
+    <PackageReference Include="dbup-core" Version="6.0.15" />
+    <PackageReference Include="dbup-sqlite" Version="6.0.4" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3"
+                      Version="2.1.12"
+                      PrivateAssets="all"
+                      ExcludeAssets="build;buildTransitive"
+                      GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(PkgSQLitePCLRaw_lib_e_sqlite3)\runtimes\win-x64\native\e_sqlite3.dll"
+          Link="runtimes\win-x64\native\e_sqlite3.dll"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          Visible="false" />
+    <None Include="$(PkgSQLitePCLRaw_lib_e_sqlite3)\runtimes\linux-x64\native\libe_sqlite3.so"
+          Link="runtimes\linux-x64\native\libe_sqlite3.so"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          Visible="false" />
+    <None Include="SQLitePCLRaw.batteries_v2.dll.config"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
+    <EmbeddedResource Include="Migrations\*.sql" />
+  </ItemGroup>
+</Project>

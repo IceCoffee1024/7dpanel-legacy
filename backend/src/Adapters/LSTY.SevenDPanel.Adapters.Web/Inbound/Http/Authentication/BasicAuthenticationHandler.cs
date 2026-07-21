@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Owin.Security;
@@ -23,15 +22,14 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
             if (string.IsNullOrEmpty(header) ||
                 !header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) ||
                 !TryDecodeCredentials(header.Substring("Basic ".Length).Trim(), out var username, out var password) ||
-                !Options.Verifier(username, password))
+                !Options.Verifier.TryVerify(username, password, out var panelIdentity))
             {
                 return Task.FromResult<AuthenticationTicket?>(null);
             }
 
-            var identity = new ClaimsIdentity(Options.AuthenticationType);
-            identity.AddClaim(new Claim(ClaimTypes.Name, username));
-            identity.AddClaim(new Claim(ClaimTypes.Role, "Owner"));
-            identity.AddClaim(new Claim("identity_source", "configuration"));
+            var identity = PanelClaimsIdentityFactory.Create(
+                panelIdentity,
+                Options.AuthenticationType);
             return Task.FromResult<AuthenticationTicket?>(
                 new AuthenticationTicket(identity, new AuthenticationProperties()));
         }

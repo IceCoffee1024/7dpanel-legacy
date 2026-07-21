@@ -1,5 +1,4 @@
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Hosting;
 using Microsoft.Owin.Security;
@@ -41,17 +40,19 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
                 return Task.CompletedTask;
             }
 
-            if (!verifier.Verify(context.UserName, context.Password))
+            if (!verifier.TryVerify(
+                context.UserName,
+                context.Password,
+                out var panelIdentity))
             {
                 context.SetError("invalid_grant", "The user name or password is incorrect.");
                 return Task.CompletedTask;
             }
 
             var now = DateTimeOffset.UtcNow;
-            var identity = new ClaimsIdentity(OAuthDefaults.AuthenticationType);
-            identity.AddClaim(new Claim(ClaimTypes.Name, options.Username));
-            identity.AddClaim(new Claim(ClaimTypes.Role, "Owner"));
-            identity.AddClaim(new Claim("identity_source", "configuration"));
+            var identity = PanelClaimsIdentityFactory.Create(
+                panelIdentity,
+                OAuthDefaults.AuthenticationType);
             context.Validated(new AuthenticationTicket(
                 identity,
                 new AuthenticationProperties

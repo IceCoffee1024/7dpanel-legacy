@@ -2,7 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Text;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
-using LSTY.SevenDPanel.Hosting;
+using LSTY.SevenDPanel.Hosting.Authentication;
 using Microsoft.Owin.Security;
 using Xunit;
 
@@ -11,19 +11,18 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class AuthenticationTests
     {
         [Fact]
-        public void Configured_credentials_are_exact_and_password_may_contain_colons()
+        public void Persistent_credentials_are_exact_and_return_stable_identity()
         {
-            var options = PanelAuthenticationOptions.FromBinding(
-                true,
-                "Owner",
-                "pass:word",
-                allowInsecureHttp: true);
-            var verifier = new PanelCredentialVerifier(options);
+            var expected = new PanelUserIdentity("owner-subject", "Owner");
+            var verifier = new PanelCredentialVerifier(
+                new TestCredentialStore(expected, "pass:word"));
 
-            Assert.True(verifier.Verify("Owner", "pass:word"));
-            Assert.False(verifier.Verify("owner", "pass:word"));
-            Assert.False(verifier.Verify("Owner", "pass"));
-            Assert.False(verifier.Verify("Owner", "pass:word "));
+            Assert.True(verifier.TryVerify("Owner", "pass:word", out var identity));
+            Assert.Equal(expected.Subject, identity.Subject);
+            Assert.Equal(expected.Username, identity.Username);
+            Assert.False(verifier.TryVerify("owner", "pass:word", out _));
+            Assert.False(verifier.TryVerify("Owner", "pass", out _));
+            Assert.False(verifier.TryVerify("Owner", "pass:word ", out _));
         }
 
         [Fact]
@@ -52,44 +51,47 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public void Access_token_store_revokes_oldest_and_expires_tokens()
+        public void Persistent_access_token_bridge_issues_opaque_token_and_rebuilds_current_identity()
         {
-            var now = new DateTimeOffset(2026, 7, 21, 0, 0, 0, TimeSpan.Zero);
-            var sequence = 0;
-            using var provider = new InMemoryAccessTokenProvider(
-                2,
-                () => now,
-                () => "token-" + (++sequence));
-            var ticket = CreateTicket(now.AddMinutes(5));
+            var currentUtc = DateTimeOffset.UtcNow;
+            var issuedUtc = new DateTimeOffset(
+                currentUtc.Year,
+                currentUtc.Month,
+                currentUtc.Day,
+                currentUtc.Hour,
+                currentUtc.Minute,
+                currentUtc.Second,
+                TimeSpan.Zero);
+            var expiresUtc = issuedUtc.AddMinutes(5);
+            var original = new PanelUserIdentity("owner-subject", "Owner");
+            var credentials = new TestCredentialStore(original, "password");
+            var tokens = new TestAccessTokenStore("opaque-token");
+            var provider = new PersistentAccessTokenProvider(tokens, credentials);
 
-            var first = provider.Issue(ticket);
-            var second = provider.Issue(ticket);
-            var third = provider.Issue(ticket);
+            var token = provider.Issue(CreateTicket(original, issuedUtc, expiresUtc));
 
-            Assert.False(provider.TryReceive(first, out _));
-            Assert.True(provider.TryReceive(second, out _));
-            Assert.True(provider.TryReceive(third, out _));
+            Assert.Equal("opaque-token", token);
+            Assert.Equal(original.Subject, tokens.IssuedIdentity?.Subject);
+            Assert.Equal(original.Username, tokens.IssuedIdentity?.Username);
+            Assert.Equal(issuedUtc, tokens.IssuedUtc);
+            Assert.Equal(expiresUtc, tokens.ExpiresUtc);
 
-            now = now.AddMinutes(6);
-            Assert.False(provider.TryReceive(second, out _));
-            Assert.False(provider.TryReceive(third, out _));
-            Assert.Equal(0, provider.Count);
-        }
+            credentials.Identity = new PanelUserIdentity(original.Subject, "Renamed Owner");
+            Assert.True(provider.TryReceive(token, out var received));
 
-        [Fact]
-        public void Disposing_access_token_store_invalidates_all_tokens()
-        {
-            var now = new DateTimeOffset(2026, 7, 21, 0, 0, 0, TimeSpan.Zero);
-            var provider = new InMemoryAccessTokenProvider(
-                2,
-                () => now,
-                () => "token");
-            var token = provider.Issue(CreateTicket(now.AddMinutes(5)));
+            Assert.Equal(
+                original.Subject,
+                received.Identity.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Assert.Equal(
+                "Renamed Owner",
+                received.Identity.FindFirst(ClaimTypes.Name)?.Value);
+            Assert.Equal("Owner", received.Identity.FindFirst(ClaimTypes.Role)?.Value);
+            Assert.Equal("sqlite", received.Identity.FindFirst("identity_source")?.Value);
+            Assert.Equal(issuedUtc, received.Properties.IssuedUtc);
+            Assert.Equal(expiresUtc, received.Properties.ExpiresUtc);
 
-            provider.Dispose();
-
+            credentials.Active = false;
             Assert.False(provider.TryReceive(token, out _));
-            Assert.Throws<ObjectDisposedException>(() => provider.Issue(CreateTicket(now.AddMinutes(5))));
         }
 
         [Fact]
@@ -100,7 +102,11 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Null(format.Unprotect("self-contained-token"));
             Assert.Throws<InvalidOperationException>(() =>
             {
-                format.Protect(CreateTicket(DateTimeOffset.UtcNow.AddMinutes(5)));
+                var now = DateTimeOffset.UtcNow;
+                format.Protect(CreateTicket(
+                    new PanelUserIdentity("owner-subject", "Owner"),
+                    now,
+                    now.AddMinutes(5)));
             });
         }
 
@@ -126,13 +132,109 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(limiter.TryAcquire("127.0.0.3", out _));
         }
 
-        private static AuthenticationTicket CreateTicket(DateTimeOffset expiresUtc)
+        private static AuthenticationTicket CreateTicket(
+            PanelUserIdentity panelIdentity,
+            DateTimeOffset issuedUtc,
+            DateTimeOffset expiresUtc)
         {
             var identity = new ClaimsIdentity("Bearer");
-            identity.AddClaim(new Claim(ClaimTypes.Name, "Owner"));
+            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, panelIdentity.Subject));
+            identity.AddClaim(new Claim(ClaimTypes.Name, panelIdentity.Username));
             return new AuthenticationTicket(
                 identity,
-                new AuthenticationProperties { ExpiresUtc = expiresUtc });
+                new AuthenticationProperties
+                {
+                    IssuedUtc = issuedUtc,
+                    ExpiresUtc = expiresUtc
+                });
+        }
+
+        private sealed class TestCredentialStore : IPanelCredentialStore
+        {
+            private readonly string password;
+
+            public TestCredentialStore(PanelUserIdentity identity, string password)
+            {
+                Identity = identity;
+                this.password = password;
+            }
+
+            public PanelUserIdentity Identity { get; set; }
+            public bool Active { get; set; } = true;
+
+            public bool TryVerify(
+                string username,
+                string suppliedPassword,
+                out PanelUserIdentity identity)
+            {
+                identity = null!;
+                if (!Active ||
+                    !string.Equals(username, Identity.Username, StringComparison.Ordinal) ||
+                    !string.Equals(suppliedPassword, password, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                identity = Identity;
+                return true;
+            }
+
+            public bool TryGetActive(string subject, out PanelUserIdentity identity)
+            {
+                identity = null!;
+                if (!Active ||
+                    !string.Equals(subject, Identity.Subject, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                identity = Identity;
+                return true;
+            }
+        }
+
+        private sealed class TestAccessTokenStore : IPanelAccessTokenStore
+        {
+            private readonly string token;
+            private StoredAccessToken? storedToken;
+
+            public TestAccessTokenStore(string token)
+            {
+                this.token = token;
+            }
+
+            public PanelUserIdentity? IssuedIdentity { get; private set; }
+            public DateTimeOffset IssuedUtc { get; private set; }
+            public DateTimeOffset ExpiresUtc { get; private set; }
+
+            public string Issue(
+                PanelUserIdentity identity,
+                DateTimeOffset issuedUtc,
+                DateTimeOffset expiresUtc)
+            {
+                IssuedIdentity = identity;
+                IssuedUtc = issuedUtc;
+                ExpiresUtc = expiresUtc;
+                storedToken = new StoredAccessToken(identity, issuedUtc, expiresUtc);
+                return token;
+            }
+
+            public bool TryValidate(
+                string suppliedToken,
+                DateTimeOffset utcNow,
+                out StoredAccessToken accessToken)
+            {
+                accessToken = null!;
+                if (storedToken == null ||
+                    !string.Equals(suppliedToken, token, StringComparison.Ordinal) ||
+                    storedToken.ExpiresUtc <= utcNow)
+                {
+                    return false;
+                }
+
+                accessToken = storedToken;
+                return true;
+            }
         }
     }
 }

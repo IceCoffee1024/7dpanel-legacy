@@ -47,32 +47,83 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $forbiddenNames = @(
+    '0Harmony.dll',
     'Assembly-CSharp.dll',
-    'Microsoft.Bcl.AsyncInterfaces.dll',
     'Newtonsoft.Json.dll',
     'LogLibrary.dll',
     'UnityEngine.CoreModule.dll',
-    'System.Runtime.CompilerServices.Unsafe.dll'
+    'System.Data.SQLite.dll',
+    'SQLite.Interop.dll'
 )
-$gameAssemblies = Get-ChildItem -LiteralPath $publishPath -File | Where-Object {
+$forbiddenFiles = Get-ChildItem -LiteralPath $publishPath -Recurse -File | Where-Object {
     $_.Name -in $forbiddenNames
 }
-if ($gameAssemblies) {
-    Write-Host "Removing game-provided assemblies from publish output: $($gameAssemblies.Name -join ', ')"
-    $gameAssemblies | Remove-Item -Force
+if ($forbiddenFiles) {
+    Write-Host "Removing forbidden assemblies from publish output: $($forbiddenFiles.Name -join ', ')"
+    $forbiddenFiles | Remove-Item -Force
 }
 
-$forbidden = Get-ChildItem -LiteralPath $publishPath -File | Where-Object {
+$forbidden = Get-ChildItem -LiteralPath $publishPath -Recurse -File | Where-Object {
     $_.Name -in $forbiddenNames
 }
 if ($forbidden) {
-    throw "The publish directory contains game-provided assemblies: $($forbidden.Name -join ', ')"
+    throw "The publish directory contains forbidden assemblies: $($forbidden.Name -join ', ')"
+}
+
+$forbiddenRootRuntimeNames = @(
+    'e_sqlite3.dll',
+    'System.Resources.ResourceManager.dll'
+)
+foreach ($name in $forbiddenRootRuntimeNames) {
+    $path = Join-Path $publishPath $name
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
+        Write-Host "Removing SQLite runtime asset from the Mod root: $name"
+        Remove-Item -LiteralPath $path -Force
+    }
+    if (Test-Path -LiteralPath $path) {
+        throw "A SQLite runtime asset must not remain in the Mod root: $path"
+    }
+}
+
+$obsoleteRuntimeInformationPath = Join-Path $publishPath 'runtimes\win-x64\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll'
+if (Test-Path -LiteralPath $obsoleteRuntimeInformationPath -PathType Leaf) {
+    Remove-Item -LiteralPath $obsoleteRuntimeInformationPath -Force
+}
+
+$requiredRuntimeAssetPaths = @(
+    (Join-Path $publishPath 'runtimes\win-x64\native\e_sqlite3.dll'),
+    (Join-Path $publishPath 'runtimes\linux-x64\native\libe_sqlite3.so')
+)
+$missingRuntimeAssets = $requiredRuntimeAssetPaths |
+    Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }
+if ($missingRuntimeAssets) {
+    throw "Missing required SQLite runtime assets: $($missingRuntimeAssets -join ', ')"
 }
 
 $requiredNames = @(
+    'Dapper.dll',
+    'dbup-core.dll',
+    'dbup-sqlite.dll',
+    'LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll',
+    'Microsoft.CSharp.dll',
+    'Microsoft.Bcl.AsyncInterfaces.dll',
+    'Microsoft.Data.Sqlite.dll',
     'Microsoft.Extensions.DependencyInjection.dll',
     'Microsoft.Extensions.DependencyInjection.Abstractions.dll',
+    'Microsoft.Extensions.Logging.Abstractions.dll',
     'Microsoft.Owin.Security.OAuth.dll',
+    'SQLitePCLRaw.batteries_v2.dll',
+    'SQLitePCLRaw.batteries_v2.dll.config',
+    'SQLitePCLRaw.core.dll',
+    'SQLitePCLRaw.provider.dynamic_cdecl.dll',
+    'System.Buffers.dll',
+    'System.ComponentModel.DataAnnotations.dll',
+    'System.Dynamic.dll',
+    'System.Memory.dll',
+    'System.Numerics.Vectors.dll',
+    'System.Reflection.Emit.dll',
+    'System.Runtime.CompilerServices.Unsafe.dll',
+    'System.Runtime.InteropServices.RuntimeInformation.dll',
     'System.Threading.Channels.dll',
     'System.Threading.Tasks.Extensions.dll'
 )
