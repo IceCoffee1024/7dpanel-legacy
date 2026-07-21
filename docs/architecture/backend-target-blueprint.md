@@ -185,7 +185,7 @@ Browser
   -> Application use case
   -> typed Application port
   -> outbound adapter
-  -> bounded main-thread scheduler
+  -> GameThreadDispatcher
   -> 7DTD API
 ```
 
@@ -196,7 +196,7 @@ Application 代码永远不会接收活动的 Unity 或 7DTD 对象。游戏 ada
 ```text
 HTTP worker
   Controller -> Use Case -> SQLite / File / Queue Port
-                         -> Main Thread Scheduler -> 7DTD
+                         -> typed Game Port -> GameThreadDispatcher -> 7DTD
 
 7DTD main thread
   Game Event Adapter -> immutable event snapshot -> background queue
@@ -304,12 +304,12 @@ GET /api/v1/players/online
   -> GetOnlinePlayersUseCase
   -> authorize ViewPlayers
   -> IOnlinePlayerQuery
-  -> SevenDaysMainThreadScheduler
+  -> GameThreadDispatcher
   -> map live players to immutable PlayerSnapshot values
   -> HTTP response contracts
 ```
 
-超时返回 `Unavailable` 或 `Unknown`，不得把过期数据伪装成实时数据。
+请求尚未开始时可以取消或按启动截止时间返回不可用；一旦游戏主线程开始读取活动对象，就等待真实快照，不得把过期数据伪装成实时数据。每个新增生产 Gateway 必须根据其真实并发和成本选择 single-flight、有界容量或合并读取，不得无界投递。
 
 ### 玩家管理动作
 
@@ -320,7 +320,7 @@ POST /api/v1/players/{id}/kick
   -> authorize and validate confirmation
   -> persist audit intent
   -> IPlayerActions.KickAsync
-  -> main-thread scheduler
+  -> GameThreadDispatcher
   -> typed 7DTD action
   -> complete audit with Succeeded / Failed / Unknown
 ```
@@ -329,7 +329,7 @@ HTTP 超时不能证明游戏动作失败。动作一旦开始，就必须继续
 
 ### 公告与自动化
 
-即时公告先完成授权并持久化审计意图，再通过主线程 scheduler 使用类型化公告 gateway。
+即时公告先完成授权并持久化审计意图，再通过 `GameThreadDispatcher` 使用类型化公告 gateway。每个状态变更 Gateway 在投递前拥有自己的有界背压策略；不得把当前只读版本命令的 single-flight 策略未经负载证据推广到其他动作。
 
 ```text
 PlayerJoined callback
@@ -475,13 +475,14 @@ backend/
 |   |   |   `-- Ports/
 |   |   |       |-- IOnlinePlayerQuery.cs        # 在线玩家快照
 |   |   |       `-- IPlayerActions.cs            # 类型化玩家变更
+|   |   |-- ConsoleCommands/
+|   |   |   |-- ExecuteConsoleCommandUseCase.cs  # 受限高级命令
+|   |   |   |-- ConsoleCommandResult.cs          # 不可变命令输出
+|   |   |   `-- IRestrictedConsoleGateway.cs     # 类型化白名单控制台动作
 |   |   |-- ConsoleLogs/
 |   |   |   |-- SearchConsoleLogsUseCase.cs      # 有界游标搜索
-|   |   |   |-- ExecuteConsoleCommandUseCase.cs  # 受限高级命令
 |   |   |   |-- Models/ConsoleLogEntryView.cs    # 安全的日志读模型
-|   |   |   `-- Ports/
-|   |   |       |-- IConsoleLogQuery.cs          # 控制台日志搜索
-|   |   |       `-- IRestrictedConsoleGateway.cs # 白名单控制台动作
+|   |   |   `-- Ports/IConsoleLogQuery.cs        # 控制台日志搜索
 |   |   |-- Announcements/
 |   |   |   |-- PublishAnnouncementUseCase.cs    # 权限、审计、发布
 |   |   |   |-- Models/
@@ -601,13 +602,13 @@ backend/
 |   |       |   |-- SevenDaysPlayerActions.cs
 |   |       |   `-- SevenDaysSnapshotMapper.cs
 |   |       |-- Announcements/SevenDaysAnnouncementGateway.cs
-|   |       |-- ConsoleLogs/
-|   |       |   |-- SevenDaysConsoleLogQuery.cs
+|   |       |-- ConsoleCommands/
 |   |       |   `-- SevenDaysRestrictedConsoleGateway.cs
+|   |       |-- ConsoleLogs/SevenDaysConsoleLogQuery.cs
 |   |       |-- Backups/
 |   |       |   |-- SevenDaysWorldSaveGateway.cs
 |   |       |   `-- SevenDaysServerShutdown.cs
-|   |       `-- Runtime/SevenDaysMainThreadScheduler.cs
+|   |       `-- Runtime/GameThreadDispatcher.cs
 |   |
 |   |-- Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/
 |   |   |-- LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj
@@ -661,7 +662,7 @@ backend/
 目标设计仍需要以下真实实现和进程证据：
 
 - 用于在线玩家快照和类型化玩家动作的稳定 `v3.0.1-b4` API；
-- `ThreadManager.AddSingleTaskMainThread` 的取消、异常和关服行为；
+- `GameThreadDispatcher` 的排队取消、启动超时、执行异常和 Windows `version` 主线程往返已有当前证据；仍缺状态变更动作的关服竞态、多个生产 Gateway 的背压基线和 Linux 证据；
 - 控制台日志真实容量饱和与 Linux Unity Mono 行为；Windows `v3.0.1-b4` 的 `Log.LogCallbacksExtended`、`System.Threading.Channels`、正常负载和关服排空已有当前证据；
 - `Admin`/`Viewer` 用户管理、可调用的 Token 撤销入口、审计和最终移除配置引导仍需实现；产品不采用 Cookie、CSRF Token 或 refresh token；
 - 引导 `Owner`、持久 Token 和 SSE 周期复验已有自动化；当前标准 Batteries/SQLitePCLRaw `2.1.12`、`Microsoft.Bcl.AsyncInterfaces` 和 `System.Runtime.CompilerServices.Unsafe` 发布物已有 Windows 7DTD 进程证据，但仍缺 Linux 证据；

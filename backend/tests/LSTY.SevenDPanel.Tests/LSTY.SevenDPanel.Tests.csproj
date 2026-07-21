@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Bootstrap\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj" />
+    <ProjectReference Include="..\..\src\Core\LSTY.SevenDPanel.Application\LSTY.SevenDPanel.Application.csproj" />
     <ProjectReference Include="..\..\src\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
     <ProjectReference Include="..\..\src\Adapters\LSTY.SevenDPanel.Adapters.Persistence.Sqlite\LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\..\src\Adapters\LSTY.SevenDPanel.Adapters.SevenDays\LSTY.SevenDPanel.Adapters.SevenDays.csproj" />

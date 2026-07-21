@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Hosting;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
+using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
@@ -174,6 +176,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 authenticationStore,
                 provider.GetRequiredService<IPanelAccessTokenStore>());
+            Assert.IsType<SevenDaysRestrictedConsoleGateway>(
+                provider.GetRequiredService<IRestrictedConsoleGateway>());
+            Assert.NotNull(provider.GetRequiredService<ExecuteConsoleCommandUseCase>());
 
             try
             {

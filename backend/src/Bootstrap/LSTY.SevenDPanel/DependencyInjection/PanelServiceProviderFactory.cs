@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
+using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
@@ -42,6 +44,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(_ => new ConsoleLogService(log));
                 services.AddSingleton<IServerEventStream>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);
+                services.AddSingleton<IRestrictedConsoleGateway, SevenDaysRestrictedConsoleGateway>();
+                services.AddSingleton<ExecuteConsoleCommandUseCase>();
                 services.AddScoped<ServerEventSseSession>();
                 services.AddSingleton(serviceProvider => new ModHost(
                     () =>

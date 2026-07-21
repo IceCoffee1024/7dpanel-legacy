@@ -9,6 +9,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+    <ProjectReference Include="..\..\Core\LSTY.SevenDPanel.Application\LSTY.SevenDPanel.Application.csproj" />
     <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Persistence.Sqlite\LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj" />

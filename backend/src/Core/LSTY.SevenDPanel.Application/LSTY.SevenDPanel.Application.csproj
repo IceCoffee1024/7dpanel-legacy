@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>LSTY.SevenDPanel.Application</AssemblyName>
+    <RootNamespace>LSTY.SevenDPanel.Application</RootNamespace>
+  </PropertyGroup>
+</Project>

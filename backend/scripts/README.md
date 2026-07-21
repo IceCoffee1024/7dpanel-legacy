@@ -71,10 +71,14 @@ runtime layout:
 
 ```text
 <ModDirectory>/
-  7DPanel.dll
+  LSTY.SevenDPanel.dll
   Dapper.dll
   dbup-core.dll
   dbup-sqlite.dll
+  LSTY.SevenDPanel.Application.dll
+  LSTY.SevenDPanel.Hosting.dll
+  LSTY.SevenDPanel.Adapters.Web.dll
+  LSTY.SevenDPanel.Adapters.SevenDays.dll
   LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll
   Microsoft.Bcl.AsyncInterfaces.dll
   Microsoft.CSharp.dll

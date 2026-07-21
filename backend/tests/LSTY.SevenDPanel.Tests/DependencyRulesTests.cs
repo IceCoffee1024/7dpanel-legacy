@@ -254,6 +254,12 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("'0Harmony.dll'", forbiddenNames);
             Assert.DoesNotContain("'0Harmony.dll'", requiredNames);
             Assert.Contains("$requiredNames", publishScript);
+            Assert.Contains("'LSTY.SevenDPanel.dll'", requiredNames);
+            Assert.Contains("'LSTY.SevenDPanel.Application.dll'", requiredNames);
+            Assert.Contains("'LSTY.SevenDPanel.Hosting.dll'", requiredNames);
+            Assert.Contains("'LSTY.SevenDPanel.Adapters.Web.dll'", requiredNames);
+            Assert.Contains("'LSTY.SevenDPanel.Adapters.SevenDays.dll'", requiredNames);
+            Assert.Contains("'LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll'", requiredNames);
             Assert.Contains("'System.Threading.Channels.dll'", publishScript);
             Assert.Contains("'System.Threading.Tasks.Extensions.dll'", publishScript);
             Assert.Contains("'Microsoft.Extensions.DependencyInjection.dll'", publishScript);

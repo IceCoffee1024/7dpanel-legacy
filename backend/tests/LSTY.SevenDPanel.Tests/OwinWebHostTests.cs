@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
+using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
@@ -57,6 +58,180 @@ namespace LSTY.SevenDPanel.Tests
             finally
             {
                 rebound.Stop();
+            }
+        }
+
+        [Fact]
+        public async Task Console_command_requires_authentication()
+        {
+            var gateway = new TestRestrictedConsoleGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateConsoleCommandRequest(url, "version"))
+            {
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "authentication_required",
+                    "/api/v1/console/commands");
+                Assert.Null(gateway.Command);
+            }
+        }
+
+        [Fact]
+        public async Task Authenticated_owner_executes_version_command()
+        {
+            var gateway = new TestRestrictedConsoleGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateConsoleCommandRequest(url, " VERSION "))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal("version", (string?)payload["command"]);
+                Assert.Equal("version output", (string?)payload["output"]?[0]);
+                Assert.Equal("version", gateway.Command);
+            }
+        }
+
+        [Fact]
+        public async Task Unsupported_console_command_returns_problem_details_without_dispatch()
+        {
+            var gateway = new TestRestrictedConsoleGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateConsoleCommandRequest(url, "kick player"))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "console_command_not_supported",
+                    "/api/v1/console/commands");
+                Assert.Null(gateway.Command);
+            }
+        }
+
+        [Fact]
+        public async Task Console_command_rejects_requests_before_game_ready()
+        {
+            var gateway = new TestRestrictedConsoleGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway,
+                gameReadiness: GameReadinessState.Loading);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateConsoleCommandRequest(url, "version"))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "game_not_ready",
+                    "/api/v1/console/commands");
+                Assert.Null(gateway.Command);
+            }
+        }
+
+        [Fact]
+        public async Task Busy_console_command_returns_problem_details()
+        {
+            var gateway = new TestRestrictedConsoleGateway(
+                new ConsoleCommandBusyException());
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateConsoleCommandRequest(url, "version"))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "console_command_busy",
+                    "/api/v1/console/commands");
             }
         }
 
@@ -688,6 +863,21 @@ namespace LSTY.SevenDPanel.Tests
             return new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
         }
 
+        private static HttpRequestMessage CreateConsoleCommandRequest(
+            string url,
+            string command)
+        {
+            return new HttpRequestMessage(
+                HttpMethod.Post,
+                url + "api/v1/console/commands")
+            {
+                Content = new StringContent(
+                    "{\"command\":" + Newtonsoft.Json.JsonConvert.SerializeObject(command) + "}",
+                    Encoding.UTF8,
+                    "application/json")
+            };
+        }
+
         private static FormUrlEncodedContent CreateTokenContent(string password) =>
             new FormUrlEncodedContent(new[]
             {
@@ -720,7 +910,9 @@ namespace LSTY.SevenDPanel.Tests
         private static ServiceProvider CreateWebServiceProvider(
             bool enableConsoleLogStream,
             ServerEventHub hub,
-            bool allowInsecureHttp = true)
+            bool allowInsecureHttp = true,
+            IRestrictedConsoleGateway? consoleGateway = null,
+            GameReadinessState gameReadiness = GameReadinessState.Ready)
         {
             var services = new ServiceCollection();
             var authentication = enableConsoleLogStream
@@ -737,7 +929,10 @@ namespace LSTY.SevenDPanel.Tests
                 authentication));
             services.AddSingleton<IServerEventStream>(hub);
             services.AddSingleton<IPanelRuntimeStatus>(
-                new TestPanelRuntimeStatus(ModHostState.Running, GameReadinessState.Ready));
+                new TestPanelRuntimeStatus(ModHostState.Running, gameReadiness));
+            services.AddSingleton(
+                consoleGateway ?? new TestRestrictedConsoleGateway());
+            services.AddSingleton<ExecuteConsoleCommandUseCase>();
             var authenticationStore = new TestPanelAuthenticationStore();
             services.AddSingleton<IPanelCredentialStore>(authenticationStore);
             services.AddSingleton<IPanelAccessTokenStore>(authenticationStore);
@@ -747,6 +942,30 @@ namespace LSTY.SevenDPanel.Tests
                 ValidateOnBuild = true,
                 ValidateScopes = true
             });
+        }
+
+        private sealed class TestRestrictedConsoleGateway : IRestrictedConsoleGateway
+        {
+            private readonly Exception? failure;
+
+            public TestRestrictedConsoleGateway(Exception? failure = null)
+            {
+                this.failure = failure;
+            }
+
+            public string? Command { get; private set; }
+
+            public Task<ConsoleCommandResult> ExecuteVersionAsync(
+                CancellationToken cancellationToken)
+            {
+                const string command = ExecuteConsoleCommandUseCase.VersionCommand;
+                Command = command;
+                if (failure != null)
+                    return Task.FromException<ConsoleCommandResult>(failure);
+                return Task.FromResult(new ConsoleCommandResult(
+                    command,
+                    new[] { "version output" }));
+            }
         }
 
         private sealed class TestPanelRuntimeStatus : IPanelRuntimeStatus
