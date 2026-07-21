@@ -24,6 +24,18 @@ maintaining duplicate product, design, architecture, or test facts.
   changes. Minimize accidental complexity with clear ownership, explicit
   boundaries, simple verifiable designs, and recoverable operations so the
   team can keep changing the system with confidence.
+- MUST implement the smallest complete vertical slice approved for the current
+  task. Do not add interfaces, registries, generic lifecycle abstractions, or
+  future-facing infrastructure without a non-test runtime consumer in the same
+  change. An existing external boundary, cross-project dependency direction,
+  second runtime implementation or consumer, demonstrated duplication, or
+  explicitly approved near-term consumer may justify an abstraction; testing
+  convenience alone does not.
+- MUST scale verification to the changed boundary as defined in
+  [docs/test.md](docs/test.md). Run targeted checks while iterating and run
+  broader aggregate checks once after the implementation stabilizes. Do not run
+  publish, live 7DTD, or browser smoke unless the changed code crosses that
+  boundary, the test strategy requires it, or the user explicitly requests it.
 - When `.codegraph/` exists at the repository root, use CodeGraph before `rg`
   or direct file reads to understand or locate code. Prefer
   `codegraph explore "<question or symbols>"`; use
