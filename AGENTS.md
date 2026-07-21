@@ -36,13 +36,18 @@ maintaining duplicate product, design, architecture, or test facts.
   broader aggregate checks once after the implementation stabilizes. Do not run
   publish, live 7DTD, or browser smoke unless the changed code crosses that
   boundary, the test strategy requires it, or the user explicitly requests it.
-- When `.codegraph/` exists at the repository root, use CodeGraph before `rg`
-  or direct file reads to understand or locate code. Prefer
-  `codegraph explore "<question or symbols>"`; use
-  `codegraph node <symbol-or-file>` for one symbol or file.
-- For current framework, library, SDK, API, or CLI usage, resolve the exact
-  library with Context7 and query the relevant official documentation. Do not
-  rely only on model memory.
+- When `.codegraph/` exists at the repository root, use CodeGraph before
+  workspace text search or direct file reads to understand or locate code.
+  Prefer the MCP `codegraph_explore` tool when available; otherwise use
+  `codegraph explore "<question or symbols>"`. Use `codegraph node
+  <symbol-or-file>` for one known symbol or file when the installed CLI
+  supports it. Treat verbatim source returned by CodeGraph as already read.
+- For current framework, library, SDK, API, CLI, or cloud-service usage, use
+  Context7 before relying on model memory or general web search. Resolve the
+  exact library ID first unless the user supplied one, then query the official
+  documentation with one focused concept per request. Do not invoke Context7
+  for repository business logic, general programming concepts, or refactoring
+  that does not depend on an external API.
 - Use `managing-project-lifecycle` to create, update, and audit project
   documentation.
 - Repository instructions and established local conventions override skill
