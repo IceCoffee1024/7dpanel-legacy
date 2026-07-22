@@ -38,6 +38,23 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Request_cancellation_is_not_converted_to_an_internal_server_error()
+        {
+            var logs = new List<string>();
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+            var context = CreateContext("/api/v1/players/7/kick");
+            var middleware = CreateMiddleware(
+                _ => Task.FromCanceled(cancellation.Token),
+                logs.Add);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => middleware.Invoke(context));
+
+            Assert.Empty(logs);
+            Assert.NotEqual((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+        }
+
+        [Fact]
         public async Task Exception_after_sse_body_starts_does_not_append_problem_details()
         {
             var logs = new List<string>();

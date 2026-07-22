@@ -106,9 +106,28 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("services.AddSingleton<SevenDaysOnlinePlayerQuery>();", providerFactorySource);
             Assert.Contains("services.AddSingleton<IOnlinePlayerQuery>", providerFactorySource);
             Assert.Contains("services.AddSingleton<GetOnlinePlayersUseCase>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SqlitePlayerActionAuditTrail>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IPlayerActionAuditTrail>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SevenDaysPlayerActions>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IPlayerActions>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<KickPlayerUseCase>();", providerFactorySource);
+            Assert.Contains("playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);", providerFactorySource);
             Assert.Contains("ValidateOnBuild = true", providerFactorySource);
             Assert.Contains("ValidateScopes = true", providerFactorySource);
 
+            var upgradeIndex = providerFactorySource.IndexOf(
+                "databaseBootstrapper.Upgrade();",
+                StringComparison.Ordinal);
+            var recoveryIndex = providerFactorySource.IndexOf(
+                "playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);",
+                StringComparison.Ordinal);
+            var webHostIndex = providerFactorySource.IndexOf(
+                "return new OwinWebHost(",
+                StringComparison.Ordinal);
+            Assert.True(upgradeIndex >= 0 && recoveryIndex > upgradeIndex,
+                "Pending player actions must be recovered after the database upgrade.");
+            Assert.True(webHostIndex > recoveryIndex,
+                "Pending player actions must be recovered before the OWIN host is created.");
             var candidateRuntimeIndex = modMainSource.IndexOf("candidateRuntime = PanelServiceProviderFactory.CreateRuntime(", StringComparison.Ordinal);
             var candidateAdapterIndex = modMainSource.IndexOf("candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateRuntime);", StringComparison.Ordinal);
             var registerIndex = modMainSource.IndexOf("candidateAdapter.RegisterAndStart();", StringComparison.Ordinal);
@@ -126,6 +145,28 @@ namespace LSTY.SevenDPanel.Tests
             var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);
             Assert.True(registeredIndex >= 0, "Lifecycle adapter must record lifecycle registration.");
             Assert.True(startIndex > registeredIndex, "Lifecycle adapter must register all lifecycle handlers before starting the panel host.");
+        }
+
+        [Fact]
+        public void Player_action_adapters_remain_isolated()
+        {
+            var webRoot = Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.Web");
+            var sevenDaysRoot = Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.SevenDays");
+            var persistenceRoot = Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.Persistence.Sqlite");
+
+            AssertSourceDoesNotContain(webRoot, "LSTY.SevenDPanel.Adapters.SevenDays");
+            AssertSourceDoesNotContain(webRoot, "LSTY.SevenDPanel.Adapters.Persistence.Sqlite");
+            AssertSourceDoesNotContain(sevenDaysRoot, "LSTY.SevenDPanel.Adapters.Persistence.Sqlite");
+            AssertSourceDoesNotContain(persistenceRoot, "LSTY.SevenDPanel.Adapters.SevenDays");
         }
 
         [Fact]
@@ -406,6 +447,17 @@ namespace LSTY.SevenDPanel.Tests
                         direction + " must not reference " + forbiddenNamespace.TrimStart('.') + ": " + sourcePath);
                 }
             }
+        }
+
+        private static void AssertSourceDoesNotContain(
+            string projectRoot,
+            string forbiddenNamespace)
+        {
+            var offender = Directory
+                .GetFiles(projectRoot, "*.cs", SearchOption.AllDirectories)
+                .FirstOrDefault(path => File.ReadAllText(path).Contains(forbiddenNamespace));
+            Assert.True(offender == null,
+                projectRoot + " must not reference " + forbiddenNamespace + ": " + offender);
         }
 
         private static string ResolveProjectReference(string projectPath, XElement reference)

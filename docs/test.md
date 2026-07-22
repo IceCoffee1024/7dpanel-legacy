@@ -7,7 +7,7 @@ last_updated: "2026-07-22"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。当前 Release 构建为零警告，152 项 xUnit 自动化覆盖生命周期、命名服务器事件、Problem Details、SQLite migration、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、Application 控制台命令与在线玩家查询、主线程 Dispatcher 状态竞态、认证命令/玩家 API、Harmony 位置补丁边界和静态 Admin 托管。Admin 当前 9 个 Vitest 文件共 119 项自动化覆盖共享 HTTP、认证、内存会话、路由、安全返回目标、玩家 DTO/状态机和组件行为；Playwright Chromium suite 已建立 4 项真实 Owner 场景，但 2026-07-22 因三个必需环境变量均未设置而全部 skip。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据已覆盖当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、DI、Bcl/Unsafe、migration、认证 SSE、`game-ready`、`server-stopping`、只读 `version` 主线程往返、单个真实在线玩家字段和正常关服；Linux 真实进程仍未验证。完整用户管理、状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-22 的当前 Release Rebuild 为零错误，220 项 xUnit 自动化全部通过，覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、Harmony 位置补丁边界和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 182 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建，覆盖共享 HTTP、认证、内存会话、路由、安全返回目标、玩家 DTO/状态机、踢出 API/composable、固定目标确认和桌面/移动组件编排。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据已覆盖当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、DI、Bcl/Unsafe、migration、认证 SSE、`game-ready`、`server-stopping`、只读 `version` 主线程往返、单个真实在线玩家字段和正常关服；Owner 踢出真实拒绝消息、延迟断开、列表更新和审计一致性仍未验证，Linux 真实进程也未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -33,7 +33,7 @@ last_updated: "2026-07-22"
 | 多项目依赖或发布边界漂移 | `DependencyRulesTests` 校验项目引用白名单、Inbound/Outbound 不得交叉引用，以及只有 Bootstrap 可以实现 `IModApi`；发布检查确认 Bootstrap、Application、Hosting、Web、SevenDays 和 Persistence 六个产品 DLL 齐全。 |
 | 产品版本来源漂移 | 健康端点必须返回 `ProductInfo.Version`；测试校验该值与 Bootstrap 的 `ModInfo.xml` 一致，不允许从 Adapter 当前执行程序集推断产品版本。 |
 | OWIN 生命周期泄漏 | 在同一测试主机上重复启动、正常关服和再次启动服务端；确认端口可重新绑定、后台线程和计时器退出、请求在 draining 后被拒绝。 |
-| 主线程调度拖慢游戏 | 当前只读版本 Gateway 与在线玩家 Query 必须保持相互独立的 single-flight，排队取消/启动超时不得执行委托，执行开始后不得伪造取消或超时；新增生产 Gateway 前按真实负载验证有界拒绝、合并或背压，不允许无界增长。 |
+| 主线程调度拖慢游戏 | 当前只读版本 Gateway、在线玩家 Query 和踢出 Application gate 必须保持职责独立；排队取消/启动超时不得执行委托，执行开始后不得伪造取消或超时。踢出同一时刻只允许一个请求在审计和动作链路中运行；未来新增生产 Gateway 前按真实负载验证有界拒绝、合并或背压，不允许无界增长。 |
 | 在线玩家字段或线程边界漂移 | 自动化必须验证不可变复制、排序、可空跨平台身份、实例级 single-flight、取消/超时/异常后释放、Owner-only、就绪短路、字段白名单和稳定 503；只有真实测试玩家 smoke 才能证明 `v3.0.1-b4` 字段兼容，任何游戏活对象不得离开主线程委托。 |
 | 后台命令已接收但无人消费或错误分发 | 集成测试必须覆盖生产者投递、唯一 Consumer 组件读取、有界执行槽、显式 Dispatcher 到唯一 Use Case、长任务与短任务并发、单项失败隔离、停止生产、完成写端、截止时间内排空及未处理项的明确结果。 |
 | 组合运行时启停顺序漂移 | 使用记录型 `IModRuntime` 和可控日志订阅验证 `ConsoleLogService` 先启动、先停止；已接受日志、一次 `game-ready` 和 `server-stopping` 共用 sequence 且停止时排空，日志排空超时仍会尝试 `ModHost.Stop` 并聚合失败；`ModHost` 不包含具体队列、数据库或重试逻辑。 |
@@ -42,7 +42,7 @@ last_updated: "2026-07-22"
 | 配置引导身份或生产 SSE 被误当作完整 `CAP-05` | 默认和缺失配置必须产生批准的 `username` / `password` 与明文 HTTP 过渡边界，并只同步固定 `owner`；Basic/password grant 必须读取 SQLite，Bearer 只能来自 Header。限流、统一 401/429/503、Token 到期/轮换撤销、SSE 周期复验、订阅上限、Welcome、replay/gap 和断开释放必须有自动化。完整角色/用户管理仍按未实现处理，产品不采用 Cookie、CSRF Token 或 refresh token。 |
 | Channels/SQLite 与宿主程序集冲突 | 发布物必须包含 Channels、Tasks.Extensions `4.6.3`、Bcl AsyncInterfaces `10.0.10`、Unsafe `6.1.2`、Microsoft.Data.Sqlite、SQLitePCLRaw Batteries/core/dynamic provider、`SQLitePCLRaw.batteries_v2.dll.config`，以及 Mod 根目录中的五个 Framework64 宿主兼容程序集和 Windows/Linux x64 RID native SQLite。根目录不得保留 native `e_sqlite3.dll`，旧 System.Data.SQLite/SQLite.Interop 与游戏提供的 Newtonsoft.Json、LogLibrary 或 Unity 程序集不得发布；源码规则必须禁止自定义 loader、ResourceManager shim 和显式 provider 绑定。Release 必须零冲突警告，官方进程日志必须证明标准 Batteries 组合加载且无托管或 native 类型加载错误。 |
 | 持久化端口泄漏 provider | 依赖测试禁止 Hosting/Web 引用 Dapper、DbUp、`SqliteConnection` 或数据库事务类型；只有 Persistence Adapter 实现 credential/token Store 并拥有连接与事务。 |
-| SQLite 写竞争或审计静默丢失 | 当前身份集成测试验证 WAL、5 秒 default timeout、立即写事务、迁移幂等、Token 严格容量和连接池清理；后续高频审计/作业切片仍须验证并发写入、锁竞争和失败恢复。高风险动作在审计意图持久化失败时不得进入游戏主线程。 |
+| SQLite 写竞争或审计静默丢失 | 当前身份与玩家动作集成测试验证 WAL、5 秒 default timeout、立即写事务、迁移幂等、Token 严格容量、短连接、Pending 插入、并发一次完成、数据库锁失败后恢复、遗留 Pending 启动恢复和连接池清理。高风险动作在审计意图持久化失败时不得进入游戏主线程，终态写入不可确认时不得伪造失败。 |
 | 在线备份不一致 | 在保存提交完成后持续制造世界写入，验证归档清单、校验和及恢复后世界数据；若无法证明一致性，发布前必须采用架构文档所述维护窗口或文件系统快照方案。 |
 | 恢复时文件已经打开 | 验证待恢复操作发生在世界文件打开前；通过文件占用和中途终止注入确认原存档、待恢复标记及回滚副本可恢复。 |
 | SQLite 平台兼容 | 在 Windows x64 和 Linux x64 分别验证 Native 库加载、首次建库、全部迁移、CRUD、进程重启和数据库关闭。 |
@@ -73,6 +73,7 @@ last_updated: "2026-07-22"
 - 后端单元测试采用 xUnit v3。无共享状态的测试允许并行；占用固定端口、SQLite 文件、游戏进程或静态游戏状态的测试必须使用测试集合隔离或显式禁止并行。
 - 当前自动化覆盖 `ModHost` 启停/就绪状态和并发终止竞态，生命周期 Adapter 的三个可执行回调与失败回滚，集中控制台日志服务、当前进程 `ServerEventLiveWindow`、每客户端 `ServerEventHub` 和组合运行时，Microsoft DI scope 隔离/复用/一次释放、Provider 验证与运行时先停后释放顺序；`GameThreadDispatcherTests` 确定性验证排队取消/启动超时阻止执行，以及执行开始后取消/超时仍等待真实结果，`ConsoleCommandTests` 验证 `version` 标准化和未支持命令不会进入 Gateway。
 - 在线玩家单元测试验证 Application 快照复制和用例转发、Adapter 稳定排序、可空跨平台身份、不同实例门禁隔离，以及成功、异常、取消和超时后的门禁释放；基础设施与真实字段兼容仍由官方进程 smoke 负责。
+- 踢出用例测试验证确认、原因与身份前置校验，审计先于动作，专属 single-flight，成功/离线/身份变化/取消/超时/未知异常的终态映射，以及审计意图或完成不可用语义。SevenDays 动作测试验证所有游戏对象访问位于 Dispatcher 内、实体与双字段身份重验、原生调用恰好一次和 `ManualKick` 参数快照。
 - 服务器事件自动化覆盖日志六字段、三类 replay 事件的共享 sequence、固定窗口淘汰、批次与 gap 边界、回调/consumer 线程隔离、队满即时拒绝与 high-water 上限、保序且只消费一次、单次 `game-ready`、停止 marker、消费后通过公开 stream 边界广播、单项失败继续、订阅失败、注销后拒绝、限时排空、超时仍停止内部运行时、停止摘要时序、多订阅者隔离、mailbox 溢出、订阅上限、空窗口游标和完成释放。生产静态 delegate 的精确映射由源码复核与真实进程验证，不通过额外 source/callback 接口伪装成单元测试结论。
 - 认证单元和 SQLite 集成测试使用可控时间验证 Basic 首个冒号分隔、非法 Base64、引导凭据同步、Token 最旧淘汰/到期/轮换撤销，以及每地址限流窗口和 bucket 容量；不通过真实等待模拟 Token 到期。
 - 配置测试验证 `config.example.json`、`PanelHostConfig.CreateDefault()` 和缺失配置时生成的 `config.json` 同步启用引导 `username` / `password`、30 分钟 Token 与 `allowInsecureHttp=true`；SQLite 测试验证每次启动只更新稳定 `owner` 且凭据变化撤销旧 Token。解析失败仍必须关闭认证，受保护 API 不得退化为匿名访问。
@@ -81,7 +82,7 @@ last_updated: "2026-07-22"
 
 ### SQLite 与文件系统集成测试
 
-- 当前身份测试为每个用例使用唯一临时数据库和数据目录，运行真实 DbUp migration、WAL 初始化、5 秒 default timeout、能力型 Store 短事务、Store/connection factory 重建与连接池清理；数据库文件扫描验证密码和完整 Token secret 不以明文落盘。
+- 当前身份与玩家动作审计测试为每个用例使用唯一临时数据库和数据目录，运行真实 DbUp migration、WAL 初始化、5 秒 default timeout、能力型 Store 短事务、Store/connection factory 重建与连接池清理；审计测试覆盖完整 Pending 快照、一次合法终态、并发完成、锁竞争和跨实例启动恢复，身份数据库扫描验证密码和完整 Token secret 不以明文落盘。
 - 对高频写入制造并发日志和审计负载，验证写入串行化、审计持久化确认、锁竞争恢复、队列饱和策略和日志丢弃计数；审计或作业状态不得静默丢失。
 - 对持久后台作业验证先落盘再投递、进程中断后重新发现 `queued/running` 状态和幂等恢复；对瞬时游戏事件验证过载拒绝可观测。
 - 在 SQLite 写入、待恢复文件标记和安全关服之间逐点注入失败，验证跨边界流程使用幂等状态与补偿恢复，而不是依赖虚假的全局事务。
@@ -95,11 +96,11 @@ last_updated: "2026-07-22"
 - 同一 Katana 测试类使用真实根 Provider 验证匿名/错误 Basic/错误 Bearer 的 401 与双 challenge、password grant、OAuth `invalid_grant` 例外、拒绝 QueryString Token、每分钟限流 429、Welcome 先于命名 replay、gap、无效游标 400、订阅容量的建流前 503，以及响应释放后 scoped session 与 Hub 订阅清理。直接 handler 测试另验证 Web API 使用同一个 OWIN scope，non-owning wrapper 不提前释放实际 scope。15 秒 comment heartbeat 由源码复核，不为了等待间隔增加慢集成测试，也不把间隔暴露为服主配置。
 - 同一 Katana 主机还验证控制台命令匿名 401、认证 `version` 成功、未支持命令 400、游戏未就绪 503 和 single-flight 忙 503 均使用稳定 Problem Details，且拒绝路径不会调用 Gateway。
 - 同一 Katana 主机验证玩家查询匿名 401、Owner 空/多玩家 200、camelCase 字段白名单与排序、游戏未就绪时不调用 Query，以及繁忙、主线程启动超时和快照不可用的稳定 503 Problem Details。当前持久认证只创建 `Owner`，非 Owner 403 随角色管理切片验证。
+- 同一 Katana 主机验证 Owner 踢出请求字段、确认、原因、身份、认证主体、成功白名单，以及离线、身份变化、busy、主线程超时、审计不可用和原生失败的稳定 Problem Details；请求取消不会被通用异常边界改写为 500。当前持久认证只创建 `Owner`，真实非 Owner 身份链路仍随角色管理切片验证。
 - `DependencyRulesTests` 以源码规则验证 Bootstrap 通过唯一 composition root 创建经过验证的 Provider、使用局部 candidate 调用 `RegisterAndStart` 后才发布字段，并保护 DI 包归属、发布清单、Adapter 方向和唯一 `IModApi`；`SevenDaysGameLifecycleAdapterTests` 通过事件 seam 执行 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 回调，验证订阅顺序、逆序回滚、异常保留及 Dispose 只拥有订阅。真实静态 `ModEvents` 注册仍由官方进程 smoke 验证。
 - 使用同一配置凭据重复启动并改变用户名/密码，断言数据库始终只有固定 `Subject=owner` 的一个引导用户；凭据不变时保留 Token，变化时旧凭据和旧 Token 同时失效。
 - Bearer SSE 使用可控时钟和可变用户状态验证事件持续到达也不能推迟复验；Token 过期、撤销或用户禁用后不得继续写出受保护事件。
-- 当前只读命令通过 Application 类型化端口和 SevenDays Gateway 进入主线程，Controller 不直接引用或访问游戏活对象；状态变更动作仍需后续专属测试。
-- 后续状态变更动作必须覆盖并发请求、客户端取消、服务端超时、重复提交和宿主停止期间的审计终态；当前 `version` 切片不作为这些场景已通过的证据。
+- 当前只读命令和 Owner 踢出都通过 Application 类型化端口进入 SevenDays Adapter；Controller 不直接引用或访问游戏活对象。踢出已覆盖并发 busy、开始前取消/超时、开始后等待真实结果、重复提交抑制和审计终态；宿主停止期间已经开始的真实动作排空仍需官方进程证据。
 
 ### 真实 7DTD 进程测试
 
@@ -185,8 +186,9 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
-- SQLite migration 失败/锁竞争故障注入、状态变更游戏动作的主线程/关服/审计终态，以及自动化真实游戏事件和控制台日志突发测试；只读 `version` 的 Windows 主线程往返已经通过。
-- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，并补关服后保留玩家快照进入 Stale、listener 释放及重启恢复 Fresh 的浏览器证据；当前已具备依赖锁定、lint、typecheck、119 项 Vitest、Vite 8 生产构建和缺环境时明确 skip 的 Playwright 基础。
+- 玩家动作审计已具备自动化锁竞争与启动恢复证据；仍需验证迁移失败、真实关服期间动作终态，以及自动化真实游戏事件和控制台日志突发。只读 `version` 的 Windows 主线程往返已经通过。
+- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；当前已具备依赖锁定、lint、typecheck、182 项 Vitest 和 Vite 8 生产构建证据。
+- 在 Windows `v3.0.1-b4` 受控玩家上执行真实踢出，保存玩家收到的批准原因、原生 API 返回后约 0.5 秒断开、在线列表更新和 `player_action_audit` 对应终态；在此之前不得把自动化 `Succeeded` 解释为真实玩家已经离线。
 - 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite 和双平台 SQLite Native RID；当前 Windows 发布脚本已校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，项目引用、SQLite provider、Harmony 应用顺序、DI 包归属和 Adapter 方向已有本地测试门禁。
 - 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
 - 将 Windows `v3.0.1-b4` 真实进程 smoke 自动化并归档服务端日志，同时建立 Linux x64 对应基线。
@@ -214,8 +216,8 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 | 缺口 | 影响与处理 |
 |---|---|
-| 后端当前实现 Mod 生命周期、健康端点、统一 Problem Details、SQLite 引导 Owner/持久 Bearer、Basic/OAuth、周期复验的认证命名 SSE、集中服务器事件窗口，以及认证后只读 `version` 和 Owner-only 在线玩家查询纵向切片 | 本地 net48 构建、SQLite/OWIN 自动化、Windows/Linux x64 发布布局，以及当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、只读 `version` 和单个在线玩家字段的 Windows 官方进程 smoke 已通过。空服务器分支尚未在真实进程复验；REST 日志查询、完整用户管理、状态变更游戏动作及其审计/关服语义和 Linux 真实进程仍不可宣称完成。 |
-| Admin 登录与在线玩家真实浏览器门禁未执行 | Playwright 已定义匿名重定向、Owner 登录、Authorization Header、请求 URL、Cookie/Storage/控制台、深链接刷新和 `390x844` 水平溢出场景；本轮 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 均未设置，4 项按设计 skip。未发布、启动或停止服务器，也未执行真实 OWIN、真实窄屏渲染或关服后 Stale；这些结果不得从 119 项 Vitest 推导。 |
+| Owner 踢出自动化已通过但真实游戏动作未执行 | Release Rebuild、220 项后端测试和 182 项 Admin 测试覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；本轮未启动或发布真实服务器，也未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
+| Admin 登录、在线玩家与踢出真实浏览器门禁未执行 | Playwright 已定义 4 项登录/玩家基础场景，但本轮未设置真实环境或运行该 suite，且尚未增加真实踢出场景。未执行真实 OWIN、`390x844` 踢出对话框渲染、键盘/遮罩关闭锁定或成功刷新；这些结果不得从 182 项 Vitest 推导。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |

@@ -1,15 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import type { OnlinePlayer } from '../api/onlinePlayers'
+
+import { useToast } from '@nuxt/ui/composables'
+import { computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { useKickPlayer } from '../model/useKickPlayer'
 import { useOnlinePlayers } from '../model/useOnlinePlayers'
 
+import KickPlayerDialog from './KickPlayerDialog.vue'
 import OnlinePlayersList from './OnlinePlayersList.vue'
 import OnlinePlayersState from './OnlinePlayersState.vue'
 import OnlinePlayersTable from './OnlinePlayersTable.vue'
 import OnlinePlayersToolbar from './OnlinePlayersToolbar.vue'
 
 const router = useRouter()
+const toast = useToast()
+
+function redirectToLogin() {
+  return router.replace({
+    path: '/login',
+    query: { redirect: '/players' },
+  })
+}
 const {
   state,
   snapshot,
@@ -17,13 +30,27 @@ const {
   isRefreshing,
   refresh,
 } = useOnlinePlayers({
-  onSessionExpired: () => router.replace({
-    path: '/login',
-    query: { redirect: '/players' },
-  }),
+  onSessionExpired: redirectToLogin,
+})
+const {
+  isSubmitting: isKickSubmitting,
+  feedback: kickFeedback,
+  submit: submitKick,
+  clearFeedback: clearKickFeedback,
+} = useKickPlayer({
+  onSessionExpired: redirectToLogin,
 })
 
 const copyFeedback = ref<string | null>(null)
+const selectedPlayer = shallowRef<OnlinePlayer | null>(null)
+const kickDialogOpen = computed({
+  get: () => selectedPlayer.value !== null,
+  set: (open: boolean) => {
+    if (!open && !isKickSubmitting.value)
+      selectedPlayer.value = null
+  },
+})
+const canKick = computed(() => kickFeedback.value?.code !== 'forbidden')
 
 async function copyIdentity(combinedId: string) {
   try {
@@ -37,6 +64,42 @@ async function copyIdentity(combinedId: string) {
   catch {
     copyFeedback.value = '复制失败，请手动选择身份标识'
   }
+}
+
+function openKickDialog(player: OnlinePlayer) {
+  clearKickFeedback()
+  selectedPlayer.value = player
+}
+
+function closeKickDialog() {
+  if (isKickSubmitting.value)
+    return
+  selectedPlayer.value = null
+  clearKickFeedback()
+}
+
+async function confirmKick(reason: string) {
+  const target = selectedPlayer.value
+  if (target === null)
+    return
+
+  const result = await submitKick(target, reason)
+  if (result !== null) {
+    toast.add({ title: `已踢出 ${target.name}`, color: 'success' })
+    selectedPlayer.value = null
+    await refresh()
+    return
+  }
+
+  if (kickFeedback.value?.code === 'player_not_online'
+    || kickFeedback.value?.code === 'player_identity_changed') {
+    selectedPlayer.value = null
+    await refresh()
+    return
+  }
+
+  if (kickFeedback.value?.code === 'forbidden')
+    selectedPlayer.value = null
 }
 </script>
 
@@ -67,8 +130,18 @@ async function copyIdentity(combinedId: string) {
       />
 
       <template v-else>
-        <OnlinePlayersTable :players="snapshot.players" @copy-identity="copyIdentity" />
-        <OnlinePlayersList :players="snapshot.players" @copy-identity="copyIdentity" />
+        <OnlinePlayersTable
+          :players="snapshot.players"
+          :can-kick="canKick"
+          @copy-identity="copyIdentity"
+          @kick-player="openKickDialog"
+        />
+        <OnlinePlayersList
+          :players="snapshot.players"
+          :can-kick="canKick"
+          @copy-identity="copyIdentity"
+          @kick-player="openKickDialog"
+        />
         <p
           v-if="copyFeedback"
           data-testid="copy-feedback"
@@ -80,4 +153,13 @@ async function copyIdentity(combinedId: string) {
       </template>
     </template>
   </UDashboardPanel>
+
+  <KickPlayerDialog
+    v-model:open="kickDialogOpen"
+    :player="selectedPlayer"
+    :is-submitting="isKickSubmitting"
+    :feedback="kickFeedback"
+    @confirm="confirmKick"
+    @cancel="closeKickDialog"
+  />
 </template>

@@ -29,6 +29,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
                 {
                     await Next.Invoke(context).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     if (!IsApiRequest(context.Request.Path.Value)) throw;

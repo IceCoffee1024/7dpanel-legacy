@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
+import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { OnlinePlayer } from '../api/onlinePlayers'
 
 import { computed } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   players: readonly OnlinePlayer[]
-}>()
+  canKick?: boolean
+}>(), {
+  canKick: true,
+})
 
-defineEmits<{
+const emit = defineEmits<{
   copyIdentity: [combinedId: string]
+  kickPlayer: [player: OnlinePlayer]
 }>()
 
 const columns: TableColumn<OnlinePlayer>[] = [
@@ -19,9 +23,18 @@ const columns: TableColumn<OnlinePlayer>[] = [
   { accessorKey: 'level', header: '等级' },
   { accessorKey: 'health', header: '生命值' },
   { accessorKey: 'ping', header: '延迟' },
+  { id: 'actions', header: '操作' },
 ]
 
 const tableData = computed(() => props.players as OnlinePlayer[])
+
+function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
+  return [{
+    label: '踢出玩家',
+    icon: 'i-lucide-log-out',
+    onSelect: () => emit('kickPlayer', player),
+  }]
+}
 </script>
 
 <template>
@@ -93,6 +106,18 @@ const tableData = computed(() => props.players as OnlinePlayer[])
       </template>
       <template #ping-cell="{ row }">
         <span class="block text-right font-mono tabular-nums">{{ row.original.ping }} ms</span>
+      </template>
+      <template #actions-cell="{ row }">
+        <UDropdownMenu v-if="canKick" :items="playerActions(row.original)">
+          <UButton
+            :aria-label="`玩家操作：${row.original.name}`"
+            class="size-8"
+            color="neutral"
+            icon="i-lucide-ellipsis-vertical"
+            square
+            variant="ghost"
+          />
+        </UDropdownMenu>
       </template>
     </UTable>
   </div>

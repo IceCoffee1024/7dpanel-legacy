@@ -3,4 +3,7 @@
     <AssemblyName>LSTY.SevenDPanel.Application</AssemblyName>
     <RootNamespace>LSTY.SevenDPanel.Application</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="LSTY.SevenDPanel.Tests" />
+  </ItemGroup>
 </Project>

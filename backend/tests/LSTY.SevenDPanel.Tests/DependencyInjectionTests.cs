@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -186,6 +187,15 @@ namespace LSTY.SevenDPanel.Tests
                 onlinePlayerQuery,
                 provider.GetRequiredService<IOnlinePlayerQuery>());
             Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
+            var playerActionAuditTrail = provider.GetRequiredService<SqlitePlayerActionAuditTrail>();
+            Assert.Same(
+                playerActionAuditTrail,
+                provider.GetRequiredService<IPlayerActionAuditTrail>());
+            var playerActions = provider.GetRequiredService<SevenDaysPlayerActions>();
+            Assert.Same(
+                playerActions,
+                provider.GetRequiredService<IPlayerActions>());
+            Assert.NotNull(provider.GetRequiredService<KickPlayerUseCase>());
 
             try
             {
@@ -203,6 +213,70 @@ namespace LSTY.SevenDPanel.Tests
                 factory.Dispose();
                 if (Directory.Exists(dataDirectory))
                     Directory.Delete(dataDirectory, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void Runtime_start_recovers_pending_player_actions_before_accepting_requests()
+        {
+            var dataDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-di-tests",
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dataDirectory);
+            var runtime = PanelServiceProviderFactory.CreateRuntime(
+                PanelHostOptions.FromBinding(GetAvailablePort(), "127.0.0.1", "http"),
+                dataDirectory,
+                null,
+                _ => { });
+            var providerField = typeof(ServiceProviderRuntime).GetField(
+                "serviceProvider",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(providerField);
+            var provider = Assert.IsAssignableFrom<IServiceProvider>(
+                providerField.GetValue(runtime));
+            var bootstrapper = provider.GetRequiredService<SqliteDatabaseBootstrapper>();
+            var audit = provider.GetRequiredService<SqlitePlayerActionAuditTrail>();
+            var factory = provider.GetRequiredService<SqliteConnectionFactory>();
+
+            try
+            {
+                bootstrapper.Upgrade();
+                audit.CreatePending(new PlayerActionAuditIntent(
+                    "pending-operation",
+                    "owner",
+                    7,
+                    new PlayerPlatformIdentity("steam-1", "Steam"),
+                    "rule violation",
+                    DateTimeOffset.UtcNow));
+
+                runtime.Start();
+
+                using var connection = factory.Open();
+                using var command = connection.CreateCommand();
+                command.CommandText =
+                    "SELECT status || ':' || failure_code FROM player_action_audit WHERE operation_id = 'pending-operation';";
+                Assert.Equal("Unknown:process_interrupted", command.ExecuteScalar());
+            }
+            finally
+            {
+                try { runtime.Dispose(); } catch { }
+                if (Directory.Exists(dataDirectory))
+                    Directory.Delete(dataDirectory, recursive: true);
+            }
+        }
+
+        private static int GetAvailablePort()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            try
+            {
+                return ((IPEndPoint)listener.LocalEndpoint).Port;
+            }
+            finally
+            {
+                listener.Stop();
             }
         }
 

@@ -1,13 +1,26 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type { OnlinePlayer } from '../api/onlinePlayers'
 
-defineProps<{
+withDefaults(defineProps<{
   players: readonly OnlinePlayer[]
+  canKick?: boolean
+}>(), {
+  canKick: true,
+})
+
+const emit = defineEmits<{
+  copyIdentity: [combinedId: string]
+  kickPlayer: [player: OnlinePlayer]
 }>()
 
-defineEmits<{
-  copyIdentity: [combinedId: string]
-}>()
+function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
+  return [{
+    label: '踢出玩家',
+    icon: 'i-lucide-log-out',
+    onSelect: () => emit('kickPlayer', player),
+  }]
+}
 </script>
 
 <template>
@@ -22,9 +35,21 @@ defineEmits<{
             entity {{ player.entityId }} · {{ player.ping }} ms
           </p>
         </div>
-        <UBadge color="neutral" variant="subtle">
-          Lv. {{ player.level }}
-        </UBadge>
+        <div class="flex shrink-0 items-center gap-1">
+          <UBadge color="neutral" variant="subtle">
+            Lv. {{ player.level }}
+          </UBadge>
+          <UDropdownMenu v-if="canKick" :items="playerActions(player)">
+            <UButton
+              :aria-label="`玩家操作：${player.name}`"
+              class="size-8"
+              color="neutral"
+              icon="i-lucide-ellipsis-vertical"
+              square
+              variant="ghost"
+            />
+          </UDropdownMenu>
+        </div>
       </div>
 
       <dl class="player-details mt-4 grid gap-x-5 gap-y-4">

@@ -52,6 +52,13 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<IOnlinePlayerQuery>(serviceProvider =>
                     serviceProvider.GetRequiredService<SevenDaysOnlinePlayerQuery>());
                 services.AddSingleton<GetOnlinePlayersUseCase>();
+                services.AddSingleton<SqlitePlayerActionAuditTrail>();
+                services.AddSingleton<IPlayerActionAuditTrail>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqlitePlayerActionAuditTrail>());
+                services.AddSingleton<SevenDaysPlayerActions>();
+                services.AddSingleton<IPlayerActions>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysPlayerActions>());
+                services.AddSingleton<KickPlayerUseCase>();
                 services.AddScoped<ServerEventSseSession>();
                 services.AddSingleton(serviceProvider => new ModHost(
                     () =>
@@ -60,7 +67,10 @@ namespace LSTY.SevenDPanel.DependencyInjection
                             .GetRequiredService<SqliteDatabaseBootstrapper>();
                         var authenticationStore = serviceProvider
                             .GetRequiredService<SqliteAuthenticationStore>();
+                        var playerActionAuditTrail = serviceProvider
+                            .GetRequiredService<SqlitePlayerActionAuditTrail>();
                         databaseBootstrapper.Upgrade();
+                        playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);
                         if (options.Authentication.Enabled)
                         {
                             authenticationStore.EnsureBootstrapOwner(

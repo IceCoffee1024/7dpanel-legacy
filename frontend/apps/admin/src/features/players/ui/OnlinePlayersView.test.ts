@@ -1,4 +1,7 @@
 import type {
+  KickPlayerController,
+  KickPlayerFeedback,
+  KickPlayerResponse,
   OnlinePlayer,
   OnlinePlayersController,
   OnlinePlayersErrorCode,
@@ -6,20 +9,37 @@ import type {
   OnlinePlayersState,
 } from '..'
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { readonly, shallowRef } from 'vue'
+import { nextTick, readonly, shallowRef } from 'vue'
 
 import OnlinePlayersList from './OnlinePlayersList.vue'
 import OnlinePlayersTable from './OnlinePlayersTable.vue'
 import OnlinePlayersView from './OnlinePlayersView.vue'
 
-const { useOnlinePlayersMock } = vi.hoisted(() => ({
+const { routerReplaceMock, toastAddMock, useKickPlayerMock, useOnlinePlayersMock } = vi.hoisted(() => ({
+  routerReplaceMock: vi.fn(),
+  toastAddMock: vi.fn(),
+  useKickPlayerMock: vi.fn(),
   useOnlinePlayersMock: vi.fn(),
+}))
+
+vi.mock('@nuxt/ui/composables', async importOriginal => ({
+  ...await importOriginal<typeof import('@nuxt/ui/composables')>(),
+  useToast: () => ({ add: toastAddMock }),
+}))
+
+vi.mock('../model/useKickPlayer', () => ({
+  useKickPlayer: useKickPlayerMock,
 }))
 
 vi.mock('../model/useOnlinePlayers', () => ({
   useOnlinePlayers: useOnlinePlayersMock,
+}))
+
+vi.mock('vue-router', async importOriginal => ({
+  ...await importOriginal<typeof import('vue-router')>(),
+  useRouter: () => ({ replace: routerReplaceMock }),
 }))
 
 const player: OnlinePlayer = {
@@ -42,18 +62,37 @@ interface ControllerValues {
   isRefreshing?: boolean
 }
 
-function mountOnlinePlayersView(values: ControllerValues = {}) {
+function mountOnlinePlayersView(values: ControllerValues = {}, kickOptions: {
+  feedback?: KickPlayerFeedback | null
+  response?: KickPlayerResponse | null
+} = {}) {
   const refresh = vi.fn().mockResolvedValue(undefined)
   const dispose = vi.fn()
+  const feedback = shallowRef<KickPlayerFeedback | null>(kickOptions.feedback ?? null)
+  const snapshotState = shallowRef<OnlinePlayersSnapshot | null>(values.snapshot ?? null)
+  const submit = vi.fn().mockImplementation(async () => {
+    feedback.value = kickOptions.feedback ?? null
+    return kickOptions.response ?? null
+  })
   const controller: OnlinePlayersController = {
     state: readonly(shallowRef(values.state ?? 'loading')),
-    snapshot: readonly(shallowRef(values.snapshot ?? null)),
+    snapshot: readonly(snapshotState),
     errorCode: readonly(shallowRef(values.errorCode ?? null)),
     isRefreshing: readonly(shallowRef(values.isRefreshing ?? false)),
     refresh,
     dispose,
   }
   useOnlinePlayersMock.mockReturnValue(controller)
+  const kickController: KickPlayerController = {
+    isSubmitting: readonly(shallowRef(false)),
+    feedback: readonly(feedback),
+    submit,
+    clearFeedback: vi.fn(() => {
+      feedback.value = null
+    }),
+    dispose: vi.fn(),
+  }
+  useKickPlayerMock.mockReturnValue(kickController)
 
   return {
     wrapper: mount(OnlinePlayersView, {
@@ -69,6 +108,17 @@ function mountOnlinePlayersView(values: ControllerValues = {}) {
           Tooltip: {
             template: '<div><slot /></div>',
           },
+          KickPlayerDialog: {
+            props: ['open', 'player', 'isSubmitting', 'feedback'],
+            emits: ['update:open', 'confirm', 'cancel'],
+            template: `
+              <section v-if="open" data-testid="kick-dialog">
+                <span data-testid="kick-dialog-player">{{ player?.name }}</span>
+                <span v-if="feedback" role="status">{{ feedback.message }}</span>
+                <button data-testid="kick-dialog-confirm" @click="$emit('confirm', '违反服务器规则')">确认</button>
+              </section>
+            `,
+          },
           UDashboardSidebarCollapse: true,
           UIcon: true,
           UTooltip: {
@@ -78,6 +128,8 @@ function mountOnlinePlayersView(values: ControllerValues = {}) {
       },
     }),
     refresh,
+    snapshotState,
+    submit,
   }
 }
 
@@ -89,6 +141,9 @@ function onePlayerSnapshot(overrides: Partial<OnlinePlayer> = {}): OnlinePlayers
 }
 
 beforeEach(() => {
+  routerReplaceMock.mockReset()
+  toastAddMock.mockReset()
+  useKickPlayerMock.mockReset()
   useOnlinePlayersMock.mockReset()
 })
 
@@ -114,6 +169,138 @@ it('keeps player rows visible while stale', () => {
 
   expect(wrapper.text()).toContain('数据已过期')
   expect(wrapper.text()).toContain('Test Player')
+})
+
+it.each([
+  ['desktop table', OnlinePlayersTable],
+  ['mobile list', OnlinePlayersList],
+] as const)('uses the same fixed kick target from the %s', async (_, component) => {
+  const { wrapper, snapshotState, submit } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  })
+
+  wrapper.getComponent(component).vm.$emit('kickPlayer', player)
+  await nextTick()
+  snapshotState.value = onePlayerSnapshot({
+    name: 'Replacement Player',
+    platformIdentity: {
+      combinedId: 'Steam_replacement',
+      platform: 'Steam',
+    },
+  })
+  await nextTick()
+  await wrapper.get('[data-testid="kick-dialog-confirm"]').trigger('click')
+
+  expect(wrapper.get('[data-testid="kick-dialog-player"]').text()).toBe('Test Player')
+  expect(submit).toHaveBeenCalledWith(player, '违反服务器规则')
+})
+
+it('closes, notifies and refreshes after a successful kick', async () => {
+  const response: KickPlayerResponse = {
+    operationId: '8f742dcfe65a454d8f919e164ace77d7',
+    status: 'succeeded',
+    target: {
+      entityId: player.entityId,
+      name: player.name,
+      platformIdentity: player.platformIdentity,
+    },
+    requestedAtUtc: '2026-07-22T08:00:00Z',
+    completedAtUtc: '2026-07-22T08:00:00.100Z',
+  }
+  const { wrapper, refresh } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  }, { response })
+
+  wrapper.getComponent(OnlinePlayersTable).vm.$emit('kickPlayer', player)
+  await nextTick()
+  await wrapper.get('[data-testid="kick-dialog-confirm"]').trigger('click')
+  await flushPromises()
+
+  expect(toastAddMock).toHaveBeenCalledWith({ title: '已踢出 Test Player', color: 'success' })
+  expect(refresh).toHaveBeenCalledOnce()
+  expect(wrapper.find('[data-testid="kick-dialog"]').exists()).toBe(false)
+})
+
+it.each(['player_not_online', 'player_identity_changed'] as const)('refreshes without retrying after %s', async (code) => {
+  const feedback: KickPlayerFeedback = {
+    code,
+    message: code === 'player_not_online' ? '玩家已不在线' : '玩家身份已变化，请刷新后重试',
+  }
+  const { wrapper, refresh, submit } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  }, { feedback })
+
+  wrapper.getComponent(OnlinePlayersTable).vm.$emit('kickPlayer', player)
+  await nextTick()
+  await wrapper.get('[data-testid="kick-dialog-confirm"]').trigger('click')
+  await flushPromises()
+
+  expect(submit).toHaveBeenCalledOnce()
+  expect(refresh).toHaveBeenCalledOnce()
+  expect(wrapper.find('[data-testid="kick-dialog"]').exists()).toBe(false)
+})
+
+it.each([
+  ['player_action_busy', '另一个踢出操作正在进行，请稍后重试'],
+  ['game_not_ready', '游戏服务尚未就绪，请稍后重试'],
+  ['game_thread_timeout', '游戏响应超时，请稍后重试'],
+  ['audit_unavailable', '审计服务暂不可用，请稍后重试'],
+  ['unknown', '结果尚无法确认'],
+] as const)('keeps the fixed dialog open for %s feedback', async (code, message) => {
+  const { wrapper, refresh } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  }, { feedback: { code, message } })
+
+  wrapper.getComponent(OnlinePlayersTable).vm.$emit('kickPlayer', player)
+  await nextTick()
+  await wrapper.get('[data-testid="kick-dialog-confirm"]').trigger('click')
+  await flushPromises()
+
+  expect(wrapper.get('[data-testid="kick-dialog-player"]').text()).toBe('Test Player')
+  expect(wrapper.get('[role="status"]').text()).toBe(message)
+  expect(refresh).not.toHaveBeenCalled()
+  expect(toastAddMock).not.toHaveBeenCalled()
+})
+
+it('uses the existing players redirect when the kick session expires', () => {
+  mountOnlinePlayersView()
+  const options = useKickPlayerMock.mock.calls[0]?.[0]
+
+  options.onSessionExpired()
+
+  expect(routerReplaceMock).toHaveBeenCalledWith({
+    path: '/login',
+    query: { redirect: '/players' },
+  })
+})
+
+it('hides kick actions after forbidden feedback', () => {
+  const { wrapper } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  }, { feedback: { code: 'forbidden', message: '无权踢出玩家' } })
+
+  expect(wrapper.find('[aria-label="玩家操作：Test Player"]').exists()).toBe(false)
+})
+
+it('closes the fixed dialog after a submitted action becomes forbidden', async () => {
+  const { wrapper, submit } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  }, { feedback: { code: 'forbidden', message: '无权踢出玩家' } })
+
+  wrapper.getComponent(OnlinePlayersTable).vm.$emit('kickPlayer', player)
+  await nextTick()
+  await wrapper.get('[data-testid="kick-dialog-confirm"]').trigger('click')
+  await flushPromises()
+
+  expect(submit).toHaveBeenCalledOnce()
+  expect(wrapper.find('[data-testid="kick-dialog"]').exists()).toBe(false)
+  expect(wrapper.find('[aria-label="玩家操作：Test Player"]').exists()).toBe(false)
 })
 
 it('renders a loading skeleton before the first snapshot', () => {
@@ -213,6 +400,62 @@ it.each([
   })
 
   expect(wrapper.text()).toContain('未绑定')
+})
+
+it.each([
+  ['desktop table', OnlinePlayersTable],
+  ['mobile list', OnlinePlayersList],
+] as const)('emits the selected player from the %s action menu', async (_, component) => {
+  const wrapper = mount(component, {
+    props: { players: [player] },
+    global: {
+      stubs: {
+        DropdownMenu: {
+          props: ['items'],
+          template: `
+            <div>
+              <slot />
+              <button
+                data-testid="select-kick-player"
+                :data-icon="items[0].icon"
+                @click="items[0].onSelect()"
+              >
+                {{ items[0].label }}
+              </button>
+            </div>
+          `,
+        },
+        Icon: true,
+        UDropdownMenu: {
+          props: ['items'],
+          template: `
+            <div>
+              <slot />
+              <button
+                data-testid="select-kick-player"
+                :data-icon="items[0].icon"
+                @click="items[0].onSelect()"
+              >
+                {{ items[0].label }}
+              </button>
+            </div>
+          `,
+        },
+        UIcon: true,
+      },
+    },
+  })
+
+  const actionButton = wrapper.get('[aria-label="玩家操作：Test Player"]')
+  expect(actionButton.classes()).toContain('size-8')
+
+  const kickItem = wrapper.get('[data-testid="select-kick-player"]')
+  expect(kickItem.attributes('data-icon')).toBe('i-lucide-log-out')
+  expect(kickItem.text()).toBe('踢出玩家')
+  await kickItem.trigger('click')
+
+  expect(wrapper.emitted('kickPlayer')).toEqual([[player]])
+  expect(wrapper.emitted('consoleCommand')).toBeUndefined()
 })
 
 it('copies only the selected platform identity', async () => {

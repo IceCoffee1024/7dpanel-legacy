@@ -31,7 +31,7 @@ namespace LSTY.SevenDPanel.Tests
                 connection.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND (name LIKE 'ix_%' OR name = 'ux_users_username');"));
             Assert.Equal(
-                1,
+                2,
                 connection.ExecuteScalar<int>("SELECT COUNT(*) FROM SchemaVersions;"));
             Assert.Equal(
                 "wal",

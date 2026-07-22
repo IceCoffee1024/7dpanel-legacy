@@ -5,9 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
@@ -444,6 +446,363 @@ namespace LSTY.SevenDPanel.Tests
                     expectedCode,
                     "/api/v1/players/online");
                 Assert.Equal(1, query.CallCount);
+            }
+        }
+
+        [Fact]
+        public async Task Kick_player_requires_authentication_without_audit_or_action()
+        {
+            var actions = new TestPlayerActions();
+            var audit = new TestPlayerActionAuditTrail();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                playerActions: actions,
+                playerActionAuditTrail: audit);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateKickPlayerRequest(url, 7, ValidKickBody))
+            {
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "authentication_required",
+                    "/api/v1/players/7/kick");
+                Assert.Equal(0, actions.CallCount);
+                Assert.Equal(0, audit.CreatePendingCallCount);
+            }
+        }
+
+        [Theory]
+        [InlineData(7, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\"}", "player_kick_confirmation_required")]
+        [InlineData(7, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\",\"confirmed\":false}", "player_kick_confirmation_required")]
+        [InlineData(7, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"   \",\"confirmed\":true}", "invalid_player_kick_reason")]
+        [InlineData(7, "{\"reason\":\"rule violation\",\"confirmed\":true}", "invalid_player_identity")]
+        [InlineData(-1, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\",\"confirmed\":true}", "invalid_player_identity")]
+        public async Task Invalid_kick_request_returns_stable_problem_without_audit_or_action(
+            int entityId,
+            string body,
+            string expectedCode)
+        {
+            var actions = new TestPlayerActions();
+            var audit = new TestPlayerActionAuditTrail();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                playerActions: actions,
+                playerActionAuditTrail: audit);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateKickPlayerRequest(url, entityId, body))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    expectedCode,
+                    "/api/v1/players/" + entityId + "/kick");
+                Assert.Equal(0, actions.CallCount);
+                Assert.Equal(0, audit.CreatePendingCallCount);
+            }
+        }
+
+        [Fact]
+        public void Kick_player_action_is_owner_authorized()
+        {
+            var controllerAuthorization = Assert.Single(
+                typeof(PlayersController).GetCustomAttributes<AuthorizeAttribute>());
+            var action = Assert.Single(
+                typeof(PlayersController).GetMethods(),
+                method => method.Name == "Kick");
+
+            Assert.Equal("Owner", controllerAuthorization.Roles);
+            Assert.NotNull(action.GetCustomAttribute<HttpPostAttribute>());
+            Assert.Equal(
+                "{entityId:int}/kick",
+                action.GetCustomAttribute<RouteAttribute>()?.Template);
+        }
+
+        [Fact]
+        public async Task Owner_kicks_player_with_subject_trimmed_reason_and_exact_success_contract()
+        {
+            var actions = new TestPlayerActions();
+            var audit = new TestPlayerActionAuditTrail();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                playerActions: actions,
+                playerActionAuditTrail: audit);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateKickPlayerRequest(
+                url,
+                7,
+                ValidKickBody.Replace("rule violation", "  rule violation  ")))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal(
+                    new[] { "completedAtUtc", "operationId", "requestedAtUtc", "status", "target" },
+                    payload.Properties().Select(property => property.Name).OrderBy(name => name));
+                Assert.Matches("^[0-9a-f]{32}$", (string?)payload["operationId"] ?? string.Empty);
+                Assert.Equal("succeeded", (string?)payload["status"]);
+                Assert.Equal(7, (int?)payload["target"]?["entityId"]);
+                Assert.Equal("Alice", (string?)payload["target"]?["name"]);
+                Assert.Equal("steam-1", (string?)payload["target"]?["platformIdentity"]?["combinedId"]);
+                Assert.Equal("Steam", (string?)payload["target"]?["platformIdentity"]?["platform"]);
+                Assert.NotNull((DateTimeOffset?)payload["requestedAtUtc"]);
+                Assert.NotNull((DateTimeOffset?)payload["completedAtUtc"]);
+                Assert.Equal("test-owner-subject", audit.Intent?.ActorSubject);
+                Assert.Equal("rule violation", audit.Intent?.Reason);
+                Assert.Equal(7, actions.Command?.EntityId);
+                Assert.Equal("steam-1", actions.Command?.ExpectedPlatformIdentity.CombinedId);
+            }
+        }
+
+        [Fact]
+        public async Task Overlong_kick_reason_is_rejected_without_audit_or_action()
+        {
+            var body = ValidKickBody.Replace("rule violation", new string('x', 201));
+            await AssertKickProblemAsync(
+                body,
+                HttpStatusCode.BadRequest,
+                "invalid_player_kick_reason",
+                new TestPlayerActions(),
+                new TestPlayerActionAuditTrail(),
+                expectedActionCalls: 0,
+                expectedAuditCalls: 0);
+        }
+
+        [Fact]
+        public async Task Game_not_ready_rejects_kick_without_audit_or_action()
+        {
+            var actions = new TestPlayerActions();
+            var audit = new TestPlayerActionAuditTrail();
+            await AssertKickProblemAsync(
+                ValidKickBody,
+                HttpStatusCode.ServiceUnavailable,
+                "game_not_ready",
+                actions,
+                audit,
+                expectedActionCalls: 0,
+                expectedAuditCalls: 0,
+                gameReadiness: GameReadinessState.Loading);
+        }
+
+        public static IEnumerable<object[]> KickFailureCases()
+        {
+            yield return new object[]
+            {
+                new TestPlayerActions(result: KickPlayerActionResult.PlayerNotOnline()),
+                new TestPlayerActionAuditTrail(),
+                HttpStatusCode.Conflict,
+                "player_not_online",
+                null!
+            };
+            yield return new object[]
+            {
+                new TestPlayerActions(result: KickPlayerActionResult.PlayerIdentityChanged(
+                    7,
+                    "Other",
+                    new PlayerPlatformIdentity("steam-2", "Steam"))),
+                new TestPlayerActionAuditTrail(),
+                HttpStatusCode.Conflict,
+                "player_identity_changed",
+                null!
+            };
+            yield return new object[]
+            {
+                new TestPlayerActions(failure: new TimeoutException("internal timeout detail")),
+                new TestPlayerActionAuditTrail(),
+                HttpStatusCode.ServiceUnavailable,
+                "game_thread_timeout",
+                "internal timeout detail"
+            };
+            yield return new object[]
+            {
+                new TestPlayerActions(),
+                new TestPlayerActionAuditTrail(createFailure: new InvalidOperationException("database path detail")),
+                HttpStatusCode.ServiceUnavailable,
+                "audit_unavailable",
+                "database path detail"
+            };
+            yield return new object[]
+            {
+                new TestPlayerActions(),
+                new TestPlayerActionAuditTrail(completeResult: false),
+                HttpStatusCode.ServiceUnavailable,
+                "audit_completion_unavailable",
+                null!
+            };
+            yield return new object[]
+            {
+                new TestPlayerActions(failure: new InvalidOperationException("native failure detail")),
+                new TestPlayerActionAuditTrail(),
+                HttpStatusCode.InternalServerError,
+                "player_kick_failed",
+                "native failure detail"
+            };
+        }
+
+        [Theory]
+        [MemberData(nameof(KickFailureCases))]
+        public async Task Kick_failures_return_stable_problem_details_without_internal_messages(
+            TestPlayerActions actions,
+            TestPlayerActionAuditTrail audit,
+            HttpStatusCode expectedStatus,
+            string expectedCode,
+            string? forbiddenDetail)
+        {
+            var payload = await AssertKickProblemAsync(
+                ValidKickBody,
+                expectedStatus,
+                expectedCode,
+                actions,
+                audit,
+                expectedActionCalls: expectedCode == "audit_unavailable" ? 0 : 1,
+                expectedAuditCalls: 1);
+
+            if (forbiddenDetail != null)
+                Assert.DoesNotContain(forbiddenDetail, payload.ToString());
+        }
+
+        [Fact]
+        public async Task Concurrent_kick_returns_busy_without_a_second_audit_or_action()
+        {
+            var pendingResult = new TaskCompletionSource<KickPlayerActionResult>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var actions = new TestPlayerActions(pendingResult: pendingResult);
+            var audit = new TestPlayerActionAuditTrail();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                playerActions: actions,
+                playerActionAuditTrail: audit);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var firstRequest = CreateKickPlayerRequest(url, 7, ValidKickBody))
+            using (var secondRequest = CreateKickPlayerRequest(url, 8, ValidKickBody))
+            {
+                firstRequest.Headers.Authorization = CreateBasicAuthorization();
+                secondRequest.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                var firstResponseTask = client.SendAsync(
+                    firstRequest,
+                    TestContext.Current.CancellationToken);
+                Assert.True(SpinWait.SpinUntil(
+                    () => actions.CallCount == 1,
+                    TimeSpan.FromSeconds(5)));
+
+                using var secondResponse = await client.SendAsync(
+                    secondRequest,
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, secondResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    secondResponse,
+                    "player_action_busy",
+                    "/api/v1/players/8/kick");
+                Assert.Equal(1, actions.CallCount);
+                Assert.Equal(1, audit.CreatePendingCallCount);
+
+                pendingResult.SetResult(KickPlayerActionResult.Succeeded(
+                    7,
+                    "Alice",
+                    new PlayerPlatformIdentity("steam-1", "Steam")));
+                using var firstResponse = await firstResponseTask;
+                Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+            }
+        }
+
+        private static async Task<JObject> AssertKickProblemAsync(
+            string body,
+            HttpStatusCode expectedStatus,
+            string expectedCode,
+            TestPlayerActions actions,
+            TestPlayerActionAuditTrail audit,
+            int expectedActionCalls,
+            int expectedAuditCalls,
+            GameReadinessState gameReadiness = GameReadinessState.Ready)
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                gameReadiness: gameReadiness,
+                playerActions: actions,
+                playerActionAuditTrail: audit);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateKickPlayerRequest(url, 7, body))
+            {
+                request.Headers.Authorization = CreateBasicAuthorization();
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(expectedStatus, response.StatusCode);
+                var payload = await AssertProblemDetailsAsync(
+                    response,
+                    expectedCode,
+                    "/api/v1/players/7/kick");
+                Assert.Equal(expectedActionCalls, actions.CallCount);
+                Assert.Equal(expectedAuditCalls, audit.CreatePendingCallCount);
+                return payload;
             }
         }
 
@@ -1097,6 +1456,22 @@ namespace LSTY.SevenDPanel.Tests
                 url + "api/v1/players/online");
         }
 
+        private const string ValidKickBody =
+            "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\",\"confirmed\":true}";
+
+        private static HttpRequestMessage CreateKickPlayerRequest(
+            string url,
+            int entityId,
+            string body)
+        {
+            return new HttpRequestMessage(
+                HttpMethod.Post,
+                url + "api/v1/players/" + entityId + "/kick")
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            };
+        }
+
         private static FormUrlEncodedContent CreateTokenContent(string password) =>
             new FormUrlEncodedContent(new[]
             {
@@ -1132,7 +1507,9 @@ namespace LSTY.SevenDPanel.Tests
             bool allowInsecureHttp = true,
             IRestrictedConsoleGateway? consoleGateway = null,
             GameReadinessState gameReadiness = GameReadinessState.Ready,
-            IOnlinePlayerQuery? onlinePlayerQuery = null)
+            IOnlinePlayerQuery? onlinePlayerQuery = null,
+            IPlayerActions? playerActions = null,
+            IPlayerActionAuditTrail? playerActionAuditTrail = null)
         {
             var services = new ServiceCollection();
             var authentication = enableConsoleLogStream
@@ -1155,6 +1532,10 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton<ExecuteConsoleCommandUseCase>();
             services.AddSingleton<IOnlinePlayerQuery>(onlinePlayerQuery ?? new TestOnlinePlayerQuery());
             services.AddSingleton<GetOnlinePlayersUseCase>();
+            services.AddSingleton<IPlayerActions>(playerActions ?? new TestPlayerActions());
+            services.AddSingleton<IPlayerActionAuditTrail>(
+                playerActionAuditTrail ?? new TestPlayerActionAuditTrail());
+            services.AddSingleton<KickPlayerUseCase>();
             var authenticationStore = new TestPanelAuthenticationStore();
             services.AddSingleton<IPanelCredentialStore>(authenticationStore);
             services.AddSingleton<IPanelAccessTokenStore>(authenticationStore);
@@ -1196,6 +1577,72 @@ namespace LSTY.SevenDPanel.Tests
                     DateTimeOffset.UtcNow,
                     Array.Empty<PlayerSnapshot>()));
             }
+        }
+
+        public sealed class TestPlayerActions : IPlayerActions
+        {
+            private readonly KickPlayerActionResult? result;
+            private readonly Exception? failure;
+            private readonly TaskCompletionSource<KickPlayerActionResult>? pendingResult;
+
+            public TestPlayerActions(
+                KickPlayerActionResult? result = null,
+                Exception? failure = null,
+                TaskCompletionSource<KickPlayerActionResult>? pendingResult = null)
+            {
+                this.result = result;
+                this.failure = failure;
+                this.pendingResult = pendingResult;
+            }
+
+            public int CallCount { get; private set; }
+
+            public KickPlayerCommand? Command { get; private set; }
+
+            public Task<KickPlayerActionResult> KickAsync(
+                KickPlayerCommand command,
+                CancellationToken cancellationToken)
+            {
+                CallCount++;
+                Command = command;
+                if (failure != null)
+                    return Task.FromException<KickPlayerActionResult>(failure);
+                if (pendingResult != null)
+                    return pendingResult.Task;
+                return Task.FromResult(result ?? KickPlayerActionResult.Succeeded(
+                    command.EntityId,
+                    "Alice",
+                    command.ExpectedPlatformIdentity));
+            }
+        }
+
+        public sealed class TestPlayerActionAuditTrail : IPlayerActionAuditTrail
+        {
+            private readonly Exception? createFailure;
+            private readonly bool completeResult;
+
+            public TestPlayerActionAuditTrail(
+                Exception? createFailure = null,
+                bool completeResult = true)
+            {
+                this.createFailure = createFailure;
+                this.completeResult = completeResult;
+            }
+
+            public int CreatePendingCallCount { get; private set; }
+
+            public PlayerActionAuditIntent? Intent { get; private set; }
+
+            public void CreatePending(PlayerActionAuditIntent intent)
+            {
+                CreatePendingCallCount++;
+                if (createFailure != null) throw createFailure;
+                Intent = intent;
+            }
+
+            public bool TryComplete(PlayerActionAuditCompletion completion) => completeResult;
+
+            public int MarkPendingUnknown(DateTimeOffset completedAtUtc) => 0;
         }
 
         private sealed class TestRestrictedConsoleGateway : IRestrictedConsoleGateway
