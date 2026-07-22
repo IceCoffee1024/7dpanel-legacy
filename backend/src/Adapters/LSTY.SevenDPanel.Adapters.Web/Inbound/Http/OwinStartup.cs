@@ -4,6 +4,7 @@ using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,7 +91,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             app.UseOAuthAuthorizationServer(new OAuthAuthorizationServerOptions
             {
                 AllowInsecureHttp = authentication.AllowInsecureHttp,
-                TokenEndpointPath = new PathString("/api/v1/auth/token"),
+                TokenEndpointPath = new PathString(HttpRoutes.TokenEndpoint),
                 AccessTokenExpireTimeSpan = authentication.AccessTokenLifetime,
                 AccessTokenFormat = RejectingAuthenticationTicketFormat.Instance,
                 AccessTokenProvider = accessTokens,
@@ -123,6 +124,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =
                 new CamelCasePropertyNamesContractResolver();
+            OpenApiConfiguration.Configure(app);
             app.UseWebApi(config);
         }
 
@@ -146,6 +148,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             {
                 return false;
             }
+
+            if (OpenApiRoutes.OwnsPath(normalizedPath))
+                return false;
 
             return string.IsNullOrEmpty(Path.GetExtension(normalizedPath));
         }

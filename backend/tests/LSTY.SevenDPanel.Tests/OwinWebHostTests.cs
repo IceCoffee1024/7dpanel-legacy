@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
@@ -21,6 +22,7 @@ using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin.Security.DataProtection;
 using Newtonsoft.Json.Linq;
+using NSwag;
 using Owin;
 using Xunit;
 
@@ -30,6 +32,306 @@ namespace LSTY.SevenDPanel.Tests
     [Trait("Host", "InProcessKatana")]
     public sealed class OwinWebHostTests
     {
+        [Fact]
+        public async Task Anonymous_openapi_document_is_public()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                using var response = await client.GetAsync(
+                    url + "swagger/v1/swagger.json",
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+                Assert.StartsWith("3.", (string?)payload["openapi"]);
+                Assert.Equal("7DPanel API", (string?)payload["info"]?["title"]);
+                Assert.Equal("v1", (string?)payload["info"]?["version"]);
+                Assert.NotNull(payload["paths"]?["/health"]?["get"]);
+                Assert.NotNull(payload["paths"]?["/api/v1/health"]?["get"]);
+            }
+        }
+
+        [Fact]
+        public async Task Anonymous_swagger_ui_uses_fixed_document_path()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                using var response = await client.GetAsync(
+                    url + "swagger",
+                    TestContext.Current.CancellationToken);
+                var body = await response.Content.ReadAsStringAsync();
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+                Assert.Contains("/swagger/v1/swagger.json", body);
+            }
+        }
+
+        [Fact]
+        public async Task Openapi_document_covers_controller_and_owin_routes()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var document = await GetOpenApiDocumentAsync(client, url);
+
+                Assert.NotNull(document["paths"]?["/health"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/health"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/events/stream"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/console/commands"]?["post"]);
+                Assert.NotNull(document["paths"]?["/api/v1/players/online"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/players/{entityId}/kick"]?["post"]);
+                var tokenOperation = document["paths"]?["/api/v1/auth/token"]?["post"];
+                Assert.NotNull(tokenOperation);
+                var formSchema = tokenOperation!["requestBody"]?["content"]?
+                    ["application/x-www-form-urlencoded"]?["schema"];
+                Assert.NotNull(formSchema);
+                Assert.Equal(
+                    new[] { "grant_type", "password", "username" },
+                    formSchema!["required"]!.Values<string>().OrderBy(value => value).ToArray());
+                Assert.Equal("password", (string?)formSchema["properties"]?["grant_type"]?["enum"]?[0]);
+                Assert.NotNull(formSchema["properties"]?["username"]);
+                Assert.NotNull(formSchema["properties"]?["password"]);
+
+                var successSchema = tokenOperation["responses"]?["200"]?["content"]?
+                    ["application/json"]?["schema"];
+                Assert.NotNull(successSchema?["properties"]?["access_token"]);
+                Assert.NotNull(successSchema?["properties"]?["token_type"]);
+                Assert.NotNull(successSchema?["properties"]?["expires_in"]);
+                Assert.Equal(
+                    new[] { "access_token", "expires_in", "token_type" },
+                    successSchema!["required"]!.Values<string>().OrderBy(value => value).ToArray());
+                var errorSchema = tokenOperation["responses"]?["400"]?["content"]?
+                    ["application/json"]?["schema"];
+                Assert.Equal(
+                    new[] { "error" },
+                    errorSchema!["required"]!.Values<string>().OrderBy(value => value).ToArray());
+                Assert.Null(formSchema["properties"]?["refresh_token"]);
+                Assert.Null(successSchema["properties"]?["refresh_token"]);
+                Assert.Equal("Authentication", (string?)tokenOperation["tags"]?[0]);
+                Assert.Contains("Refresh tokens are not supported", (string?)tokenOperation["description"]);
+                Assert.Contains("password-grant form data", (string?)tokenOperation["requestBody"]?["description"]);
+                Assert.Null(tokenOperation["security"]);
+                Assert.Null(tokenOperation["responses"]?["400"]?["content"]?
+                    ["application/problem+json"]);
+            }
+        }
+
+        [Fact]
+        public void Openapi_token_operation_rejects_duplicate_post_registration()
+        {
+            var document = new OpenApiDocument();
+            document.Paths[HttpRoutes.TokenEndpoint] = new OpenApiPathItem
+            {
+                [OpenApiOperationMethod.Post] = new OpenApiOperation()
+            };
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                PanelOpenApiDocumentProcessor.AddOAuthTokenEndpoint(document));
+
+            Assert.Contains("already contains POST", exception.Message);
+            Assert.Contains(HttpRoutes.TokenEndpoint, exception.Message);
+        }
+
+        [Fact]
+        public void Openapi_token_operation_rejects_case_insensitive_duplicate_post_registration()
+        {
+            var document = new OpenApiDocument();
+            document.Paths[HttpRoutes.TokenEndpoint.ToUpperInvariant()] = new OpenApiPathItem
+            {
+                [OpenApiOperationMethod.Post] = new OpenApiOperation()
+            };
+
+            Assert.Throws<InvalidOperationException>(() =>
+                PanelOpenApiDocumentProcessor.AddOAuthTokenEndpoint(document));
+        }
+
+        [Fact]
+        public void Openapi_token_operation_preserves_other_methods_on_the_same_path()
+        {
+            var document = new OpenApiDocument();
+            var path = new OpenApiPathItem
+            {
+                [OpenApiOperationMethod.Get] = new OpenApiOperation()
+            };
+            document.Paths[HttpRoutes.TokenEndpoint] = path;
+
+            PanelOpenApiDocumentProcessor.AddOAuthTokenEndpoint(document);
+
+            Assert.Same(path, document.Paths[HttpRoutes.TokenEndpoint]);
+            Assert.NotNull(path[OpenApiOperationMethod.Get]);
+            Assert.NotNull(path[OpenApiOperationMethod.Post]);
+        }
+
+        [Fact]
+        public async Task Openapi_document_describes_basic_and_bearer_security()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var document = await GetOpenApiDocumentAsync(client, url);
+
+                Assert.Equal("http", (string?)document["components"]?["securitySchemes"]?["Basic"]?["type"]);
+                Assert.Equal("basic", (string?)document["components"]?["securitySchemes"]?["Basic"]?["scheme"]);
+                Assert.Equal("http", (string?)document["components"]?["securitySchemes"]?["Bearer"]?["type"]);
+                Assert.Equal("bearer", (string?)document["components"]?["securitySchemes"]?["Bearer"]?["scheme"]);
+
+                Assert.Null(document["paths"]?["/health"]?["get"]?["security"]);
+                Assert.Null(document["paths"]?["/api/v1/health"]?["get"]?["security"]);
+                Assert.Null(document["paths"]?["/api/v1/auth/token"]?["post"]?["security"]);
+                AssertAlternativeSecurity(document, "/api/v1/events/stream", "get");
+                AssertAlternativeSecurity(document, "/api/v1/console/commands", "post");
+                AssertAlternativeSecurity(document, "/api/v1/players/online", "get");
+                AssertAlternativeSecurity(document, "/api/v1/players/{entityId}/kick", "post");
+            }
+        }
+
+        [Fact]
+        public async Task Openapi_document_describes_server_sent_event_stream()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var document = await GetOpenApiDocumentAsync(client, url);
+                var operation = document["paths"]?["/api/v1/events/stream"]?["get"];
+                Assert.NotNull(operation);
+
+                var lastEventId = operation!["parameters"]?
+                    .Single(parameter => (string?)parameter?["name"] == "Last-Event-ID");
+                Assert.Equal("header", (string?)lastEventId?["in"]);
+                Assert.NotEqual(true, (bool?)lastEventId?["required"]);
+                Assert.NotNull(operation["responses"]?["200"]?["content"]?["text/event-stream"]);
+                Assert.Contains("long-lived named event stream", (string?)operation["description"]);
+                Assert.Contains("cannot be rewritten as JSON", (string?)operation["description"]);
+            }
+        }
+
+        [Fact]
+        public async Task Openapi_document_reuses_problem_details_for_actual_api_errors()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var document = await GetOpenApiDocumentAsync(client, url);
+
+                AssertProblemResponses(document, "/api/v1/events/stream", "get", "400", "401", "429", "500", "503");
+                AssertProblemResponses(document, "/api/v1/console/commands", "post", "400", "401", "403", "500", "503");
+                AssertProblemResponses(document, "/api/v1/players/online", "get", "401", "403", "500", "503");
+                AssertProblemResponses(document, "/api/v1/players/{entityId}/kick", "post", "400", "401", "403", "409", "500", "503");
+                AssertProblemResponses(document, "/api/v1/auth/token", "post", "429", "500");
+                AssertResponseCodes(document, "/api/v1/events/stream", "get", "200", "400", "401", "429", "500", "503");
+                AssertResponseCodes(document, "/api/v1/console/commands", "post", "200", "400", "401", "403", "500", "503");
+                AssertResponseCodes(document, "/api/v1/players/online", "get", "200", "401", "403", "500", "503");
+                AssertResponseCodes(document, "/api/v1/players/{entityId}/kick", "post", "200", "400", "401", "403", "409", "500", "503");
+                AssertResponseCodes(document, "/api/v1/auth/token", "post", "200", "400", "429", "500");
+
+                var schema = document["components"]?["schemas"]?["ApiProblemDetails"];
+                Assert.NotNull(schema);
+                Assert.Equal(
+                    new[] { "code", "detail", "instance", "status", "title", "traceId", "type" },
+                    schema!["properties"]!.Children<JProperty>()
+                        .Select(property => property.Name)
+                        .OrderBy(name => name)
+                        .ToArray());
+                Assert.DoesNotContain("exception", schema.ToString(), StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("stack", schema.ToString(), StringComparison.OrdinalIgnoreCase);
+                Assert.Null(document["paths"]?["/api/v1/auth/token"]?["post"]?["responses"]?["400"]?
+                    ["content"]?["application/problem+json"]);
+            }
+        }
+
+        [Fact]
+        public async Task Swagger_requests_do_not_invoke_game_or_audit_dependencies()
+        {
+            var consoleGateway = new TestRestrictedConsoleGateway();
+            var onlinePlayers = new TestOnlinePlayerQuery();
+            var playerActions = new TestPlayerActions();
+            var auditTrail = new TestPlayerActionAuditTrail();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                false,
+                hub,
+                consoleGateway: consoleGateway,
+                onlinePlayerQuery: onlinePlayers,
+                playerActions: playerActions,
+                playerActionAuditTrail: auditTrail);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                using var documentResponse = await client.GetAsync(
+                    url + "swagger/v1/swagger.json",
+                    TestContext.Current.CancellationToken);
+                using var uiResponse = await client.GetAsync(
+                    url + "swagger",
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.OK, documentResponse.StatusCode);
+                Assert.Equal(HttpStatusCode.OK, uiResponse.StatusCode);
+                Assert.Null(consoleGateway.Command);
+                Assert.Equal(0, onlinePlayers.CallCount);
+                Assert.Equal(0, playerActions.CallCount);
+                Assert.Equal(0, auditTrail.CreatePendingCallCount);
+            }
+        }
+
         [Theory]
         [InlineData("health")]
         [InlineData("api/v1/health")]
@@ -868,6 +1170,13 @@ namespace LSTY.SevenDPanel.Tests
                         missingApiResponse,
                         "resource_not_found",
                         "/api/v1/missing");
+
+                    var missingSwaggerResponse = await client.GetAsync(
+                        url + "swagger/missing",
+                        TestContext.Current.CancellationToken);
+                    var missingSwaggerBody = await missingSwaggerResponse.Content.ReadAsStringAsync();
+                    Assert.Equal(HttpStatusCode.NotFound, missingSwaggerResponse.StatusCode);
+                    Assert.DoesNotContain("7DPanel Admin", missingSwaggerBody);
                 }
             }
             finally
@@ -1417,6 +1726,60 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(string.IsNullOrWhiteSpace((string?)payload["detail"]));
             Assert.False(string.IsNullOrWhiteSpace((string?)payload["traceId"]));
             return payload;
+        }
+
+        private static async Task<JObject> GetOpenApiDocumentAsync(
+            HttpClient client,
+            string url)
+        {
+            using var response = await client.GetAsync(
+                url + "swagger/v1/swagger.json",
+                TestContext.Current.CancellationToken);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            return JObject.Parse(body);
+        }
+
+        private static void AssertAlternativeSecurity(
+            JObject document,
+            string path,
+            string method)
+        {
+            var security = Assert.IsType<JArray>(document["paths"]?[path]?[method]?["security"]);
+            Assert.Equal(2, security.Count);
+            Assert.Contains(security, requirement => requirement?["Basic"] is JArray);
+            Assert.Contains(security, requirement => requirement?["Bearer"] is JArray);
+            Assert.All(security, requirement => Assert.Single(((JObject)requirement!).Properties()));
+        }
+
+        private static void AssertProblemResponses(
+            JObject document,
+            string path,
+            string method,
+            params string[] statusCodes)
+        {
+            foreach (var statusCode in statusCodes)
+            {
+                Assert.Equal(
+                    "#/components/schemas/ApiProblemDetails",
+                    (string?)document["paths"]?[path]?[method]?["responses"]?[statusCode]?
+                        ["content"]?["application/problem+json"]?["schema"]?["$ref"]);
+            }
+        }
+
+        private static void AssertResponseCodes(
+            JObject document,
+            string path,
+            string method,
+            params string[] statusCodes)
+        {
+            Assert.Equal(
+                statusCodes.OrderBy(statusCode => statusCode).ToArray(),
+                document["paths"]?[path]?[method]?["responses"]!
+                    .Children<JProperty>()
+                    .Select(property => property.Name)
+                    .OrderBy(statusCode => statusCode)
+                    .ToArray());
         }
 
         private static ConsoleLogEntry CreateConsoleLogEntry(string message) =>
