@@ -10,6 +10,9 @@
 # Local CodeGraph index
 .codegraph/
 
+# Local Git worktrees
+/.worktrees/
+
 # Built Visual Studio Code Extensions
 *.vsix
 
