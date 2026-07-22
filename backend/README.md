@@ -60,7 +60,7 @@ test compares those values with `config.example.json` so the operator template
 cannot silently drift from fallback behavior.
 
 During the current framework-building phase, the `authentication` object is
-enabled by default with the known credentials `username` / `password`, a
+enabled by default with the known credentials `admin` / `password`, a
 30-minute access-token lifetime, and `allowInsecureHttp: true`. These values are
 present in both the versioned template and a newly generated `config.json`, so
 they are not secrets. On each start they seed the single SQLite user with

@@ -4,7 +4,7 @@
   "scheme": "http",
   "authentication": {
     "enabled": true,
-    "username": "username",
+    "username": "admin",
     "password": "password",
     "accessTokenLifetimeMinutes": 30,
     "allowInsecureHttp": true

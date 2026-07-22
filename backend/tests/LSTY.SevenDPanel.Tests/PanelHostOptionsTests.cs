@@ -41,7 +41,7 @@ namespace LSTY.SevenDPanel.Tests
 
                 Assert.Equal("http://*:18080/", options.Url);
                 Assert.True(options.Authentication.Enabled);
-                Assert.Equal("username", options.Authentication.Username);
+                Assert.Equal("admin", options.Authentication.Username);
                 Assert.Equal("password", options.Authentication.Password);
                 Assert.Equal(TimeSpan.FromMinutes(30), options.Authentication.AccessTokenLifetime);
                 Assert.True(options.Authentication.AllowInsecureHttp);
