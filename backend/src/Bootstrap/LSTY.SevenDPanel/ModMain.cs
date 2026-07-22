@@ -13,6 +13,7 @@ namespace LSTY.SevenDPanel
         private const string HarmonyId = "com.lsty.7dpanel.assembly-location";
 
         private Harmony? harmony;
+        private ConsoleCommandHarmonyRuntime? commandHarmony;
         private ServiceProviderRuntime? runtime;
         private SevenDaysGameLifecycleAdapter? adapter;
 
@@ -20,11 +21,12 @@ namespace LSTY.SevenDPanel
 
         public void InitMod(Mod? modInstance)
         {
-            if (runtime != null || harmony != null) return;
+            if (runtime != null || harmony != null || commandHarmony != null) return;
             if (modInstance == null) throw new ArgumentNullException(nameof(modInstance));
 
             Action<string> log = message => Log.Out("[7DPanel] " + message);
             Harmony? candidateHarmony = null;
+            ConsoleCommandHarmonyRuntime? candidateCommandHarmony = null;
             ServiceProviderRuntime? candidateRuntime = null;
             SevenDaysGameLifecycleAdapter? candidateAdapter = null;
             try
@@ -54,10 +56,12 @@ namespace LSTY.SevenDPanel
                     dataDirectory,
                     assetRoot,
                     log);
-                candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateRuntime);
+                candidateCommandHarmony = ConsoleCommandHarmonyRuntime.Install(candidateRuntime);
+                candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateCommandHarmony);
                 candidateAdapter.RegisterAndStart();
                 runtime = candidateRuntime;
                 adapter = candidateAdapter;
+                commandHarmony = candidateCommandHarmony;
                 harmony = candidateHarmony;
                 Log.Out("[7DPanel] Mod initialized. URL: " + options.Url);
             }
@@ -65,6 +69,7 @@ namespace LSTY.SevenDPanel
             {
                 try { candidateAdapter?.Dispose(); } catch { }
                 try { candidateRuntime?.Dispose(); } catch { }
+                try { candidateCommandHarmony?.Dispose(); } catch { }
                 try { candidateHarmony?.UnpatchSelf(); } catch { }
                 ModInstance = null;
                 throw;

@@ -3,6 +3,7 @@ using System.IO;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
@@ -46,7 +47,15 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(_ => new ConsoleLogService(log));
                 services.AddSingleton<IServerEventStream>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);
-                services.AddSingleton<IRestrictedConsoleGateway, SevenDaysRestrictedConsoleGateway>();
+                services.AddSingleton<SqliteConsoleCommandAuditStore>();
+                services.AddSingleton<IConsoleCommandAuditStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteConsoleCommandAuditStore>());
+                services.AddSingleton(serviceProvider => new ConsoleCommandAuditService(
+                    serviceProvider.GetRequiredService<IConsoleCommandAuditStore>(),
+                    log));
+                services.AddSingleton<SevenDaysConsoleCommandService>();
+                services.AddSingleton<IConsoleCommandGateway>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysConsoleCommandService>());
                 services.AddSingleton<ExecuteConsoleCommandUseCase>();
                 services.AddSingleton<SevenDaysOnlinePlayerQuery>();
                 services.AddSingleton<IOnlinePlayerQuery>(serviceProvider =>
@@ -90,16 +99,21 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(serviceProvider => new ConsoleLogRuntime(
                     serviceProvider.GetRequiredService<ConsoleLogService>(),
                     serviceProvider.GetRequiredService<ModHost>()));
+                services.AddSingleton(serviceProvider => new ConsoleCommandRuntime(
+                    serviceProvider.GetRequiredService<ConsoleCommandAuditService>(),
+                    serviceProvider.GetRequiredService<SevenDaysConsoleCommandService>(),
+                    serviceProvider.GetRequiredService<ConsoleLogRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<ConsoleLogRuntime>());
+                    serviceProvider.GetRequiredService<ConsoleCommandRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {
                     ValidateOnBuild = true,
                     ValidateScopes = true
                 });
+                provider.GetRequiredService<SqliteDatabaseBootstrapper>().Upgrade();
                 var inner = provider.GetRequiredService<IModRuntime>();
                 var runtime = new ServiceProviderRuntime(inner, provider);
                 provider = null;

@@ -111,6 +111,11 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("services.AddSingleton<SevenDaysPlayerActions>();", providerFactorySource);
             Assert.Contains("services.AddSingleton<IPlayerActions>", providerFactorySource);
             Assert.Contains("services.AddSingleton<KickPlayerUseCase>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SqliteConsoleCommandAuditStore>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IConsoleCommandAuditStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SevenDaysConsoleCommandService>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IConsoleCommandGateway>", providerFactorySource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new ConsoleCommandRuntime(", providerFactorySource);
             Assert.Contains("playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);", providerFactorySource);
             Assert.Contains("ValidateOnBuild = true", providerFactorySource);
             Assert.Contains("ValidateScopes = true", providerFactorySource);
@@ -129,17 +134,34 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(webHostIndex > recoveryIndex,
                 "Pending player actions must be recovered before the OWIN host is created.");
             var candidateRuntimeIndex = modMainSource.IndexOf("candidateRuntime = PanelServiceProviderFactory.CreateRuntime(", StringComparison.Ordinal);
-            var candidateAdapterIndex = modMainSource.IndexOf("candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateRuntime);", StringComparison.Ordinal);
+            var commandHarmonyIndex = modMainSource.IndexOf(
+                "candidateCommandHarmony = ConsoleCommandHarmonyRuntime.Install(candidateRuntime);",
+                StringComparison.Ordinal);
+            var candidateAdapterIndex = modMainSource.IndexOf(
+                "candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateCommandHarmony);",
+                StringComparison.Ordinal);
             var registerIndex = modMainSource.IndexOf("candidateAdapter.RegisterAndStart();", StringComparison.Ordinal);
             var publishRuntimeIndex = modMainSource.IndexOf("runtime = candidateRuntime;", StringComparison.Ordinal);
             var publishAdapterIndex = modMainSource.IndexOf("adapter = candidateAdapter;", StringComparison.Ordinal);
             Assert.True(registerIndex >= 0, "Bootstrap must start the candidate lifecycle adapter.");
-            Assert.True(candidateRuntimeIndex >= 0 && candidateAdapterIndex > candidateRuntimeIndex,
-                "Bootstrap must build the validated service provider before lifecycle registration.");
+            Assert.True(candidateRuntimeIndex >= 0 && commandHarmonyIndex > candidateRuntimeIndex,
+                "Bootstrap must build the validated service provider before installing command Harmony.");
+            Assert.True(candidateAdapterIndex > commandHarmonyIndex,
+                "Bootstrap must bind lifecycle registration to the command Harmony runtime proxy.");
             Assert.True(publishRuntimeIndex > registerIndex, "Bootstrap must publish the runtime only after lifecycle registration succeeds.");
             Assert.True(publishAdapterIndex > registerIndex, "Bootstrap must publish the adapter only after lifecycle registration succeeds.");
             Assert.Contains("candidateAdapter?.Dispose();", modMainSource);
             Assert.Contains("candidateRuntime?.Dispose();", modMainSource);
+            Assert.Contains("candidateCommandHarmony?.Dispose();", modMainSource);
+
+            var providerUpgradeIndex = providerFactorySource.LastIndexOf(
+                ".Upgrade();",
+                StringComparison.Ordinal);
+            var resolveRuntimeIndex = providerFactorySource.IndexOf(
+                "provider.GetRequiredService<IModRuntime>();",
+                StringComparison.Ordinal);
+            Assert.True(providerUpgradeIndex >= 0 && resolveRuntimeIndex > providerUpgradeIndex,
+                "SQLite migrations must complete before command services can start accepting observations.");
 
             var registeredIndex = lifecycleSource.IndexOf("registered = true;", StringComparison.Ordinal);
             var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);

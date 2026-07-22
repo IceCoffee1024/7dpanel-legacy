@@ -7,11 +7,11 @@ last_updated: "2026-07-22"
 
 ## 背景与驱动因素
 
-本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户与 Bearer Token、Basic/Bearer 认证、认证生产 SSE、Admin 静态资源托管，以及认证后通过游戏主线程执行白名单只读 `version` 命令、查询在线玩家精简快照和以类型化原生 API 踢出在线玩家的 Application 纵向切片。踢出动作在 Application 持有专属 single-flight 和持久审计生命周期，在游戏主线程重新校验实体与平台身份，并通过 SQLite 保存 `Pending` 到可信终态。当前 Admin 是 Vue 3、Vite、Nuxt UI 和 Pinia 应用，提供 `/login`、受保护的 `/` 与 `/players`；它通过共享同源 Fetch 边界消费健康、password grant 和在线玩家 API，并只在 Pinia 内存中保存 Bearer 会话。前端 SSE 和控制台命令消费尚未实现。`Admin`/`Viewer` 用户管理、封禁、禁言、传送、审计查询页面、备份、公告、任意或改变状态的控制台命令、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Cookie、CSRF Token 或 refresh token。
+本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户与 Bearer Token、Basic/Bearer 认证、认证生产 SSE、Admin 静态资源托管，以及认证后通过容量 32 的有界 FIFO 在游戏主线程执行动态控制台命令、查询在线玩家精简快照和以类型化原生 API 踢出在线玩家的 Application 纵向切片。最终 `SdtdConsole.executeCommand` 由独立 Harmony Patch 尽力观察，完整原文、参数、输出、来源和结果通过容量 256 的异步队列写入 SQLite；审计失败不会改变命令结果，并以告警和 gap 记录缺失。当前 Admin 尚未消费 SSE 或控制台命令。`Admin`/`Viewer` 用户管理、封禁、禁言、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Cookie、CSRF Token 或 refresh token。
 
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
-当前切片直接支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家快照、Owner 踢出与首个受限只读控制台命令，以及 `CAP-05` 的踢出审计写入基础，并落实 `NFR-01`、`NFR-02`、`NFR-04` 的自托管、未知结果不得显示为成功和管理凭证失败关闭约束。它不代表 `CAP-01` 的完整游戏状态、`CAP-02` 的其他玩家动作/日志页面、`CAP-05` 的审计查询或完整身份管理，以及其他 P0 能力已经完成。
+当前切片直接支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家快照、Owner 踢出、动态控制台命令与命令审计写入，以及 `CAP-05` 的踢出审计写入基础，并落实 `NFR-01`、`NFR-02`、`NFR-04` 的自托管、未知结果不得显示为成功和管理凭证失败关闭约束。它不代表 `CAP-01` 的完整游戏状态、`CAP-02` 的其他玩家动作/日志页面、`CAP-05` 的审计查询或完整身份管理，以及其他 P0 能力已经完成。
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据来自根目录只读私有子模块 `7dtd-reference/`；该子模块不是产品源码或发布内容。
 
@@ -29,7 +29,7 @@ flowchart LR
     ModLoader[7DTD Mod Loader] --> Bootstrap[ModMain.InitMod]
     Bootstrap --> Config[config.json]
     Bootstrap --> Database[(data/7dpanel.db)]
-    Bootstrap --> Runtime[ConsoleLogRuntime]
+    Bootstrap --> Runtime[ConsoleCommandRuntime]
     Runtime --> ModHost
     ModHost --> Host
     GameEvents[GameStartDone / WorldShuttingDown / GameShutdown] --> Lifecycle[SevenDays Lifecycle Adapter]
@@ -43,9 +43,13 @@ flowchart LR
     Auth --> Database
     Runtime --> LogService
     Api --> Application[ExecuteConsoleCommandUseCase]
-    Application --> ConsolePort[IRestrictedConsoleGateway]
-    ConsolePort --> Dispatcher[GameThreadDispatcher]
+    Application --> ConsolePort[IConsoleCommandGateway]
+    ConsolePort --> CommandQueue[Bounded FIFO 32]
+    CommandQueue --> Dispatcher[GameThreadDispatcher]
     Dispatcher --> GameConsole[SdtdConsole]
+    GameConsole --> CommandPatch[executeCommand Harmony observation]
+    CommandPatch --> AuditQueue[Bounded audit queue 256]
+    AuditQueue --> Database
     Api --> PlayerUseCase[GetOnlinePlayersUseCase]
     PlayerUseCase --> PlayerPort[IOnlinePlayerQuery]
     PlayerPort --> Dispatcher
@@ -70,10 +74,10 @@ flowchart LR
 |---|---|---|
 | `backend/src/Bootstrap/LSTY.SevenDPanel/` | 唯一 `IModApi` 入口、进程期 `Assembly.Location` 兼容补丁、配置文件 I/O、Microsoft DI 组合根与根 Provider 所有权、数据库路径、Admin 资源根目录选择和 Mod 发布入口 | Application、Hosting、Web Adapter、SevenDays Adapter、Persistence Adapter、`Microsoft.Extensions.DependencyInjection`、游戏提供的 `0_TFP_Harmony` 和编译期程序集 |
 | `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` OWIN 生命周期状态机、独立 `GameReadinessState`、`IModRuntime`、`IPanelRuntimeStatus`、`IPanelWebHost`、监听选项、产品元数据、认证 Store 端口，以及 Web/SevenDays Adapter 之间受限的命名服务器事件契约 | .NET Framework BCL |
-| `backend/src/Core/LSTY.SevenDPanel.Application/` | `ExecuteConsoleCommandUseCase` 对输入执行精确 `version` 白名单；`GetOnlinePlayersUseCase` 返回不可变玩家快照；`KickPlayerUseCase` 拥有前置校验、踢出专属 single-flight、审计意图先行、动作结果映射和 `Pending -> Succeeded/Failed/Unknown` 协调 | .NET Framework BCL；当前不依赖 Domain |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、受限控制台命令、Owner-only 在线玩家查询与踢出路由；关联标识、Problem Details、认证限流、Basic/OAuth Bearer middleware、scoped SSE session、OWIN/Web API 请求作用域桥接、全局 JSON 配置、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期和日志事件；提供有界日志/事件服务、组合运行时、独立只读 Gateway/Query、`SevenDaysPlayerActions` 类型化踢出 Adapter，以及轻量 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration、PBKDF2 引导用户、不透明 Token Store，以及永久玩家动作审计和遗留 `Pending` 启动恢复 | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
+| `backend/src/Core/LSTY.SevenDPanel.Application/` | `ExecuteConsoleCommandUseCase` 转发认证主体与未规范化命令原文；定义动态 Gateway、审计 entry/gap 与 Store 端口；`GetOnlinePlayersUseCase` 返回不可变玩家快照；`KickPlayerUseCase` 协调踢出审计与终态 | .NET Framework BCL；当前不依赖 Domain |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、动态控制台命令、Owner-only 在线玩家查询与踢出路由；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期和日志事件；提供有界日志/事件服务、容量 32 的命令 FIFO、最终 `executeCommand` Harmony observation、容量 256 的异步审计服务、玩家 Query、类型化踢出 Adapter 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration、持久身份/Token、玩家动作审计、完整命令审计和审计 gap | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
 | `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/` 与 `/players`、显式 Pinia Router guard、内存 Bearer 会话、共享同源 HTTP 边界、健康与在线玩家 Feature、局部查询状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Nuxt UI、Vite |
 
 当前已由控制台命令纵向切片创建 Application 项目，但尚无 Domain 项目；SQLite Persistence Adapter 是首个 Local Adapter。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向、六个产品 DLL 的发布门禁和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
@@ -82,11 +86,11 @@ flowchart LR
 
 1. `ModMain.InitMod` 先保存非空 `ModInstance`，使用游戏提供的 `0_TFP_Harmony` 只应用 `AssemblyLocationPatch`，并在读取配置或创建运行时前验证 Bootstrap 程序集的 `Assembly.Location` 非空。补丁只在原结果为空且 `Mod.ContainsAssembly` 确认程序集属于当前 Mod 时返回 `<ModDirectory>/<AssemblyName>.dll`；候选启动失败会撤销本 Harmony id 的补丁。
 2. `ModMain.InitMod` 读取或创建监听配置，并从 `modInstance.Path` 派生 `<ModDirectory>/data` 与 `<ModDirectory>/wwwroot`。
-3. Bootstrap 通过 `PanelServiceProviderFactory` 显式注册 SQLite connection factory、DbUp bootstrapper、同一实例的 credential/token Store、singleton `ConsoleLogService`、同一实例的 `IServerEventStream`、控制台 Gateway/用例、同一实例的 `SevenDaysOnlinePlayerQuery`/`IOnlinePlayerQuery`、`GetOnlinePlayersUseCase`、`ModHost`/`IPanelRuntimeStatus`、`ConsoleLogRuntime`/`IModRuntime` 和 scoped `ServerEventSseSession`，以 `ValidateOnBuild=true`、`ValidateScopes=true` 构建唯一根 Provider；随后才创建 `SevenDaysGameLifecycleAdapter`。完成注册与启动后才发布字段，异常路径 best-effort 清理候选运行时并保留原异常。
+3. Bootstrap 通过 `PanelServiceProviderFactory` 显式注册 SQLite connection factory、DbUp bootstrapper、身份与两类审计 Store、`ConsoleCommandAuditService`、`SevenDaysConsoleCommandService`、`ConsoleLogService`、玩家端口、`ModHost`、具体 `ConsoleCommandRuntime` 和 scoped `ServerEventSseSession`，以 `ValidateOnBuild=true`、`ValidateScopes=true` 构建唯一根 Provider。DbUp upgrade 在任何命令观察或 HTTP 接收前完成；随后 Bootstrap 安装独立命令 Harmony runtime，并让 `SevenDaysGameLifecycleAdapter` 驱动该代理。完成注册与启动后才发布字段，异常路径按 adapter、DI runtime、命令 Harmony、位置 Harmony 的逆序 best-effort 清理。
 4. `RegisterAndStart` 依次通过 `ISevenDaysLifecycleEvents` 注册 `WorldShuttingDown`、`GameShutdown` 和 `GameStartDone`，全部成功后再调用 `runtime.Start()`。注册失败按逆序注销；`runtime.Start()` 抛出时还会 best-effort 调用 `runtime.Stop()`，清理失败不遮蔽原始启动异常。
 5. `SevenDaysModEvents` 在 SevenDays Adapter 程序集内保存精确游戏 delegate，返回幂等订阅 token 负责注销，保持 `ModEvents.RegisterHandler` 对调用程序集的识别语义。
-6. `ConsoleLogRuntime.Start` 先启动日志服务，再委托 `ModHost.Start`；其 Host factory 直接通过 `Microsoft.Data.Sqlite` 打开数据库，由 `SQLitePCLRaw.bundle_e_sqlite3` 的标准 Batteries 初始化 provider 并基于已恢复的程序集位置解析目标平台 native asset，再验证 WAL、执行 DbUp migration、同步引导 `Owner`，全部成功后才创建 OWIN Host。当前代码不包含自定义 native loader、ResourceManager shim、`SQLite3Provider_dynamic_cdecl.Setup` 或 `raw.SetProvider`。迁移或同步失败由 `ModHost` 记录并进入 `Faulted`，不启动监听也不把异常抛回 7DTD 初始化。`ConsoleLogService` 先启动唯一 consumer，再订阅 `Log.LogCallbacksExtended`。这些运行时资源由根 Provider 按显式注册创建，不使用程序集扫描、业务 service locator 或通用组件注册表。
-7. `GameStartDone` 由 `ConsoleLogRuntime` 先转发给 `ModHost`，再把一次 `game-ready` 排入与已接受日志相同的有界顺序通道。任一关闭事件调用幂等 `ServiceProviderRuntime.Stop`：先拒绝新日志、注销静态 delegate、把 `server-stopping` 排在已接受日志之后、限时排空并完成 Hub，再停止 `ModHost` 和释放根 Provider；各阶段失败仍继续回收并聚合报告。并发或晚到的就绪事件不能覆盖 `Stopping`。
+6. `ConsoleCommandRuntime.Start` 按命令审计、HTTP 命令、`ConsoleLogRuntime` 的顺序启动；最后者再启动日志服务和 `ModHost`。消费者先就绪再接受生产者，任一阶段失败会逆序停止已启动阶段。SQLite 标准 Batteries、WAL、DbUp migration 和引导 `Owner` 已在 Patch 安装前完成；当前代码不包含自定义 native loader、ResourceManager shim、`SQLite3Provider_dynamic_cdecl.Setup`、`raw.SetProvider`、程序集扫描、业务 service locator 或通用组件注册表。
+7. `GameStartDone` 依次转发到命令审计、HTTP 命令、日志和 `ModHost`，只有日志窗口写入一次 `game-ready`。任一关闭事件按 `ModHost`/console-log、HTTP 命令、命令审计的逆序停止并聚合失败；随后命令 Harmony 代理调用 `UnpatchSelf()`，根 Provider 最后释放。未开始命令完成为 unavailable，已开始命令和已接受审计限时排空；并发或晚到就绪事件不能覆盖 `Stopping`。
 
 2026-07-18 的 Windows 7DTD `v3.0.1-b4` 人工 smoke 是旧启动时序的历史基线。2026-07-19 的同版本真实进程 smoke 验证 OWIN 在 `GameStartDone` 前启动。2026-07-20 在引入事件隔离与就绪状态后再次验证：OWIN 在启动后 `8.576` 秒启动，`StartGame done` 在 `119.732` 秒出现，日志没有 ModEvent 注册或回调错误；正常关服记录 OWIN stopped，进程退出且 18080 端口释放。测试层级和证据限制见[测试策略](test.md)。
 
@@ -104,14 +108,16 @@ flowchart LR
 
 ### 7DTD 主线程调度边界
 
-- `POST /api/v1/console/commands` 要求 `Owner` 或 `Admin`，并在 `GameReadinessState.Ready` 前返回 503 Problem Details `game_not_ready`。Application 用例只接受大小写不敏感、去除首尾空白后的精确 `version`，类型化 Gateway 只暴露 `ExecuteVersionAsync`；其他字符串在接触游戏 Adapter 前返回 400 `console_command_not_supported`。
+- `POST /api/v1/console/commands` 要求 `Owner` 或 `Admin`，并在 `GameReadinessState.Ready` 前返回 503 Problem Details `game_not_ready`。Application 保留非空命令原文和认证主体，不维护内置或第三方命令白名单；命令名称、参数和未知命令语义由 7DTD 注册表解释。
 - 7DPanel 对所有经过 `SdtdConsole.ExecuteSync`、`SdtdConsole.ExecuteAsync`、内部 `executeCommand` 或 `SdtdConsole.Output` 的控制台命令统一采用游戏主线程串行边界，不按具体命令是否只读放宽。`SdtdConsole` 在实例级复用命令分词列表和当前命令输出列表，`ExecuteSync` 只在调用线程同步进入 `executeCommand`，不负责线程切换；7DTD 自有的 `ExecuteAsync` 则把多线程生产请求交给 `SdtdConsole.Update` 串行消费。7DPanel 因此不得从 OWIN 工作线程直接调用 `ExecuteSync`，Gateway 自身的 single-flight 也不能替代该边界，因为它无法排除 Telnet、游戏内置 Web、GUI 或其他 Mod 同时使用同一控制台实例。
-- `SevenDaysRestrictedConsoleGateway` 用进程内 single-flight 门禁保证同一时刻最多一个版本命令进入 `GameThreadDispatcher`；并发请求立即返回 503 `console_command_busy`，不会增长 7DTD 主线程队列。它在游戏主线程内复制 `SdtdConsole.ExecuteSync` 的共享输出列表，再把不可变结果交回 Application。
+- `SevenDaysConsoleCommandService` 使用容量 32 的 bounded Channel 和唯一 consumer 严格按接收顺序把独立 HTTP 工作项送入 `GameThreadDispatcher`；正在执行项不占等待容量。队满立即返回 503 `console_command_queue_full`，停止或未启动返回 `console_command_unavailable`。等待中取消保证不执行；一旦进入 Running，HTTP 取消不替换真实同步结果。服务在游戏主线程内用 `ConsoleCommandSourceContext` 标记 `7dpanel-http`/actor，并在离开共享 `SdtdConsole` 前复制输出。
+- 独立 Harmony id 只 patch 最终 `SdtdConsole.executeCommand`。Prefix 使用游戏 `tokenizeCommand` 并立即复制 token；Postfix/Finalizer 以一次完成门复制输出或异常类型，observer/tokenizer 故障均 fail-open。HTTP scope 优先成为来源，否则按 sender 映射 `local-game`、`remote-client` 或 `network`，不保存网络对象描述或远端对象字符串。Patch 不替换 `ExecuteAsync`、`Update()` 或命令注册。
+- `ConsoleCommandAuditService` 使用独立容量 256 的 bounded Channel 和唯一 consumer，把完整原文、命令名、ordinal 参数、逐行输出、来源、可空 actor、起止时间和 `Completed/Threw` 写入 migration `003_ConsoleCommandAudit.sql` 的四张表。回调只 `TryWrite`，不在游戏线程执行 SQLite I/O；队满或 Store failure 只告警并累计 `queue_full`/`store_failure` gap，恢复后的下一次写入先持久化 gap。现有命名 SSE 仍只有 `console-log`、`game-ready` 和 `server-stopping`。
 - `GET /api/v1/players/online` 只允许 `Owner`，在游戏未就绪时不投递查询。`SevenDaysOnlinePlayerQuery` 使用与控制台命令相互独立的实例级 single-flight，在同一次主线程委托中配对连接与 `EntityPlayer`、复制批准字段并按 entity id 排序；转换中缺少实体的条目被跳过，World 或连接基础设施不可用返回稳定 503，其他字段读取失败进入统一 500 边界。
 - `POST /api/v1/players/{entityId}/kick` 只允许 `Owner`。`KickPlayerUseCase` 在写入 `Pending` 审计前获取踢出专属 single-flight；busy 请求不创建审计，审计意图失败不调用游戏动作。`SevenDaysPlayerActions` 只在 Dispatcher 委托内按 `entityId` 重新读取连接并比较 `combinedId + platform`，匹配后调用 `GameUtils.KickPlayerForClientInfo` 的 `ManualKick` 路径；它不拼接控制台命令，也不把 `ClientInfo` 暴露给 Application。
 - 审计 migration `002_PlayerActionAudit.sql` 永久保存操作 id、固定 `kick` 类型、操作者、目标身份、trim 后原因、请求/完成时间、`Pending/Succeeded/Failed/Unknown` 和稳定失败码。终态更新只允许命中当前 `Pending` 一次；终态写入不可确认时保留 `Pending` 并返回未知结果，启动恢复使用 `process_interrupted` 标记遗留记录。
 - `GameThreadDispatcher` 已在游戏主线程时直接执行，否则通过 `ThreadManager.AddSingleTaskMainThread` 投递。每个请求用原子 `Pending -> Running -> Completed` 状态竞争：排队取消或 5 秒启动截止时间到达会完成 Task 并保证委托不执行；一旦进入 `Running`，取消或截止时间不再伪造失败，而是等待同步游戏操作的真实结果或异常。
-- 委托异常由 Dispatcher 写入 Task；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。当前 Dispatcher 不拥有通用队列、容量、逐帧 pump 或独立 Start/Stop 生命周期；只读版本命令、在线玩家查询和踢出用例各自拥有局部 single-flight。未来新增其他玩家动作或生产者前仍必须按其真实负载和副作用重新确定背压、审计、幂等及关服语义。只有完全绕过 `SdtdConsole`，且不访问 Unity 对象、游戏主线程拥有的集合或其他未证明线程安全状态的类型化操作，才能依据其实际依赖单独决定是否需要主线程。
+- 委托异常由 Dispatcher 写入 Task；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。Dispatcher 本身不拥有通用队列、容量、逐帧 pump 或独立生命周期；动态命令 FIFO、在线玩家查询和踢出 single-flight 分别由具体消费者拥有。只有完全绕过 `SdtdConsole`，且不访问 Unity 对象、游戏主线程集合或其他未证明线程安全状态的类型化操作，才能依据实际依赖单独决定线程边界。
 - 2026-07-21 Windows `v3.0.1-b4` 真实进程 smoke 在 `GameStartDone` 前取得 9 次 `game_not_ready`，就绪后命令返回 HTTP 200 和 5 行真实输出，首行为 `Game version: V 3.0.1 (b4) Compatibility Version: V 3.0.1`；随后 Telnet 正常关服且监听释放。前一轮启动因 EOS `NoConnection` 在游戏就绪前退出，保留为外部失败证据；后续重试通过且服主三字段配置的 71 字节与 SHA-256 均未改变。
 
 ### OWIN、Web API 与静态资源
@@ -124,7 +130,7 @@ flowchart LR
 - Problem Details 外层通过 non-owning write-tracking stream 区分尚未开始和已经写出的响应；只有前者能被改写为统一 500，SSE 或其他已开始 body 发生异常时只记录 traceId 并结束响应，不追加错误 JSON。
 - `POST /api/v1/auth/token` 只支持 password grant，返回数据库只保存 secret hash 的短期不透明 Bearer Token；Token 跨 7DTD 进程重启保留，最多保留 128 个未到期 Token。token endpoint 与携带 Basic Header 的事件建连按远端地址限制为每分钟 20 次、最多 1024 个地址 bucket。
 - `GET /api/v1/events/stream` 要求 `Owner`、`Admin` 或 `Viewer` 的 Basic/Bearer 身份，拒绝 QueryString Token，并按 Welcome、replay、live 和 heartbeat 顺序输出命名事件。`Last-Event-ID` 只接受非负十进制整数。
-- `POST /api/v1/console/commands` 接受 `{ "command": "version" }`，成功返回 `{ command, output }`；缺少命令、未支持命令、游戏未就绪、single-flight 忙和主线程启动超时均使用稳定 Problem Details，且未经认证的请求不会进入用例。
+- `POST /api/v1/console/commands` 接受任意非空原文 `{ "command": "..." }`，成功返回该原文及本次独立输出；缺少命令、游戏未就绪、队满、服务不可用和主线程启动超时使用稳定 Problem Details，且未经认证的请求不会进入用例。未知命令作为 7DTD 的真实控制台输出返回，不由 Web 层维护第二套注册表。
 - `GET /api/v1/players/online` 返回 `{ capturedAtUtc, players }`；玩家只含 entity id、名称、原生/可选跨平台身份、ping、level 和 health，不返回 IP、位置、封禁、战斗统计或离线历史。无玩家是 200 空数组；未就绪、繁忙、主线程启动超时和快照基础设施不可用使用稳定 503 Problem Details。
 - `POST /api/v1/players/{entityId}/kick` 接受预期主平台身份、1 至 200 字符原因和精确 `confirmed: true`；操作者只来自认证主体。成功仅返回 operation id、`succeeded`、主线程目标快照和 UTC 时间；离线、身份变化、busy、超时及审计不可用使用稳定 Problem Details。请求取消继续作为宿主控制流传播，不被统一异常边界伪造成 500。
 - Web API 移除 XML formatter，并统一用 `CamelCasePropertyNamesContractResolver` 输出 camelCase JSON。
@@ -177,7 +183,7 @@ GET /
 - 当前过渡阶段的 `authentication` 默认启用，使用已知引导凭据 `username` / `password` 和 30 分钟 Token 生命周期；服主可以在 `config.json` 中替换凭据，用户名和密码仍必须非空，Token 生命周期限制为 5 到 1440 分钟。每次启动按稳定 `Subject=owner` 同步唯一 SQLite 用户；凭据不变时保留 Token，用户名或密码变化时同事务更新并撤销该 Owner 的 Token。无效认证配置失败关闭但不替换有效监听配置，受保护 API 不会退化为匿名访问。
 - `allowInsecureHttp` 当前默认 true，与默认 `http` 监听共同允许明文 HTTP 上的 Basic 和 password grant；这是当前阶段按 `NFR-04` 接受的运行假设，启动日志只输出不含凭据的风险警告。用户管理能力能够安全维护至少一个 `Owner` 后，必须删除配置引导、已知默认凭据和明文远程认证例外。
 - `config.json`、`.env.local` 和运行时 `data/` 都不是发布模板内容。发布脚本不会覆盖已有 `config.json` 或 `data/`。
-- 当前持久状态只有 `data/7dpanel.db` 中的引导用户、DbUp migration journal、访问 Token 和永久玩家踢出审计；尚无审计查询模型、通用作业或备份记录。
+- 当前持久状态包括 `data/7dpanel.db` 中的引导用户、DbUp migration journal、访问 Token、永久玩家踢出审计、完整控制台命令审计和审计 gap；尚无审计查询模型、通用作业或备份记录。
 
 ### 当前依赖兼容矩阵
 
@@ -195,7 +201,7 @@ GET /
 | SQLite 持久化 | Dapper `2.1.79`、DbUp Core `6.0.15`、DbUp SQLite `6.0.4`、Microsoft.Data.Sqlite `10.0.9`、SQLitePCLRaw bundle/native `2.1.12` | migration/store 集成测试、Release 构建、Windows/Linux x64 本地发布清单和 Windows `v3.0.1-b4` 标准 Batteries 真实进程通过；Linux Mono 待验证 | 短连接、WAL、5 秒 default timeout、逐 migration 事务；Bootstrap 发布五个 Framework64 宿主兼容程序集，Persistence Adapter 显式布置两个 RID native asset，并由标准 bundle 初始化，不保留 shim、绝对路径加载或显式 provider 绑定 |
 | Async interfaces | Mod 发布 `Microsoft.Bcl.AsyncInterfaces 10.0.10`（程序集 `10.0.0.10`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再依赖游戏目录中的 6.x 文件；发布脚本要求 Mod 目录存在固定新版 |
 | Unsafe | Mod 发布 `System.Runtime.CompilerServices.Unsafe 6.1.2`（程序集 `6.0.3.0`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再排除 runtime；发布脚本要求 Mod 目录存在固定新版 |
-| 有界日志通道 | `System.Threading.Channels 8.0.0`、`System.Threading.Tasks.Extensions 4.6.3` | Release 构建、自动化和本地发布清单通过；Channels 既有 Windows Mono 证据仍有效，依赖升级需重跑 smoke | 发布 Channels、Tasks.Extensions 和 Unsafe；仍不复制 LogLibrary 或 Unity 程序集 |
+| 有界日志与命令通道 | `System.Threading.Channels 8.0.0`、`System.Threading.Tasks.Extensions 4.6.3` | 控制台日志、HTTP 命令 FIFO、异步审计自动化和本地发布清单通过；动态命令的 Windows Mono 进程证据待补 | 三条通道容量和生命周期独立；发布 Channels、Tasks.Extensions 和 Unsafe，仍不复制 Harmony、LogLibrary 或 Unity 程序集 |
 | Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | lint、typecheck、182 项 Vitest、生产构建通过；Playwright 真实 Owner suite 已建立但本轮未执行；旧健康切片具备 Vite 8 真实 OWIN smoke 和 Chromium 人工证据 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器踢出、`390x844` 真实渲染或真实动作结果证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
@@ -208,7 +214,7 @@ GET /
 - 2026-07-21 较早的 Windows 7DTD `v3.0.1-b4` smoke 使用现已删除的自定义 loader 和 SQLitePCLRaw `2.1.11`，只保留为历史兼容证据。
 - 同日当前标准 Batteries/SQLitePCLRaw `2.1.12` 二进制完成 Windows `v3.0.1-b4` 真实进程 smoke：游戏从独立 `0_TFP_Harmony` 加载 `0Harmony`，`Assembly.Location` 补丁在 `3.071s` 成功并先于 `3.388s` database upgrade，OWIN 在 `7.775s` 启动，`StartGame done` 在 `65.392s` 出现。健康端点返回精确三字段 200；Basic/Bearer SSE 均以 Welcome 开始，Bearer replay 包含 `console-log` 和 `game-ready`，关服连接收到 `server-stopping`。正常停止摘要为 `accepted=188`、`consumed=188`、无丢弃或 consumer failure，OWIN 停止、进程退出且端点不可达；兼容性错误扫描为 0。Linux 真实进程仍待验证。
 - 开发期发布、启停和健康检查入口见[后端脚本指南](../backend/scripts/README.md)。辅助脚本不属于产品运行时。
-- 当前生产关服流程调用幂等 `ServiceProviderRuntime.Stop`，先由 `ConsoleLogRuntime` 注销并排空 `ConsoleLogService`、调用 `ModHost.Stop` 释放 OWIN，再释放根 Provider；SQLite connection factory 随 Provider 释放并清空连接池。`GameThreadDispatcher` 没有独立生命周期；OWIN 请求取消可阻止尚未开始的版本命令，已经开始的同步命令会返回真实结果。通用游戏动作排空和可观察 HTTP draining 仍未实现。
+- 当前生产关服流程先停止 `ModHost`/console-log，再停止 HTTP 命令 FIFO 并拒绝未开始项，最后排空命令审计；各阶段失败聚合且后续阶段仍执行。命令 Harmony 随后只卸载自身 id，根 Provider 在所有内部运行时成功停止后才释放并清空 SQLite 连接池；审计排空超时会保留 Provider 所有权并允许后续 Stop 重试，避免 consumer 访问已释放 Store。`GameThreadDispatcher` 没有独立生命周期；等待中的 HTTP 命令可取消，已经开始的同步命令返回真实结果。通用游戏动作排空和可观察 HTTP draining 仍未实现。
 
 ## 质量属性
 
@@ -218,9 +224,9 @@ GET /
 - OWIN 集成测试使用真实 Katana Host 验证端口释放、API/静态资源优先级、SPA fallback、缺失资源、缺失资产目录、关联标识、统一 404、Basic/Bearer challenge、OAuth password grant 与协议错误、限流 429、拒绝 QueryString Token，以及生产 SSE 的 Welcome、命名 replay、gap、无效游标、建流前 503 和断开释放。
 - `SevenDaysGameLifecycleAdapterTests` 通过可替换事件边界执行三个回调，并覆盖订阅顺序、逆序回滚、异常保留与订阅所有权；真实静态 `ModEvents` wrapper 仍由官方进程 smoke 提供兼容证据。
 - 控制台日志测试覆盖六字段 entry、sequence/淘汰/gap、回调线程与 consumer 隔离、队满拒绝、保序消费、单项失败、订阅失败、停止排空和注销后摘要；生产 `Log.LogCallbacksExtended` delegate 与 Channels 加载由官方进程 smoke 验证。
-- 主线程 Dispatcher 的确定性测试覆盖排队取消/启动超时保证不执行，以及执行开始后取消/超时不能替换真实结果；Application 测试覆盖命令白名单、玩家不可变快照和查询转发，SevenDays Query 测试覆盖排序、可空跨平台身份、实例级 single-flight 及取消/超时/异常后释放，Katana 测试覆盖命令与玩家 API 的认证、就绪、成功和稳定 Problem Details。
+- 主线程 Dispatcher 与命令 FIFO 的确定性测试覆盖接收顺序、等待容量、独立结果、排队取消/启动超时保证不执行、开始后取消不能替换真实结果、单项异常隔离及停止边界；Application/Katana 测试覆盖原文、actor、并发独立输出、队满/不可用 Problem Details 和无结构化命令事件。Patch/审计测试覆盖 token/output 快照、来源、异常透明、observer/tokenizer fail-open、Store failure、gap 恢复和正常关服卸载自身 Patch。
 - `DependencyRulesTests` 用源码规则保护当前项目依赖、Adapter 方向、唯一 `IModApi` 和 Bootstrap candidate 发布顺序。
-- SQLite 集成测试覆盖 migration 幂等、WAL、引导 Owner 同步、凭据轮换撤销、Token 跨 Store/connection factory 重建、到期、严格 128 容量和明文不落盘；SSE 可控时钟测试覆盖失效后停止写出。
+- SQLite 集成测试覆盖 migration 幂等、WAL、引导 Owner 同步、凭据轮换撤销、Token 跨 Store/connection factory 重建、到期、严格 128 容量、明文不落盘，以及命令原文、ordinal 参数、逐行输出和幂等 gap 的事务往返；SSE 可控时钟测试覆盖失效后停止写出。
 - 健康客户端保留最后成功样本并明确标记 stale/offline，不把失败或过期结果显示为 fresh。
 
 ### 安全性
@@ -252,6 +258,7 @@ GET /
 - `GameStartDone` readiness 已进入每连接 Welcome 和一次 `game-ready` 事件，但尚无可重复查询的认证服务器状态端点；就绪前 `503` 和写请求 draining 拒绝仍是目标设计。
 - Owner 踢出链路已有 Application、SQLite、SevenDays、Katana 和 Admin 自动化，但尚未在 Windows `v3.0.1-b4` 真实进程验证拒绝原因、约 0.5 秒延迟断开、在线列表变化与 SQLite 审计一致性。关服竞态、帧预算、指标和 Linux 主线程证据仍缺失，不能从自动化或只读 `version` 证据推导真实状态变更验收已经完成。
 - 控制台日志已有认证 SSE，但没有 REST 查询、跨重启游标或持久化；Windows 正常负载没有触发容量饱和，真实容量饱和与 Linux Mono 基线仍缺失。
+- 动态命令、FIFO、Harmony observation 和 SQLite 审计已有自动化与发布物证据，但本次没有可用的独立服务器配置，未执行 Windows `v3.0.1-b4` 真实进程。内置与第三方注册命令、原生 `ExecuteAsync` 队列不变、非 HTTP 标准入口、SQLite 锁故障恢复和正常关服 Patch 卸载仍需真实进程证据。
 - 默认全接口明文监听并启用已知引导凭据；任何能够访问 18080 端口的客户端都可以作为持久 `Owner` 认证，这是当前过渡阶段明确接受、但在用户管理进入发布范围后必须移除的暴露风险。
 - 当前标准 Batteries 的 Microsoft.Data.Sqlite/`e_sqlite3` 和进程期 `Assembly.Location` 补丁已通过本地 net48 构建、测试、双平台发布清单和 Windows 官方 7DTD 进程 smoke；Linux 官方进程 smoke 仍缺失。
 - Linux x64 已有本地发布布局证据，但没有本项目官方进程运行证据。

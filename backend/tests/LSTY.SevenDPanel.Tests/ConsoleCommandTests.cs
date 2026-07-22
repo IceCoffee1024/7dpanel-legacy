@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
@@ -9,45 +11,67 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class ConsoleCommandTests
     {
         [Fact]
-        public async Task Version_command_is_normalized_before_dispatch()
+        public async Task Arbitrary_command_is_forwarded_without_normalization()
         {
             var gateway = new RecordingConsoleGateway();
             var useCase = new ExecuteConsoleCommandUseCase(gateway);
+            const string rawCommand = "  say \"Hello  world\"  ";
 
             var result = await useCase.ExecuteAsync(
-                "  VERSION  ",
+                new ConsoleCommandRequest("owner", rawCommand),
                 TestContext.Current.CancellationToken);
 
-            Assert.Equal("version", gateway.Command);
-            Assert.Equal("version", result.Command);
-            Assert.Equal(new[] { "version output" }, result.Output);
+            var request = Assert.Single(gateway.Requests);
+            Assert.Equal("owner", request.ActorSubject);
+            Assert.Equal(rawCommand, request.Command);
+            Assert.Equal(rawCommand, result.Command);
+            Assert.Equal(new[] { "command output" }, result.Output);
         }
 
-        [Fact]
-        public async Task Unsupported_command_is_rejected_before_dispatch()
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Empty_actor_is_rejected_before_dispatch(string actorSubject)
         {
             var gateway = new RecordingConsoleGateway();
             var useCase = new ExecuteConsoleCommandUseCase(gateway);
 
-            var exception = await Assert.ThrowsAsync<ConsoleCommandNotSupportedException>(() =>
-                useCase.ExecuteAsync("kick player", TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                useCase.ExecuteAsync(
+                    new ConsoleCommandRequest(actorSubject, "version"),
+                    TestContext.Current.CancellationToken));
 
-            Assert.Equal("kick player", exception.Command);
-            Assert.Null(gateway.Command);
+            Assert.Empty(gateway.Requests);
         }
 
-        private sealed class RecordingConsoleGateway : IRestrictedConsoleGateway
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Empty_command_is_rejected_before_dispatch(string command)
         {
-            public string? Command { get; private set; }
+            var gateway = new RecordingConsoleGateway();
+            var useCase = new ExecuteConsoleCommandUseCase(gateway);
 
-            public Task<ConsoleCommandResult> ExecuteVersionAsync(
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                useCase.ExecuteAsync(
+                    new ConsoleCommandRequest("owner", command),
+                    TestContext.Current.CancellationToken));
+
+            Assert.Empty(gateway.Requests);
+        }
+
+        private sealed class RecordingConsoleGateway : IConsoleCommandGateway
+        {
+            public List<ConsoleCommandRequest> Requests { get; } = new();
+
+            public Task<ConsoleCommandResult> ExecuteAsync(
+                ConsoleCommandRequest request,
                 CancellationToken cancellationToken)
             {
-                const string command = ExecuteConsoleCommandUseCase.VersionCommand;
-                Command = command;
+                Requests.Add(request);
                 return Task.FromResult(new ConsoleCommandResult(
-                    command,
-                    new[] { "version output" }));
+                    request.Command,
+                    new[] { "command output" }));
             }
         }
     }
