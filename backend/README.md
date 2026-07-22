@@ -30,6 +30,15 @@ combat statistics, and offline history. User/role management,
 additional player actions, audit-query APIs, and other product capabilities
 are not implemented yet.
 
+The embedded host also exposes public runtime API documentation at `/swagger`
+and `/swagger/v1/swagger.json`. NSwag reflects the Web API controllers at
+runtime; a centralized Web Adapter document processor adds the OWIN-owned
+password-grant token operation, and an operation processor describes the
+existing Basic/Bearer alternatives, SSE response, and Problem Details errors.
+The documentation endpoints intentionally have no access control and do not
+invoke the console, player-query, player-action, or audit ports. The Web
+Adapter owns `NSwag.AspNet.Owin`; no controller uses `NSwag.Annotations`.
+
 Bootstrap compiles against the game-provided `0_TFP_Harmony/0Harmony.dll` and
 applies a scoped `Assembly.Location` compatibility patch before runtime
 composition. After SQLite migration, it installs the separately owned command
@@ -48,6 +57,9 @@ its connection pools after OWIN stops.
 Development publish, server-control, and health-check helpers are documented in
 the [script guide](scripts/README.md). Machine-specific values belong in the
 ignored `.env.local`; the tracked `.env.example` defines the available keys.
+The publish gate includes the NSwag, NJsonSchema, and Namotion runtime closure
+while continuing to remove `Newtonsoft.Json.dll`; JSON serialization uses the
+copy supplied by the game process.
 
 At runtime, `config.example.json` is the versioned template and `config.json` is
 the server-owned configuration. The Mod creates a default `config.json` when it
