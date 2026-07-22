@@ -592,7 +592,7 @@ public sealed class ConsoleCommandAuditService : IModRuntime, IDisposable
 
 - [ ] **步骤 5：执行 Windows 真实进程 smoke**
 
-  本轮缺少可安全使用的独立服务器配置，未执行；内置/第三方命令、原生异步队列、非 HTTP 来源、SQLite 故障和正常关服 Patch 卸载继续作为明确缺口。
+  已部分执行。2026-07-22 在 Windows `v3.0.1-b4` 当前发布物上确认健康与 Basic 认证、内置/第三方注册命令、HTTP/非 HTTP 审计、原文参数、多行输出和并发输出隔离；未验证原生异步队列不变、SQLite 故障告警/gap 恢复和正常关服 Patch 卸载，因此本步骤不勾选完成。
 
   使用 [后端脚本指南](../../../backend/scripts/README.md) 的现有发布、启动、认证和停止流程，在未修改的 `v3.0.1-b4` 进程内验证：
 

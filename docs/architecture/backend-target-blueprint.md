@@ -301,7 +301,7 @@ Bearer Token 对客户端保持不透明，数据库只保存高熵 secret 的�
 
 动态控制台命令、容量 32 的 HTTP FIFO、最终 `SdtdConsole.executeCommand` Harmony observation、容量 256 的 fail-open 异步 SQLite 审计和独立关服生命周期已经实现并提升到[当前系统架构](../architecture.md#7dtd-主线程调度边界)。批准的变更边界与决策历史保留在[动态控制台命令设计规格](../superpowers/specs/2026-07-22-dynamic-console-commands-design.md)，不再由本 Target 蓝图重复维护。
 
-本蓝图仅保留尚未成为当前证据的后续目标：在 Windows `v3.0.1-b4` 真实进程验证内置命令、第三方 Mod 注册命令、非 HTTP 标准入口审计、7DTD 原生 `ExecuteAsync` 队列不变、SQLite 故障告警/gap 和正常关服 Patch 卸载；在 Windows/Linux 建立主线程帧预算与典型命令负载基线。未来若增加应用级输入/输出限制、命令资源隔离或审计查询 API，必须作为新的产品与架构变更单独批准。
+Windows `v3.0.1-b4` 在线人工 smoke 已验证内置/第三方 Mod 注册命令、HTTP/非 HTTP 标准入口审计、原文参数、多行输出和并发输出隔离。本蓝图仅保留尚未成为当前证据的后续目标：验证 7DTD 原生 `ExecuteAsync` 队列不变、SQLite 故障告警/gap 和正常关服 Patch 卸载；在 Windows/Linux 建立主线程帧预算与典型命令负载基线。未来若增加应用级输入/输出限制、命令资源隔离或审计查询 API，必须作为新的产品与架构变更单独批准。
 
 ### 在线玩家
 

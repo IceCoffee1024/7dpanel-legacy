@@ -7,7 +7,7 @@ last_updated: "2026-07-22"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-22 的新鲜 Release 全量门禁共 257 项 xUnit 自动化全部通过且 0 跳过，覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作/控制台命令审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、动态命令 FIFO、最终执行点 Harmony observation、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、Harmony 生命周期和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 182 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据只覆盖旧只读 `version` 主线程往返、在线玩家字段、认证 SSE 和正常关服；本次动态命令、命令审计与 Owner 踢出均没有新的真实进程证据，Linux 真实进程也未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-22 的新鲜 Release 全量门禁共 257 项 xUnit 自动化全部通过且 0 跳过，覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作/控制台命令审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、动态命令 FIFO、最终执行点 Harmony observation、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、Harmony 生命周期和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 182 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-22 的远程 Windows 7DTD `v3.0.1-b4` 在线证据确认当前动态命令发布物的健康与 Basic 认证、内置和第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出及并发输出隔离；本轮未关服，也未执行 SQLite 故障注入或原生异步队列不变检查。Owner 踢出和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -190,7 +190,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
 - 玩家动作审计已具备自动化锁竞争与启动恢复证据；仍需验证迁移失败、真实关服期间动作终态，以及自动化真实游戏事件和控制台日志突发。只读 `version` 的 Windows 主线程往返已经通过。
-- 动态控制台命令、容量 32 HTTP FIFO、最终执行点 Harmony observation 和容量 256 fail-open SQLite 命令审计已有单元、SQLite、Katana、生命周期与发布物自动化证据；仍必须在 Windows `v3.0.1-b4` 验证内置命令、测试 Mod 注册命令、原生异步队列不变、非 HTTP 标准入口审计、完整原文持久化及审计故障告警。
+- 动态控制台命令、容量 32 HTTP FIFO、最终执行点 Harmony observation 和容量 256 fail-open SQLite 命令审计已有单元、SQLite、Katana、生命周期与发布物自动化证据；Windows `v3.0.1-b4` 在线人工 smoke 进一步验证内置/第三方命令、HTTP/非 HTTP 来源审计、完整原文参数、多行输出和并发输出隔离。仍必须验证原生异步队列不变、真实 SQLite 故障告警/gap 恢复，以及当前二进制正常关服排空和 Patch 卸载。
 - 在受控真实 OWIN Owner 环境执行现有 Playwright suite，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；当前已具备依赖锁定、lint、typecheck、182 项 Vitest 和 Vite 8 生产构建证据。
 - 在 Windows `v3.0.1-b4` 受控玩家上执行真实踢出，保存玩家收到的批准原因、原生 API 返回后约 0.5 秒断开、在线列表更新和 `player_action_audit` 对应终态；在此之前不得把自动化 `Succeeded` 解释为真实玩家已经离线。
 - 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite 和双平台 SQLite Native RID；当前 Windows 发布脚本已校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，项目引用、SQLite provider、Harmony 应用顺序、DI 包归属和 Adapter 方向已有本地测试门禁。
@@ -220,7 +220,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 | 缺口 | 影响与处理 |
 |---|---|
-| 动态控制台命令自动化已通过但真实进程门禁未执行 | 自动化覆盖原文/actor 透传、容量 32 FIFO、并发输出隔离、最终执行点 Patch、容量 256 异步审计、SQLite gap、fail-open 和关服卸载；本轮缺少独立服务器配置，不能宣称 Windows `v3.0.1-b4` 的内置/第三方命令、原生异步队列不变、非 HTTP 标准入口、真实 SQLite 故障告警或 Patch 卸载已通过。 |
+| 动态控制台命令真实进程门禁仅部分执行 | 自动化覆盖原文/actor 透传、容量 32 FIFO、并发输出隔离、最终执行点 Patch、容量 256 异步审计、SQLite gap、fail-open 和关服卸载；Windows `v3.0.1-b4` 在线人工 smoke 已确认内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出和并发输出隔离，但不能宣称原生异步队列不变、真实 SQLite 故障告警/gap 恢复或当前二进制正常关服 Patch 卸载已通过。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与 182 项 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；本轮未启动真实服务器，也未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
 | Admin 登录、在线玩家与踢出真实浏览器门禁未执行 | Playwright 已定义 4 项登录/玩家基础场景，但本轮未设置真实环境或运行该 suite，且尚未增加真实踢出场景。未执行真实 OWIN、`390x844` 踢出对话框渲染、键盘/遮罩关闭锁定或成功刷新；这些结果不得从 182 项 Vitest 推导。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |

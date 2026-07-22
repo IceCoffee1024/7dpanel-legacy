@@ -119,6 +119,7 @@ flowchart LR
 - `GameThreadDispatcher` 已在游戏主线程时直接执行，否则通过 `ThreadManager.AddSingleTaskMainThread` 投递。每个请求用原子 `Pending -> Running -> Completed` 状态竞争：排队取消或 5 秒启动截止时间到达会完成 Task 并保证委托不执行；一旦进入 `Running`，取消或截止时间不再伪造失败，而是等待同步游戏操作的真实结果或异常。
 - 委托异常由 Dispatcher 写入 Task；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。Dispatcher 本身不拥有通用队列、容量、逐帧 pump 或独立生命周期；动态命令 FIFO、在线玩家查询和踢出 single-flight 分别由具体消费者拥有。只有完全绕过 `SdtdConsole`，且不访问 Unity 对象、游戏主线程集合或其他未证明线程安全状态的类型化操作，才能依据实际依赖单独决定线程边界。
 - 2026-07-21 Windows `v3.0.1-b4` 真实进程 smoke 在 `GameStartDone` 前取得 9 次 `game_not_ready`，就绪后命令返回 HTTP 200 和 5 行真实输出，首行为 `Game version: V 3.0.1 (b4) Compatibility Version: V 3.0.1`；随后 Telnet 正常关服且监听释放。前一轮启动因 EOS `NoConnection` 在游戏就绪前退出，保留为外部失败证据；后续重试通过且服主三字段配置的 71 字节与 SHA-256 均未改变。
+- 2026-07-22 在同版 Windows 真实进程和当前动态命令发布物上完成追加人工 smoke：健康端点与 Basic 认证正常，HTTP `version` 返回 200、5 行独立真实输出且首行仍为上述版本文本；HTTP 执行在 SQLite 形成 `source=7dpanel-http`、`actor_subject=owner`、`completion_kind=Completed` 的完整审计，Telnet/游戏控制台执行也形成非 HTTP 来源审计。受控测试还确认第三方 Mod 注册命令可直接执行、带空白与参数的命令原文可持久化、多行输出可按序保存，以及多个 HTTP 请求获得各自输出。本轮未关服，因此不提供当前二进制的排空、Patch 卸载或端口释放证据。
 
 ### OWIN、Web API 与静态资源
 
@@ -258,7 +259,7 @@ GET /
 - `GameStartDone` readiness 已进入每连接 Welcome 和一次 `game-ready` 事件，但尚无可重复查询的认证服务器状态端点；就绪前 `503` 和写请求 draining 拒绝仍是目标设计。
 - Owner 踢出链路已有 Application、SQLite、SevenDays、Katana 和 Admin 自动化，但尚未在 Windows `v3.0.1-b4` 真实进程验证拒绝原因、约 0.5 秒延迟断开、在线列表变化与 SQLite 审计一致性。关服竞态、帧预算、指标和 Linux 主线程证据仍缺失，不能从自动化或只读 `version` 证据推导真实状态变更验收已经完成。
 - 控制台日志已有认证 SSE，但没有 REST 查询、跨重启游标或持久化；Windows 正常负载没有触发容量饱和，真实容量饱和与 Linux Mono 基线仍缺失。
-- 动态命令、FIFO、Harmony observation 和 SQLite 审计已有自动化与发布物证据，但本次没有可用的独立服务器配置，未执行 Windows `v3.0.1-b4` 真实进程。内置与第三方注册命令、原生 `ExecuteAsync` 队列不变、非 HTTP 标准入口、SQLite 锁故障恢复和正常关服 Patch 卸载仍需真实进程证据。
+- 动态命令、FIFO、Harmony observation 和 SQLite 审计已有自动化、发布物和 Windows `v3.0.1-b4` 在线真实进程证据；HTTP/非 HTTP 来源、第三方注册命令、原文参数、多行输出和并发输出隔离已经验证。原生 `ExecuteAsync` 队列不变、真实 SQLite 锁故障恢复、当前二进制正常关服排空与 Patch 卸载仍需真实进程证据。
 - 默认全接口明文监听并启用已知引导凭据；任何能够访问 18080 端口的客户端都可以作为持久 `Owner` 认证，这是当前过渡阶段明确接受、但在用户管理进入发布范围后必须移除的暴露风险。
 - 当前标准 Batteries 的 Microsoft.Data.Sqlite/`e_sqlite3` 和进程期 `Assembly.Location` 补丁已通过本地 net48 构建、测试、双平台发布清单和 Windows 官方 7DTD 进程 smoke；Linux 官方进程 smoke 仍缺失。
 - Linux x64 已有本地发布布局证据，但没有本项目官方进程运行证据。
