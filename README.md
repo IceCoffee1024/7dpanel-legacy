@@ -12,11 +12,12 @@ a buildable and testable `net48` solution with the Mod lifecycle, in-process
 OWIN hosting, SQLite-backed bootstrap Owner authentication, persistent opaque
 Bearer tokens, authenticated named SSE, and a read-only `version` command that
 runs through the game main thread. The backend also exposes an Owner-only
-online-player snapshot query through that typed main-thread boundary. The Admin application currently connects
-only to the anonymous same-origin health endpoint and renders loading, fresh,
-stale, and offline states; it does not yet consume login, Bearer, SSE, or the
-console command API. Full user management, state-changing game actions,
-player UI/actions, backups, announcements, and auditing are not implemented. The
+online-player snapshot query through that typed main-thread boundary. The Admin
+application currently provides an Owner login, an in-memory Bearer session,
+protected Overview and online-player routes, and same-origin health and
+online-player queries; it does not yet consume SSE or the console command API.
+Full user management, state-changing game actions, backups, announcements, and
+auditing are not implemented. The
 Marketing application has not been initialized.
 Target documents describe approved direction, not completed features.
 
@@ -69,8 +70,8 @@ dotnet build backend/7DPanel.sln --configuration Release --no-restore
 dotnet test backend/7DPanel.sln --configuration Release --no-build --no-restore
 ```
 
-Admin verification requires lint, type checking, and a production build. Run
-the exact commands from the
+Admin verification requires automated tests, lint, type checking, and a
+production build. Run the exact commands from the
 [Admin application guide](frontend/apps/admin/README.md#verification).
 
 See the [test strategy](docs/test.md) for the required verification levels and

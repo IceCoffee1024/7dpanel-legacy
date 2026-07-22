@@ -1,9 +1,8 @@
 # 7DPanel Admin
 
 The self-hosted administration interface for 7DPanel. The current application
-contains the responsive product shell and an Overview route. Backend health,
-authentication, and operational features are introduced as verified vertical
-slices.
+contains the responsive product shell, an Owner login flow, a protected
+Overview route, and a protected online players route.
 
 ## Development
 
@@ -30,8 +29,25 @@ Run all current application gates from this directory:
 ```powershell
 pnpm lint
 pnpm typecheck
+pnpm test
 pnpm build
 ```
+
+The real OWIN browser suite is a separate environment gate. It requires a
+running test deployment and all of these environment variables:
+
+- `SEVENDPANEL_ADMIN_URL`
+- `PANEL_USERNAME`
+- `PANEL_PASSWORD`
+
+Run it only against that controlled environment:
+
+```powershell
+pnpm test:e2e
+```
+
+When any required variable is absent, the suite reports its real-environment
+tests as skipped. A skipped suite is not evidence that the browser smoke passed.
 
 ## Package Ownership
 

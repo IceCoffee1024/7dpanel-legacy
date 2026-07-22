@@ -1,13 +1,13 @@
 ---
 state: Current
-last_updated: "2026-07-21"
+last_updated: "2026-07-22"
 ---
 
 # 7DPanel 系统架构
 
 ## 背景与驱动因素
 
-本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户与 Bearer Token、Basic/Bearer 认证、认证生产 SSE、Admin 静态资源托管，以及认证后通过游戏主线程执行白名单只读 `version` 命令和查询在线玩家精简快照的 Application 纵向切片。当前 Admin 是 Vue 3、Vite 和 Nuxt UI 应用，只有 `/` 客户端路由，并通过类型化同源客户端读取 `/api/v1/health`；前端登录、SSE、控制台命令和玩家查询消费尚未实现。`Admin`/`Viewer` 用户管理、玩家状态变更动作、备份、公告、审计、任意或改变状态的控制台命令、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Cookie、CSRF Token 或 refresh token。
+本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户与 Bearer Token、Basic/Bearer 认证、认证生产 SSE、Admin 静态资源托管，以及认证后通过游戏主线程执行白名单只读 `version` 命令和查询在线玩家精简快照的 Application 纵向切片。当前 Admin 是 Vue 3、Vite、Nuxt UI 和 Pinia 应用，提供 `/login`、受保护的 `/` 与 `/players`；它通过共享同源 Fetch 边界消费健康、password grant 和在线玩家 API，并只在 Pinia 内存中保存 Bearer 会话。前端 SSE 和控制台命令消费尚未实现。`Admin`/`Viewer` 用户管理、玩家状态变更动作、备份、公告、审计、任意或改变状态的控制台命令、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Cookie、CSRF Token 或 refresh token。
 
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
@@ -68,7 +68,7 @@ flowchart LR
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、受限控制台命令和 Owner-only 在线玩家路由；关联标识、Problem Details、认证限流、Basic/OAuth Bearer middleware、scoped SSE session、OWIN/Web API 请求作用域桥接、全局 JSON 配置、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离三个静态生命周期事件和 `Log.LogCallbacksExtended`；提供集中的有界控制台日志服务、当前进程 `ServerEventLiveWindow`、每客户端有界 `ServerEventHub`、组合运行时、两个相互独立的 single-flight 只读 Gateway/Query，以及直接适配 `ThreadManager.AddSingleTaskMainThread` 的轻量 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL 初始化、DbUp 嵌入迁移、PBKDF2 引导用户同步和不透明 Token Store | Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
-| `frontend/apps/admin/` | 响应式应用壳、唯一 `/` 路由、健康 API Client、`useServerHealth` 和 Overview 状态呈现 | Vue 3、Vue Router、Nuxt UI、Vite |
+| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/` 与 `/players`、显式 Pinia Router guard、内存 Bearer 会话、共享同源 HTTP 边界、健康与在线玩家 Feature 及页面局部查询状态 | Vue 3、Vue Router、Pinia、Nuxt UI、Vite |
 
 当前已由控制台命令纵向切片创建 Application 项目，但尚无 Domain 项目；SQLite Persistence Adapter 是首个 Local Adapter。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向、六个产品 DLL 的发布门禁和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
@@ -121,7 +121,7 @@ flowchart LR
 - 健康响应精确为 `{ status: "ok", product: "7DPanel", version: "0.1.0" }`。`ProductInfo` 是名称和版本来源，测试会与 `ModInfo.xml` 对齐。
 - 默认 `bindAddress` 为 `0.0.0.0`，转换为 `http://*:18080/`。认证默认启用 `username` / `password`，并允许在明文 HTTP 上传输 Basic 和 password grant；这是当前框架搭建阶段按 `NFR-04` 批准的暴露边界。
 
-### Admin 健康概览
+### Admin 健康、登录与在线玩家
 
 ```text
 GET /
@@ -136,7 +136,11 @@ GET /
 - `useServerHealth` 只拥有页面局部状态。首次请求是 loading；成功后是 fresh；没有成功数据的失败是 offline；已有成功数据后失败或 60 秒未获得新样本是 stale。
 - 新请求取消旧请求，组件卸载时取消当前请求并清理 stale timer。
 - 开发期 Vite proxy 从 `.env.local` 的 `VITE_BACKEND_URL` 读取上游目标；生产代码和构建产物不包含该目标地址。
-- 生成的客户端路由表当前只有 `/`。OWIN 会为 `/overview` 返回 `index.html`，但 Vue Router 没有对应页面；该缺口见[测试策略](test.md#已知缺口)。
+- `createAdminRouter` 显式接收与应用相同的 Pinia 实例；未认证访问带 `requiresAuth` 的 `/` 或 `/players` 时跳转 `/login`，已认证访问 `/login` 时跳转安全返回目标或 `/players`。安全返回目标只接受生成路由表中存在的站内路径。
+- Auth Setup Store 只保存 Token 与到期时间，按到期时间清理会话并计算 `Authorization` Header；不安装持久化插件。密码只存在于登录表单局部 state 和请求调用栈，提交结束后清空。
+- `shared/api/requestJson` 固定相对 `/api/v1/` 路径和 `credentials: 'omit'`，统一取消、超时、JSON 与 Problem Details 映射。Auth Feature 自己映射 password grant，Players Feature 自己验证玩家 DTO；玩家快照和轮询状态不进入 Pinia。
+- `useOnlinePlayers` 首次进入立即请求，每 10 秒刷新；页面隐藏时暂停，恢复后立即刷新；请求使用 single-flight 与取消。401 或本地会话到期清除会话并回到登录页；403 映射 Forbidden、暂停自动轮询但保留手动刷新；有旧快照的失败映射 Stale，无旧快照映射 Offline。
+- 生成的客户端路由表当前包含 `/`、`/login` 和 `/players`。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
 
 ## 数据与接口
 
@@ -180,7 +184,7 @@ GET /
 | Async interfaces | Mod 发布 `Microsoft.Bcl.AsyncInterfaces 10.0.10`（程序集 `10.0.0.10`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再依赖游戏目录中的 6.x 文件；发布脚本要求 Mod 目录存在固定新版 |
 | Unsafe | Mod 发布 `System.Runtime.CompilerServices.Unsafe 6.1.2`（程序集 `6.0.3.0`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再排除 runtime；发布脚本要求 Mod 目录存在固定新版 |
 | 有界日志通道 | `System.Threading.Channels 8.0.0`、`System.Threading.Tasks.Extensions 4.6.3` | Release 构建、自动化和本地发布清单通过；Channels 既有 Windows Mono 证据仍有效，依赖升级需重跑 smoke | 发布 Channels、Tasks.Extensions 和 Unsafe；仍不复制 LogLibrary 或 Unity 程序集 |
-| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | lint、typecheck、生产构建、Vite 8 真实 OWIN smoke 和 Chromium 人工检查通过 | Node.js 只用于开发和构建，生产静态托管不需要 Node.js；`@types/node` 仅服务于 `vite.config.ts` 的 Node 侧 `tsconfig`，typecheck 同时覆盖应用和 Node 配置；精确解析结果以 Admin 锁文件为准，当前没有自动化单元或浏览器 E2E |
+| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | lint、typecheck、119 项 Vitest、生产构建通过；Playwright 真实 Owner suite 已建立，但本轮 4 项因环境变量缺失而 skip；旧健康切片具备 Vite 8 真实 OWIN smoke 和 Chromium 人工证据 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有登录/玩家真实 OWIN 浏览器、`390x844` 真实渲染或关服 Stale 证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
 

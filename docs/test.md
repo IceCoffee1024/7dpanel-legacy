@@ -1,13 +1,13 @@
 ---
 state: Current
-last_updated: "2026-07-21"
+last_updated: "2026-07-22"
 ---
 
 # 7DPanel 测试策略
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。当前 Release 构建为零警告，152 项 xUnit 自动化覆盖生命周期、命名服务器事件、Problem Details、SQLite migration、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、Application 控制台命令与在线玩家查询、主线程 Dispatcher 状态竞态、认证命令/玩家 API、Harmony 位置补丁边界和静态 Admin 托管。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据已覆盖当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、DI、Bcl/Unsafe、migration、认证 SSE、`game-ready`、`server-stopping`、只读 `version` 主线程往返、单个真实在线玩家字段和正常关服；Linux 真实进程仍未验证。完整用户管理、状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。当前 Release 构建为零警告，152 项 xUnit 自动化覆盖生命周期、命名服务器事件、Problem Details、SQLite migration、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、Application 控制台命令与在线玩家查询、主线程 Dispatcher 状态竞态、认证命令/玩家 API、Harmony 位置补丁边界和静态 Admin 托管。Admin 当前 9 个 Vitest 文件共 119 项自动化覆盖共享 HTTP、认证、内存会话、路由、安全返回目标、玩家 DTO/状态机和组件行为；Playwright Chromium suite 已建立 4 项真实 Owner 场景，但 2026-07-22 因三个必需环境变量均未设置而全部 skip。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据已覆盖当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、DI、Bcl/Unsafe、migration、认证 SSE、`game-ready`、`server-stopping`、只读 `version` 主线程往返、单个真实在线玩家字段和正常关服；Linux 真实进程仍未验证。完整用户管理、状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -137,7 +137,7 @@ last_updated: "2026-07-21"
 
 - 覆盖引导 `Owner` 登录、未来用户与角色管理、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
 - 覆盖 loading、empty、offline、stale、forbidden、failed、unknown 和 draining 状态，确保界面不会把未知结果渲染为成功。
-- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示“服务器运行正常”、`7DPanel`、`v0.1.0` 和成功采样时间；仅 `/favicon.ico` 保持既有 404。自动化浏览器 E2E 尚未建立。
+- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示“服务器运行正常”、`7DPanel`、`v0.1.0` 和成功采样时间；仅 `/favicon.ico` 保持既有 404。登录/玩家 Playwright suite 已建立，但本轮 4 项因真实环境变量缺失而 skip；该结果不证明真实 OWIN 登录、玩家页面、深链接或 `390x844` 布局通过。
 - 对全部 P0 流程和表单分别以 `zh-CN` 与 `en` 运行关键 E2E；覆盖受支持浏览器语言首访、不支持语言回退 `en`、未认证与已认证入口切换、刷新后偏好持久化，以及切换时当前路由、筛选和安全表单输入保持。
 - 验证产品文案、Nuxt UI 内置文案、Valibot 内置错误、日期与数字格式和稳定服务端错误码映射始终使用同一当前语言；缺失键、空白文案、翻译键泄漏和原始服务端异常文本均使测试失败。
 - 验证 Steam ID、玩家名、服务器名、IP、坐标、路径、日志原文、审计标识和协议标识在语言切换前后保持原值，并在 320 CSS 像素宽度下检查英文文本扩展不会遮挡关键操作。
@@ -169,10 +169,11 @@ last_updated: "2026-07-21"
 当前可运行的后端门禁包括依赖还原、Release 构建和测试；仓库级聚合命令见
 [README 的 Test and Checks](../README.md#test-and-checks)。
 
-Admin 当前门禁包括 lint、typecheck 和 Vite `8.1.5`/Rolldown 生产构建，开发/CI 基线为 Node.js `24+`；其中
+Admin 当前快速门禁包括 lint、typecheck、Vitest 和 Vite `8.1.5`/Rolldown 生产构建，开发/CI 基线为 Node.js `24+`；其中
 typecheck 同时运行 `vue-tsc -p ./tsconfig.app.json` 和
 `tsc -p ./tsconfig.node.json`，工作目录和精确命令见
 [Admin 应用验证说明](../frontend/apps/admin/README.md#verification)。
+真实 OWIN Playwright 是单独的环境门禁，环境变量名和执行入口也由该 Admin README 拥有；缺少任一前置变量时 suite 明确 skip，不能计作 smoke 通过。
 
 发布前先完成 Admin 构建，再运行 `backend\scripts\Publish-Mod.cmd`；脚本会校验
 `dist/index.html` 与哈希资源，并只替换发布目录中的 `wwwroot/`。
@@ -185,7 +186,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
 - SQLite migration 失败/锁竞争故障注入、状态变更游戏动作的主线程/关服/审计终态，以及自动化真实游戏事件和控制台日志突发测试；只读 `version` 的 Windows 主线程往返已经通过。
-- 前端自动化单元测试和浏览器 E2E；当前已具备依赖锁定、lint、typecheck、Vite 8 生产构建和真实 OWIN smoke 门禁。
+- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，并补关服后保留玩家快照进入 Stale、listener 释放及重启恢复 Fresh 的浏览器证据；当前已具备依赖锁定、lint、typecheck、119 项 Vitest、Vite 8 生产构建和缺环境时明确 skip 的 Playwright 基础。
 - 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite 和双平台 SQLite Native RID；当前 Windows 发布脚本已校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，项目引用、SQLite provider、Harmony 应用顺序、DI 包归属和 Adapter 方向已有本地测试门禁。
 - 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
 - 将 Windows `v3.0.1-b4` 真实进程 smoke 自动化并归档服务端日志，同时建立 Linux x64 对应基线。
@@ -214,12 +215,10 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | 缺口 | 影响与处理 |
 |---|---|
 | 后端当前实现 Mod 生命周期、健康端点、统一 Problem Details、SQLite 引导 Owner/持久 Bearer、Basic/OAuth、周期复验的认证命名 SSE、集中服务器事件窗口，以及认证后只读 `version` 和 Owner-only 在线玩家查询纵向切片 | 本地 net48 构建、SQLite/OWIN 自动化、Windows/Linux x64 发布布局，以及当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、只读 `version` 和单个在线玩家字段的 Windows 官方进程 smoke 已通过。空服务器分支尚未在真实进程复验；REST 日志查询、完整用户管理、状态变更游戏动作及其审计/关服语义和 Linux 真实进程仍不可宣称完成。 |
-| Admin 健康客户端没有自动化单元测试 | `parseServerHealth`、HTTP/JSON 错误映射、取消和 stale timer 目前只经过类型检查、构建和人工浏览器场景；引入前端测试运行器后应优先补齐这些纯函数与 composable 分支。 |
+| Admin 登录与在线玩家真实浏览器门禁未执行 | Playwright 已定义匿名重定向、Owner 登录、Authorization Header、请求 URL、Cookie/Storage/控制台、深链接刷新和 `390x844` 水平溢出场景；本轮 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 均未设置，4 项按设计 skip。未发布、启动或停止服务器，也未执行真实 OWIN、真实窄屏渲染或关服后 Stale；这些结果不得从 119 项 Vitest 推导。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |
-| `/overview` 只有服务端 SPA fallback，没有客户端路由 | OWIN 会为 `/overview` 返回 `index.html`，但当前生成的 Vue Router 路由表只有 `/`，因此应用壳加载后主面板为空；在把 `/overview` 作为公开入口前，应新增客户端路由或将 fallback 验收路径收敛为 `/`，并补浏览器断言。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |
 | `InitMod` 恢复时机尚无真实文件占用证据 | 可能无法在世界加载前替换存档；恢复实现前用 `v3.0.1-b4` 进程验证并记录调用时序。 |
 | Linux x64 的 SQLite Native 只有本地发布布局和旧项目运行经验 | 当前仓库尚无 Linux 7DTD 进程证据；在声明 Linux 支持或首个候选发布前建立 Linux x64 进程内 smoke 基线。 |
 | 浏览器支持范围尚未形成产品决定 | 首版暂以 Chromium 稳定版建立 E2E 基线；扩大公开支持范围时更新本节和发布门槛。 |
-| Vite 8 生产构建仍有大 chunk 警告 | 当前最大 JS chunk 约 `684 KB`，超过 Vite 默认的 `500 KB` 提示；在产品包体积预算确定后评估 `build.rolldownOptions.output.codeSplitting` 或页面拆分，不将此警告误记为构建失败。 |

@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-21"
+last_updated: "2026-07-22"
 document_role: Target
 ---
 
@@ -275,7 +275,7 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 数据表格 | 基础表格使用 Nuxt UI Table；应用直接导入分页、排序等 TanStack API 时添加 `@tanstack/vue-table` | 条件候选 | `@nuxt/ui` 已提供基础表格能力；传递依赖不构成应用可直接使用的 API 契约，不默认声明 `@tanstack/table-core` | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
 | API 契约代码生成 | `@hey-api/openapi-ts`（`devDependency`）；生成代码直接导入的运行时客户端包按实际用途声明 | 优先候选 | 仅在后端提供稳定、可重复获取的本地 OpenAPI 契约后采用；生成类型、SDK 和客户端必须输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务，并由可重复脚本和 CI 检查契约或生成结果漂移 | Web API 2 契约生成与 OpenAPI 版本、稳定错误码和分页模型、Fetch 的 Header Bearer/取消/超时、插件与锁定工具链兼容性、确定性输出、生成代码审查边界及运行时导入 |
 | 服务端状态 | 薄 API Client；出现真实查询缓存复杂度后评估 `@pinia/colada` | 条件候选 | Pinia Colada 只管理服务器权威数据的查询、去重、缓存、失效和 Mutation；采用后必须先注册 `pinia`，普通 Pinia Store 仍只管理客户端自有状态，不复制查询缓存。SSE 只更新对应查询或触发精确失效 | 至少两个真实查询消费者、缓存键和新鲜度、取消与去重、重试上限、会话过期、`Offline`/`Unknown`、乐观更新与回滚、SSE 补取和失效、DevTools、包体积，以及缺少 `networkMode` 和 `structuralSharing` 对目标流程的影响 |
-| 客户端全局状态 | 优先使用 Feature 局部 composable、provide/inject 或 URL；确有跨路由共享状态时评估 `pinia` | 条件候选 | 只管理客户端自有且有明确生命周期的共享状态，优先使用类型化 Setup Store；不得复制服务器权威数据、替代查询缓存或默认持久化整个 Store | 状态所有者和至少两个真实消费者、Store 边界、会话过期重置、持久化白名单、敏感数据、DevTools、HMR、测试隔离和包体积 |
+| 客户端全局状态 | `pinia` Setup Store | 已采用；登录与玩家切片自动化通过 | 跨路由会话由登录页、显式 Pinia Router guard、App Shell 和受保护 API 共同消费；只保存内存 Bearer 会话和客户端自有状态，不安装持久化插件，不复制玩家或其他服务器权威数据 | 真实 OWIN 下 Token 不进入 Storage/URL/日志仍需浏览器 smoke；HMR 和包体积继续随应用演进验证 |
 | 进程内瞬时事件 | 优先使用 props/emits、显式 Feature API、路由状态和查询失效；确有解耦需求时评估 `mitt` | 条件候选 | 只传递无持久状态、无需权威恢复的应用级通知；必须定义集中式 TypeScript 事件映射，不承载服务器事实、业务命令、权限或长任务结果 | 明确生产者与至少两个独立消费者、订阅释放、重复注册、事件顺序、异常隔离、测试可追踪性及 HMR 行为 |
 | Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
 | SSE | Header Bearer 全阶段使用 Fetch 型客户端；实现时比较无依赖 Fetch parser、`event-source-plus` 与 `@microsoft/fetch-event-source` | Fetch 型边界已批准；具体库为条件候选 | 必须设置 `Authorization` Header、检查 401/403/429/503、主动取消并限制重连，禁止 QueryString Token；产品不采用 Cookie 认证，原生 `EventSource` 不进入目标方案；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | Content-Type、Welcome/命名事件、Last-Event-ID/游标、Header Bearer 生命周期、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
@@ -294,9 +294,9 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 日志虚拟化 | 默认不引入；达到实测 DOM 与滚动瓶颈后选型 | 默认不采用 | 首先用有界窗口和分页控制复杂度 | 行高、动态内容、键盘访问、复制、搜索和定位 |
 | 静态检查 | ESLint、`@antfu/eslint-config`、`vue-tsc` | Admin 目标采用 | Antfu flat config 统一 JavaScript、TypeScript 和 Vue SFC 规则，`vue-tsc` 独立负责类型检查；项目覆盖规则按所属集成显式配置 | 全工程 lint 基线、type-aware lint 耗时、忽略范围、编辑器/CI 一致性，以及配置不再直接导入后移除 `eslint-plugin-vue`/`typescript-eslint` 的结果 |
 | ESLint formatter | Antfu formatters 与直接 `devDependency` `eslint-plugin-format` | Admin 目标采用 | 统一格式化 CSS、HTML、Markdown 和 Vue `<style>`；精确版本和脚本由应用清单拥有，不把格式化成功等同于类型或业务验证 | 首次自动修复差异、Prettier/dprint 行为、生成文件排除、编辑器保存行为和 CI 非交互执行 |
-| 单元与组件测试运行器 | `vitest` | 优先候选 | 复用 Vite 的 ESM、TypeScript、Vue SFC 和路径解析链路，负责快速单元/组件测试、mock、watch 与可选覆盖率；CI 必须使用一次性 run 模式 | 与锁定 Vite/Node.js 的兼容性、配置归属、路径别名、并行隔离、计时器、覆盖率 provider、watch 与 CI 脚本边界 |
-| Vue 组件测试 | `@vue/test-utils` + `happy-dom`；仅在实际 Web API 兼容缺口出现时回退评估 `jsdom` | 优先候选 | 通过 `mount` 验证 props、slots、可见状态、用户交互和 emit；优先使用更轻量快速的 `happy-dom`，共享挂载器负责 Nuxt UI、Router、i18n 等插件，不默认使用浅挂载或只依赖快照 | 异步更新与清理、Teleport、全局插件、网络/时间 mock、`happy-dom` API 差异、行为导向断言、模拟 DOM 局限，以及需要真实焦点、CSS 或视口时升级到浏览器测试 |
-| 浏览器端到端测试 | Playwright 等在首个完整用户流程中确定 | 条件候选 | 验证真实 OWIN 静态托管、路由、登录、响应式、可访问性和 P0 流程；不与 Vitest 组件测试重复同一内部实现 | 浏览器矩阵、服务启动、测试数据隔离、失败截图/trace、执行时间和 CI 成本 |
+| 单元与组件测试运行器 | `vitest` | 已采用；119 项自动化通过 | 复用 Vite 的 ESM、TypeScript、Vue SFC 和路径解析链路，负责认证 Store、API 映射、查询状态和组件行为测试；一次性 run 模式显式排除 `tests/e2e/` | 覆盖率 provider、watch 与 CI 固定任务尚未建立 |
+| Vue 组件测试 | `@vue/test-utils` + `happy-dom`；仅在实际 Web API 兼容缺口出现时回退评估 `jsdom` | 已采用；登录、路由与玩家组件自动化通过 | 通过 `mount` 验证登录、路由和玩家页面可见行为；共享挂载器负责 Nuxt UI、Router 和真实/测试 Pinia，不默认使用浅挂载或只依赖快照 | 真实焦点、CSS、视口和浏览器布局仍由 Playwright 负责，不能从 happy-dom 结果推导 |
+| 浏览器端到端测试 | Playwright | Chromium 门禁基础已建立；真实 suite 未验证 | 配置使用真实 OWIN base URL、失败 trace/截图和 Desktop Chrome；Owner suite 覆盖匿名重定向、登录、深链接刷新、Authorization Header、请求 URL、Storage/Cookie/控制台和 `390x844` 水平溢出，不 mock 后端 | 本轮因 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 缺失而 4 项 skip；服务启停、真实玩家、真实布局、控制台泄漏和关服后 Stale 仍需受控环境证据 |
 
 ### 工程清单约束
 
@@ -382,6 +382,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - Nuxt UI standalone Vue 在目标密度、响应式表格和键盘操作上的原型证据；
 - `vue-i18n`、Nuxt UI locale 与 `@valibot/i18n` 的语言标识映射、按需加载、缺失键门禁和同步切换原型；
 - Windows/Linux Mod 发布物中的静态资源路径和真实进程 smoke。
+- 当前 Playwright Owner suite 已建立缺前置条件时的明确 skip 门禁，但尚未在真实 OWIN、真实凭据和受控在线玩家环境执行；`390x844` 真实渲染、Header-only Token 浏览器证据和关服后 Stale 仍未取得。
 
 这些缺口在首个 Admin 纵向切片的变更设计和实施计划中逐项关闭。未经代码、自动化测试和真实 OWIN 发布验证，
 不得把候选框架、目录或运行链路提升为当前架构事实。
