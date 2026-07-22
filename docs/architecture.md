@@ -105,12 +105,13 @@ flowchart LR
 ### 7DTD 主线程调度边界
 
 - `POST /api/v1/console/commands` 要求 `Owner` 或 `Admin`，并在 `GameReadinessState.Ready` 前返回 503 Problem Details `game_not_ready`。Application 用例只接受大小写不敏感、去除首尾空白后的精确 `version`，类型化 Gateway 只暴露 `ExecuteVersionAsync`；其他字符串在接触游戏 Adapter 前返回 400 `console_command_not_supported`。
+- 7DPanel 对所有经过 `SdtdConsole.ExecuteSync`、`SdtdConsole.ExecuteAsync`、内部 `executeCommand` 或 `SdtdConsole.Output` 的控制台命令统一采用游戏主线程串行边界，不按具体命令是否只读放宽。`SdtdConsole` 在实例级复用命令分词列表和当前命令输出列表，`ExecuteSync` 只在调用线程同步进入 `executeCommand`，不负责线程切换；7DTD 自有的 `ExecuteAsync` 则把多线程生产请求交给 `SdtdConsole.Update` 串行消费。7DPanel 因此不得从 OWIN 工作线程直接调用 `ExecuteSync`，Gateway 自身的 single-flight 也不能替代该边界，因为它无法排除 Telnet、游戏内置 Web、GUI 或其他 Mod 同时使用同一控制台实例。
 - `SevenDaysRestrictedConsoleGateway` 用进程内 single-flight 门禁保证同一时刻最多一个版本命令进入 `GameThreadDispatcher`；并发请求立即返回 503 `console_command_busy`，不会增长 7DTD 主线程队列。它在游戏主线程内复制 `SdtdConsole.ExecuteSync` 的共享输出列表，再把不可变结果交回 Application。
 - `GET /api/v1/players/online` 只允许 `Owner`，在游戏未就绪时不投递查询。`SevenDaysOnlinePlayerQuery` 使用与控制台命令相互独立的实例级 single-flight，在同一次主线程委托中配对连接与 `EntityPlayer`、复制批准字段并按 entity id 排序；转换中缺少实体的条目被跳过，World 或连接基础设施不可用返回稳定 503，其他字段读取失败进入统一 500 边界。
 - `POST /api/v1/players/{entityId}/kick` 只允许 `Owner`。`KickPlayerUseCase` 在写入 `Pending` 审计前获取踢出专属 single-flight；busy 请求不创建审计，审计意图失败不调用游戏动作。`SevenDaysPlayerActions` 只在 Dispatcher 委托内按 `entityId` 重新读取连接并比较 `combinedId + platform`，匹配后调用 `GameUtils.KickPlayerForClientInfo` 的 `ManualKick` 路径；它不拼接控制台命令，也不把 `ClientInfo` 暴露给 Application。
 - 审计 migration `002_PlayerActionAudit.sql` 永久保存操作 id、固定 `kick` 类型、操作者、目标身份、trim 后原因、请求/完成时间、`Pending/Succeeded/Failed/Unknown` 和稳定失败码。终态更新只允许命中当前 `Pending` 一次；终态写入不可确认时保留 `Pending` 并返回未知结果，启动恢复使用 `process_interrupted` 标记遗留记录。
 - `GameThreadDispatcher` 已在游戏主线程时直接执行，否则通过 `ThreadManager.AddSingleTaskMainThread` 投递。每个请求用原子 `Pending -> Running -> Completed` 状态竞争：排队取消或 5 秒启动截止时间到达会完成 Task 并保证委托不执行；一旦进入 `Running`，取消或截止时间不再伪造失败，而是等待同步游戏操作的真实结果或异常。
-- 委托异常由 Dispatcher 写入 Task；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。当前 Dispatcher 不拥有通用队列、容量、逐帧 pump 或独立 Start/Stop 生命周期；只读版本命令、在线玩家查询和踢出用例各自拥有局部 single-flight。未来新增其他玩家动作或生产者前仍必须按其真实负载和副作用重新确定背压、审计、幂等及关服语义。
+- 委托异常由 Dispatcher 写入 Task；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。当前 Dispatcher 不拥有通用队列、容量、逐帧 pump 或独立 Start/Stop 生命周期；只读版本命令、在线玩家查询和踢出用例各自拥有局部 single-flight。未来新增其他玩家动作或生产者前仍必须按其真实负载和副作用重新确定背压、审计、幂等及关服语义。只有完全绕过 `SdtdConsole`，且不访问 Unity 对象、游戏主线程拥有的集合或其他未证明线程安全状态的类型化操作，才能依据其实际依赖单独决定是否需要主线程。
 - 2026-07-21 Windows `v3.0.1-b4` 真实进程 smoke 在 `GameStartDone` 前取得 9 次 `game_not_ready`，就绪后命令返回 HTTP 200 和 5 行真实输出，首行为 `Game version: V 3.0.1 (b4) Compatibility Version: V 3.0.1`；随后 Telnet 正常关服且监听释放。前一轮启动因 EOS `NoConnection` 在游戏就绪前退出，保留为外部失败证据；后续重试通过且服主三字段配置的 71 字节与 SHA-256 均未改变。
 
 ### OWIN、Web API 与静态资源

@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-21"
+last_updated: "2026-07-22"
 document_role: Target
 ---
 
@@ -297,6 +297,33 @@ Authorization: Bearer <opaque-token>
 
 Bearer Token 对客户端保持不透明，数据库只保存高熵 secret 的摘要，token id 只承担记录定位。Token 只允许出现在 `Authorization` Header，不接受 QueryString 或 Cookie；产品不建立 Cookie 会话，因此不引入 CSRF Token，也不签发 refresh token。过渡期没有用户管理 API；等后续用户管理能力可以安全维护至少一个 `Owner` 后，再删除配置同步、已知默认凭据和相应引导代码。每个用例仍然必须独立执行权限检查，并保持稳定的 401/403 Problem Details，具体当前事实见[系统架构](../architecture.md#本地配置与状态)。
 
+### 动态控制台命令
+
+```text
+POST /api/v1/console/commands
+  -> authenticate Owner or Admin
+  -> validate non-empty command text and game readiness
+  -> enqueue one independent HTTP command work item in bounded FIFO
+  -> GameThreadDispatcher
+  -> SdtdConsole.ExecuteSync(raw command)
+  -> copy this invocation's output before leaving the game thread
+  -> complete the HTTP request
+
+SdtdConsole.executeCommand from any standard caller
+  -> Harmony observation at the final shared execution point
+  -> immutable audit snapshot after execution
+  -> bounded asynchronous audit writer
+  -> SQLite command audit, best effort and fail-open
+```
+
+7DPanel 不再维护控制台命令白名单；Application 只协调授权、请求生命周期和技术中立结果，SevenDays Adapter 把完整命令文本交给 7DTD 已注册命令集合解释。HTTP 入口拥有独立的有界 FIFO，每个请求都是不可合并的工作项；容量不足时明确拒绝新请求，不把等待者无界追加到 7DTD 主线程。请求尚未开始时可以取消，开始后必须等待真实同步结果或明确标记结果未知，不能因 HTTP 断开伪造失败。
+
+7DTD 自有 `ExecuteAsync` 队列及 `Update()` 消费语义保持不变。7DPanel 不用 Harmony 替换、清空或重新调度原生队列，而是在最终共享的 `SdtdConsole.executeCommand` 执行点观察正常控制台调用。因此内置命令、第三方 Mod 注册命令以及 Telnet、游戏 Web/GUI 和其他标准调用方可以进入同一审计边界；直接调用游戏 API 或绕过 `SdtdConsole.executeCommand` 的第三方代码不受此边界治理。
+
+Harmony observation 只复制审计所需的不可变值，不在游戏主线程等待 SQLite、执行网络 I/O 或同步通知订阅者。执行后的审计通过独立有界异步写入路径保存完整原始命令和参数、可识别来源、时间、输出及可判断结果；写入失败不得改变原命令结果或阻止命令执行，但必须产生可见告警并标记审计缺口。该审计容量不得与可丢弃的 `console-log` 管线共享，现有 `Log.LogCallbacksExtended`、`ServerEventLiveWindow`、`ServerEventHub` 和 `console-log` SSE 保持原职责，不新增结构化命令 SSE。
+
+首个动态命令切片不添加应用级输入或输出长度限制，也不承诺命令级资源隔离。实现必须保留运行时和协议层的真实失败，不得把“暂无限制”解释为无限内存、无限队列或绕过宿主固有限制。详细批准边界见[动态控制台命令设计规格](../superpowers/specs/2026-07-22-dynamic-console-commands-design.md)。
+
 ### 在线玩家
 
 当前已实现 Owner-only 的只读纵向切片：`GetOnlinePlayersUseCase`、`IOnlinePlayerQuery`、`SevenDaysOnlinePlayerQuery` 和 `PlayersController` 通过独立 single-flight 在游戏主线程复制精简快照。以下 `ViewPlayers` 权限与通用角色授权仍是用户管理落地后的 Target，不是当前实现事实。
@@ -479,9 +506,10 @@ backend/
 |   |   |       |-- IOnlinePlayerQuery.cs        # 在线玩家快照
 |   |   |       `-- IPlayerActions.cs            # 类型化玩家变更
 |   |   |-- ConsoleCommands/
-|   |   |   |-- ExecuteConsoleCommandUseCase.cs  # 受限高级命令
+|   |   |   |-- ExecuteConsoleCommandUseCase.cs  # 动态命令协调
 |   |   |   |-- ConsoleCommandResult.cs          # 不可变命令输出
-|   |   |   `-- IRestrictedConsoleGateway.cs     # 类型化白名单控制台动作
+|   |   |   |-- IConsoleCommandGateway.cs        # 动态命令执行端口
+|   |   |   `-- IConsoleCommandAudit.cs          # 异步尽力审计端口
 |   |   |-- ConsoleLogs/
 |   |   |   |-- SearchConsoleLogsUseCase.cs      # 有界游标搜索
 |   |   |   |-- Models/ConsoleLogEntryView.cs    # 安全的日志读模型
@@ -606,7 +634,8 @@ backend/
 |   |       |   `-- SevenDaysSnapshotMapper.cs
 |   |       |-- Announcements/SevenDaysAnnouncementGateway.cs
 |   |       |-- ConsoleCommands/
-|   |       |   `-- SevenDaysRestrictedConsoleGateway.cs
+|   |       |   |-- SevenDaysConsoleCommandGateway.cs
+|   |       |   `-- ConsoleCommandExecutionPatch.cs
 |   |       |-- ConsoleLogs/SevenDaysConsoleLogQuery.cs
 |   |       |-- Backups/
 |   |       |   |-- SevenDaysWorldSaveGateway.cs

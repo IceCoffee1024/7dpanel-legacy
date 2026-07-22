@@ -14,7 +14,7 @@ last_updated: "2026-07-22"
 | 需求 | 关键场景 | 主要测试层级 | 必须保留的证据 |
 |---|---|---|---|
 | `CAP-01` | Mod 内嵌宿主启动；自动识别当前服务端；状态采样时间与新鲜度；离线、不可用和过期状态不得显示为正常 | 单元、OWIN/API 集成、真实进程 smoke、浏览器 E2E | API 响应、页面断言、服务端日志和测试报告 |
-| `CAP-02` | 在线玩家身份快照；踢出、禁言、封禁和传送；危险操作确认；主线程执行；日志过滤；成功、失败和拒绝审计 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | 游戏内结果、API 结果和对应审计记录 |
+| `CAP-02` | 在线玩家身份快照；踢出、禁言、封禁和传送；动态内置/第三方控制台命令；HTTP 有界 FIFO 与主线程串行；日志过滤；成功、失败、拒绝和审计缺口 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | 游戏内结果、API 结果、队列顺序、Harmony 覆盖和对应审计记录 |
 | `CAP-03` | 手动与计划备份状态机；保存提交完成后快照；校验失败、损坏归档、磁盘空间不足；重启恢复；中断后回滚 | 单元、SQLite 集成、真实进程、故障注入、恢复演练 | 备份清单与校验和、状态迁移、恢复后存档验证和回滚证据 |
 | `CAP-04` | 即时公告；进服欢迎、周期提醒和血月提醒；同一触发只执行一次；重启后的调度恢复；失败可见 | 单元、SQLite 集成、真实进程、E2E | 游戏内公告、任务执行记录和审计记录 |
 | `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；Basic/password grant 验证当前用户；Header-only 不透明 Bearer Token 签发、跨重启、到期和撤销；SSE 周期复验；未来 `Admin`/`Viewer` 管理与审计 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | migration/Store 报告、Authorization Header、Token 生命周期、连接关闭、权限矩阵和审计记录 |
@@ -34,6 +34,8 @@ last_updated: "2026-07-22"
 | 产品版本来源漂移 | 健康端点必须返回 `ProductInfo.Version`；测试校验该值与 Bootstrap 的 `ModInfo.xml` 一致，不允许从 Adapter 当前执行程序集推断产品版本。 |
 | OWIN 生命周期泄漏 | 在同一测试主机上重复启动、正常关服和再次启动服务端；确认端口可重新绑定、后台线程和计时器退出、请求在 draining 后被拒绝。 |
 | 主线程调度拖慢游戏 | 当前只读版本 Gateway、在线玩家 Query 和踢出 Application gate 必须保持职责独立；排队取消/启动超时不得执行委托，执行开始后不得伪造取消或超时。踢出同一时刻只允许一个请求在审计和动作链路中运行；未来新增生产 Gateway 前按真实负载验证有界拒绝、合并或背压，不允许无界增长。 |
+| 动态命令队列破坏顺序或无界增长 | 确定性测试必须验证 HTTP 命令有界 FIFO 的容量、严格接收顺序、每请求独立结果、队满拒绝、开始前取消、开始后真实结果、单项异常隔离、停止时排空边界，以及它不会替换或消费 7DTD 原生异步队列。 |
+| 全局命令审计改变游戏行为或静默缺失 | 源码与真实进程测试必须证明 Harmony 只观察最终 `SdtdConsole.executeCommand`，不改变命令注册、同步返回或原生队列；内置、第三方 Mod、HTTP 和至少一个非 HTTP 标准入口产生完整原文审计。SQLite 锁定、队满或消费者失败时原命令继续执行，同时告警并记录可识别的审计缺口。绕过 `SdtdConsole` 的直接游戏 API 调用明确不计入覆盖率。 |
 | 在线玩家字段或线程边界漂移 | 自动化必须验证不可变复制、排序、可空跨平台身份、实例级 single-flight、取消/超时/异常后释放、Owner-only、就绪短路、字段白名单和稳定 503；只有真实测试玩家 smoke 才能证明 `v3.0.1-b4` 字段兼容，任何游戏活对象不得离开主线程委托。 |
 | 后台命令已接收但无人消费或错误分发 | 集成测试必须覆盖生产者投递、唯一 Consumer 组件读取、有界执行槽、显式 Dispatcher 到唯一 Use Case、长任务与短任务并发、单项失败隔离、停止生产、完成写端、截止时间内排空及未处理项的明确结果。 |
 | 组合运行时启停顺序漂移 | 使用记录型 `IModRuntime` 和可控日志订阅验证 `ConsoleLogService` 先启动、先停止；已接受日志、一次 `game-ready` 和 `server-stopping` 共用 sequence 且停止时排空，日志排空超时仍会尝试 `ModHost.Stop` 并聚合失败；`ModHost` 不包含具体队列、数据库或重试逻辑。 |
@@ -72,6 +74,7 @@ last_updated: "2026-07-22"
 
 - 后端单元测试采用 xUnit v3。无共享状态的测试允许并行；占用固定端口、SQLite 文件、游戏进程或静态游戏状态的测试必须使用测试集合隔离或显式禁止并行。
 - 当前自动化覆盖 `ModHost` 启停/就绪状态和并发终止竞态，生命周期 Adapter 的三个可执行回调与失败回滚，集中控制台日志服务、当前进程 `ServerEventLiveWindow`、每客户端 `ServerEventHub` 和组合运行时，Microsoft DI scope 隔离/复用/一次释放、Provider 验证与运行时先停后释放顺序；`GameThreadDispatcherTests` 确定性验证排队取消/启动超时阻止执行，以及执行开始后取消/超时仍等待真实结果，`ConsoleCommandTests` 验证 `version` 标准化和未支持命令不会进入 Gateway。
+- 动态命令切片必须新增队列与用例测试，覆盖命令原文不被白名单或参数解析改写、FIFO、容量饱和、并发独立输出、开始前取消、开始后断连、未知命令和执行异常；Harmony observation 测试覆盖返回与抛错路径、嵌套/连续调用隔离、原始参数快照、审计投递失败不影响命令结果，并证明不会产生结构化命令 SSE。
 - 在线玩家单元测试验证 Application 快照复制和用例转发、Adapter 稳定排序、可空跨平台身份、不同实例门禁隔离，以及成功、异常、取消和超时后的门禁释放；基础设施与真实字段兼容仍由官方进程 smoke 负责。
 - 踢出用例测试验证确认、原因与身份前置校验，审计先于动作，专属 single-flight，成功/离线/身份变化/取消/超时/未知异常的终态映射，以及审计意图或完成不可用语义。SevenDays 动作测试验证所有游戏对象访问位于 Dispatcher 内、实体与双字段身份重验、原生调用恰好一次和 `ManualKick` 参数快照。
 - 服务器事件自动化覆盖日志六字段、三类 replay 事件的共享 sequence、固定窗口淘汰、批次与 gap 边界、回调/consumer 线程隔离、队满即时拒绝与 high-water 上限、保序且只消费一次、单次 `game-ready`、停止 marker、消费后通过公开 stream 边界广播、单项失败继续、订阅失败、注销后拒绝、限时排空、超时仍停止内部运行时、停止摘要时序、多订阅者隔离、mailbox 溢出、订阅上限、空窗口游标和完成释放。生产静态 delegate 的精确映射由源码复核与真实进程验证，不通过额外 source/callback 接口伪装成单元测试结论。
@@ -94,7 +97,7 @@ last_updated: "2026-07-22"
 - 在进程内启动完整 OWIN 管道，验证路由、输入校验、Header 认证、授权、Token 到期与撤销、SSE 最多 15 秒周期复验、统一错误结构、静态资源和 draining 行为；产品不采用 Cookie 认证、CSRF Token 或 refresh token。
 - `OwinWebHostTests` 在真实 Katana 主机中验证 `/` 和无扩展名路由返回 Admin `index.html`，哈希资源按静态文件返回，缺失资源保持 404；即使 `wwwroot/api/v1/health` 存在冲突文件，`/api/v1/health` 仍由 Web API 返回健康 JSON，未知 `/api/*` 返回统一 404 Problem Details。健康 JSON 必须精确使用 `status`、`product`、`version`，大小写不匹配即失败。
 - 同一 Katana 测试类使用真实根 Provider 验证匿名/错误 Basic/错误 Bearer 的 401 与双 challenge、password grant、OAuth `invalid_grant` 例外、拒绝 QueryString Token、每分钟限流 429、Welcome 先于命名 replay、gap、无效游标 400、订阅容量的建流前 503，以及响应释放后 scoped session 与 Hub 订阅清理。直接 handler 测试另验证 Web API 使用同一个 OWIN scope，non-owning wrapper 不提前释放实际 scope。15 秒 comment heartbeat 由源码复核，不为了等待间隔增加慢集成测试，也不把间隔暴露为服主配置。
-- 同一 Katana 主机还验证控制台命令匿名 401、认证 `version` 成功、未支持命令 400、游戏未就绪 503 和 single-flight 忙 503 均使用稳定 Problem Details，且拒绝路径不会调用 Gateway。
+- 当前 Katana 主机仍验证控制台命令匿名 401、认证 `version` 成功、未支持命令 400、游戏未就绪 503 和 single-flight 忙 503；动态命令切片落地时必须把该旧合同替换为 Owner/Admin 授权、任意注册命令透传、FIFO 顺序、队满拒绝、取消/断连与独立输出的稳定 HTTP 结果，并验证队满和未就绪路径不会执行命令。
 - 同一 Katana 主机验证玩家查询匿名 401、Owner 空/多玩家 200、camelCase 字段白名单与排序、游戏未就绪时不调用 Query，以及繁忙、主线程启动超时和快照不可用的稳定 503 Problem Details。当前持久认证只创建 `Owner`，非 Owner 403 随角色管理切片验证。
 - 同一 Katana 主机验证 Owner 踢出请求字段、确认、原因、身份、认证主体、成功白名单，以及离线、身份变化、busy、主线程超时、审计不可用和原生失败的稳定 Problem Details；请求取消不会被通用异常边界改写为 500。当前持久认证只创建 `Owner`，真实非 Owner 身份链路仍随角色管理切片验证。
 - `DependencyRulesTests` 以源码规则验证 Bootstrap 通过唯一 composition root 创建经过验证的 Provider、使用局部 candidate 调用 `RegisterAndStart` 后才发布字段，并保护 DI 包归属、发布清单、Adapter 方向和唯一 `IModApi`；`SevenDaysGameLifecycleAdapterTests` 通过事件 seam 执行 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 回调，验证订阅顺序、逆序回滚、异常保留及 Dispose 只拥有订阅。真实静态 `ModEvents` 注册仍由官方进程 smoke 验证。
@@ -187,6 +190,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
 - 玩家动作审计已具备自动化锁竞争与启动恢复证据；仍需验证迁移失败、真实关服期间动作终态，以及自动化真实游戏事件和控制台日志突发。只读 `version` 的 Windows 主线程往返已经通过。
+- 动态控制台命令、HTTP 有界 FIFO、最终执行点 Harmony observation 和 fail-open SQLite 命令审计均为已批准目标，尚无实现或测试证据；实现后必须在 Windows `v3.0.1-b4` 验证内置命令、测试 Mod 注册命令、原生异步队列不变、非 HTTP 标准入口审计、完整原文持久化及审计故障告警。
 - 在受控真实 OWIN Owner 环境执行现有 Playwright suite，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；当前已具备依赖锁定、lint、typecheck、182 项 Vitest 和 Vite 8 生产构建证据。
 - 在 Windows `v3.0.1-b4` 受控玩家上执行真实踢出，保存玩家收到的批准原因、原生 API 返回后约 0.5 秒断开、在线列表更新和 `player_action_audit` 对应终态；在此之前不得把自动化 `Succeeded` 解释为真实玩家已经离线。
 - 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite 和双平台 SQLite Native RID；当前 Windows 发布脚本已校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，项目引用、SQLite provider、Harmony 应用顺序、DI 包归属和 Adapter 方向已有本地测试门禁。
