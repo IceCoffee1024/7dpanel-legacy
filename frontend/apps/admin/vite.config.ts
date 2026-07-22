@@ -36,5 +36,11 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      environment: 'happy-dom',
+      setupFiles: ['./src/shared/testing/setup.ts'],
+      clearMocks: true,
+      restoreMocks: true,
+    },
   }
 })

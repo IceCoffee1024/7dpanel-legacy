@@ -1,22 +1,22 @@
 import ui from '@nuxt/ui/vue-plugin'
 
 import { createHead } from '@unhead/vue/client'
+import { createPinia } from 'pinia'
 import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
-import { handleHotUpdate, routes } from 'vue-router/auto-routes'
+import { handleHotUpdate } from 'vue-router/auto-routes'
 import App from './App.vue'
+import { createAdminRouter } from './app/router'
 
 import './assets/css/main.css'
 
 const app = createApp(App)
 
 const head = createHead()
-const router = createRouter({
-  routes,
-  history: createWebHistory(),
-})
+const pinia = createPinia()
+const router = createAdminRouter(pinia)
 
 app.use(head)
+app.use(pinia)
 app.use(router)
 app.use(ui)
 

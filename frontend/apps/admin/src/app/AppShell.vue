@@ -1,20 +1,33 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
-import { shallowRef } from 'vue'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+import { computed, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { useAuthStore } from '../features/auth'
+
 const router = useRouter()
+const auth = useAuthStore()
 const sidebarOpen = shallowRef(false)
 
-const navigation = [{
-  label: '概览',
-  icon: 'i-lucide-layout-dashboard',
-  to: '/',
-  exact: true,
-  onSelect: () => {
-    sidebarOpen.value = false
+const navigation = [
+  {
+    label: '概览',
+    icon: 'i-lucide-layout-dashboard',
+    to: '/',
+    exact: true,
+    onSelect: () => {
+      sidebarOpen.value = false
+    },
   },
-}] satisfies NavigationMenuItem[]
+  {
+    label: '玩家',
+    icon: 'i-lucide-users',
+    to: '/players',
+    onSelect: () => {
+      sidebarOpen.value = false
+    },
+  },
+] satisfies NavigationMenuItem[]
 
 const searchGroups = [{
   id: 'navigation',
@@ -22,8 +35,18 @@ const searchGroups = [{
   items: navigation,
 }]
 
+const accountItems = computed<DropdownMenuItem[][]>(() => [[{
+  label: '退出登录',
+  icon: 'i-lucide-log-out',
+  onSelect: async () => {
+    auth.logout()
+    await router.replace('/login')
+  },
+}]])
+
 defineShortcuts({
   'g-o': () => router.push('/'),
+  'g-p': () => router.push('/players'),
 })
 </script>
 
@@ -58,7 +81,26 @@ defineShortcuts({
       </template>
 
       <template #footer="{ collapsed }">
-        <AppearanceMenu :collapsed="collapsed" />
+        <div class="flex flex-col gap-1">
+          <AppearanceMenu :collapsed="collapsed" />
+
+          <UDropdownMenu
+            :items="accountItems"
+            :content="{ align: 'center', collisionPadding: 12 }"
+            :ui="{ content: collapsed ? 'w-40' : 'w-(--reka-dropdown-menu-trigger-width)' }"
+          >
+            <UButton
+              aria-label="Owner 账号"
+              block
+              color="neutral"
+              icon="i-lucide-circle-user-round"
+              label="Owner"
+              :square="collapsed"
+              :trailing-icon="collapsed ? undefined : 'i-lucide-chevrons-up-down'"
+              variant="ghost"
+            />
+          </UDropdownMenu>
+        </div>
       </template>
     </UDashboardSidebar>
 

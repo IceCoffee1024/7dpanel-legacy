@@ -15,6 +15,7 @@
     "paths": {
       "#build/ui/*": ["./node_modules/.nuxt-ui/ui/*"]
     },
+    "types": ["vitest/globals"],
     "allowImportingTsExtensions": true,
 
     /* Linting */
