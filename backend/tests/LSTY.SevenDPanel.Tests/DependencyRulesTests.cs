@@ -288,6 +288,48 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Runtime_package_versions_match_the_verified_dependency_set()
+        {
+            var packageVersions = Directory
+                .GetFiles(SourceRoot, "*.csproj", SearchOption.AllDirectories)
+                .SelectMany(path => XDocument.Load(path)
+                    .Descendants("PackageReference")
+                    .Select(package => new
+                    {
+                        Name = (string)package.Attribute("Include"),
+                        Version = (string)package.Attribute("Version")
+                    }))
+                .Where(package => !string.IsNullOrWhiteSpace(package.Name))
+                .ToLookup(
+                    package => package.Name,
+                    package => package.Version,
+                    StringComparer.OrdinalIgnoreCase);
+
+            Assert.Equal("6.1.1", Assert.Single(packageVersions["dbup-core"]));
+            Assert.Equal("6.0.4", Assert.Single(packageVersions["dbup-sqlite"]));
+            Assert.Equal("10.0.10", Assert.Single(packageVersions["Microsoft.Data.Sqlite"]));
+            Assert.Equal(
+                "10.0.10",
+                Assert.Single(packageVersions["Microsoft.Extensions.DependencyInjection"]));
+            Assert.Equal(
+                "10.0.10",
+                Assert.Single(packageVersions["Microsoft.Extensions.DependencyInjection.Abstractions"]));
+            Assert.Equal("10.0.10", Assert.Single(packageVersions["System.Threading.Channels"]));
+            Assert.NotEmpty(packageVersions["Microsoft.Bcl.AsyncInterfaces"]);
+            Assert.All(
+                packageVersions["Microsoft.Bcl.AsyncInterfaces"],
+                version => Assert.Equal("10.0.10", version));
+            Assert.NotEmpty(packageVersions["System.Threading.Tasks.Extensions"]);
+            Assert.All(
+                packageVersions["System.Threading.Tasks.Extensions"],
+                version => Assert.Equal("4.6.3", version));
+            Assert.NotEmpty(packageVersions["System.Runtime.CompilerServices.Unsafe"]);
+            Assert.All(
+                packageVersions["System.Runtime.CompilerServices.Unsafe"],
+                version => Assert.Equal("6.1.2", version));
+        }
+
+        [Fact]
         public void Nswag_packages_are_owned_by_the_web_adapter()
         {
             var projects = Directory
@@ -434,7 +476,7 @@ namespace LSTY.SevenDPanel.Tests
                     element => (string)element.Attribute("Version"),
                     StringComparer.OrdinalIgnoreCase);
 
-            Assert.Equal("10.0.9", packages["Microsoft.Data.Sqlite"]);
+            Assert.Equal("10.0.10", packages["Microsoft.Data.Sqlite"]);
             Assert.Equal("2.1.12", packages["SQLitePCLRaw.bundle_e_sqlite3"]);
             Assert.Equal("2.1.12", packages["SQLitePCLRaw.lib.e_sqlite3"]);
             var nativePackage = project.Descendants("PackageReference")
