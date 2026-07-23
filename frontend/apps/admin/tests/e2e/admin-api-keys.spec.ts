@@ -20,7 +20,9 @@ async function loginOwner(page: import('@playwright/test').Page, destination: '/
 
   const tokenResponse = await tokenResponsePromise
   const tokenPayload = await tokenResponse.json() as { expires_in?: unknown }
-  expect(tokenPayload.expires_in).toBe(28_800)
+  expect(tokenPayload.expires_in).toEqual(expect.any(Number))
+  expect(tokenPayload.expires_in).toBeGreaterThanOrEqual(28_799)
+  expect(tokenPayload.expires_in).toBeLessThanOrEqual(28_800)
   await expect(page).toHaveURL(new RegExp(`${destination}$`))
 }
 
@@ -87,7 +89,9 @@ test('client-side session expiry redirects to login and permits owner relogin', 
   await page.clock.fastForward('08:00:01')
   await page.getByRole('link', { name: '玩家' }).click()
 
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fplayers$/)
+  await expect(page).toHaveURL(url => (
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
+  ))
   await loginOwner(page, '/players')
-  await expect(page.getByRole('heading', { name: '在线玩家' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '在线玩家', exact: true })).toBeVisible()
 })

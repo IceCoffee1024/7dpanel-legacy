@@ -33,12 +33,19 @@ pnpm test
 pnpm build
 ```
 
-The real OWIN browser suite is a separate environment gate. It requires a
-running test deployment and all of these environment variables:
+The real OWIN browser suite is a separate environment gate. Playwright loads
+these values from `.env.local`, while variables already present in the process
+environment take precedence. It requires a running test deployment and all of
+these variables:
 
 - `SEVENDPANEL_ADMIN_URL`
 - `PANEL_USERNAME`
 - `PANEL_PASSWORD`
+
+`SEVENDPANEL_E2E_BROWSER` selects `msedge`, `chrome`, or `chromium` and defaults
+to the system-installed Microsoft Edge on Windows. `chrome` uses the installed
+Google Chrome. `chromium` uses Playwright's version-pinned browser and requires
+`pnpm exec playwright install chromium` before the suite runs.
 
 Run it only against that controlled environment:
 
@@ -48,6 +55,8 @@ pnpm test:e2e
 
 When any required variable is absent, the suite reports its real-environment
 tests as skipped. A skipped suite is not evidence that the browser smoke passed.
+An unsupported browser value fails during Playwright configuration instead of
+silently selecting another browser.
 
 ## Package Ownership
 

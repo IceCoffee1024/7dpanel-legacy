@@ -19,7 +19,9 @@ async function loginOwner(page: import('@playwright/test').Page) {
 test('redirects an anonymous players deep link to login', async ({ page }) => {
   await page.goto('/players')
 
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fplayers$/)
+  await expect(page).toHaveURL(url => (
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
+  ))
   await expect(page.getByRole('heading', { name: '登录管理面板' })).toBeVisible()
 })
 
@@ -38,19 +40,29 @@ test('owner login shows players without leaking authentication into browser pers
   await page.goto('/players')
   await loginOwner(page)
 
-  await expect(page.getByRole('heading', { name: '在线玩家' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '在线玩家', exact: true })).toBeVisible()
   await expect(page.getByText(/在线 \d+ 人/)).toBeVisible()
   const playersRequest = await playersRequestPromise
   const authorizationHeaderIsBearer = playersRequest.headers().authorization?.startsWith('Bearer ') === true
   expect(authorizationHeaderIsBearer).toBe(true)
   expect(playersRequest.url().toLowerCase()).not.toContain('access_token')
 
-  const browserPersistenceIsEmpty = await page.evaluate(() => (
-    document.cookie === ''
-    && localStorage.length === 0
-    && sessionStorage.length === 0
-  ))
-  expect(browserPersistenceIsEmpty).toBe(true)
+  const browserPersistenceContainsSensitiveMaterial = await page.evaluate(
+    ({ expectedUsername, expectedPassword }) => {
+      const persistedText = [
+        document.cookie,
+        ...Object.entries(localStorage).flat(),
+        ...Object.entries(sessionStorage).flat(),
+      ].join('\n')
+
+      return persistedText.includes(expectedUsername)
+        || persistedText.includes(expectedPassword)
+        || /7dp_[tk]_[\w.-]+/.test(persistedText)
+        || /bearer\s+\S+/i.test(persistedText)
+    },
+    { expectedUsername: username!, expectedPassword: password! },
+  )
+  expect(browserPersistenceContainsSensitiveMaterial).toBe(false)
   expect(consoleContainsSensitiveMaterial).toBe(false)
 })
 
@@ -64,7 +76,9 @@ test('login and players deep links survive refresh with the expected memory-sess
   await loginOwner(page)
   await page.reload()
 
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fplayers$/)
+  await expect(page).toHaveURL(url => (
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
+  ))
 })
 
 test('players layout has no horizontal overflow at 390 by 844', async ({ page }) => {

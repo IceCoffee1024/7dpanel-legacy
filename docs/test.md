@@ -7,7 +7,7 @@ last_updated: "2026-07-23"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。无 Basic/API Key 认证变更后，定向后端回归共 116 项 xUnit 自动化通过，覆盖 password grant、8 小时默认 Access Token、PBKDF2-HMAC-SHA256 1000 次迭代、Access Token/API Key 严格分流、当前用户/角色重建、API Key REST/OpenAPI、Basic 拒绝与 SSE 周期复验；合并后的 Release 聚合构建和全量 xUnit 为 319 项通过。2026-07-23 的事件投影分支已通过 Release Rebuild 及相关 88 项 xUnit 自动化，覆盖逐玩家观察时间、Join/Save/Disconnect 投影、OWIN 合同和依赖边界。Admin 的 API 解析、局部状态、对话框/视图、页面和路由定向自动化已通过；完整 `pnpm test` 为 19 个文件、229 项通过，lint、typecheck 和 Vite 8 生产构建均通过。该 Vitest 输出仍包含 happy-dom teardown 的 `AbortError`、fork worker 终止超时和外部连接超时，根因未确认，不能视为干净的测试基础设施。Playwright Chromium suite 已扩展为 6 项真实 Owner/API Key 场景，但因缺少环境变量全部 skip，不能计作真实 OWIN 浏览器门禁。2026-07-23 的远程 Windows 7DTD `v3.0.1-b4` 闭环 smoke 验证了合并提交 `a98ad6b` 的公开 Swagger UI/OpenAPI Unity Mono 加载与访问、Telnet 原生异步队列、真实 SQLite 写锁期间命令 fail-open、解锁后的 `store_failure` gap 恢复、正常关服排空、进程/监听释放和重复启停；该动态命令与 Swagger 证据发生在移除 Basic 前，不能证明当前认证版本的真实进程行为。当前 Access Token/API Key、事件投影真实 Join/Save/Disconnect、Owner 踢出、真实浏览器门禁、自动归档和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。无 Basic/API Key 认证变更后，定向后端回归共 116 项 xUnit 自动化通过，覆盖 password grant、8 小时默认 Access Token、PBKDF2-HMAC-SHA256 1000 次迭代、Access Token/API Key 严格分流、当前用户/角色重建、API Key REST/OpenAPI、Basic 拒绝与 SSE 周期复验；合并后的 Release 聚合构建和全量 xUnit 为 319 项通过。2026-07-23 的事件投影分支已通过 Release Rebuild 及相关 88 项 xUnit 自动化，覆盖逐玩家观察时间、Join/Save/Disconnect 投影、OWIN 合同和依赖边界。Admin 的 API 解析、局部状态、对话框/视图、页面和路由定向自动化已通过；完整 `pnpm test` 为 19 个文件、229 项通过，lint、typecheck 和 Vite 8 生产构建均通过。该 Vitest 输出仍包含 happy-dom teardown 的 `AbortError`、fork worker 终止超时和外部连接超时，根因未确认，不能视为干净的测试基础设施。2026-07-23 在受控 Windows `v3.0.1-b4` OWIN 环境中以系统 Microsoft Edge 运行 6 项 Owner/API Key Playwright 场景并全部通过，覆盖 8 小时 Token、API Key 一次性显示/使用/撤销、撤销后 401、深链接、内存会话边界、认证材料不进入浏览器持久化和 `390x844` 无水平溢出；同一真实进程的协议 smoke 还验证 Access Token 与 API Key 均收到 SSE `welcome`、Basic REST/SSE 均返回 401 且无 Basic challenge，临时 API Key 随后成功撤销。2026-07-23 的远程 Windows 7DTD `v3.0.1-b4` 闭环 smoke 验证了合并提交 `a98ad6b` 的公开 Swagger UI/OpenAPI Unity Mono 加载与访问、Telnet 原生异步队列、真实 SQLite 写锁期间命令 fail-open、解锁后的 `store_failure` gap 恢复、正常关服排空、进程/监听释放和重复启停；该动态命令与 Swagger 证据发生在移除 Basic 前，不能证明当前认证版本的真实进程行为。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、自动归档和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -146,7 +146,7 @@ last_updated: "2026-07-23"
 
 - 覆盖引导 `Owner` 登录、未来用户与角色管理、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
 - 覆盖 loading、empty、offline、stale、forbidden、failed、unknown 和 draining 状态，确保界面不会把未知结果渲染为成功。
-- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示“服务器运行正常”、`7DPanel`、`v0.1.0` 和成功采样时间；仅 `/favicon.ico` 保持既有 404。登录/玩家/API Key Playwright suite 已建立 6 项真实环境场景，但本轮因真实环境变量缺失而 skip；该结果不证明真实 OWIN 登录、API Key、玩家页面、深链接或 `390x844` 布局通过。
+- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示“服务器运行正常”、`7DPanel`、`v0.1.0` 和成功采样时间；仅 `/favicon.ico` 保持既有 404。登录/玩家/API Key Playwright suite 已在受控真实 OWIN 环境用系统 Microsoft Edge 运行 6 项并全部通过，覆盖真实登录、API Key 生命周期、玩家页面、深链接、内存会话边界、认证材料不持久化和 `390x844` 布局。
 - 对全部 P0 流程和表单分别以 `zh-CN` 与 `en` 运行关键 E2E；覆盖受支持浏览器语言首访、不支持语言回退 `en`、未认证与已认证入口切换、刷新后偏好持久化，以及切换时当前路由、筛选和安全表单输入保持。
 - 验证产品文案、Nuxt UI 内置文案、Valibot 内置错误、日期与数字格式和稳定服务端错误码映射始终使用同一当前语言；缺失键、空白文案、翻译键泄漏和原始服务端异常文本均使测试失败。
 - 验证 Steam ID、玩家名、服务器名、IP、坐标、路径、日志原文、审计标识和协议标识在语言切换前后保持原值，并在 320 CSS 像素宽度下检查英文文本扩展不会遮挡关键操作。
@@ -165,7 +165,7 @@ last_updated: "2026-07-23"
 | Admin 前端开发/CI Node.js 环境 | Admin lint、应用与 Node 配置 typecheck、Vite `8.1.5`/Rolldown 生产构建 | 推荐 Node.js `24+`；`package.json` 精确兼容范围为 `^20.19.0 || ^22.13.0 || >=24.0.0`，使用 `pnpm@11.13.1` 和冻结锁文件 |
 | Windows x64 真实服务端 | 发布 smoke、E2E、性能和恢复演练 | 官方 7DTD Dedicated Server `v3.0.1-b4`、隔离端口、临时世界 |
 | Linux x64 真实服务端 | Native 兼容、发布 smoke、E2E 和恢复演练 | 官方 `v3.0.1-b4` Mono 运行时、区分大小写文件系统、临时世界 |
-| 浏览器矩阵 | 管理流程 E2E | 至少覆盖一个 Chromium 稳定版；扩大支持范围前补充对应浏览器 |
+| 浏览器矩阵 | 管理流程 E2E | Windows 开发环境默认使用系统 Microsoft Edge；可显式选择系统 Google Chrome 或 Playwright 固定 Chromium；至少覆盖一个 Chromium 稳定版，扩大支持范围前补充对应浏览器 |
 
 - 测试账号固定覆盖 `Owner`、`Admin`、`Viewer` 和未认证用户，不创建首版范围外的 `Player`，不使用生产密码、持久有效 Token、Steam 身份或真实 IP。
 - 玩家、日志、存档和备份夹具使用合成数据；涉及 Steam ID/IP 的场景采用明确保留的测试值。
@@ -227,8 +227,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 |---|---|
 | Windows 动态命令闭环 smoke 尚未自动归档 | `a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；但流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行，当前认证二进制也尚未复验。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与既有 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；本轮未启动真实服务器，也未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
-| Admin 登录、在线玩家、API Key 与踢出真实浏览器门禁未执行 | Playwright 已定义 6 项登录/API Key/玩家基础场景，但本轮未设置真实环境或运行该 suite，且尚未增加真实踢出场景。未执行真实 OWIN、API Key 完整值泄漏检查、`390x844` 踢出对话框渲染、键盘/遮罩关闭锁定或成功刷新；这些结果不得从组件或定向 Vitest 推导。 |
-| 当前认证版本尚无真实进程验收 | 本轮未获授权停止服务器、重置 `7dpanel.db` 或发布。后续在受控环境按 password grant、`expires_in=28800`、API Key 创建/REST/SSE 使用/撤销、Basic 401 和正常关服/端口释放顺序执行，未取得该证据前不得声称 Unity Mono 或真实数据库迁移已通过。 |
+| Admin 踢出真实浏览器门禁未执行 | 登录/API Key/玩家基础 Playwright 场景已在受控真实 OWIN 环境以系统 Microsoft Edge 运行 6 项并全部通过；尚未增加真实踢出场景，也未执行 `390x844` 踢出对话框渲染、键盘/遮罩关闭锁定或成功刷新，这些结果不得从组件或定向 Vitest 推导。 |
 | Admin Vitest teardown 存在未定位噪声 | `pnpm test` 的 19 个文件、229 项断言通过，但输出仍出现 happy-dom `AbortError`、fork worker 终止超时和外部连接 `ETIMEDOUT`。API Key 视图测试已 mock 业务请求，当前未能确认噪声来源；在根因和稳定修复完成前，它不构成干净的 CI 或发布证据。 |
 | 当前认证版本尚无 Swagger Unity Mono 复验证据 | 公开 JSON/UI、路由、安全、SSE、Problem Details、无业务副作用、依赖所有权和隔离发布布局已通过 Windows Katana/本地门禁；`a98ad6b` 已在 Windows `v3.0.1-b4` Unity Mono 加载 NSwag/NJsonSchema/Namotion 并访问 `/swagger`，但本轮未在当前认证发布物复验。Linux 支持仍需对应 Linux smoke。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |
