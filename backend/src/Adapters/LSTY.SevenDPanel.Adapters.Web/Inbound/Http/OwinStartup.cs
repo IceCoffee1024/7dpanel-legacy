@@ -120,9 +120,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             config.MessageHandlers.Add(new ApiProblemDetailsHandler());
             config.MapHttpAttributeRoutes();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
-            config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =
-                new CamelCasePropertyNamesContractResolver();
-            OpenApiConfiguration.Configure(app);
+            var jsonSerializerSettings = config.Formatters.JsonFormatter.SerializerSettings;
+            jsonSerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            OpenApiConfiguration.Configure(app, jsonSerializerSettings);
             app.UseWebApi(config);
         }
 

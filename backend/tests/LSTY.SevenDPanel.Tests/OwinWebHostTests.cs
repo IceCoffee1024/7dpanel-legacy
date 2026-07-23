@@ -419,6 +419,25 @@ namespace LSTY.SevenDPanel.Tests
                     "/api/v1/console/commands",
                     "post",
                     "ConsoleCommandResponse");
+                var requestContent = Assert.IsType<JObject>(
+                    document["paths"]?["/api/v1/console/commands"]?["post"]?
+                        ["requestBody"]?["content"]);
+                var requestMediaType = Assert.Single(requestContent.Properties());
+                Assert.Equal("application/json", requestMediaType.Name);
+                AssertSchemaProperties(
+                    document,
+                    requestMediaType.Value["schema"],
+                    "command");
+                AssertSchemaProperties(document, "ConsoleCommandResponse", "command", "output");
+                AssertSchemaProperties(document, "OnlinePlayersResponse", "players");
+                AssertSchemaProperties(
+                    document,
+                    "KickPlayerResponse",
+                    "completedAtUtc",
+                    "operationId",
+                    "requestedAtUtc",
+                    "status",
+                    "target");
             }
         }
 
@@ -2803,6 +2822,41 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(
                 "#/components/schemas/" + schemaName,
                 (string?)mediaType.Value["schema"]?["$ref"]);
+        }
+
+        private static void AssertSchemaProperties(
+            JObject document,
+            string schemaName,
+            params string[] propertyNames)
+        {
+            AssertSchemaProperties(
+                document,
+                document["components"]?["schemas"]?[schemaName],
+                propertyNames);
+        }
+
+        private static void AssertSchemaProperties(
+            JObject document,
+            JToken? schema,
+            params string[] propertyNames)
+        {
+            if (schema?["oneOf"] is JArray alternatives)
+                schema = Assert.Single(alternatives);
+            var reference = (string?)schema?["$ref"];
+            if (!string.IsNullOrEmpty(reference))
+            {
+                const string prefix = "#/components/schemas/";
+                Assert.StartsWith(prefix, reference, StringComparison.Ordinal);
+                schema = document["components"]?["schemas"]?[reference!.Substring(prefix.Length)];
+            }
+            var schemaObject = Assert.IsType<JObject>(schema);
+            var properties = Assert.IsType<JObject>(schemaObject["properties"]);
+            Assert.Equal(
+                propertyNames.OrderBy(propertyName => propertyName).ToArray(),
+                properties.Children<JProperty>()
+                    .Select(property => property.Name)
+                    .OrderBy(propertyName => propertyName)
+                    .ToArray());
         }
 
         private static void AssertResponseCodes(

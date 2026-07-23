@@ -1,18 +1,27 @@
 using LSTY.SevenDPanel.Hosting;
 using NJsonSchema;
+using NJsonSchema.NewtonsoftJson.Generation;
 using NSwag.AspNet.Owin;
+using Newtonsoft.Json;
 using Owin;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
 {
     internal static class OpenApiConfiguration
     {
-        public static void Configure(IAppBuilder app)
+        public static void Configure(
+            IAppBuilder app,
+            JsonSerializerSettings jsonSerializerSettings)
         {
             app.UseOpenApi(typeof(OwinStartup).Assembly, settings =>
             {
                 settings.DocumentPath = OpenApiRoutes.Document;
-                settings.GeneratorSettings.SchemaSettings.SchemaType = SchemaType.OpenApi3;
+                settings.GeneratorSettings.SchemaSettings =
+                    new NewtonsoftJsonSchemaGeneratorSettings
+                    {
+                        SchemaType = SchemaType.OpenApi3,
+                        SerializerSettings = jsonSerializerSettings
+                    };
                 settings.GeneratorSettings.Title = "7DPanel API";
                 settings.GeneratorSettings.Version = "v1";
                 settings.GeneratorSettings.Description =
