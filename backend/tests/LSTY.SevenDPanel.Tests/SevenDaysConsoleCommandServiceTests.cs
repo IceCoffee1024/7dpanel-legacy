@@ -123,8 +123,7 @@ namespace LSTY.SevenDPanel.Tests
             var waiting = service.ExecuteAsync(Request("waiting"), CancellationToken.None);
             var stop = Task.Run(service.Stop, TestContext.Current.CancellationToken);
 
-            await Assert.ThrowsAsync<ConsoleCommandUnavailableException>(() =>
-                service.ExecuteAsync(Request("late"), CancellationToken.None));
+            await WaitForStopToRejectNewCommandsAsync(service);
             Assert.False(stop.IsCompleted);
             dispatcher.CompleteNext("running-output");
 
@@ -134,6 +133,27 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(new[] { "running" }, dispatcher.Commands);
             service.Stop();
             service.MarkGameReady();
+        }
+
+        private static async Task WaitForStopToRejectNewCommandsAsync(
+            SevenDaysConsoleCommandService service)
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            while (true)
+            {
+                try
+                {
+                    await service.ExecuteAsync(Request("late"), CancellationToken.None);
+                }
+                catch (ConsoleCommandUnavailableException)
+                {
+                    return;
+                }
+                catch (ConsoleCommandQueueFullException)
+                {
+                    await Task.Delay(10, timeout.Token);
+                }
+            }
         }
 
         private static SevenDaysConsoleCommandService CreateService(

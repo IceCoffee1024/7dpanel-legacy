@@ -10,12 +10,6 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
     {
         public void Process(DocumentProcessorContext context)
         {
-            context.Document.SecurityDefinitions["Basic"] = new OpenApiSecurityScheme
-            {
-                Type = OpenApiSecuritySchemeType.Http,
-                Scheme = "basic",
-                Description = "HTTP Basic authentication."
-            };
             context.Document.SecurityDefinitions["Bearer"] = new OpenApiSecurityScheme
             {
                 Type = OpenApiSecuritySchemeType.Http,

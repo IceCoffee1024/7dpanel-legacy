@@ -43,7 +43,7 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.True(options.Authentication.Enabled);
                 Assert.Equal("admin", options.Authentication.Username);
                 Assert.Equal("password", options.Authentication.Password);
-                Assert.Equal(TimeSpan.FromMinutes(30), options.Authentication.AccessTokenLifetime);
+                Assert.Equal(TimeSpan.FromHours(8), options.Authentication.AccessTokenLifetime);
                 Assert.True(options.Authentication.AllowInsecureHttp);
                 Assert.True(File.Exists(path));
             }
@@ -137,7 +137,24 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(
                 defaults.Authentication.AccessTokenLifetimeMinutes,
                 example.Authentication.AccessTokenLifetimeMinutes);
+            Assert.Equal(480, defaults.Authentication.AccessTokenLifetimeMinutes);
             Assert.Equal(defaults.Authentication.AllowInsecureHttp, example.Authentication.AllowInsecureHttp);
+        }
+
+        [Theory]
+        [InlineData(5)]
+        [InlineData(1440)]
+        public void Authentication_lifetime_accepts_the_existing_configuration_boundaries(
+            int lifetimeMinutes)
+        {
+            var options = PanelAuthenticationOptions.FromBinding(
+                enabled: true,
+                username: "admin",
+                password: "password",
+                accessTokenLifetimeMinutes: lifetimeMinutes,
+                allowInsecureHttp: true);
+
+            Assert.Equal(TimeSpan.FromMinutes(lifetimeMinutes), options.AccessTokenLifetime);
         }
     }
 }

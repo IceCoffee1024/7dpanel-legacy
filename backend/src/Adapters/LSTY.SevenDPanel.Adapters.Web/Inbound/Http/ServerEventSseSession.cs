@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -17,7 +18,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
     {
         private const int MailboxCapacity = 256;
         private const int ReplayLimit = 5000;
-        private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
+        private static readonly TimeSpan DefaultHeartbeatInterval = TimeSpan.FromSeconds(15);
         private static readonly Encoding Utf8 = new UTF8Encoding(false);
         private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings
         {
@@ -28,12 +29,16 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         private readonly IPanelRuntimeStatus runtimeStatus;
         private readonly IPanelCredentialStore credentialStore;
         private readonly IPanelAccessTokenStore accessTokenStore;
+        private readonly IPanelApiKeyStore apiKeyStore;
         private readonly Func<DateTimeOffset> utcNow;
         private readonly TimeSpan authorizationValidationInterval;
+        private readonly TimeSpan heartbeatInterval;
         private IServerEventSubscription? subscription;
         private WelcomeEventData? welcome;
         private string? authorizationSubject;
         private string? bearerToken;
+        private PanelCredentialType credentialType;
+        private IReadOnlyCollection<string>? allowedRoles;
         private DateTimeOffset nextAuthorizationValidationUtc;
         private int authorizationAttempted;
         private int reservationAttempted;
@@ -44,14 +49,17 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             IServerEventStream serverEvents,
             IPanelRuntimeStatus runtimeStatus,
             IPanelCredentialStore credentialStore,
-            IPanelAccessTokenStore accessTokenStore)
+            IPanelAccessTokenStore accessTokenStore,
+            IPanelApiKeyStore apiKeyStore)
             : this(
                 serverEvents,
                 runtimeStatus,
                 credentialStore,
                 accessTokenStore,
+                apiKeyStore,
                 () => DateTimeOffset.UtcNow,
-                HeartbeatInterval)
+                DefaultHeartbeatInterval,
+                DefaultHeartbeatInterval)
         {
         }
 
@@ -60,13 +68,36 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             IPanelRuntimeStatus runtimeStatus,
             IPanelCredentialStore credentialStore,
             IPanelAccessTokenStore accessTokenStore,
+            IPanelApiKeyStore apiKeyStore,
             Func<DateTimeOffset> utcNow,
             TimeSpan authorizationValidationInterval)
+            : this(
+                serverEvents,
+                runtimeStatus,
+                credentialStore,
+                accessTokenStore,
+                apiKeyStore,
+                utcNow,
+                authorizationValidationInterval,
+                DefaultHeartbeatInterval)
+        {
+        }
+
+        internal ServerEventSseSession(
+            IServerEventStream serverEvents,
+            IPanelRuntimeStatus runtimeStatus,
+            IPanelCredentialStore credentialStore,
+            IPanelAccessTokenStore accessTokenStore,
+            IPanelApiKeyStore apiKeyStore,
+            Func<DateTimeOffset> utcNow,
+            TimeSpan authorizationValidationInterval,
+            TimeSpan heartbeatInterval)
         {
             this.serverEvents = serverEvents ?? throw new ArgumentNullException(nameof(serverEvents));
             this.runtimeStatus = runtimeStatus ?? throw new ArgumentNullException(nameof(runtimeStatus));
             this.credentialStore = credentialStore ?? throw new ArgumentNullException(nameof(credentialStore));
             this.accessTokenStore = accessTokenStore ?? throw new ArgumentNullException(nameof(accessTokenStore));
+            this.apiKeyStore = apiKeyStore ?? throw new ArgumentNullException(nameof(apiKeyStore));
             this.utcNow = utcNow ?? throw new ArgumentNullException(nameof(utcNow));
             if (authorizationValidationInterval <= TimeSpan.Zero)
             {
@@ -76,22 +107,43 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             }
 
             this.authorizationValidationInterval = authorizationValidationInterval;
+            if (heartbeatInterval <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(heartbeatInterval),
+                    "The heartbeat interval must be positive.");
+            }
+
+            this.heartbeatInterval = heartbeatInterval;
         }
 
-        public bool TryAuthorize(string subject, string? token)
+        public bool TryAuthorize(
+            string subject,
+            string? token,
+            PanelCredentialType suppliedCredentialType,
+            IReadOnlyCollection<string> suppliedAllowedRoles)
         {
             if (Volatile.Read(ref disposed) != 0)
                 throw new ObjectDisposedException(nameof(ServerEventSseSession));
             if (Interlocked.Exchange(ref authorizationAttempted, 1) != 0)
                 throw new InvalidOperationException("SSE authorization can only be attempted once.");
-            if (string.IsNullOrWhiteSpace(subject)) return false;
+            if (string.IsNullOrWhiteSpace(subject) ||
+                string.IsNullOrWhiteSpace(token) ||
+                suppliedAllowedRoles == null ||
+                suppliedAllowedRoles.Count == 0)
+            {
+                return false;
+            }
 
             authorizationSubject = subject;
-            bearerToken = string.IsNullOrWhiteSpace(token) ? null : token;
+            bearerToken = token;
+            credentialType = suppliedCredentialType;
+            allowedRoles = suppliedAllowedRoles;
             if (RefreshAuthorization()) return true;
 
             authorizationSubject = null;
             bearerToken = null;
+            allowedRoles = null;
             return false;
         }
 
@@ -171,6 +223,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     lastSentSequence = serverEvent.Sequence;
                 }
 
+                var heartbeatDeadlineUtc = utcNow().Add(heartbeatInterval);
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     if (AuthorizationValidationIsDue() && !RefreshAuthorization()) return;
@@ -178,7 +231,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     using (var heartbeat = CancellationTokenSource.CreateLinkedTokenSource(
                         cancellationToken))
                     {
-                        heartbeat.CancelAfter(HeartbeatInterval);
+                        heartbeat.CancelAfter(GetSubscriptionReadTimeout(heartbeatDeadlineUtc));
                         try
                         {
                             serverEvent = await activeSubscription
@@ -188,11 +241,16 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                         catch (OperationCanceledException)
                             when (!cancellationToken.IsCancellationRequested)
                         {
-                            if (!RefreshAuthorization()) return;
-                            await WriteTextAsync(
-                                output,
-                                ": keep-alive\n\n",
-                                cancellationToken).ConfigureAwait(false);
+                            var now = utcNow();
+                            if (now >= nextAuthorizationValidationUtc && !RefreshAuthorization()) return;
+                            if (now >= heartbeatDeadlineUtc)
+                            {
+                                await WriteTextAsync(
+                                    output,
+                                    ": keep-alive\n\n",
+                                    cancellationToken).ConfigureAwait(false);
+                                heartbeatDeadlineUtc = utcNow().Add(heartbeatInterval);
+                            }
                             continue;
                         }
                     }
@@ -216,6 +274,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                         serverEvent,
                         cancellationToken).ConfigureAwait(false);
                     lastSentSequence = serverEvent.Sequence;
+                    heartbeatDeadlineUtc = utcNow().Add(heartbeatInterval);
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -242,31 +301,68 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             if (Interlocked.Exchange(ref disposed, 1) != 0) return;
             bearerToken = null;
             authorizationSubject = null;
+            allowedRoles = null;
             Interlocked.Exchange(ref subscription, null)?.Dispose();
         }
 
         private bool AuthorizationValidationIsDue() =>
             utcNow() >= nextAuthorizationValidationUtc;
 
+        private TimeSpan GetSubscriptionReadTimeout(DateTimeOffset heartbeatDeadlineUtc)
+        {
+            var now = utcNow();
+            var deadlineUtc = heartbeatDeadlineUtc < nextAuthorizationValidationUtc
+                ? heartbeatDeadlineUtc
+                : nextAuthorizationValidationUtc;
+            var timeout = deadlineUtc - now;
+            if (timeout <= TimeSpan.Zero)
+            {
+                return TimeSpan.Zero;
+            }
+
+            return timeout;
+        }
+
         private bool RefreshAuthorization()
         {
             var subject = authorizationSubject;
-            if (string.IsNullOrEmpty(subject)) return false;
+            var roles = allowedRoles;
+            if (string.IsNullOrEmpty(subject) || roles == null) return false;
 
             var now = utcNow();
             DateTimeOffset? expiresUtc = null;
             if (bearerToken != null)
             {
-                if (!accessTokenStore.TryValidate(bearerToken, now, out var storedToken) ||
-                    !string.Equals(
-                        storedToken.Identity.Subject,
-                        subject,
-                        StringComparison.Ordinal))
+                if (credentialType == PanelCredentialType.AccessToken)
+                {
+                    if (!accessTokenStore.TryValidate(bearerToken, now, out var storedToken) ||
+                        !string.Equals(
+                            storedToken.Identity.Subject,
+                            subject,
+                            StringComparison.Ordinal))
+                    {
+                        return false;
+                    }
+
+                    expiresUtc = storedToken.ExpiresUtc;
+                }
+                else if (credentialType == PanelCredentialType.ApiKey)
+                {
+                    if (!apiKeyStore.TryValidate(bearerToken, now, out var storedApiKey) ||
+                        !string.Equals(
+                            storedApiKey.Identity.Subject,
+                            subject,
+                            StringComparison.Ordinal))
+                    {
+                        return false;
+                    }
+
+                    expiresUtc = storedApiKey.ExpiresUtc;
+                }
+                else
                 {
                     return false;
                 }
-
-                expiresUtc = storedToken.ExpiresUtc;
             }
 
             if (!credentialStore.TryGetActive(subject!, out var currentIdentity) ||
@@ -274,12 +370,23 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             {
                 return false;
             }
+            if (!ContainsRole(roles, currentIdentity.Role)) return false;
 
             var scheduled = now.Add(authorizationValidationInterval);
             nextAuthorizationValidationUtc = expiresUtc.HasValue && expiresUtc.Value < scheduled
                 ? expiresUtc.Value
                 : scheduled;
             return true;
+        }
+
+        private static bool ContainsRole(IReadOnlyCollection<string> roles, string role)
+        {
+            foreach (var candidate in roles)
+            {
+                if (string.Equals(candidate, role, StringComparison.Ordinal)) return true;
+            }
+
+            return false;
         }
 
         private static Task WriteServerEventAsync(

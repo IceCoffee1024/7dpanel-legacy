@@ -14,8 +14,8 @@ and prevents game-provided assemblies from being copied to build output. The
 current validation slice implements `ModMain`, `ModHost`, the 7DTD lifecycle,
 a consolidated bounded in-process server-event stream, Katana self-hosting,
 `/health` plus `/api/v1/health`, unified API Problem Details, a
-configuration-seeded SQLite `Owner`, SQLite-backed Basic authentication,
-persistent opaque Bearer tokens, and the authenticated
+configuration-seeded SQLite `Owner`, OAuth password grant, persistent opaque
+Header Bearer Access Tokens and API Keys, and the authenticated
 `/api/v1/events/stream`. Authenticated `Owner` and `Admin` requests can submit
 any non-empty command registered with 7DTD through a bounded capacity-32 FIFO;
 each request keeps its own raw command and output while execution remains
@@ -34,7 +34,7 @@ The embedded host also exposes public runtime API documentation at `/swagger`
 and `/swagger/v1/swagger.json`. NSwag reflects the Web API controllers at
 runtime; a centralized Web Adapter document processor adds the OWIN-owned
 password-grant token operation, and an operation processor describes the
-existing Basic/Bearer alternatives, SSE response, and Problem Details errors.
+single Bearer scheme, API Key operations, SSE response, and Problem Details errors.
 The documentation endpoints intentionally have no access control and do not
 invoke the console, player-query, player-action, or audit ports. The Web
 Adapter owns `NSwag.AspNet.Owin`; no controller uses `NSwag.Annotations`.
@@ -72,23 +72,32 @@ test compares those values with `config.example.json` so the operator template
 cannot silently drift from fallback behavior.
 
 During the current framework-building phase, the `authentication` object is
-enabled by default with the known credentials `admin` / `password`, a
-30-minute access-token lifetime, and `allowInsecureHttp: true`. These values are
+enabled by default with the known credentials `admin` / `password`, an
+8-hour access-token lifetime, and `allowInsecureHttp: true`. These values are
 present in both the versioned template and a newly generated `config.json`, so
 they are not secrets. On each start they seed the single SQLite user with
-`Subject=owner`; Basic and password-grant verification then read that persistent
-record. Changing either credential updates the same owner and revokes its prior
-tokens. Other credentials and access tokens must not enter command history,
+`Subject=owner`; password-grant verification then reads that persistent record
+with PBKDF2-HMAC-SHA256 at 1,000 iterations. Changing either credential updates
+the same owner and revokes its prior Access Tokens. Other credentials and access tokens must not enter command history,
 URLs, logs, frontend assets, or version control. Cookie, CSRF-token, and refresh
 token authentication are not planned.
 
-`POST /api/v1/auth/token` accepts only the OAuth password grant and issues a
-short-lived opaque Bearer token whose secret is stored only as a SQLite hash.
-Tokens survive a server restart until expiration or revocation.
-`GET /api/v1/events/stream` requires either Basic or Bearer authentication,
-rejects tokens in the query string, and emits `welcome`, `console-log`,
-`game-ready`, and `server-stopping` events. The stream revalidates the current
-user and Bearer token at most every 15 seconds and closes after invalidation.
+`POST /api/v1/auth/token` accepts only the OAuth password grant and issues an
+opaque Access Token whose secret is stored only as a SQLite hash. The default
+lifetime is 8 hours (`expires_in=28800`); Tokens survive a server restart until
+expiration or revocation. `GET /api/v1/events/stream` accepts only
+`Authorization: Bearer` Access Tokens or API Keys, rejects Basic, Cookie, and
+query-string credentials, and emits `welcome`, `console-log`, `game-ready`, and
+`server-stopping` events. The stream revalidates the current user, credential,
+and allowed role at most every 15 seconds and closes after invalidation.
+
+`GET /api/v1/api-keys` returns metadata for the authenticated subject's API
+Keys. `POST /api/v1/api-keys` and `DELETE /api/v1/api-keys/{keyId}` require a
+website Access Token; a Key cannot create or revoke Keys. A created Key is
+returned once with `Cache-Control: no-store`; subsequent list results expose
+only the safe id prefix, name, timestamps, and status. API Key secrets use a
+distinct `7dp_k_` format and SQLite stores only their SHA-256 hash. API Key
+authorization rebuilds the creator's current enabled state and role.
 Example local checks using environment-held test credentials are:
 
 ```powershell
@@ -98,10 +107,6 @@ $body = @{
   password = $env:PANEL_PASSWORD
 }
 $token = (Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:18080/api/v1/auth/token' -Body $body).access_token
-$basic = [Convert]::ToBase64String(
-  [Text.Encoding]::UTF8.GetBytes("$($env:PANEL_USERNAME):$($env:PANEL_PASSWORD)"))
-@('no-buffer', 'url = "http://127.0.0.1:18080/api/v1/events/stream"', "header = `"Authorization: Basic $basic`"") |
-  curl.exe --config -
 @('no-buffer', 'url = "http://127.0.0.1:18080/api/v1/events/stream"', "header = `"Authorization: Bearer $token`"") |
   curl.exe --config -
 ```

@@ -37,10 +37,15 @@ namespace LSTY.SevenDPanel.Tests
                 stream,
                 new FakeRuntimeStatus(),
                 authentication,
+                authentication,
                 authentication);
             using var output = new MemoryStream();
 
-            Assert.True(session.TryAuthorize(FakeAuthenticationStore.Subject, null));
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
             Assert.True(session.TryReserve());
             await session.WriteAsync(output, null, CancellationToken.None);
 
@@ -75,17 +80,337 @@ namespace LSTY.SevenDPanel.Tests
                 new FakeRuntimeStatus(),
                 authentication,
                 authentication,
+                authentication,
                 () => now,
                 TimeSpan.FromSeconds(1));
             using var output = new MemoryStream();
 
-            Assert.True(session.TryAuthorize(FakeAuthenticationStore.Subject, "bearer-token"));
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
             Assert.True(session.TryReserve());
             await session.WriteAsync(output, null, CancellationToken.None);
 
             var text = Encoding.UTF8.GetString(output.ToArray());
             Assert.StartsWith("event: welcome\n", text);
             Assert.DoesNotContain("event: game-ready\n", text);
+        }
+
+        [Fact]
+        public async Task Revoked_api_key_authorization_closes_before_the_next_event()
+        {
+            var now = new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero);
+            var live = ServerEvent.CreateGameReady(
+                1,
+                new DateTime(2026, 7, 23, 0, 1, 0, DateTimeKind.Utc));
+            var authentication = new FakeAuthenticationStore();
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                new ServerEvent?[] { live },
+                () =>
+                {
+                    authentication.ApiKeyActive = false;
+                    now = now.AddSeconds(2);
+                });
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => now,
+                TimeSpan.FromSeconds(1));
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "api-key",
+                PanelCredentialType.ApiKey,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, null, CancellationToken.None);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.DoesNotContain("event: game-ready\n", text);
+            Assert.Equal(0, authentication.AccessTokenValidationCount);
+            Assert.True(authentication.ApiKeyValidationCount >= 2);
+        }
+
+        [Fact]
+        public async Task Disabled_api_key_owner_closes_before_the_next_event()
+        {
+            var now = new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero);
+            var live = ServerEvent.CreateGameReady(
+                1,
+                new DateTime(2026, 7, 23, 0, 1, 0, DateTimeKind.Utc));
+            var authentication = new FakeAuthenticationStore();
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                new ServerEvent?[] { live },
+                () =>
+                {
+                    authentication.Active = false;
+                    now = now.AddSeconds(2);
+                });
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => now,
+                TimeSpan.FromSeconds(1));
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "api-key",
+                PanelCredentialType.ApiKey,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, null, CancellationToken.None);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.DoesNotContain("event: game-ready\n", text);
+            Assert.Equal(0, authentication.AccessTokenValidationCount);
+            Assert.True(authentication.ApiKeyValidationCount >= 2);
+        }
+
+        [Fact]
+        public async Task Role_outside_the_allowed_set_closes_before_the_next_event()
+        {
+            var now = new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero);
+            var live = ServerEvent.CreateGameReady(
+                1,
+                new DateTime(2026, 7, 23, 0, 1, 0, DateTimeKind.Utc));
+            var authentication = new FakeAuthenticationStore();
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                new ServerEvent?[] { live },
+                () =>
+                {
+                    authentication.Role = PanelUserIdentity.ViewerRole;
+                    now = now.AddSeconds(2);
+                });
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => now,
+                TimeSpan.FromSeconds(1));
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, null, CancellationToken.None);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.DoesNotContain("event: game-ready\n", text);
+        }
+
+        [Fact]
+        public void Missing_bearer_credential_is_rejected()
+        {
+            var authentication = new FakeAuthenticationStore();
+            using var session = new ServerEventSseSession(
+                new FakeServerEventStream(Array.Empty<ServerEvent>(), Array.Empty<ServerEvent?>()),
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication);
+
+            Assert.False(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                null,
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
+        }
+
+        [Fact]
+        public async Task Expired_api_key_closes_at_its_expiration_boundary()
+        {
+            var now = new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero);
+            var live = ServerEvent.CreateGameReady(
+                1,
+                new DateTime(2026, 7, 23, 0, 1, 0, DateTimeKind.Utc));
+            var authentication = new FakeAuthenticationStore
+            {
+                ApiKeyExpiresUtc = now.AddSeconds(1)
+            };
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                new ServerEvent?[] { live },
+                () => now = now.AddSeconds(2));
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => now,
+                TimeSpan.FromSeconds(15));
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "api-key",
+                PanelCredentialType.ApiKey,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, null, CancellationToken.None);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.DoesNotContain("event: game-ready\n", text);
+            Assert.True(authentication.ApiKeyValidationCount >= 2);
+        }
+
+        [Fact]
+        public async Task Idle_api_key_stream_closes_at_its_expiration_boundary()
+        {
+            var now = DateTimeOffset.UtcNow;
+            var authentication = new FakeAuthenticationStore
+            {
+                ApiKeyExpiresUtc = now.AddMilliseconds(100)
+            };
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                Array.Empty<ServerEvent?>());
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => DateTimeOffset.UtcNow,
+                TimeSpan.FromSeconds(15));
+            using var output = new MemoryStream();
+            using var cancellation = new CancellationTokenSource();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "api-key",
+                PanelCredentialType.ApiKey,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+
+            var writeTask = session.WriteAsync(output, null, cancellation.Token);
+            var completed = await Task.WhenAny(
+                writeTask,
+                Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+            if (completed != writeTask)
+            {
+                cancellation.Cancel();
+                await writeTask;
+            }
+
+            Assert.Same(writeTask, completed);
+            Assert.True(authentication.ApiKeyValidationCount >= 2);
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.DoesNotContain(": keep-alive\n\n", text);
+        }
+
+        [Fact]
+        public async Task Idle_stream_writes_heartbeats_while_authorization_remains_valid()
+        {
+            var authentication = new FakeAuthenticationStore();
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                Array.Empty<ServerEvent?>());
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => DateTimeOffset.UtcNow,
+                TimeSpan.FromSeconds(15),
+                TimeSpan.FromMilliseconds(25));
+            using var output = new MemoryStream();
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+
+            var writeTask = session.WriteAsync(output, null, cancellation.Token);
+            await Task.Delay(TimeSpan.FromMilliseconds(125), TestContext.Current.CancellationToken);
+            cancellation.Cancel();
+            await writeTask;
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.Contains(": keep-alive\n\n", text);
+        }
+
+        [Fact]
+        public async Task Idle_stream_writes_a_heartbeat_when_authorization_and_heartbeat_are_due_together()
+        {
+            var start = new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero);
+            var now = start;
+            var canceledReadCount = 0;
+            var authentication = new FakeAuthenticationStore();
+            authentication.AfterAccessTokenValidation = () =>
+            {
+                if (authentication.AccessTokenValidationCount > 1)
+                    now = now.AddMilliseconds(1);
+            };
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                Array.Empty<ServerEvent?>(),
+                null,
+                () =>
+                {
+                    canceledReadCount++;
+                    now = start.AddMilliseconds(canceledReadCount * 20);
+                });
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication,
+                () => now,
+                TimeSpan.FromMilliseconds(20),
+                TimeSpan.FromMilliseconds(20));
+            using var output = new MemoryStream();
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+            now = now.AddMilliseconds(1);
+
+            var writeTask = session.WriteAsync(output, null, cancellation.Token);
+            Assert.True(SpinWait.SpinUntil(
+                () => authentication.AccessTokenValidationCount >= 3,
+                TimeSpan.FromSeconds(1)));
+            cancellation.Cancel();
+            await writeTask;
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.StartsWith("event: welcome\n", text);
+            Assert.Contains(": keep-alive\n\n", text);
         }
 
         private static int Count(string value, string fragment)
@@ -115,15 +440,18 @@ namespace LSTY.SevenDPanel.Tests
             private readonly IReadOnlyList<ServerEvent> replay;
             private readonly IReadOnlyList<ServerEvent?> live;
             private readonly Action? onRead;
+            private readonly Action? onCanceledRead;
 
             public FakeServerEventStream(
                 IReadOnlyList<ServerEvent> replay,
                 IReadOnlyList<ServerEvent?> live,
-                Action? onRead = null)
+                Action? onRead = null,
+                Action? onCanceledRead = null)
             {
                 this.replay = replay;
                 this.live = live;
                 this.onRead = onRead;
+                this.onCanceledRead = onCanceledRead;
             }
 
             public IReadOnlyList<ServerEvent> ReadAfter(
@@ -139,7 +467,7 @@ namespace LSTY.SevenDPanel.Tests
                 int capacity,
                 out IServerEventSubscription? subscription)
             {
-                subscription = new FakeSubscription(live, onRead);
+                subscription = new FakeSubscription(live, onRead, onCanceledRead);
                 return true;
             }
         }
@@ -148,19 +476,38 @@ namespace LSTY.SevenDPanel.Tests
         {
             private readonly Queue<ServerEvent?> events;
             private readonly Action? onRead;
+            private readonly Action? onCanceledRead;
 
-            public FakeSubscription(IEnumerable<ServerEvent?> events, Action? onRead)
+            public FakeSubscription(
+                IEnumerable<ServerEvent?> events,
+                Action? onRead,
+                Action? onCanceledRead)
             {
                 this.events = new Queue<ServerEvent?>(events);
                 this.onRead = onRead;
+                this.onCanceledRead = onCanceledRead;
             }
 
             public bool IsOverflowed => false;
 
-            public Task<ServerEvent?> ReadAsync(CancellationToken cancellationToken)
+            public async Task<ServerEvent?> ReadAsync(CancellationToken cancellationToken)
             {
                 onRead?.Invoke();
-                return Task.FromResult(events.Dequeue());
+                if (events.Count == 0)
+                {
+                    try
+                    {
+                        await Task.Delay(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        onCanceledRead?.Invoke();
+                        throw;
+                    }
+                    return null;
+                }
+
+                return events.Dequeue();
             }
 
             public void Dispose()
@@ -170,14 +517,21 @@ namespace LSTY.SevenDPanel.Tests
 
         private sealed class FakeAuthenticationStore :
             IPanelCredentialStore,
-            IPanelAccessTokenStore
+            IPanelAccessTokenStore,
+            IPanelApiKeyStore
         {
             public const string Subject = "owner";
 
-            private readonly PanelUserIdentity identity =
-                new PanelUserIdentity(Subject, "Owner");
-
             public bool Active { get; set; } = true;
+            public bool ApiKeyActive { get; set; } = true;
+            public DateTimeOffset? ApiKeyExpiresUtc { get; set; }
+            public string Role { get; set; } = PanelUserIdentity.OwnerRole;
+            public Action? AfterAccessTokenValidation { get; set; }
+            public int AccessTokenValidationCount { get; private set; }
+            public int ApiKeyValidationCount { get; private set; }
+
+            private PanelUserIdentity Identity =>
+                new PanelUserIdentity(Subject, "Owner", Role);
 
             public bool TryVerify(
                 string username,
@@ -185,9 +539,9 @@ namespace LSTY.SevenDPanel.Tests
                 out PanelUserIdentity panelIdentity)
             {
                 panelIdentity = null!;
-                if (!Active || !string.Equals(username, identity.Username, StringComparison.Ordinal))
+                if (!Active || !string.Equals(username, Identity.Username, StringComparison.Ordinal))
                     return false;
-                panelIdentity = identity;
+                panelIdentity = Identity;
                 return true;
             }
 
@@ -196,7 +550,7 @@ namespace LSTY.SevenDPanel.Tests
                 panelIdentity = null!;
                 if (!Active || !string.Equals(subject, Subject, StringComparison.Ordinal))
                     return false;
-                panelIdentity = identity;
+                panelIdentity = Identity;
                 return true;
             }
 
@@ -210,10 +564,49 @@ namespace LSTY.SevenDPanel.Tests
                 DateTimeOffset utcNow,
                 out StoredAccessToken storedToken)
             {
+                AccessTokenValidationCount++;
+                AfterAccessTokenValidation?.Invoke();
                 storedToken = null!;
                 if (!Active || !string.Equals(token, "bearer-token", StringComparison.Ordinal))
                     return false;
-                storedToken = new StoredAccessToken(identity, utcNow, utcNow.AddMinutes(1));
+                storedToken = new StoredAccessToken(Identity, utcNow, utcNow.AddMinutes(1));
+                return true;
+            }
+
+            public ApiKeyCreateResult Create(
+                string subject,
+                string name,
+                DateTimeOffset createdUtc,
+                DateTimeOffset? expiresUtc) =>
+                throw new NotSupportedException();
+
+            public IReadOnlyList<StoredApiKey> List(string subject, DateTimeOffset utcNow) =>
+                Array.Empty<StoredApiKey>();
+
+            public bool Revoke(string subject, string keyId, DateTimeOffset revokedUtc) => false;
+
+            public bool TryValidate(
+                string apiKey,
+                DateTimeOffset utcNow,
+                out StoredApiKey storedApiKey)
+            {
+                ApiKeyValidationCount++;
+                storedApiKey = null!;
+                if (!Active ||
+                    !ApiKeyActive ||
+                    ApiKeyExpiresUtc.HasValue && ApiKeyExpiresUtc.Value <= utcNow ||
+                    !string.Equals(apiKey, "api-key", StringComparison.Ordinal))
+                    return false;
+
+                storedApiKey = new StoredApiKey(
+                    "api-key-id",
+                    Identity,
+                    "test",
+                    utcNow,
+                    null,
+                    ApiKeyExpiresUtc,
+                    null,
+                    utcNow);
                 return true;
             }
         }

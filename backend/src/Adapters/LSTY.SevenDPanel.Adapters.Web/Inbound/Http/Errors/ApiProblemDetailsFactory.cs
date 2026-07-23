@@ -23,7 +23,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
                 Title = GetTitle(statusCode),
                 Status = (int)statusCode,
                 Detail = detail,
-                Instance = instance,
+                Instance = GetSafeInstance(instance),
                 Code = code,
                 TraceId = traceId
             };
@@ -35,13 +35,28 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
             string code,
             string detail)
         {
+            return CreateContent(
+                request,
+                statusCode,
+                code,
+                detail,
+                GetSafeInstance(request));
+        }
+
+        public static ObjectContent<ApiProblemDetails> CreateContent(
+            HttpRequestMessage request,
+            HttpStatusCode statusCode,
+            string code,
+            string detail,
+            string instance)
+        {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("A problem code is required.", nameof(code));
             if (string.IsNullOrWhiteSpace(detail)) throw new ArgumentException("Problem detail is required.", nameof(detail));
 
             var traceId = GetTraceId(request);
             var problem = Create(
-                request.RequestUri?.AbsolutePath ?? string.Empty,
+                instance ?? string.Empty,
                 traceId,
                 statusCode,
                 code,
@@ -60,10 +75,25 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
             string code,
             string detail)
         {
+            return CreateResponse(
+                request,
+                statusCode,
+                code,
+                detail,
+                GetSafeInstance(request));
+        }
+
+        public static HttpResponseMessage CreateResponse(
+            HttpRequestMessage request,
+            HttpStatusCode statusCode,
+            string code,
+            string detail,
+            string instance)
+        {
             var response = new HttpResponseMessage(statusCode)
             {
                 RequestMessage = request,
-                Content = CreateContent(request, statusCode, code, detail)
+                Content = CreateContent(request, statusCode, code, detail, instance)
             };
             response.Headers.TryAddWithoutValidation(
                 RequestCorrelationMiddleware.HeaderName,
@@ -100,6 +130,21 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
             }
 
             return Guid.NewGuid().ToString("N");
+        }
+
+        private static string GetSafeInstance(HttpRequestMessage? request)
+        {
+            return GetSafeInstance(request?.RequestUri?.AbsolutePath);
+        }
+
+        private static string GetSafeInstance(string? path)
+        {
+            path ??= string.Empty;
+            const string apiKeysPath = "/api/v1/api-keys";
+            if (path.StartsWith(apiKeysPath + "/", StringComparison.OrdinalIgnoreCase))
+                return apiKeysPath;
+
+            return path;
         }
 
         private static string GetTitle(HttpStatusCode statusCode)

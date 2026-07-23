@@ -8,7 +8,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
     {
         public static ClaimsIdentity Create(
             PanelUserIdentity panelIdentity,
-            string authenticationType)
+            string authenticationType,
+            PanelCredentialType credentialType = PanelCredentialType.AccessToken)
         {
             if (panelIdentity == null) throw new ArgumentNullException(nameof(panelIdentity));
             if (string.IsNullOrEmpty(authenticationType))
@@ -17,7 +18,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
             var identity = new ClaimsIdentity(authenticationType);
             identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, panelIdentity.Subject));
             identity.AddClaim(new Claim(ClaimTypes.Name, panelIdentity.Username));
-            identity.AddClaim(new Claim(ClaimTypes.Role, "Owner"));
+            identity.AddClaim(new Claim(ClaimTypes.Role, panelIdentity.Role));
+            identity.AddClaim(new Claim(
+                PanelClaimTypes.CredentialType,
+                credentialType == PanelCredentialType.ApiKey ? "api_key" : "access_token"));
             identity.AddClaim(new Claim("identity_source", "sqlite"));
             return identity;
         }

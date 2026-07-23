@@ -191,7 +191,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Openapi_document_describes_basic_and_bearer_security()
+        public async Task Openapi_document_describes_bearer_security_without_basic()
         {
             var port = GetAvailablePort();
             var url = "http://127.0.0.1:" + port + "/";
@@ -206,18 +206,17 @@ namespace LSTY.SevenDPanel.Tests
                 host.Start();
                 var document = await GetOpenApiDocumentAsync(client, url);
 
-                Assert.Equal("http", (string?)document["components"]?["securitySchemes"]?["Basic"]?["type"]);
-                Assert.Equal("basic", (string?)document["components"]?["securitySchemes"]?["Basic"]?["scheme"]);
+                Assert.Null(document["components"]?["securitySchemes"]?["Basic"]);
                 Assert.Equal("http", (string?)document["components"]?["securitySchemes"]?["Bearer"]?["type"]);
                 Assert.Equal("bearer", (string?)document["components"]?["securitySchemes"]?["Bearer"]?["scheme"]);
 
                 Assert.Null(document["paths"]?["/health"]?["get"]?["security"]);
                 Assert.Null(document["paths"]?["/api/v1/health"]?["get"]?["security"]);
                 Assert.Null(document["paths"]?["/api/v1/auth/token"]?["post"]?["security"]);
-                AssertAlternativeSecurity(document, "/api/v1/events/stream", "get");
-                AssertAlternativeSecurity(document, "/api/v1/console/commands", "post");
-                AssertAlternativeSecurity(document, "/api/v1/players/online", "get");
-                AssertAlternativeSecurity(document, "/api/v1/players/{entityId}/kick", "post");
+                AssertBearerSecurity(document, "/api/v1/events/stream", "get");
+                AssertBearerSecurity(document, "/api/v1/console/commands", "post");
+                AssertBearerSecurity(document, "/api/v1/players/online", "get");
+                AssertBearerSecurity(document, "/api/v1/players/{entityId}/kick", "post");
             }
         }
 
@@ -246,6 +245,104 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.NotNull(operation["responses"]?["200"]?["content"]?["text/event-stream"]);
                 Assert.Contains("long-lived named event stream", (string?)operation["description"]);
                 Assert.Contains("cannot be rewritten as JSON", (string?)operation["description"]);
+            }
+        }
+
+        [Fact]
+        public async Task Openapi_document_describes_api_key_management_contract()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var document = await GetOpenApiDocumentAsync(client, url);
+                var post = document["paths"]?["/api/v1/api-keys"]?["post"];
+                var delete = document["paths"]?["/api/v1/api-keys/{keyId}"]?["delete"];
+
+                Assert.NotNull(document["paths"]?["/api/v1/api-keys"]?["get"]);
+                Assert.NotNull(post);
+                Assert.NotNull(delete);
+                AssertBearerSecurity(document, "/api/v1/api-keys", "get");
+                AssertBearerSecurity(document, "/api/v1/api-keys", "post");
+                AssertBearerSecurity(document, "/api/v1/api-keys/{keyId}", "delete");
+                Assert.Contains("Access Token", Assert.IsType<string>((string?)post!["description"]));
+                Assert.Contains("Access Token", Assert.IsType<string>((string?)delete!["description"]));
+                Assert.Equal(
+                    new[] { "apiKey", "createdAtUtc", "expiresAtUtc", "id", "name" },
+                    post["responses"]?["201"]?["content"]?["application/json"]?["schema"]?
+                        ["properties"]?
+                        .Children<JProperty>()
+                        .Select(property => property.Name)
+                        .OrderBy(name => name)
+                        .ToArray());
+                Assert.Equal(
+                    new[] { "apiKey", "createdAtUtc", "expiresAtUtc", "id", "name" },
+                    post["responses"]?["201"]?["content"]?["application/json"]?["schema"]?
+                        ["required"]?
+                        .Values<string>()
+                        .OrderBy(name => name)
+                        .ToArray());
+                Assert.Equal(
+                    "no-store",
+                    (string?)post["responses"]?["201"]?["headers"]?["Cache-Control"]?["example"]);
+                Assert.True((bool?)post["responses"]?["201"]?["headers"]?["Cache-Control"]?["required"]);
+                Assert.True((bool?)post["responses"]?["201"]?["content"]?["application/json"]?
+                    ["schema"]?["properties"]?["expiresAtUtc"]?["nullable"]);
+                var metadataSchema = Assert.IsType<JObject>(
+                    document["paths"]?["/api/v1/api-keys"]?["get"]?
+                        ["responses"]?["200"]?["content"]?["application/json"]?["schema"]?["items"]);
+                Assert.Equal(
+                    new[]
+                    {
+                        "createdAtUtc",
+                        "displayPrefix",
+                        "expiresAtUtc",
+                        "id",
+                        "lastUsedAtUtc",
+                        "name",
+                        "status"
+                    },
+                    metadataSchema?["properties"]?
+                        .Children<JProperty>()
+                        .Select(property => property.Name)
+                        .OrderBy(name => name)
+                        .ToArray());
+                Assert.Equal(
+                    new[]
+                    {
+                        "createdAtUtc",
+                        "displayPrefix",
+                        "expiresAtUtc",
+                        "id",
+                        "lastUsedAtUtc",
+                        "name",
+                        "status"
+                    },
+                    metadataSchema?["required"]?
+                        .Values<string>()
+                        .OrderBy(name => name)
+                        .ToArray());
+                Assert.True((bool?)metadataSchema?["properties"]?["lastUsedAtUtc"]?["nullable"]);
+                Assert.True((bool?)metadataSchema?["properties"]?["expiresAtUtc"]?["nullable"]);
+                Assert.Equal(
+                    new[] { "active", "expired", "revoked" },
+                    metadataSchema?["properties"]?["status"]?["enum"]?
+                        .Values<string>()
+                        .OrderBy(status => status)
+                        .ToArray());
+                AssertProblemResponses(document, "/api/v1/api-keys", "get", "401", "403", "500");
+                AssertProblemResponses(document, "/api/v1/api-keys", "post", "400", "401", "403", "409", "415", "500");
+                AssertProblemResponses(document, "/api/v1/api-keys/{keyId}", "delete", "401", "403", "404", "500");
+                AssertResponseCodes(document, "/api/v1/api-keys", "get", "200", "401", "403", "500");
+                AssertResponseCodes(document, "/api/v1/api-keys", "post", "201", "400", "401", "403", "409", "415", "500");
+                AssertResponseCodes(document, "/api/v1/api-keys/{keyId}", "delete", "204", "401", "403", "404", "500");
             }
         }
 
@@ -401,7 +498,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Authenticated_owner_executes_arbitrary_command_without_normalization()
+        public async Task Basic_credentials_cannot_execute_protected_rest_operations()
         {
             const string rawCommand = "  thirdparty.sample  alpha  ";
             var gateway = new TestConsoleCommandGateway();
@@ -426,13 +523,12 @@ namespace LSTY.SevenDPanel.Tests
                 using var response = await client.SendAsync(
                     request,
                     TestContext.Current.CancellationToken);
-                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
-
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.Equal(rawCommand, (string?)payload["command"]);
-                Assert.Equal("command output", (string?)payload["output"]?[0]);
-                Assert.Equal("test-owner-subject", gateway.Request?.ActorSubject);
-                Assert.Equal(rawCommand, gateway.Request?.Command);
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "authentication_required",
+                    "/api/v1/console/commands");
+                Assert.Null(gateway.Request);
             }
         }
 
@@ -457,9 +553,10 @@ namespace LSTY.SevenDPanel.Tests
             using (var firstRequest = CreateConsoleCommandRequest(url, "version"))
             using (var secondRequest = CreateConsoleCommandRequest(url, "thirdparty.sample alpha"))
             {
-                firstRequest.Headers.Authorization = CreateBasicAuthorization();
-                secondRequest.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                firstRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                secondRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
 
                 var firstResponseTask = client.SendAsync(
                     firstRequest,
@@ -510,8 +607,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreateConsoleCommandRequest(url, "kick player"))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -542,8 +639,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreateConsoleCommandRequest(url, "version"))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -578,8 +675,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreateConsoleCommandRequest(url, "version"))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -613,8 +710,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreateConsoleCommandRequest(url, "version"))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -677,8 +774,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreatePlayersRequest(url))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -730,8 +827,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreatePlayersRequest(url))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -786,8 +883,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreatePlayersRequest(url))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -823,8 +920,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreatePlayersRequest(url))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -905,8 +1002,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreateKickPlayerRequest(url, entityId, body))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -962,8 +1059,8 @@ namespace LSTY.SevenDPanel.Tests
                 7,
                 ValidKickBody.Replace("rule violation", "  rule violation  ")))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -1120,9 +1217,10 @@ namespace LSTY.SevenDPanel.Tests
             using (var firstRequest = CreateKickPlayerRequest(url, 7, ValidKickBody))
             using (var secondRequest = CreateKickPlayerRequest(url, 8, ValidKickBody))
             {
-                firstRequest.Headers.Authorization = CreateBasicAuthorization();
-                secondRequest.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                firstRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                secondRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
 
                 var firstResponseTask = client.SendAsync(
                     firstRequest,
@@ -1178,8 +1276,8 @@ namespace LSTY.SevenDPanel.Tests
             using (var client = new HttpClient(handler))
             using (var request = CreateKickPlayerRequest(url, 7, body))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -1370,8 +1468,7 @@ namespace LSTY.SevenDPanel.Tests
                 var challenges = response.Headers.WwwAuthenticate
                     .Select(value => value.Scheme)
                     .ToArray();
-                Assert.Contains("Basic", challenges);
-                Assert.Contains("Bearer", challenges);
+                Assert.Equal(new[] { "Bearer" }, challenges);
                 Assert.Equal(0, hub.SubscriberCount);
             }
         }
@@ -1449,7 +1546,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Basic_event_stream_replays_after_last_event_id_and_releases_subscription()
+        public async Task Bearer_event_stream_replays_after_last_event_id_and_releases_subscription()
         {
             var window = new ServerEventLiveWindow(4);
             var hub = new ServerEventHub(window);
@@ -1471,8 +1568,8 @@ namespace LSTY.SevenDPanel.Tests
                 url + "api/v1/events/stream"))
             {
                 request.Headers.TryAddWithoutValidation("Last-Event-ID", "1");
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using (var response = await client.SendAsync(
                     request,
@@ -1519,7 +1616,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Basic_event_stream_reports_replay_gap()
+        public async Task Bearer_event_stream_reports_replay_gap()
         {
             var window = new ServerEventLiveWindow(2);
             var hub = new ServerEventHub(window);
@@ -1540,8 +1637,8 @@ namespace LSTY.SevenDPanel.Tests
                 url + "api/v1/events/stream"))
             {
                 request.Headers.TryAddWithoutValidation("Last-Event-ID", "0");
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using (var response = await client.SendAsync(
                     request,
@@ -1562,7 +1659,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Basic_event_stream_rejects_invalid_last_event_id()
+        public async Task Bearer_event_stream_rejects_invalid_last_event_id()
         {
             var hub = new ServerEventHub(new ServerEventLiveWindow(2));
             var port = GetAvailablePort();
@@ -1579,8 +1676,8 @@ namespace LSTY.SevenDPanel.Tests
                 url + "api/v1/events/stream"))
             {
                 request.Headers.TryAddWithoutValidation("Last-Event-ID", "invalid");
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 var response = await client.SendAsync(
                     request,
@@ -1613,8 +1710,8 @@ namespace LSTY.SevenDPanel.Tests
                 HttpMethod.Get,
                 url + "api/v1/events/stream"))
             {
-                request.Headers.Authorization = CreateBasicAuthorization();
                 host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
 
                 using var response = await client.SendAsync(
                     request,
@@ -1679,6 +1776,802 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.True(SpinWait.SpinUntil(
                     () => hub.SubscriberCount == 0,
                     TimeSpan.FromSeconds(5)));
+            }
+        }
+
+        [Fact]
+        public async Task Api_key_authorizes_event_stream_only_from_the_authorization_header()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out var hub);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+
+                using (var authorizedRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/events/stream"))
+                {
+                    authorizedRequest.Headers.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", TestApiKey);
+                    using var authorizedResponse = await client.SendAsync(
+                        authorizedRequest,
+                        HttpCompletionOption.ResponseHeadersRead,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, authorizedResponse.StatusCode);
+                    Assert.Equal(
+                        "text/event-stream",
+                        authorizedResponse.Content.Headers.ContentType?.MediaType);
+
+                    using var stream = await authorizedResponse.Content.ReadAsStreamAsync();
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    Assert.Equal("event: welcome", await ReadLineWithTimeoutAsync(reader));
+                }
+
+                Assert.True(SpinWait.SpinUntil(
+                    () => hub.SubscriberCount == 0,
+                    TimeSpan.FromSeconds(5)));
+
+                using var queryResponse = await client.GetAsync(
+                    url + "api/v1/events/stream?access_token=" + Uri.EscapeDataString(TestApiKey),
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.Unauthorized, queryResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    queryResponse,
+                    "authentication_required",
+                    "/api/v1/events/stream");
+
+                using var cookieRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/events/stream");
+                cookieRequest.Headers.Add("Cookie", "access_token=" + TestApiKey);
+                using var cookieResponse = await client.SendAsync(
+                    cookieRequest,
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.Unauthorized, cookieResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    cookieResponse,
+                    "authentication_required",
+                    "/api/v1/events/stream");
+                Assert.Equal(0, hub.SubscriberCount);
+            }
+        }
+
+        [Fact]
+        public async Task Api_key_authorizes_protected_rest_only_from_the_authorization_header()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+
+                using (var authorizedRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/online"))
+                {
+                    authorizedRequest.Headers.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", TestApiKey);
+                    using var authorizedResponse = await client.SendAsync(
+                        authorizedRequest,
+                        TestContext.Current.CancellationToken);
+
+                    Assert.Equal(HttpStatusCode.OK, authorizedResponse.StatusCode);
+                }
+
+                using var queryResponse = await client.GetAsync(
+                    url + "api/v1/players/online?access_token=" + Uri.EscapeDataString(TestApiKey),
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.Unauthorized, queryResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    queryResponse,
+                    "authentication_required",
+                    "/api/v1/players/online");
+
+                using var cookieRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/online");
+                cookieRequest.Headers.Add("Cookie", "access_token=" + TestApiKey);
+                using var cookieResponse = await client.SendAsync(
+                    cookieRequest,
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.Unauthorized, cookieResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    cookieResponse,
+                    "authentication_required",
+                    "/api/v1/players/online");
+            }
+        }
+
+        [Fact]
+        public async Task Anonymous_request_to_api_keys_is_rejected()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+
+                using var response = await client.GetAsync(
+                    url + "api/v1/api-keys",
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "authentication_required",
+                    "/api/v1/api-keys");
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_creates_an_api_key_once_without_caching()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                url + "api/v1/api-keys"))
+            {
+                request.Content = new StringContent(
+                    "{\"name\":\" deployment \"}",
+                    Encoding.UTF8,
+                    "application/json");
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+                Assert.True(response.Headers.CacheControl?.NoStore);
+                Assert.Equal(
+                    new[] { "apiKey", "createdAtUtc", "expiresAtUtc", "id", "name" },
+                    payload.Properties()
+                        .Select(property => property.Name)
+                        .OrderBy(name => name)
+                        .ToArray());
+                Assert.Equal("deployment", (string?)payload["name"]);
+                Assert.False(string.IsNullOrWhiteSpace((string?)payload["id"]));
+                Assert.StartsWith("7dp_k_", Assert.IsType<string>((string?)payload["apiKey"]));
+                Assert.False(string.IsNullOrWhiteSpace((string?)payload["createdAtUtc"]));
+                Assert.Equal(JTokenType.Null, payload["expiresAtUtc"]?.Type);
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_lists_metadata_and_revokes_its_api_key_idempotently()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                string keyId;
+                string createdApiKey;
+                using (var createRequest = CreateApiKeyRequest(url, "deployment"))
+                {
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    var created = JObject.Parse(await createResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                    keyId = Assert.IsType<string>((string?)created["id"]);
+                    createdApiKey = Assert.IsType<string>((string?)created["apiKey"]);
+                }
+
+                using (var listRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/api-keys"))
+                {
+                    listRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var listResponse = await client.SendAsync(
+                        listRequest,
+                        TestContext.Current.CancellationToken);
+                    var list = JArray.Parse(await listResponse.Content.ReadAsStringAsync());
+
+                    Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+                    var item = Assert.IsType<JObject>(Assert.Single(list));
+                    Assert.Equal(
+                        new[]
+                        {
+                            "createdAtUtc",
+                            "displayPrefix",
+                            "expiresAtUtc",
+                            "id",
+                            "lastUsedAtUtc",
+                            "name",
+                            "status"
+                        },
+                        item.Properties()
+                            .Select(property => property.Name)
+                            .OrderBy(name => name)
+                            .ToArray());
+                    Assert.Equal(keyId, (string?)item["id"]);
+                    Assert.Equal("7dp_k_" + keyId, (string?)item["displayPrefix"]);
+                    Assert.Equal("deployment", (string?)item["name"]);
+                    Assert.Equal("active", (string?)item["status"]);
+                    Assert.DoesNotContain(createdApiKey, list.ToString());
+                    Assert.DoesNotContain("secret", list.ToString(), StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("identity", list.ToString(), StringComparison.OrdinalIgnoreCase);
+                }
+
+                for (var attempt = 0; attempt < 2; attempt++)
+                {
+                    using var revokeRequest = new HttpRequestMessage(
+                        HttpMethod.Delete,
+                        url + "api/v1/api-keys/" + Uri.EscapeDataString(keyId));
+                    revokeRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var revokeResponse = await client.SendAsync(
+                        revokeRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Api_key_can_list_but_cannot_mutate_and_requires_a_bearer_header()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                using (var listRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/api-keys"))
+                {
+                    listRequest.Headers.Authorization = CreateBearerAuthorization(TestApiKey);
+                    using var listResponse = await client.SendAsync(
+                        listRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+                }
+
+                using (var createRequest = CreateApiKeyRequest(url, "not-allowed"))
+                {
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(TestApiKey);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        createResponse,
+                        "access_token_required",
+                        "/api/v1/api-keys");
+                }
+
+                using (var revokeRequest = new HttpRequestMessage(
+                    HttpMethod.Delete,
+                    url + "api/v1/api-keys/not-a-real-key"))
+                {
+                    revokeRequest.Headers.Authorization = CreateBearerAuthorization(TestApiKey);
+                    using var revokeResponse = await client.SendAsync(
+                        revokeRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.Forbidden, revokeResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        revokeResponse,
+                        "access_token_required",
+                        "/api/v1/api-keys");
+                }
+
+                foreach (var method in new[] { HttpMethod.Get, HttpMethod.Post, HttpMethod.Delete })
+                {
+                    var route = method == HttpMethod.Delete
+                        ? "api/v1/api-keys/not-a-real-key"
+                        : "api/v1/api-keys";
+                    foreach (var useQueryString in new[] { true, false })
+                    {
+                        using var request = new HttpRequestMessage(
+                            method,
+                            url + route + (useQueryString
+                                ? "?access_token=" + Uri.EscapeDataString(TestApiKey)
+                                : string.Empty));
+                        if (!useQueryString)
+                            request.Headers.Add("Cookie", "access_token=" + TestApiKey);
+
+                        using var response = await client.SendAsync(
+                            request,
+                            TestContext.Current.CancellationToken);
+                        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                        await AssertProblemDetailsAsync(
+                            response,
+                            "authentication_required",
+                            method == HttpMethod.Delete
+                                ? "/api/v1/api-keys"
+                                : "/" + route);
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_cannot_revoke_another_subjects_api_key()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var ownerAccessToken = await IssueAccessTokenAsync(client, url);
+                var adminAccessToken = await IssueAccessTokenAsync(
+                    client,
+                    url,
+                    "test-admin",
+                    "test-admin-password");
+                string keyId;
+                using (var createRequest = CreateApiKeyRequest(url, "owner-key"))
+                {
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(ownerAccessToken);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    var created = JObject.Parse(await createResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                    keyId = Assert.IsType<string>((string?)created["id"]);
+                }
+
+                using (var revokeRequest = new HttpRequestMessage(
+                    HttpMethod.Delete,
+                    url + "api/v1/api-keys/" + Uri.EscapeDataString(keyId)))
+                {
+                    revokeRequest.Headers.Authorization = CreateBearerAuthorization(adminAccessToken);
+                    using var revokeResponse = await client.SendAsync(
+                        revokeRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.NotFound, revokeResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        revokeResponse,
+                        "api_key_not_found",
+                        "/api/v1/api-keys");
+                }
+
+                using var listRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/api-keys");
+                listRequest.Headers.Authorization = CreateBearerAuthorization(ownerAccessToken);
+                using var listResponse = await client.SendAsync(
+                    listRequest,
+                    TestContext.Current.CancellationToken);
+                var ownerKeys = JArray.Parse(await listResponse.Content.ReadAsStringAsync());
+                Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+                Assert.Equal("active", (string?)ownerKeys.Single()["status"]);
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_receives_stable_problem_details_for_invalid_api_key_creation()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+
+                using (var blankNameRequest = CreateApiKeyRequest(url, "  "))
+                {
+                    blankNameRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var blankNameResponse = await client.SendAsync(
+                        blankNameRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.BadRequest, blankNameResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        blankNameResponse,
+                        "invalid_api_key_name",
+                        "/api/v1/api-keys");
+                }
+
+                using (var longNameRequest = CreateApiKeyRequest(url, new string('a', 81)))
+                {
+                    longNameRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var longNameResponse = await client.SendAsync(
+                        longNameRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.BadRequest, longNameResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        longNameResponse,
+                        "invalid_api_key_name",
+                        "/api/v1/api-keys");
+                }
+
+                using (var malformedNameRequest = new HttpRequestMessage(
+                    HttpMethod.Post,
+                    url + "api/v1/api-keys")
+                {
+                    Content = new StringContent(
+                        "{\"name\":{}}",
+                        Encoding.UTF8,
+                        "application/json")
+                })
+                {
+                    malformedNameRequest.Headers.Authorization =
+                        CreateBearerAuthorization(accessToken);
+                    using var malformedNameResponse = await client.SendAsync(
+                        malformedNameRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.BadRequest, malformedNameResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        malformedNameResponse,
+                        "invalid_api_key_name",
+                        "/api/v1/api-keys");
+                }
+
+                using var expiredRequest = CreateApiKeyRequest(
+                    url,
+                    "expired",
+                    DateTimeOffset.UtcNow.AddMinutes(-1));
+                expiredRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                using var expiredResponse = await client.SendAsync(
+                    expiredRequest,
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.BadRequest, expiredResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    expiredResponse,
+                    "invalid_api_key_expiration",
+                    "/api/v1/api-keys");
+
+                using var malformedExpirationRequest = new HttpRequestMessage(
+                    HttpMethod.Post,
+                    url + "api/v1/api-keys")
+                {
+                    Content = new StringContent(
+                        "{\"name\":\"must-not-be-permanent\",\"expiresAtUtc\":\"not-a-date\"}",
+                        Encoding.UTF8,
+                        "application/json")
+                };
+                malformedExpirationRequest.Headers.Authorization =
+                    CreateBearerAuthorization(accessToken);
+                using var malformedExpirationResponse = await client.SendAsync(
+                    malformedExpirationRequest,
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(HttpStatusCode.BadRequest, malformedExpirationResponse.StatusCode);
+                await AssertProblemDetailsAsync(
+                    malformedExpirationResponse,
+                    "invalid_api_key_expiration",
+                    "/api/v1/api-keys");
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_receives_problem_details_for_unsupported_api_key_creation_content_type()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                using var request = new HttpRequestMessage(
+                    HttpMethod.Post,
+                    url + "api/v1/api-keys")
+                {
+                    Content = new StringContent(
+                        "{\"name\":\"unsupported-content-type\"}",
+                        Encoding.UTF8,
+                        "text/plain")
+                };
+                request.Headers.Authorization = CreateBearerAuthorization(accessToken);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "unsupported_media_type",
+                    "/api/v1/api-keys");
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_reaches_api_key_capacity_without_disclosing_existing_keys()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                var createdApiKeys = new List<string>();
+                for (var index = 0; index < 32; index++)
+                {
+                    using var createRequest = CreateApiKeyRequest(url, "key-" + index.ToString());
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    var created = JObject.Parse(await createResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                    createdApiKeys.Add(Assert.IsType<string>((string?)created["apiKey"]));
+                }
+
+                using var exhaustedRequest = CreateApiKeyRequest(url, "one-too-many");
+                exhaustedRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                using var exhaustedResponse = await client.SendAsync(
+                    exhaustedRequest,
+                    TestContext.Current.CancellationToken);
+                var problem = await AssertProblemDetailsAsync(
+                    exhaustedResponse,
+                    "api_key_capacity_reached",
+                    "/api/v1/api-keys");
+
+                Assert.Equal(HttpStatusCode.Conflict, exhaustedResponse.StatusCode);
+                foreach (var apiKey in createdApiKeys)
+                    Assert.DoesNotContain(apiKey, problem.ToString());
+            }
+        }
+
+        [Fact]
+        public async Task Access_token_lists_api_keys_by_creation_time_then_id_descending()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                var createdIds = new List<string>();
+                foreach (var name in new[] { "first", "second", "third" })
+                {
+                    using var createRequest = CreateApiKeyRequest(url, name);
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    var created = JObject.Parse(await createResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                    createdIds.Add(Assert.IsType<string>((string?)created["id"]));
+                }
+
+                using var listRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/api-keys");
+                listRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                using var listResponse = await client.SendAsync(
+                    listRequest,
+                    TestContext.Current.CancellationToken);
+                var listed = JArray.Parse(await listResponse.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+                Assert.Equal(
+                    createdIds.OrderByDescending(id => id, StringComparer.Ordinal).ToArray(),
+                    listed.Values<JObject>()
+                        .Select(item =>
+                        {
+                            var metadata = Assert.IsType<JObject>(item);
+                            return Assert.IsType<string>((string?)metadata["id"]);
+                        })
+                        .ToArray());
+            }
+        }
+
+        [Fact]
+        public async Task Concurrent_access_token_revocations_are_idempotent()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                string keyId;
+                using (var createRequest = CreateApiKeyRequest(url, "concurrent"))
+                {
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    var created = JObject.Parse(await createResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                    keyId = Assert.IsType<string>((string?)created["id"]);
+                }
+
+                var requests = Enumerable.Range(0, 4)
+                    .Select(_ => SendApiKeyRevokeAsync(client, url, accessToken, keyId))
+                    .ToArray();
+                var responses = await Task.WhenAll(requests);
+                foreach (var response in responses)
+                {
+                    using (response)
+                        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Delete_does_not_echo_a_complete_api_key_mistakenly_sent_as_an_id()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+                var completeApiKey = "7dp_k_test-key_" + new string('s', 43);
+                using var revokeRequest = new HttpRequestMessage(
+                    HttpMethod.Delete,
+                    url + "api/v1/api-keys/" + Uri.EscapeDataString(completeApiKey));
+                revokeRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                using var revokeResponse = await client.SendAsync(
+                    revokeRequest,
+                    TestContext.Current.CancellationToken);
+                var problem = await AssertProblemDetailsAsync(
+                    revokeResponse,
+                    "api_key_not_found",
+                    "/api/v1/api-keys");
+
+                Assert.Equal(HttpStatusCode.NotFound, revokeResponse.StatusCode);
+                Assert.DoesNotContain(completeApiKey, problem.ToString());
+
+                foreach (var authorization in new[]
+                {
+                    null,
+                    CreateBearerAuthorization(TestApiKey)
+                })
+                {
+                    using var protectedRequest = new HttpRequestMessage(
+                        HttpMethod.Delete,
+                        url + "api/v1/api-keys/" + Uri.EscapeDataString(completeApiKey));
+                    protectedRequest.Headers.Authorization = authorization;
+                    using var protectedResponse = await client.SendAsync(
+                        protectedRequest,
+                        TestContext.Current.CancellationToken);
+                    var protectedProblem = JObject.Parse(
+                        await protectedResponse.Content.ReadAsStringAsync());
+
+                    Assert.Equal(
+                        authorization == null ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden,
+                        protectedResponse.StatusCode);
+                    Assert.DoesNotContain(completeApiKey, protectedProblem.ToString());
+                    Assert.Equal("/api/v1/api-keys", (string?)protectedProblem["instance"]);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Created_api_key_authenticates_its_owner_and_cannot_list_another_subjects_keys()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var ownerAccessToken = await IssueAccessTokenAsync(client, url);
+                var adminAccessToken = await IssueAccessTokenAsync(
+                    client,
+                    url,
+                    "test-admin",
+                    "test-admin-password");
+                string createdApiKey;
+                string keyId;
+                using (var createRequest = CreateApiKeyRequest(url, "usable"))
+                {
+                    createRequest.Headers.Authorization = CreateBearerAuthorization(ownerAccessToken);
+                    using var createResponse = await client.SendAsync(
+                        createRequest,
+                        TestContext.Current.CancellationToken);
+                    var created = JObject.Parse(await createResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                    createdApiKey = Assert.IsType<string>((string?)created["apiKey"]);
+                    keyId = Assert.IsType<string>((string?)created["id"]);
+                }
+
+                using (var ownerListRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/api-keys"))
+                {
+                    ownerListRequest.Headers.Authorization = CreateBearerAuthorization(createdApiKey);
+                    using var ownerListResponse = await client.SendAsync(
+                        ownerListRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, ownerListResponse.StatusCode);
+                    var ownerKeys = JArray.Parse(await ownerListResponse.Content.ReadAsStringAsync());
+                    Assert.Equal(keyId, (string?)Assert.Single(ownerKeys)["id"]);
+                }
+
+                using var adminListRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/api-keys");
+                adminListRequest.Headers.Authorization = CreateBearerAuthorization(adminAccessToken);
+                using var adminListResponse = await client.SendAsync(
+                    adminListRequest,
+                    TestContext.Current.CancellationToken);
+                var adminKeys = JArray.Parse(await adminListResponse.Content.ReadAsStringAsync());
+                Assert.Equal(HttpStatusCode.OK, adminListResponse.StatusCode);
+                Assert.Empty(adminKeys);
             }
         }
 
@@ -1828,16 +2721,15 @@ namespace LSTY.SevenDPanel.Tests
             return JObject.Parse(body);
         }
 
-        private static void AssertAlternativeSecurity(
+        private static void AssertBearerSecurity(
             JObject document,
             string path,
             string method)
         {
             var security = Assert.IsType<JArray>(document["paths"]?[path]?[method]?["security"]);
-            Assert.Equal(2, security.Count);
-            Assert.Contains(security, requirement => requirement?["Basic"] is JArray);
-            Assert.Contains(security, requirement => requirement?["Bearer"] is JArray);
-            Assert.All(security, requirement => Assert.Single(((JObject)requirement!).Properties()));
+            var requirement = Assert.Single(security);
+            Assert.IsType<JArray>(requirement?["Bearer"]);
+            Assert.Single(((JObject)requirement!).Properties());
         }
 
         private static void AssertProblemResponses(
@@ -1885,6 +2777,19 @@ namespace LSTY.SevenDPanel.Tests
             return new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
         }
 
+        private static System.Net.Http.Headers.AuthenticationHeaderValue CreateBearerAuthorization(
+            string accessToken) =>
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        private static async Task AuthorizeWithPasswordGrantAsync(
+            HttpClient client,
+            string url,
+            HttpRequestMessage request)
+        {
+            request.Headers.Authorization = CreateBearerAuthorization(
+                await IssueAccessTokenAsync(client, url));
+        }
+
         private static HttpRequestMessage CreateConsoleCommandRequest(
             string url,
             string command)
@@ -1907,6 +2812,36 @@ namespace LSTY.SevenDPanel.Tests
                 url + "api/v1/players/online");
         }
 
+        private static HttpRequestMessage CreateApiKeyRequest(
+            string url,
+            string name,
+            DateTimeOffset? expiresAtUtc = null)
+        {
+            return new HttpRequestMessage(HttpMethod.Post, url + "api/v1/api-keys")
+            {
+                Content = new StringContent(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(new { name, expiresAtUtc }),
+                    Encoding.UTF8,
+                    "application/json")
+            };
+        }
+
+        private static async Task<HttpResponseMessage> SendApiKeyRevokeAsync(
+            HttpClient client,
+            string url,
+            string accessToken,
+            string keyId)
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Delete,
+                url + "api/v1/api-keys/" + Uri.EscapeDataString(keyId));
+            request.Headers.Authorization = CreateBearerAuthorization(accessToken);
+            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        private const string TestApiKey =
+            "7dp_k_0123456789012345678901_0123456789012345678901234567890123456789012";
+
         private const string ValidKickBody =
             "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\",\"confirmed\":true}";
 
@@ -1924,16 +2859,23 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         private static FormUrlEncodedContent CreateTokenContent(string password) =>
+            CreateTokenContent("test-owner", password);
+
+        private static FormUrlEncodedContent CreateTokenContent(string username, string password) =>
             new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("grant_type", "password"),
-                new KeyValuePair<string, string>("username", "test-owner"),
+                new KeyValuePair<string, string>("username", username),
                 new KeyValuePair<string, string>("password", password)
             });
 
-        private static async Task<string> IssueAccessTokenAsync(HttpClient client, string url)
+        private static async Task<string> IssueAccessTokenAsync(
+            HttpClient client,
+            string url,
+            string username = "test-owner",
+            string password = "test-password")
         {
-            using var tokenContent = CreateTokenContent("test-password");
+            using var tokenContent = CreateTokenContent(username, password);
             using var tokenResponse = await client.PostAsync(
                 url + "api/v1/auth/token",
                 tokenContent,
@@ -1990,6 +2932,7 @@ namespace LSTY.SevenDPanel.Tests
             var authenticationStore = new TestPanelAuthenticationStore();
             services.AddSingleton<IPanelCredentialStore>(authenticationStore);
             services.AddSingleton<IPanelAccessTokenStore>(authenticationStore);
+            services.AddSingleton<IPanelApiKeyStore>(authenticationStore);
             services.AddScoped<ServerEventSseSession>();
             return services.BuildServiceProvider(new ServiceProviderOptions
             {
@@ -2174,13 +3117,30 @@ namespace LSTY.SevenDPanel.Tests
 
         private sealed class TestPanelAuthenticationStore :
             IPanelCredentialStore,
-            IPanelAccessTokenStore
+            IPanelAccessTokenStore,
+            IPanelApiKeyStore
         {
             private readonly object sync = new object();
             private readonly Dictionary<string, StoredAccessToken> tokens =
                 new Dictionary<string, StoredAccessToken>(StringComparer.Ordinal);
-            private readonly PanelUserIdentity identity =
-                new PanelUserIdentity("test-owner-subject", "test-owner");
+            private readonly List<TestApiKeyRecord> apiKeys = new List<TestApiKeyRecord>();
+            private readonly Dictionary<string, TestUser> users =
+                new Dictionary<string, TestUser>(StringComparer.Ordinal)
+                {
+                    ["test-owner"] = new TestUser(
+                        new PanelUserIdentity(
+                            "test-owner-subject",
+                            "test-owner",
+                            PanelUserIdentity.OwnerRole),
+                        "test-password"),
+                    ["test-admin"] = new TestUser(
+                        new PanelUserIdentity(
+                            "test-admin-subject",
+                            "test-admin",
+                            PanelUserIdentity.AdminRole),
+                        "test-admin-password")
+                };
+            private int nextApiKeySequence;
 
             public bool TryVerify(
                 string username,
@@ -2188,23 +3148,24 @@ namespace LSTY.SevenDPanel.Tests
                 out PanelUserIdentity panelIdentity)
             {
                 panelIdentity = null!;
-                if (!string.Equals(username, identity.Username, StringComparison.Ordinal) ||
-                    !string.Equals(password, "test-password", StringComparison.Ordinal))
+                if (!users.TryGetValue(username, out var user) ||
+                    !string.Equals(password, user.Password, StringComparison.Ordinal))
                 {
                     return false;
                 }
 
-                panelIdentity = identity;
+                panelIdentity = user.Identity;
                 return true;
             }
 
             public bool TryGetActive(string subject, out PanelUserIdentity panelIdentity)
             {
                 panelIdentity = null!;
-                if (!string.Equals(subject, identity.Subject, StringComparison.Ordinal))
-                    return false;
+                var user = users.Values.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Identity.Subject, subject, StringComparison.Ordinal));
+                if (user == null) return false;
 
-                panelIdentity = identity;
+                panelIdentity = user.Identity;
                 return true;
             }
 
@@ -2213,7 +3174,7 @@ namespace LSTY.SevenDPanel.Tests
                 DateTimeOffset issuedUtc,
                 DateTimeOffset expiresUtc)
             {
-                var token = "test-token-" + Guid.NewGuid().ToString("N");
+                var token = "7dp_t_test-token-" + Guid.NewGuid().ToString("N");
                 lock (sync)
                 {
                     tokens.Add(
@@ -2241,6 +3202,175 @@ namespace LSTY.SevenDPanel.Tests
                     accessToken = candidate;
                     return true;
                 }
+            }
+
+            public ApiKeyCreateResult Create(
+                string subject,
+                string name,
+                DateTimeOffset createdUtc,
+                DateTimeOffset? expiresUtc)
+            {
+                var normalizedName = (name ?? string.Empty).Trim();
+                if (GetUnicodeScalarCount(normalizedName) is < 1 or > 80)
+                    return ApiKeyCreateResult.Failed(ApiKeyCreateStatus.InvalidName);
+                if (expiresUtc.HasValue && expiresUtc.Value <= createdUtc)
+                    return ApiKeyCreateResult.Failed(ApiKeyCreateStatus.InvalidExpiration);
+
+                lock (sync)
+                {
+                    var user = users.Values.FirstOrDefault(candidate =>
+                        string.Equals(candidate.Identity.Subject, subject, StringComparison.Ordinal));
+                    if (user == null)
+                        return ApiKeyCreateResult.Failed(ApiKeyCreateStatus.SubjectNotFound);
+                    if (apiKeys.Count(key =>
+                            string.Equals(
+                                key.Identity.Subject,
+                                subject,
+                                StringComparison.Ordinal) &&
+                            key.RevokedUtc == null) >= 32)
+                        return ApiKeyCreateResult.Failed(ApiKeyCreateStatus.CapacityReached);
+
+                    var keyId = "test-key-" + (++nextApiKeySequence).ToString();
+                    var apiKey = "7dp_k_" + keyId + "_" + Guid.NewGuid().ToString("N");
+                    var record = new TestApiKeyRecord(
+                        keyId,
+                        apiKey,
+                        user.Identity,
+                        normalizedName,
+                        createdUtc,
+                        expiresUtc);
+                    apiKeys.Add(record);
+                    return ApiKeyCreateResult.Created(new CreatedApiKey(
+                        apiKey,
+                        record.ToStoredApiKey(createdUtc)));
+                }
+            }
+
+            public IReadOnlyList<StoredApiKey> List(string subject, DateTimeOffset utcNow)
+            {
+                lock (sync)
+                {
+                    return apiKeys
+                        .Where(key => string.Equals(key.Identity.Subject, subject, StringComparison.Ordinal))
+                        .OrderByDescending(key => key.CreatedUtc)
+                        .ThenByDescending(key => key.KeyId, StringComparer.Ordinal)
+                        .Select(key => key.ToStoredApiKey(utcNow))
+                        .ToArray();
+                }
+            }
+
+            public bool Revoke(string subject, string keyId, DateTimeOffset revokedUtc)
+            {
+                lock (sync)
+                {
+                    var key = apiKeys.FirstOrDefault(candidate =>
+                        string.Equals(candidate.Identity.Subject, subject, StringComparison.Ordinal) &&
+                        string.Equals(candidate.KeyId, keyId, StringComparison.Ordinal));
+                    if (key == null) return false;
+                    key.RevokedUtc ??= revokedUtc;
+                    return true;
+                }
+            }
+
+            public bool TryValidate(
+                string apiKey,
+                DateTimeOffset utcNow,
+                out StoredApiKey storedApiKey)
+            {
+                storedApiKey = null!;
+                lock (sync)
+                {
+                    var key = apiKeys.FirstOrDefault(candidate =>
+                        string.Equals(candidate.ApiKey, apiKey, StringComparison.Ordinal) &&
+                        candidate.RevokedUtc == null &&
+                        (!candidate.ExpiresUtc.HasValue || candidate.ExpiresUtc.Value > utcNow));
+                    if (key != null)
+                    {
+                        storedApiKey = key.ToStoredApiKey(utcNow);
+                        return true;
+                    }
+                }
+
+                if (!string.Equals(apiKey, TestApiKey, StringComparison.Ordinal)) return false;
+
+                storedApiKey = new StoredApiKey(
+                    "0123456789012345678901",
+                    users["test-owner"].Identity,
+                    "integration",
+                    new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero),
+                    null,
+                    null,
+                    null,
+                    utcNow);
+                return true;
+            }
+
+            private static int GetUnicodeScalarCount(string value)
+            {
+                var count = 0;
+                for (var index = 0; index < value.Length; index++)
+                {
+                    if (char.IsHighSurrogate(value[index]) &&
+                        index + 1 < value.Length &&
+                        char.IsLowSurrogate(value[index + 1]))
+                    {
+                        index++;
+                    }
+
+                    count++;
+                }
+
+                return count;
+            }
+
+            private sealed class TestUser
+            {
+                public TestUser(PanelUserIdentity identity, string password)
+                {
+                    Identity = identity;
+                    Password = password;
+                }
+
+                public PanelUserIdentity Identity { get; }
+                public string Password { get; }
+            }
+
+            private sealed class TestApiKeyRecord
+            {
+                public TestApiKeyRecord(
+                    string keyId,
+                    string apiKey,
+                    PanelUserIdentity identity,
+                    string name,
+                    DateTimeOffset createdUtc,
+                    DateTimeOffset? expiresUtc)
+                {
+                    KeyId = keyId;
+                    ApiKey = apiKey;
+                    Identity = identity;
+                    Name = name;
+                    CreatedUtc = createdUtc;
+                    ExpiresUtc = expiresUtc;
+                }
+
+                public string KeyId { get; }
+                public string ApiKey { get; }
+                public PanelUserIdentity Identity { get; }
+                public string Name { get; }
+                public DateTimeOffset CreatedUtc { get; }
+                public DateTimeOffset? ExpiresUtc { get; }
+                public DateTimeOffset? RevokedUtc { get; set; }
+
+                public StoredApiKey ToStoredApiKey(DateTimeOffset utcNow) =>
+                    new StoredApiKey(
+                        KeyId,
+                        Identity,
+                        Name,
+                        CreatedUtc,
+                        null,
+                        ExpiresUtc,
+                        RevokedUtc,
+                        utcNow);
             }
         }
 

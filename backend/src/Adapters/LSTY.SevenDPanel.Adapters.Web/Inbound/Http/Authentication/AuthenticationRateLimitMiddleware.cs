@@ -51,24 +51,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
 
         private static bool ShouldLimit(IOwinRequest request)
         {
-            if (string.Equals(
-                    request.Path.Value,
-                    HttpRoutes.TokenEndpoint,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (!string.Equals(
-                    request.Path.Value,
-                    "/api/v1/events/stream",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            var authorization = request.Headers.Get("Authorization");
-            return authorization?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) ?? false;
+            return string.Equals(
+                request.Path.Value,
+                HttpRoutes.TokenEndpoint,
+                StringComparison.OrdinalIgnoreCase);
         }
     }
 }

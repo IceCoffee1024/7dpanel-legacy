@@ -1,6 +1,6 @@
 using System;
+using System.Reflection;
 using System.Security.Claims;
-using System.Text;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using Microsoft.Owin.Security;
@@ -11,9 +11,39 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class AuthenticationTests
     {
         [Fact]
+        public void Panel_user_identity_exposes_a_role()
+        {
+            var constructor = typeof(PanelUserIdentity).GetConstructor(
+                new[] { typeof(string), typeof(string), typeof(string) });
+
+            Assert.NotNull(constructor);
+            var identity = (PanelUserIdentity)constructor!.Invoke(
+                new object[] { "owner-subject", "Owner", PanelUserIdentity.AdminRole });
+
+            Assert.Equal(PanelUserIdentity.AdminRole, identity.Role);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("Operator")]
+        public void Panel_user_identity_rejects_unknown_roles(string role)
+        {
+            var constructor = typeof(PanelUserIdentity).GetConstructor(
+                new[] { typeof(string), typeof(string), typeof(string) });
+
+            Assert.NotNull(constructor);
+            var exception = Assert.Throws<TargetInvocationException>(() => constructor!.Invoke(
+                new object[] { "owner-subject", "Owner", role }));
+            Assert.IsType<ArgumentException>(exception.InnerException);
+        }
+
+        [Fact]
         public void Persistent_credentials_are_exact_and_return_stable_identity()
         {
-            var expected = new PanelUserIdentity("owner-subject", "Owner");
+            var expected = new PanelUserIdentity(
+                "owner-subject",
+                "Owner",
+                PanelUserIdentity.OwnerRole);
             var verifier = new PanelCredentialVerifier(
                 new TestCredentialStore(expected, "pass:word"));
 
@@ -23,31 +53,6 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(verifier.TryVerify("owner", "pass:word", out _));
             Assert.False(verifier.TryVerify("Owner", "pass", out _));
             Assert.False(verifier.TryVerify("Owner", "pass:word ", out _));
-        }
-
-        [Fact]
-        public void Basic_credentials_split_on_the_first_colon()
-        {
-            var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("Owner:pass:word"));
-
-            var parsed = BasicAuthenticationHandler.TryDecodeCredentials(encoded, out var username, out var password);
-
-            Assert.True(parsed);
-            Assert.Equal("Owner", username);
-            Assert.Equal("pass:word", password);
-        }
-
-        [Theory]
-        [InlineData("")]
-        [InlineData("not-base64")]
-        [InlineData("T3duZXI=")]
-        [InlineData("OnBhc3N3b3Jk")]
-        public void Invalid_basic_credentials_are_rejected(string encoded)
-        {
-            Assert.False(BasicAuthenticationHandler.TryDecodeCredentials(
-                encoded,
-                out _,
-                out _));
         }
 
         [Fact]
@@ -63,20 +68,29 @@ namespace LSTY.SevenDPanel.Tests
                 currentUtc.Second,
                 TimeSpan.Zero);
             var expiresUtc = issuedUtc.AddMinutes(5);
-            var original = new PanelUserIdentity("owner-subject", "Owner");
+            var original = new PanelUserIdentity(
+                "owner-subject",
+                "Owner",
+                PanelUserIdentity.AdminRole);
             var credentials = new TestCredentialStore(original, "password");
-            var tokens = new TestAccessTokenStore("opaque-token");
-            var provider = new PersistentAccessTokenProvider(tokens, credentials);
+            var tokens = new TestAccessTokenStore("7dp_t_opaque-token");
+            var provider = new PersistentBearerCredentialProvider(
+                tokens,
+                new TestApiKeyStore(),
+                credentials);
 
             var token = provider.Issue(CreateTicket(original, issuedUtc, expiresUtc));
 
-            Assert.Equal("opaque-token", token);
+            Assert.Equal("7dp_t_opaque-token", token);
             Assert.Equal(original.Subject, tokens.IssuedIdentity?.Subject);
             Assert.Equal(original.Username, tokens.IssuedIdentity?.Username);
             Assert.Equal(issuedUtc, tokens.IssuedUtc);
             Assert.Equal(expiresUtc, tokens.ExpiresUtc);
 
-            credentials.Identity = new PanelUserIdentity(original.Subject, "Renamed Owner");
+            credentials.Identity = new PanelUserIdentity(
+                original.Subject,
+                "Renamed Owner",
+                PanelUserIdentity.AdminRole);
             Assert.True(provider.TryReceive(token, out var received));
 
             Assert.Equal(
@@ -85,13 +99,71 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(
                 "Renamed Owner",
                 received.Identity.FindFirst(ClaimTypes.Name)?.Value);
-            Assert.Equal("Owner", received.Identity.FindFirst(ClaimTypes.Role)?.Value);
+            Assert.Equal(
+                PanelUserIdentity.AdminRole,
+                received.Identity.FindFirst(ClaimTypes.Role)?.Value);
             Assert.Equal("sqlite", received.Identity.FindFirst("identity_source")?.Value);
             Assert.Equal(issuedUtc, received.Properties.IssuedUtc);
             Assert.Equal(expiresUtc, received.Properties.ExpiresUtc);
 
             credentials.Active = false;
             Assert.False(provider.TryReceive(token, out _));
+        }
+
+        [Fact]
+        public void Persistent_bearer_provider_routes_api_keys_without_access_token_fallback()
+        {
+            var now = new DateTimeOffset(2026, 7, 23, 0, 0, 0, TimeSpan.Zero);
+            var original = new PanelUserIdentity(
+                "owner-subject",
+                "Owner",
+                PanelUserIdentity.OwnerRole);
+            var current = new PanelUserIdentity(
+                original.Subject,
+                "Viewer Owner",
+                PanelUserIdentity.ViewerRole);
+            var credentials = new TestCredentialStore(current, "password");
+            var accessTokens = new TestAccessTokenStore("7dp_t_access-token");
+            var apiKey = "7dp_k_0123456789012345678901_0123456789012345678901234567890123456789012";
+            var apiKeys = new TestApiKeyStore(
+                apiKey,
+                new StoredApiKey(
+                    "0123456789012345678901",
+                    original,
+                    "automation",
+                    now,
+                    null,
+                    null,
+                    null,
+                    now));
+            var provider = new PersistentBearerCredentialProvider(accessTokens, apiKeys, credentials);
+
+            Assert.True(provider.TryReceive(apiKey, out var ticket));
+            Assert.Equal(0, accessTokens.ValidationCount);
+            Assert.Equal(1, apiKeys.ValidationCount);
+            Assert.Equal(
+                PanelUserIdentity.ViewerRole,
+                ticket.Identity.FindFirst(ClaimTypes.Role)?.Value);
+            Assert.Equal(
+                "api_key",
+                ticket.Identity.FindFirst(PanelClaimTypes.CredentialType)?.Value);
+        }
+
+        [Fact]
+        public void Persistent_bearer_provider_does_not_fall_back_from_malformed_api_key_prefix()
+        {
+            var identity = new PanelUserIdentity(
+                "owner-subject",
+                "Owner",
+                PanelUserIdentity.OwnerRole);
+            var credentials = new TestCredentialStore(identity, "password");
+            var accessTokens = new TestAccessTokenStore("7dp_k_not-an-api-key");
+            var apiKeys = new TestApiKeyStore();
+            var provider = new PersistentBearerCredentialProvider(accessTokens, apiKeys, credentials);
+
+            Assert.False(provider.TryReceive("7dp_k_not-an-api-key", out _));
+            Assert.Equal(0, accessTokens.ValidationCount);
+            Assert.Equal(1, apiKeys.ValidationCount);
         }
 
         [Fact]
@@ -104,7 +176,10 @@ namespace LSTY.SevenDPanel.Tests
             {
                 var now = DateTimeOffset.UtcNow;
                 format.Protect(CreateTicket(
-                    new PanelUserIdentity("owner-subject", "Owner"),
+                    new PanelUserIdentity(
+                        "owner-subject",
+                        "Owner",
+                        PanelUserIdentity.OwnerRole),
                     now,
                     now.AddMinutes(5)));
             });
@@ -140,6 +215,7 @@ namespace LSTY.SevenDPanel.Tests
             var identity = new ClaimsIdentity("Bearer");
             identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, panelIdentity.Subject));
             identity.AddClaim(new Claim(ClaimTypes.Name, panelIdentity.Username));
+            identity.AddClaim(new Claim(ClaimTypes.Role, panelIdentity.Role));
             return new AuthenticationTicket(
                 identity,
                 new AuthenticationProperties
@@ -206,6 +282,7 @@ namespace LSTY.SevenDPanel.Tests
             public PanelUserIdentity? IssuedIdentity { get; private set; }
             public DateTimeOffset IssuedUtc { get; private set; }
             public DateTimeOffset ExpiresUtc { get; private set; }
+            public int ValidationCount { get; private set; }
 
             public string Issue(
                 PanelUserIdentity identity,
@@ -224,6 +301,7 @@ namespace LSTY.SevenDPanel.Tests
                 DateTimeOffset utcNow,
                 out StoredAccessToken accessToken)
             {
+                ValidationCount++;
                 accessToken = null!;
                 if (storedToken == null ||
                     !string.Equals(suppliedToken, token, StringComparison.Ordinal) ||
@@ -233,6 +311,54 @@ namespace LSTY.SevenDPanel.Tests
                 }
 
                 accessToken = storedToken;
+                return true;
+            }
+        }
+
+        private sealed class TestApiKeyStore : IPanelApiKeyStore
+        {
+            private readonly string? apiKey;
+            private readonly StoredApiKey? storedApiKey;
+
+            public TestApiKeyStore()
+            {
+            }
+
+            public TestApiKeyStore(string apiKey, StoredApiKey storedApiKey)
+            {
+                this.apiKey = apiKey;
+                this.storedApiKey = storedApiKey;
+            }
+
+            public int ValidationCount { get; private set; }
+
+            public ApiKeyCreateResult Create(
+                string subject,
+                string name,
+                DateTimeOffset createdUtc,
+                DateTimeOffset? expiresUtc) =>
+                throw new NotSupportedException();
+
+            public IReadOnlyList<StoredApiKey> List(string subject, DateTimeOffset utcNow) =>
+                throw new NotSupportedException();
+
+            public bool Revoke(string subject, string keyId, DateTimeOffset revokedUtc) =>
+                throw new NotSupportedException();
+
+            public bool TryValidate(
+                string suppliedApiKey,
+                DateTimeOffset utcNow,
+                out StoredApiKey apiKey)
+            {
+                ValidationCount++;
+                apiKey = null!;
+                if (!string.Equals(suppliedApiKey, this.apiKey, StringComparison.Ordinal) ||
+                    storedApiKey == null)
+                {
+                    return false;
+                }
+
+                apiKey = storedApiKey;
                 return true;
             }
         }

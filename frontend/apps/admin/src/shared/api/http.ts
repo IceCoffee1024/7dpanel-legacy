@@ -106,6 +106,9 @@ export async function requestJson<T>(
       throw new HttpError('http', `HTTP request failed with status ${response.status}`, fields)
     }
 
+    if (response.status === 204)
+      return undefined as T
+
     try {
       return await response.json() as T
     }
