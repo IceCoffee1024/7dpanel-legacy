@@ -8,6 +8,7 @@ export interface PlayerIdentity {
 export interface OnlinePlayer {
   entityId: number
   name: string
+  observedAtUtc: string
   platformIdentity: PlayerIdentity
   crossplatformIdentity: PlayerIdentity | null
   ping: number
@@ -16,7 +17,6 @@ export interface OnlinePlayer {
 }
 
 export interface OnlinePlayersSnapshot {
-  capturedAtUtc: string
   players: readonly OnlinePlayer[]
 }
 
@@ -68,12 +68,18 @@ function parseInteger(value: unknown): number {
 }
 
 function parsePlayer(value: unknown): OnlinePlayer {
-  if (!isRecord(value) || typeof value.name !== 'string' || value.name.trim() === '')
+  if (!isRecord(value)
+    || typeof value.name !== 'string'
+    || value.name.trim() === ''
+    || typeof value.observedAtUtc !== 'string'
+    || !isValidUtcTimestamp(value.observedAtUtc)) {
     throw new Error('Invalid online players response')
+  }
 
   return Object.freeze({
     entityId: parseInteger(value.entityId),
     name: value.name,
+    observedAtUtc: value.observedAtUtc,
     platformIdentity: parseIdentity(value.platformIdentity),
     crossplatformIdentity: value.crossplatformIdentity === null
       ? null
@@ -85,15 +91,11 @@ function parsePlayer(value: unknown): OnlinePlayer {
 }
 
 export function parseOnlinePlayers(value: unknown): OnlinePlayersSnapshot {
-  if (!isRecord(value)
-    || typeof value.capturedAtUtc !== 'string'
-    || !isValidUtcTimestamp(value.capturedAtUtc)
-    || !Array.isArray(value.players)) {
+  if (!isRecord(value) || !Array.isArray(value.players)) {
     throw new Error('Invalid online players response')
   }
 
   return Object.freeze({
-    capturedAtUtc: value.capturedAtUtc,
     players: Object.freeze(value.players.map(parsePlayer)),
   })
 }

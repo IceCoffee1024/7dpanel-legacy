@@ -39,6 +39,7 @@ const player: OnlinePlayer = Object.freeze({
   ping: 23,
   level: 17,
   health: 96,
+  observedAtUtc: '2026-07-23T08:00:00Z',
 })
 
 const response: KickPlayerResponse = Object.freeze({

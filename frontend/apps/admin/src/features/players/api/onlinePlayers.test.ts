@@ -10,6 +10,7 @@ vi.mock('../../../shared/api/http', () => ({
 const validPlayer = {
   entityId: 42,
   name: 'Ada',
+  observedAtUtc: '2026-07-22T08:30:00.123Z',
   platformIdentity: {
     combinedId: 'Steam_123',
     platform: 'Steam',
@@ -25,7 +26,6 @@ const validPlayer = {
 
 function validSnapshot() {
   return {
-    capturedAtUtc: '2026-07-22T08:30:00.123Z',
     players: [{
       ...validPlayer,
       platformIdentity: { ...validPlayer.platformIdentity },
@@ -35,16 +35,10 @@ function validSnapshot() {
 }
 
 describe('parseOnlinePlayers', () => {
-  it('parses an empty player snapshot and preserves the UTC text', () => {
-    const result = parseOnlinePlayers({
-      capturedAtUtc: '2026-07-22T08:30:00+00:00',
-      players: [],
-    })
+  it('parses an empty player snapshot without root freshness fields', () => {
+    const result = parseOnlinePlayers({ players: [] })
 
-    expect(result).toEqual({
-      capturedAtUtc: '2026-07-22T08:30:00+00:00',
-      players: [],
-    })
+    expect(result).toEqual({ players: [] })
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.players)).toBe(true)
   })
@@ -74,13 +68,12 @@ describe('parseOnlinePlayers', () => {
 
   it.each([
     ['a non-object root', null],
-    ['an invalid date', { capturedAtUtc: 'not-a-date', players: [] }],
-    ['a non-leap-year February 29 date', { capturedAtUtc: '2026-02-29T08:30:00Z', players: [] }],
-    ['an April 31 date', { capturedAtUtc: '2026-04-31T08:30:00Z', players: [] }],
-    ['a non-UTC date', { capturedAtUtc: '2026-07-22T08:30:00+08:00', players: [] }],
-    ['a date without an explicit offset', { capturedAtUtc: '2026-07-22T08:30:00', players: [] }],
-    ['a non-array players field', { capturedAtUtc: '2026-07-22T08:30:00Z', players: {} }],
-    ['a non-object player', { capturedAtUtc: '2026-07-22T08:30:00Z', players: [null] }],
+    ['a non-array players field', { players: {} }],
+    ['a non-object player', { players: [null] }],
+    ['a missing observation time', { ...validSnapshot(), players: [{ ...validPlayer, observedAtUtc: undefined }] }],
+    ['an invalid observation time', { ...validSnapshot(), players: [{ ...validPlayer, observedAtUtc: 'not-a-date' }] }],
+    ['a non-leap-year February 29 observation time', { ...validSnapshot(), players: [{ ...validPlayer, observedAtUtc: '2026-02-29T08:30:00Z' }] }],
+    ['a non-UTC observation time', { ...validSnapshot(), players: [{ ...validPlayer, observedAtUtc: '2026-07-22T08:30:00+08:00' }] }],
     ['an empty name', { ...validSnapshot(), players: [{ ...validPlayer, name: '   ' }] }],
     ['a missing platform identity', { ...validSnapshot(), players: [{ ...validPlayer, platformIdentity: null }] }],
     ['an empty platform combined id', { ...validSnapshot(), players: [{ ...validPlayer, platformIdentity: { combinedId: '', platform: 'Steam' } }] }],
@@ -102,14 +95,12 @@ describe('fetchOnlinePlayers', () => {
 
   it('sends the supplied authorization header without placing the token in the URL or body', async () => {
     vi.mocked(requestJson).mockResolvedValue({
-      capturedAtUtc: '2026-07-22T08:30:00Z',
       players: [],
     })
     const authorizationHeader = 'Bearer opaque.token+/= value'
     const controller = new AbortController()
 
     await expect(fetchOnlinePlayers(authorizationHeader, controller.signal)).resolves.toEqual({
-      capturedAtUtc: '2026-07-22T08:30:00Z',
       players: [],
     })
 

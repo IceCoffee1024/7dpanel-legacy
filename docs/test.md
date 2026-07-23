@@ -1,13 +1,13 @@
 ---
 state: Current
-last_updated: "2026-07-22"
+last_updated: "2026-07-23"
 ---
 
 # 7DPanel 测试策略
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-22 的当前 Release Rebuild 为零错误，220 项 xUnit 自动化全部通过，覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、Harmony 位置补丁边界和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 182 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建，覆盖共享 HTTP、认证、内存会话、路由、安全返回目标、玩家 DTO/状态机、踢出 API/composable、固定目标确认和桌面/移动组件编排。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据已覆盖当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、DI、Bcl/Unsafe、migration、认证 SSE、`game-ready`、`server-stopping`、只读 `version` 主线程往返、单个真实在线玩家字段和正常关服；Owner 踢出真实拒绝消息、延迟断开、列表更新和审计一致性仍未验证，Linux 真实进程也未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-23 的当前 Release Rebuild 为零错误，在线玩家投影、OWIN 和依赖边界相关 90 项 xUnit 自动化全部通过；更早的后端全量证据覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、Harmony 位置补丁边界和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 185 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建，覆盖共享 HTTP、认证、内存会话、路由、安全返回目标、玩家 DTO/状态机、踢出 API/composable、固定目标确认和桌面/移动组件编排。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-21 的远程 Windows 7DTD `v3.0.1-b4` 证据已覆盖当前 `Assembly.Location` 补丁、标准 Batteries/SQLitePCLRaw `2.1.12`、DI、Bcl/Unsafe、migration、认证 SSE、`game-ready`、`server-stopping`、只读 `version` 主线程往返、单个真实在线玩家字段和正常关服；事件投影的真实 Join/Save/Disconnect 链路以及 Owner 踢出真实拒绝消息、延迟断开、列表更新和审计一致性仍未验证，Linux 真实进程也未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -36,7 +36,7 @@ last_updated: "2026-07-22"
 | 主线程调度拖慢游戏 | 当前只读版本 Gateway、在线玩家 Query 和踢出 Application gate 必须保持职责独立；排队取消/启动超时不得执行委托，执行开始后不得伪造取消或超时。踢出同一时刻只允许一个请求在审计和动作链路中运行；未来新增生产 Gateway 前按真实负载验证有界拒绝、合并或背压，不允许无界增长。 |
 | 动态命令队列破坏顺序或无界增长 | 确定性测试必须验证 HTTP 命令有界 FIFO 的容量、严格接收顺序、每请求独立结果、队满拒绝、开始前取消、开始后真实结果、单项异常隔离、停止时排空边界，以及它不会替换或消费 7DTD 原生异步队列。 |
 | 全局命令审计改变游戏行为或静默缺失 | 源码与真实进程测试必须证明 Harmony 只观察最终 `SdtdConsole.executeCommand`，不改变命令注册、同步返回或原生队列；内置、第三方 Mod、HTTP 和至少一个非 HTTP 标准入口产生完整原文审计。SQLite 锁定、队满或消费者失败时原命令继续执行，同时告警并记录可识别的审计缺口。绕过 `SdtdConsole` 的直接游戏 API 调用明确不计入覆盖率。 |
-| 在线玩家字段或线程边界漂移 | 自动化必须验证不可变复制、排序、可空跨平台身份、实例级 single-flight、取消/超时/异常后释放、Owner-only、就绪短路、字段白名单和稳定 503；只有真实测试玩家 smoke 才能证明 `v3.0.1-b4` 字段兼容，任何游戏活对象不得离开主线程委托。 |
+| 在线玩家字段、事件或投影边界漂移 | 自动化必须验证 Join membership、Save 不可变复制、Disconnect 身份条件删除、排序、逐玩家观察时间、可空跨平台身份、停止拒写与清空、旧 observation 不被服务端年龄策略拒绝、Owner-only、就绪短路和字段白名单；只有真实测试玩家 smoke 才能证明 `v3.0.1-b4` 事件注册与字段兼容，任何游戏活对象不得进入投影或离开事件回调。 |
 | 后台命令已接收但无人消费或错误分发 | 集成测试必须覆盖生产者投递、唯一 Consumer 组件读取、有界执行槽、显式 Dispatcher 到唯一 Use Case、长任务与短任务并发、单项失败隔离、停止生产、完成写端、截止时间内排空及未处理项的明确结果。 |
 | 组合运行时启停顺序漂移 | 使用记录型 `IModRuntime` 和可控日志订阅验证 `ConsoleLogService` 先启动、先停止；已接受日志、一次 `game-ready` 和 `server-stopping` 共用 sequence 且停止时排空，日志排空超时仍会尝试 `ModHost.Stop` 并聚合失败；`ModHost` 不包含具体队列、数据库或重试逻辑。 |
 | 游戏日志回调拖慢或递归 | 单元测试证明回调只创建 entry 并一次非阻塞投递，窗口 append 不在回调线程执行；源码复核禁止等待、I/O、逐条 `Task.Run` 和回调内 `Log.*`，官方进程验证真实 delegate 订阅/注销。 |
@@ -75,7 +75,7 @@ last_updated: "2026-07-22"
 - 后端单元测试采用 xUnit v3。无共享状态的测试允许并行；占用固定端口、SQLite 文件、游戏进程或静态游戏状态的测试必须使用测试集合隔离或显式禁止并行。
 - 当前自动化覆盖 `ModHost` 启停/就绪状态和并发终止竞态，生命周期 Adapter 的三个可执行回调与失败回滚，集中控制台日志服务、当前进程 `ServerEventLiveWindow`、每客户端 `ServerEventHub` 和组合运行时，Microsoft DI scope 隔离/复用/一次释放、Provider 验证与运行时先停后释放顺序；`GameThreadDispatcherTests` 确定性验证排队取消/启动超时阻止执行，以及执行开始后取消/超时仍等待真实结果，`ConsoleCommandTests` 验证 `version` 标准化和未支持命令不会进入 Gateway。
 - 动态命令切片必须新增队列与用例测试，覆盖命令原文不被白名单或参数解析改写、FIFO、容量饱和、并发独立输出、开始前取消、开始后断连、未知命令和执行异常；Harmony observation 测试覆盖返回与抛错路径、嵌套/连续调用隔离、原始参数快照、审计投递失败不影响命令结果，并证明不会产生结构化命令 SSE。
-- 在线玩家单元测试验证 Application 快照复制和用例转发、Adapter 稳定排序、可空跨平台身份、不同实例门禁隔离，以及成功、异常、取消和超时后的门禁释放；基础设施与真实字段兼容仍由官方进程 smoke 负责。
+- 在线玩家单元测试验证 Application 快照复制、逐玩家观察时间和用例转发，以及 Adapter 的 Join/Save/Disconnect 顺序、不可变字段复制、稳定排序、可空跨平台身份、身份条件删除、停止拒写与清空、失败 Save 保留旧 observation、任意年龄 observation 原样返回和缺少 observation 时不产生占位玩家；事件注册与真实字段兼容仍由官方进程 smoke 负责。
 - 踢出用例测试验证确认、原因与身份前置校验，审计先于动作，专属 single-flight，成功/离线/身份变化/取消/超时/未知异常的终态映射，以及审计意图或完成不可用语义。SevenDays 动作测试验证所有游戏对象访问位于 Dispatcher 内、实体与双字段身份重验、原生调用恰好一次和 `ManualKick` 参数快照。
 - 服务器事件自动化覆盖日志六字段、三类 replay 事件的共享 sequence、固定窗口淘汰、批次与 gap 边界、回调/consumer 线程隔离、队满即时拒绝与 high-water 上限、保序且只消费一次、单次 `game-ready`、停止 marker、消费后通过公开 stream 边界广播、单项失败继续、订阅失败、注销后拒绝、限时排空、超时仍停止内部运行时、停止摘要时序、多订阅者隔离、mailbox 溢出、订阅上限、空窗口游标和完成释放。生产静态 delegate 的精确映射由源码复核与真实进程验证，不通过额外 source/callback 接口伪装成单元测试结论。
 - 认证单元和 SQLite 集成测试使用可控时间验证 Basic 首个冒号分隔、非法 Base64、引导凭据同步、Token 最旧淘汰/到期/轮换撤销，以及每地址限流窗口和 bucket 容量；不通过真实等待模拟 Token 到期。
@@ -98,7 +98,7 @@ last_updated: "2026-07-22"
 - `OwinWebHostTests` 在真实 Katana 主机中验证 `/` 和无扩展名路由返回 Admin `index.html`，哈希资源按静态文件返回，缺失资源保持 404；即使 `wwwroot/api/v1/health` 存在冲突文件，`/api/v1/health` 仍由 Web API 返回健康 JSON，未知 `/api/*` 返回统一 404 Problem Details。健康 JSON 必须精确使用 `status`、`product`、`version`，大小写不匹配即失败。
 - 同一 Katana 测试类使用真实根 Provider 验证匿名/错误 Basic/错误 Bearer 的 401 与双 challenge、password grant、OAuth `invalid_grant` 例外、拒绝 QueryString Token、每分钟限流 429、Welcome 先于命名 replay、gap、无效游标 400、订阅容量的建流前 503，以及响应释放后 scoped session 与 Hub 订阅清理。直接 handler 测试另验证 Web API 使用同一个 OWIN scope，non-owning wrapper 不提前释放实际 scope。15 秒 comment heartbeat 由源码复核，不为了等待间隔增加慢集成测试，也不把间隔暴露为服主配置。
 - 当前 Katana 主机仍验证控制台命令匿名 401、认证 `version` 成功、未支持命令 400、游戏未就绪 503 和 single-flight 忙 503；动态命令切片落地时必须把该旧合同替换为 Owner/Admin 授权、任意注册命令透传、FIFO 顺序、队满拒绝、取消/断连与独立输出的稳定 HTTP 结果，并验证队满和未就绪路径不会执行命令。
-- 同一 Katana 主机验证玩家查询匿名 401、Owner 空/多玩家 200、camelCase 字段白名单与排序、游戏未就绪时不调用 Query，以及繁忙、主线程启动超时和快照不可用的稳定 503 Problem Details。当前持久认证只创建 `Owner`，非 Owner 403 随角色管理切片验证。
+- 同一 Katana 主机验证玩家查询匿名 401、Owner 空/多玩家 200、根对象仅含 `players`、每个玩家携带合法 UTC `observedAtUtc`、camelCase 字段白名单与排序、游戏未就绪时不调用 Query，以及旧 observation 仍以原时间成功返回；在线玩家端点不拥有 busy、主线程启动超时或投影 stale 503。当前持久认证只创建 `Owner`，非 Owner 403 随角色管理切片验证。
 - 同一 Katana 主机验证 Owner 踢出请求字段、确认、原因、身份、认证主体、成功白名单，以及离线、身份变化、busy、主线程超时、审计不可用和原生失败的稳定 Problem Details；请求取消不会被通用异常边界改写为 500。当前持久认证只创建 `Owner`，真实非 Owner 身份链路仍随角色管理切片验证。
 - `DependencyRulesTests` 以源码规则验证 Bootstrap 通过唯一 composition root 创建经过验证的 Provider、使用局部 candidate 调用 `RegisterAndStart` 后才发布字段，并保护 DI 包归属、发布清单、Adapter 方向和唯一 `IModApi`；`SevenDaysGameLifecycleAdapterTests` 通过事件 seam 执行 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 回调，验证订阅顺序、逆序回滚、异常保留及 Dispose 只拥有订阅。真实静态 `ModEvents` 注册仍由官方进程 smoke 验证。
 - 使用同一配置凭据重复启动并改变用户名/密码，断言数据库始终只有固定 `Subject=owner` 的一个引导用户；凭据不变时保留 Token，变化时旧凭据和旧 Token 同时失效。
@@ -133,7 +133,7 @@ last_updated: "2026-07-22"
 
 同日当前二进制按 `Publish-Mod.cmd -> Start-Server.cmd -> Test-HealthEndpoint.cmd -> authenticated SSE -> Stop-Server.cmd -> unavailable check` 完成远程 Windows `v3.0.1-b4` smoke。日志确认 `0Harmony` 从游戏 `0_TFP_Harmony` 加载，位置补丁在 `3.071s` 记录成功，database upgrade 在 `3.388s` 开始且无新 migration，OWIN 在 `7.775s` 启动，`StartGame done` 在 `65.392s` 出现。健康端点返回精确三字段 HTTP 200；password grant 成功，Basic/Bearer SSE 都返回 200 Welcome，Bearer 从游标 0 回放 161 个事件并包含 `console-log`、`game-ready`，关服连接收到 `server-stopping` id 190。停止摘要为 `accepted=188`、`consumed=188`、`droppedFull=0`、`rejectedStopping=0`、`consumerFailures=0`、`highWater=1`；随后 OWIN 停止、进程数为 0、健康端点不可达，兼容性错误扫描为 0。测试 Token 明文只存在于已结束的验证进程，数据库仅保存约 30 分钟到期的摘要；未直接修改服主配置或数据库清理记录。本轮没有前端变化，按风险分级未重复浏览器检查。
 
-同日发布在线玩家查询切片后，在同一 Windows `v3.0.1-b4` 测试服连接一个受控玩家执行开发期人工 smoke。`/health` 与 Owner Basic 认证的 `GET /api/v1/players/online` 均返回 HTTP 200，响应包含恰好一个玩家；根对象、玩家对象和平台身份对象均只出现批准字段，玩家名和主平台身份非空，响应中未发现 IP、位置、封禁、战斗统计或离线历史字段。随后 `Stop-Server.ps1` 收到 Telnet 正常关服确认并观察到远端进程停止，`Test-HealthEndpoint.ps1 -ExpectUnavailable` 确认 listener 不可达。该证据验证了当前游戏字段映射、主线程快照路径、Owner API 和停止释放路径的真实进程兼容性；本轮未执行空服务器分支、浏览器检查或候选发布归档，这些门禁仍由既有自动化和后续适用 smoke 分别承担。
+同日发布旧在线玩家查询切片后，在同一 Windows `v3.0.1-b4` 测试服连接一个受控玩家执行开发期人工 smoke。`/health` 与 Owner Basic 认证的 `GET /api/v1/players/online` 均返回 HTTP 200，响应包含恰好一个玩家；根对象、玩家对象和平台身份对象均只出现批准字段，玩家名和主平台身份非空，响应中未发现 IP、位置、封禁、战斗统计或离线历史字段。随后 `Stop-Server.ps1` 收到 Telnet 正常关服确认并观察到远端进程停止，`Test-HealthEndpoint.ps1 -ExpectUnavailable` 确认 listener 不可达。该证据验证了已被事件投影替换的请求时主线程快照、Owner API 和当时字段映射的真实进程兼容性，不证明当前 `PlayerJoinedGame`、`SavePlayerData`、`PlayerDisconnected` 订阅和投影生命周期；当前事件投影仍需后续适用 smoke 验证。
 
 2026-07-21 在引入 Application 控制台命令切片后重新执行 `Publish-Mod.cmd -> Start-Server.cmd -> authenticated command -> Stop-Server.cmd -> unavailable check`。发布门禁确认 Bootstrap、Application、Hosting、Web、SevenDays 和 Persistence 六个产品 DLL，7DTD 日志确认 `LSTY.SevenDPanel.Application.dll` 与其余当前程序集从 Mod 目录加载。第一轮启动因外部 EOS backend `NoConnection` 在 `GameStartDone` 前自行退出，7DPanel 仍排空 52 个已接受事件并释放 OWIN；该失败未归因于 Mod，也未用重跑隐藏。重试后命令端点在加载期连续 9 次返回 503 `game_not_ready`，游戏就绪后 `POST /api/v1/console/commands` 返回 HTTP 200、`command=version` 和 5 行真实输出，首行为 `Game version: V 3.0.1 (b4) Compatibility Version: V 3.0.1`。Telnet 正常关服后健康端点不可达；服主旧三字段 `config.json` 保持 71 字节且 SHA-256 为 `9130C9804B03BCC762FA5E7D91C2983214E6F08174B23EE7E007016F4E106A9B`。本轮没有前端变化，按风险分级未执行浏览器检查。
 

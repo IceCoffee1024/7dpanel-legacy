@@ -16,6 +16,7 @@ const player: OnlinePlayer = {
   ping: 42,
   level: 18,
   health: 93,
+  observedAtUtc: '2026-07-23T08:00:00Z',
 }
 
 const modalStub = {

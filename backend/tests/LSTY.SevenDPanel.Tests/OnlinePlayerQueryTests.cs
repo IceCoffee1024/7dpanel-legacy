@@ -13,7 +13,6 @@ namespace LSTY.SevenDPanel.Tests
         public async Task GetOnlinePlayersUseCase_forwards_the_query_once_and_returns_the_same_result()
         {
             var expected = new OnlinePlayersSnapshot(
-                DateTimeOffset.UtcNow,
                 new[]
                 {
                     new PlayerSnapshot(
@@ -23,7 +22,8 @@ namespace LSTY.SevenDPanel.Tests
                         null,
                         42,
                         10,
-                        100)
+                        100,
+                        new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero))
                 });
             var query = new RecordingOnlinePlayerQuery(expected);
             var useCase = new GetOnlinePlayersUseCase(query);
@@ -46,10 +46,11 @@ namespace LSTY.SevenDPanel.Tests
                     null,
                     42,
                     10,
-                    100)
+                        100,
+                        new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero))
             };
 
-            var snapshot = new OnlinePlayersSnapshot(DateTimeOffset.UtcNow, source);
+                    var snapshot = new OnlinePlayersSnapshot(source);
             source.Clear();
 
             Assert.Single(snapshot.Players);
@@ -59,10 +60,27 @@ namespace LSTY.SevenDPanel.Tests
         [Fact]
         public void Empty_player_collection_is_non_null()
         {
-            var snapshot = new OnlinePlayersSnapshot(DateTimeOffset.UtcNow, Array.Empty<PlayerSnapshot>());
+            var snapshot = new OnlinePlayersSnapshot(Array.Empty<PlayerSnapshot>());
 
             Assert.NotNull(snapshot.Players);
             Assert.Empty(snapshot.Players);
+        }
+
+        [Fact]
+        public void PlayerSnapshot_preserves_the_observation_time()
+        {
+            var observedAtUtc = new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero);
+            var player = new PlayerSnapshot(
+                1,
+                "Alice",
+                new PlayerPlatformIdentity("steam:alice", "steam"),
+                null,
+                42,
+                10,
+                100,
+                observedAtUtc);
+
+            Assert.Equal(observedAtUtc, player.ObservedAtUtc);
         }
 
         [Theory]
@@ -78,7 +96,8 @@ namespace LSTY.SevenDPanel.Tests
                     null,
                     42,
                     10,
-                    100));
+                    100,
+                    DateTimeOffset.UtcNow));
         }
 
         [Theory]

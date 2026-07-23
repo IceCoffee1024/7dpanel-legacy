@@ -24,8 +24,19 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-function snapshot(capturedAtUtc: string): OnlinePlayersSnapshot {
-  return Object.freeze({ capturedAtUtc, players: Object.freeze([]) })
+function snapshot(observedAtUtc: string): OnlinePlayersSnapshot {
+  return Object.freeze({
+    players: Object.freeze([{
+      entityId: 7,
+      name: 'Amy',
+      observedAtUtc,
+      platformIdentity: { combinedId: 'steam:amy', platform: 'Steam' },
+      crossplatformIdentity: null,
+      ping: 42,
+      level: 10,
+      health: 100,
+    }]),
+  })
 }
 
 function createVisibility(initiallyVisible = true) {
@@ -87,9 +98,24 @@ describe('useOnlinePlayers', () => {
     await flushPromises()
 
     expect(controller.state.value).toBe('fresh')
-    expect(controller.snapshot.value?.capturedAtUtc).toBe('2026-07-22T08:00:00Z')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2026-07-22T08:00:00Z')
     expect(controller.errorCode.value).toBeNull()
     expect(controller.isRefreshing.value).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('publishes every valid success response as fresh', async () => {
+    const fetchPlayers = vi.fn().mockResolvedValue(snapshot('2000-01-01T00:00:00Z'))
+    const { controller, wrapper } = mountComposable({
+      auth: { authorizationHeader: 'Bearer token', expireSession: vi.fn() },
+      fetchPlayers,
+      visibility: createVisibility().source,
+    })
+    await flushPromises()
+
+    expect(controller.state.value).toBe('fresh')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2000-01-01T00:00:00Z')
+    expect(controller.errorCode.value).toBeNull()
     wrapper.unmount()
   })
 
@@ -107,12 +133,12 @@ describe('useOnlinePlayers', () => {
 
     await vi.advanceTimersByTimeAsync(10_000)
     expect(fetchPlayers).toHaveBeenCalledTimes(2)
-    expect(controller.snapshot.value?.capturedAtUtc).toBe('2026-07-22T08:00:00Z')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2026-07-22T08:00:00Z')
     expect(controller.isRefreshing.value).toBe(true)
 
     second.resolve(snapshot('2026-07-22T08:00:10Z'))
     await flushPromises()
-    expect(controller.snapshot.value?.capturedAtUtc).toBe('2026-07-22T08:00:10Z')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2026-07-22T08:00:10Z')
     wrapper.unmount()
   })
 
@@ -172,7 +198,7 @@ describe('useOnlinePlayers', () => {
 
     expect(controller.state.value).toBe('stale')
     expect(controller.errorCode.value).toBe('busy')
-    expect(controller.snapshot.value?.capturedAtUtc).toBe('2026-07-22T08:00:00Z')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2026-07-22T08:00:00Z')
     wrapper.unmount()
   })
 
@@ -233,7 +259,7 @@ describe('useOnlinePlayers', () => {
 
     expect(onSessionExpired).toHaveBeenCalledOnce()
     expect(controller.state.value).toBe('stale')
-    expect(controller.snapshot.value?.capturedAtUtc).toBe('2026-07-22T08:00:00Z')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2026-07-22T08:00:00Z')
     wrapper.unmount()
   })
 
@@ -328,7 +354,7 @@ describe('useOnlinePlayers', () => {
     await controller.refresh()
 
     expect(controller.state.value).toBe('fresh')
-    expect(controller.snapshot.value?.capturedAtUtc).toBe('2026-07-22T08:00:00Z')
+    expect(controller.snapshot.value?.players[0]?.observedAtUtc).toBe('2026-07-22T08:00:00Z')
     expect(controller.errorCode.value).toBeNull()
     wrapper.unmount()
   })

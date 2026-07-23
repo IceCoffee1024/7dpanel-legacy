@@ -11,7 +11,8 @@ namespace LSTY.SevenDPanel.Application
             PlayerPlatformIdentity? crossplatformIdentity,
             int ping,
             int level,
-            int health)
+            int health,
+            DateTimeOffset observedAtUtc)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("A player name is required.", nameof(name));
@@ -26,6 +27,7 @@ namespace LSTY.SevenDPanel.Application
             Ping = ping;
             Level = level;
             Health = health;
+            ObservedAtUtc = observedAtUtc;
         }
 
         public int EntityId { get; }
@@ -41,5 +43,7 @@ namespace LSTY.SevenDPanel.Application
         public int Level { get; }
 
         public int Health { get; }
+
+        public DateTimeOffset ObservedAtUtc { get; }
     }
 }

@@ -182,10 +182,12 @@ namespace LSTY.SevenDPanel.Tests
             Assert.IsType<SevenDaysRestrictedConsoleGateway>(
                 provider.GetRequiredService<IRestrictedConsoleGateway>());
             Assert.NotNull(provider.GetRequiredService<ExecuteConsoleCommandUseCase>());
-            var onlinePlayerQuery = provider.GetRequiredService<SevenDaysOnlinePlayerQuery>();
+            var onlinePlayerQuery = provider.GetRequiredService<SevenDaysOnlinePlayerProjection>();
             Assert.Same(
                 onlinePlayerQuery,
                 provider.GetRequiredService<IOnlinePlayerQuery>());
+            Assert.IsType<OnlinePlayerProjectionRuntime>(
+                provider.GetRequiredService<IModRuntime>());
             Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
             var playerActionAuditTrail = provider.GetRequiredService<SqlitePlayerActionAuditTrail>();
             Assert.Same(
@@ -250,7 +252,7 @@ namespace LSTY.SevenDPanel.Tests
                     "rule violation",
                     DateTimeOffset.UtcNow));
 
-                runtime.Start();
+                provider.GetRequiredService<ModHost>().Start();
 
                 using var connection = factory.Open();
                 using var command = connection.CreateCommand();

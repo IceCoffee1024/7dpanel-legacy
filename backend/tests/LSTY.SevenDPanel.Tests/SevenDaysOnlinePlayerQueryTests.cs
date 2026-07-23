@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
-using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Runtime;
 using LSTY.SevenDPanel.Application;
 using Xunit;
 
@@ -12,236 +12,336 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class SevenDaysOnlinePlayerQueryTests
     {
         [Fact]
-        public async Task Empty_snapshot_returns_empty_players()
+        public async Task Query_sorts_observations_and_preserves_each_observed_time()
         {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var query = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, _, _, _) => Task.FromResult(new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>())),
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
+            var older = Utc(1, 0, 0);
+            var newer = older.AddSeconds(20);
+            using var projection = CreateProjection();
+            projection.UpsertForTest(CreateObservation(42, "Zed", newer));
+            projection.UpsertForTest(CreateObservation(7, "Amy", older));
 
-            var snapshot = await query.GetOnlineAsync(CancellationToken.None);
+            var result = await projection.GetOnlineAsync(CancellationToken.None);
 
-            Assert.Equal(capturedAtUtc, snapshot.CapturedAtUtc);
-            Assert.Empty(snapshot.Players);
+            Assert.Equal(new[] { 7, 42 }, result.Players.Select(player => player.EntityId));
+            Assert.Equal(new[] { older, newer }, result.Players.Select(player => player.ObservedAtUtc));
         }
 
         [Fact]
-        public async Task Snapshot_is_sorted_by_entity_id_and_includes_nullable_crossplatform_identity()
+        public async Task Empty_projection_returns_an_empty_collection()
         {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var expectedPlatform = new PlayerPlatformIdentity("steam:2", "Steam");
-            var expectedCrossplatform = new PlayerPlatformIdentity("eos:2", "EOS");
-            var query = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, _, _, _) => Task.FromResult(new OnlinePlayersSnapshot(capturedAtUtc, new[]
-                {
-                    new PlayerSnapshot(42, "Zed", expectedPlatform, null, 12, 20, 100),
-                    new PlayerSnapshot(7, "Amy", expectedPlatform, expectedCrossplatform, 8, 16, 90),
-                    new PlayerSnapshot(11, "Bob", expectedPlatform, expectedCrossplatform, 10, 18, 95)
-                })),
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
+            using var projection = CreateProjection();
 
-            var snapshot = await query.GetOnlineAsync(CancellationToken.None);
+            var result = await projection.GetOnlineAsync(CancellationToken.None);
 
-            Assert.Collection(snapshot.Players,
-                player =>
+            Assert.Empty(result.Players);
+        }
+
+        [Fact]
+        public async Task Query_honors_an_already_cancelled_token()
+        {
+            using var projection = CreateProjection();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                projection.GetOnlineAsync(new CancellationToken(true)));
+        }
+
+        [Fact]
+        public async Task Later_observation_replaces_the_same_entity_and_prior_results_stay_stable()
+        {
+            var observedAt = Utc(1, 0, 0);
+            using var projection = CreateProjection();
+            projection.UpsertForTest(CreateObservation(7, "Before", observedAt));
+            var before = await projection.GetOnlineAsync(CancellationToken.None);
+
+            projection.UpsertForTest(CreateObservation(7, "After", observedAt.AddSeconds(1)));
+            var after = await projection.GetOnlineAsync(CancellationToken.None);
+
+            Assert.Equal("Before", Assert.Single(before.Players).Name);
+            Assert.Equal("After", Assert.Single(after.Players).Name);
+        }
+
+        [Fact]
+        public async Task Query_returns_an_old_observation_without_applying_an_age_policy()
+        {
+            var observedAt = Utc(1, 0, 0);
+            using var projection = CreateProjection();
+            projection.UpsertForTest(CreateObservation(7, "Amy", observedAt));
+
+            var result = await projection.GetOnlineAsync(CancellationToken.None);
+
+            Assert.Equal(observedAt, Assert.Single(result.Players).ObservedAtUtc);
+        }
+
+        [Fact]
+        public async Task Membership_without_an_observation_remains_absent_regardless_of_age()
+        {
+            var joinedAt = Utc(1, 0, 0);
+            using var projection = CreateProjection();
+            projection.JoinForTest(7, "steam:amy");
+
+            var result = await projection.GetOnlineAsync(CancellationToken.None);
+
+            Assert.Empty(result.Players);
+        }
+
+        [Fact]
+        public async Task Observation_for_a_reused_entity_is_hidden_until_the_current_identity_is_observed()
+        {
+            var observedAt = Utc(1, 0, 0);
+            using var projection = CreateProjection();
+            projection.UpsertForTest(CreateObservation(7, "Old", observedAt, "steam:old"));
+
+            projection.JoinForTest(7, "steam:new");
+
+            Assert.Empty((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+        }
+
+        [Fact]
+        public async Task Join_creates_membership_without_creating_an_observation()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+
+            fixture.RaiseJoined(new OnlinePlayerIdentitySource(7, "steam:amy"));
+
+            Assert.Empty((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+        }
+
+        [Fact]
+        public async Task Save_upserts_one_observation_and_later_save_replaces_it()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+
+            fixture.RaiseSave(CreateObservation(7, "Amy", fixture.UtcNow, level: 10, health: 80));
+            fixture.RaiseSave(CreateObservation(7, "Amy", fixture.UtcNow.AddSeconds(1), level: 11, health: 75));
+
+            var player = Assert.Single((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+            Assert.Equal(11, player.Level);
+            Assert.Equal(75, player.Health);
+            Assert.Equal(2, fixture.CopyCount);
+        }
+
+        [Fact]
+        public async Task Save_without_a_prior_join_creates_matching_membership()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+
+            fixture.RaiseSave(CreateObservation(7, "Amy", fixture.UtcNow));
+
+            Assert.Single((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+        }
+
+        [Fact]
+        public async Task Join_for_a_reused_entity_removes_the_old_identity_observation()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+            fixture.RaiseSave(CreateObservation(7, "Old", fixture.UtcNow, "steam:old"));
+
+            fixture.RaiseJoined(new OnlinePlayerIdentitySource(7, "steam:new"));
+
+            Assert.Empty((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+        }
+
+        [Fact]
+        public async Task Disconnect_removes_only_the_matching_identity()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+            fixture.RaiseSave(CreateObservation(7, "Amy", fixture.UtcNow));
+
+            fixture.RaiseDisconnected(new OnlinePlayerIdentitySource(7, "steam:other"));
+            Assert.Single((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+
+            fixture.RaiseDisconnected(new OnlinePlayerIdentitySource(7, "steam:amy"));
+            Assert.Empty((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+        }
+
+        [Fact]
+        public async Task Copy_failure_keeps_the_previous_observation_and_does_not_escape()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+            fixture.RaiseSave(CreateObservation(7, "Before", fixture.UtcNow));
+            fixture.CopyException = new InvalidOperationException("copy failed");
+
+            fixture.RaiseSave(CreateObservation(7, "After", fixture.UtcNow.AddSeconds(1)));
+
+            Assert.Equal(
+                "Before",
+                Assert.Single((await projection.GetOnlineAsync(CancellationToken.None)).Players).Name);
+            Assert.Contains("online player save rejected", fixture.LogMessages);
+        }
+
+        [Fact]
+        public void Start_and_stop_use_exact_reverse_subscription_order_and_are_idempotent()
+        {
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+
+            projection.Start();
+            projection.Start();
+            projection.Stop();
+            projection.Stop();
+
+            Assert.Equal(
+                new[]
                 {
-                    Assert.Equal(7, player.EntityId);
-                    Assert.Equal("Amy", player.Name);
-                    Assert.NotNull(player.CrossplatformIdentity);
-                    Assert.Equal("eos:2", player.CrossplatformIdentity!.CombinedId);
+                    "subscribe-joined", "subscribe-save", "subscribe-disconnected",
+                    "dispose-disconnected", "dispose-save", "dispose-joined"
                 },
-                player =>
-                {
-                    Assert.Equal(11, player.EntityId);
-                    Assert.Equal("Bob", player.Name);
-                },
-                player =>
-                {
-                    Assert.Equal(42, player.EntityId);
-                    Assert.Equal("Zed", player.Name);
-                    Assert.Null(player.CrossplatformIdentity);
-                });
-        }
-
-        [Fact]
-        public async Task Concurrent_second_query_fails_immediately_and_gate_releases_after_success()
-        {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var firstStarted = new ManualResetEventSlim(false);
-            var releaseFirst = new ManualResetEventSlim(false);
-            var dispatcherCalls = 0;
-
-            var query = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, _, _, _) =>
-                {
-                    dispatcherCalls++;
-                    firstStarted.Set();
-                    releaseFirst.Wait(TimeSpan.FromSeconds(5));
-                    return Task.FromResult(new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()));
-                },
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
-
-            var first = Task.Run(
-                () => query.GetOnlineAsync(TestContext.Current.CancellationToken),
-                TestContext.Current.CancellationToken);
-            Assert.True(firstStarted.Wait(
-                TimeSpan.FromSeconds(5),
-                TestContext.Current.CancellationToken));
-
-            var secondTask = query.GetOnlineAsync(CancellationToken.None);
-            var second = await Assert.ThrowsAsync<OnlinePlayerQueryBusyException>(async () => await secondTask);
-            Assert.NotNull(second);
-
-            releaseFirst.Set();
-            await first;
-            Assert.Equal(1, dispatcherCalls);
-
-            var third = await query.GetOnlineAsync(CancellationToken.None);
-            Assert.Empty(third.Players);
-            Assert.Equal(2, dispatcherCalls);
-        }
-
-        [Fact]
-        public async Task Separate_query_instances_do_not_share_the_single_flight_gate()
-        {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var firstStarted = new ManualResetEventSlim(false);
-            var releaseFirst = new ManualResetEventSlim(false);
-            var firstQuery = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, _, _, _) =>
-                {
-                    firstStarted.Set();
-                    releaseFirst.Wait(TimeSpan.FromSeconds(5));
-                    return Task.FromResult(new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()));
-                },
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
-            var secondQuery = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, action, _, _) => Task.FromResult(action()),
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
-
-            var first = Task.Run(
-                () => firstQuery.GetOnlineAsync(TestContext.Current.CancellationToken),
-                TestContext.Current.CancellationToken);
-            Assert.True(firstStarted.Wait(
-                TimeSpan.FromSeconds(5),
-                TestContext.Current.CancellationToken));
-
-            var second = await secondQuery.GetOnlineAsync(CancellationToken.None);
-
-            Assert.Empty(second.Players);
-            releaseFirst.Set();
-            await first;
-        }
-
-        [Fact]
-        public async Task Gate_releases_after_exception()
-        {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var dispatchCount = 0;
-            var query = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, action, _, _) =>
-                {
-                    dispatchCount++;
-                    if (dispatchCount == 1)
-                    {
-                        return Task.FromException<OnlinePlayersSnapshot>(new InvalidOperationException("boom"));
-                    }
-
-                    return Task.FromResult(action());
-                },
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => query.GetOnlineAsync(CancellationToken.None));
-            var second = await query.GetOnlineAsync(CancellationToken.None);
-            Assert.Empty(second.Players);
-            Assert.Equal(2, dispatchCount);
-        }
-
-        [Fact]
-        public void Missing_platform_identity_is_a_field_read_failure()
-        {
-            Assert.Throws<InvalidOperationException>(() =>
-                SevenDaysOnlinePlayerQuery.CreatePlatformIdentityFromStrings(string.Empty, "Steam"));
-        }
-
-        [Fact]
-        public void Missing_player_level_is_a_field_read_failure()
-        {
-            Assert.Throws<InvalidOperationException>(() =>
-                SevenDaysOnlinePlayerQuery.RequireLevel(null));
+                fixture.Trace);
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task Gate_releases_after_cancellation_or_timeout(bool cancel)
+        [InlineData(2)]
+        [InlineData(3)]
+        public void Registration_failure_rolls_back_prior_subscriptions_in_reverse_order(int failureIndex)
         {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var dispatchCount = 0;
-            var query = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (_, action, _, _) =>
-                {
-                    dispatchCount++;
-                    if (dispatchCount == 1)
+            var fixture = new ProjectionFixture { SubscriptionFailureIndex = failureIndex };
+            using var projection = fixture.CreateProjection();
+
+            Assert.Throws<InvalidOperationException>(() => projection.Start());
+
+            Assert.Equal(0, fixture.ActiveSubscriptionCount);
+            Assert.Equal(
+                failureIndex == 2
+                    ? new[] { "subscribe-joined", "subscribe-save", "dispose-joined" }
+                    : new[]
                     {
-                        return cancel
-                            ? Task.FromCanceled<OnlinePlayersSnapshot>(new CancellationToken(true))
-                            : Task.FromException<OnlinePlayersSnapshot>(new TimeoutException());
-                    }
-
-                    return Task.FromResult(action());
-                },
-                capture: () => new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>()),
-                utcClock: () => capturedAtUtc);
-
-            if (cancel)
-            {
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    query.GetOnlineAsync(TestContext.Current.CancellationToken));
-            }
-            else
-            {
-                await Assert.ThrowsAsync<TimeoutException>(() =>
-                    query.GetOnlineAsync(TestContext.Current.CancellationToken));
-            }
-
-            var second = await query.GetOnlineAsync(TestContext.Current.CancellationToken);
-
-            Assert.Empty(second.Players);
-            Assert.Equal(2, dispatchCount);
+                        "subscribe-joined", "subscribe-save", "subscribe-disconnected",
+                        "dispose-save", "dispose-joined"
+                    },
+                fixture.Trace);
         }
 
         [Fact]
-        public async Task Capture_delegate_runs_only_inside_dispatcher_boundary()
+        public async Task Stop_clears_projection_and_rejects_later_callbacks()
         {
-            var capturedAtUtc = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-            var captureInvocations = 0;
-            var dispatchInvocations = 0;
-            var query = new SevenDaysOnlinePlayerQuery(
-                dispatcher: (operationName, action, timeout, cancellationToken) =>
-                {
-                    dispatchInvocations++;
-                    Assert.Equal("7DPanel.Players.Online", operationName);
-                    Assert.Equal(TimeSpan.FromSeconds(5), timeout);
-                    return Task.FromResult(action());
-                },
-                capture: () =>
-                {
-                    captureInvocations++;
-                    return new OnlinePlayersSnapshot(capturedAtUtc, Array.Empty<PlayerSnapshot>());
-                },
-                utcClock: () => capturedAtUtc);
+            var fixture = new ProjectionFixture();
+            using var projection = fixture.CreateProjection();
+            projection.Start();
+            fixture.RaiseSave(CreateObservation(7, "Amy", fixture.UtcNow));
 
-            await query.GetOnlineAsync(CancellationToken.None);
+            projection.Stop();
+            fixture.RaiseSave(CreateObservation(8, "Late", fixture.UtcNow));
 
-            Assert.Equal(1, dispatchInvocations);
-            Assert.Equal(1, captureInvocations);
+            Assert.Empty((await projection.GetOnlineAsync(CancellationToken.None)).Players);
+        }
+
+        private static SevenDaysOnlinePlayerProjection CreateProjection() =>
+            new SevenDaysOnlinePlayerProjection();
+
+        private static OnlinePlayerObservation CreateObservation(
+            int entityId,
+            string name,
+            DateTimeOffset observedAtUtc,
+            string combinedId = "steam:amy",
+            int level = 10,
+            int health = 100) =>
+            new OnlinePlayerObservation(
+                new PlayerSnapshot(
+                    entityId,
+                    name,
+                    new PlayerPlatformIdentity(combinedId, "Steam"),
+                    null,
+                    42,
+                    level,
+                    health,
+                    observedAtUtc),
+                observedAtUtc);
+
+        private static DateTimeOffset Utc(int hour, int minute, int second) =>
+            new DateTimeOffset(2026, 7, 22, hour, minute, second, TimeSpan.Zero);
+
+        private sealed class ProjectionFixture
+        {
+            private Action<OnlinePlayerIdentitySource>? joined;
+            private Action<OnlinePlayerObservation>? save;
+            private Action<OnlinePlayerIdentitySource>? disconnected;
+
+            public ProjectionFixture()
+            {
+                UtcNow = Utc(1, 0, 0);
+            }
+
+            public DateTimeOffset UtcNow { get; set; }
+
+            public int CopyCount { get; private set; }
+
+            public Exception? CopyException { get; set; }
+
+            public List<string> LogMessages { get; } = new List<string>();
+
+            public List<string> Trace { get; } = new List<string>();
+
+            public int SubscriptionFailureIndex { get; set; }
+
+            public int ActiveSubscriptionCount => activeSubscriptions;
+
+            private int subscriptionCount;
+            private int activeSubscriptions;
+
+            public SevenDaysOnlinePlayerProjection CreateProjection() =>
+                new SevenDaysOnlinePlayerProjection(
+                    handler => Subscribe("joined", handler, value => joined = value),
+                    handler => Subscribe("save", handler, value => save = value),
+                    handler => Subscribe("disconnected", handler, value => disconnected = value),
+                    observation =>
+                    {
+                        CopyCount++;
+                        if (CopyException != null) throw CopyException;
+                        return observation;
+                    },
+                    LogMessages.Add);
+
+            public void RaiseJoined(OnlinePlayerIdentitySource source) => joined!(source);
+
+            public void RaiseSave(OnlinePlayerObservation observation) => save!(observation);
+
+            public void RaiseDisconnected(OnlinePlayerIdentitySource source) => disconnected!(source);
+
+            private IDisposable Subscribe<T>(
+                string name,
+                Action<T> handler,
+                Action<Action<T>> capture)
+            {
+                subscriptionCount++;
+                Trace.Add("subscribe-" + name);
+                if (subscriptionCount == SubscriptionFailureIndex)
+                    throw new InvalidOperationException("subscription failed");
+
+                capture(handler);
+                activeSubscriptions++;
+                return new Subscription(() =>
+                {
+                    activeSubscriptions--;
+                    Trace.Add("dispose-" + name);
+                });
+            }
+
+            private sealed class Subscription : IDisposable
+            {
+                private Action? dispose;
+
+                public Subscription(Action dispose)
+                {
+                    this.dispose = dispose;
+                }
+
+                public void Dispose()
+                {
+                    Interlocked.Exchange(ref dispose, null)?.Invoke();
+                }
+            }
         }
     }
 }

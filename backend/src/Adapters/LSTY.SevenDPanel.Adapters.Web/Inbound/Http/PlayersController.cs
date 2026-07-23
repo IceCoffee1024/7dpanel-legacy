@@ -45,41 +45,14 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     "The game is not ready to provide online players.");
             }
 
-            try
-            {
-                var snapshot = await useCase.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-                var players = snapshot.Players
-                    .OrderBy(player => player.EntityId)
-                    .Select(ToResponse)
-                    .ToArray();
-                return Request.CreateResponse(
-                    HttpStatusCode.OK,
-                    new OnlinePlayersResponse(snapshot.CapturedAtUtc, players));
-            }
-            catch (OnlinePlayerQueryBusyException)
-            {
-                return ApiProblemDetailsFactory.CreateResponse(
-                    Request,
-                    HttpStatusCode.ServiceUnavailable,
-                    "online_player_query_busy",
-                    "Another online player query is already in progress.");
-            }
-            catch (TimeoutException)
-            {
-                return ApiProblemDetailsFactory.CreateResponse(
-                    Request,
-                    HttpStatusCode.ServiceUnavailable,
-                    "game_thread_timeout",
-                    "The game thread did not start the online player query before the deadline.");
-            }
-            catch (OnlinePlayerSnapshotUnavailableException)
-            {
-                return ApiProblemDetailsFactory.CreateResponse(
-                    Request,
-                    HttpStatusCode.ServiceUnavailable,
-                    "online_player_snapshot_unavailable",
-                    "The online player snapshot is currently unavailable.");
-            }
+            var snapshot = await useCase.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            var players = snapshot.Players
+                .OrderBy(player => player.EntityId)
+                .Select(ToResponse)
+                .ToArray();
+            return Request.CreateResponse(
+                HttpStatusCode.OK,
+                new OnlinePlayersResponse(players));
         }
 
         [HttpPost]
@@ -229,7 +202,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 player.CrossplatformIdentity == null ? null : ToIdentityResponse(player.CrossplatformIdentity),
                 player.Ping,
                 player.Level,
-                player.Health);
+                player.Health,
+                player.ObservedAtUtc);
         }
 
         private static OnlinePlayerPlatformIdentityResponse ToIdentityResponse(PlayerPlatformIdentity identity)
@@ -240,13 +214,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
     public sealed class OnlinePlayersResponse
     {
-        public OnlinePlayersResponse(DateTimeOffset capturedAtUtc, IReadOnlyList<OnlinePlayerResponse> players)
+        public OnlinePlayersResponse(IReadOnlyList<OnlinePlayerResponse> players)
         {
-            CapturedAtUtc = capturedAtUtc.ToString("O", CultureInfo.InvariantCulture);
             Players = players;
         }
-
-        public string CapturedAtUtc { get; }
 
         public IReadOnlyList<OnlinePlayerResponse> Players { get; }
     }
@@ -260,7 +231,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             OnlinePlayerPlatformIdentityResponse? crossplatformIdentity,
             int ping,
             int level,
-            int health)
+            int health,
+            DateTimeOffset observedAtUtc)
         {
             EntityId = entityId;
             Name = name;
@@ -269,6 +241,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             Ping = ping;
             Level = level;
             Health = health;
+            ObservedAtUtc = observedAtUtc.ToString("O", CultureInfo.InvariantCulture);
         }
 
         public int EntityId { get; }
@@ -284,6 +257,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public int Level { get; }
 
         public int Health { get; }
+
+        public string ObservedAtUtc { get; }
     }
 
     public sealed class OnlinePlayerPlatformIdentityResponse

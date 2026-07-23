@@ -45,6 +45,7 @@ vi.mock('vue-router', async importOriginal => ({
 const player: OnlinePlayer = {
   entityId: 7,
   name: 'Test Player',
+  observedAtUtc: '2026-07-23T07:59:00Z',
   platformIdentity: {
     combinedId: 'Steam_76561198000000000',
     platform: 'Steam',
@@ -135,7 +136,6 @@ function mountOnlinePlayersView(values: ControllerValues = {}, kickOptions: {
 
 function onePlayerSnapshot(overrides: Partial<OnlinePlayer> = {}): OnlinePlayersSnapshot {
   return {
-    capturedAtUtc: '2026-07-21T00:00:00Z',
     players: [{ ...player, ...overrides }],
   }
 }
@@ -151,24 +151,50 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('renders the empty state with capture time', () => {
+it('renders the empty state without a fabricated capture time', () => {
   const { wrapper } = mountOnlinePlayersView({
     state: 'fresh',
-    snapshot: { capturedAtUtc: '2026-07-21T00:00:00Z', players: [] },
+    snapshot: { players: [] },
   })
 
   expect(wrapper.get('[data-testid="players-empty"]').text()).toContain('当前没有在线玩家')
-  expect(wrapper.text()).toContain('2026')
+  expect(wrapper.text()).not.toContain('捕获于')
 })
 
-it('keeps player rows visible while stale', () => {
+it.each([
+  ['desktop table', OnlinePlayersTable],
+  ['mobile list', OnlinePlayersList],
+] as const)('marks only old observations in the %s', (_, component) => {
   const { wrapper } = mountOnlinePlayersView({
-    state: 'stale',
-    snapshot: onePlayerSnapshot(),
+    state: 'fresh',
+    snapshot: onePlayerSnapshot({ observedAtUtc: '2000-01-01T00:00:00Z' }),
   })
 
-  expect(wrapper.text()).toContain('数据已过期')
-  expect(wrapper.text()).toContain('Test Player')
+  expect(wrapper.getComponent(component).text()).toContain('数据可能已过期')
+  expect(wrapper.getComponent(component).text()).toContain('Test Player')
+})
+
+it.each([
+  ['desktop table', OnlinePlayersTable],
+  ['mobile list', OnlinePlayersList],
+] as const)('shows each player observation time in the %s', (_, component) => {
+  const { wrapper } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot({ observedAtUtc: '2026-07-23T08:00:00Z' }),
+  })
+
+  expect(wrapper.getComponent(component).text()).toContain('更新于')
+  expect(wrapper.getComponent(component).text()).toContain('2026')
+})
+
+it('distinguishes a refresh failure from player observation age', () => {
+  const { wrapper } = mountOnlinePlayersView({
+    state: 'stale',
+    snapshot: onePlayerSnapshot({ observedAtUtc: new Date().toISOString() }),
+  })
+
+  expect(wrapper.text()).toContain('刷新失败，显示上次结果')
+  expect(wrapper.text()).not.toContain('数据可能已过期')
 })
 
 it.each([

@@ -2,6 +2,8 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { OnlinePlayer } from '../api/onlinePlayers'
 
+import { formatOnlinePlayerObservedAt, isOnlinePlayerObservationStale } from '../model/onlinePlayerFreshness'
+
 withDefaults(defineProps<{
   players: readonly OnlinePlayer[]
   canKick?: boolean
@@ -34,6 +36,17 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
           <p class="mt-1 font-mono text-xs text-dimmed">
             entity {{ player.entityId }} · {{ player.ping }} ms
           </p>
+          <p class="mt-1 text-xs text-muted">
+            更新于 {{ formatOnlinePlayerObservedAt(player.observedAtUtc) }}
+          </p>
+          <UBadge
+            v-if="isOnlinePlayerObservationStale(player.observedAtUtc)"
+            class="mt-2"
+            color="warning"
+            variant="subtle"
+          >
+            数据可能已过期
+          </UBadge>
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <UBadge color="neutral" variant="subtle">

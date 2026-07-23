@@ -4,6 +4,8 @@ import type { OnlinePlayer } from '../api/onlinePlayers'
 
 import { computed } from 'vue'
 
+import { formatOnlinePlayerObservedAt, isOnlinePlayerObservationStale } from '../model/onlinePlayerFreshness'
+
 const props = withDefaults(defineProps<{
   players: readonly OnlinePlayer[]
   canKick?: boolean
@@ -57,6 +59,17 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
           <p class="mt-1 font-mono text-xs text-dimmed">
             entity {{ row.original.entityId }}
           </p>
+          <p class="mt-1 text-xs text-muted">
+            更新于 {{ formatOnlinePlayerObservedAt(row.original.observedAtUtc) }}
+          </p>
+          <UBadge
+            v-if="isOnlinePlayerObservationStale(row.original.observedAtUtc)"
+            class="mt-2"
+            color="warning"
+            variant="subtle"
+          >
+            数据可能已过期
+          </UBadge>
         </div>
       </template>
 

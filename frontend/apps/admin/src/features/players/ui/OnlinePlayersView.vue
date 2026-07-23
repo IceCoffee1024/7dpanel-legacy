@@ -107,7 +107,6 @@ async function confirmKick(reason: string) {
   <UDashboardPanel id="players">
     <template #header>
       <OnlinePlayersToolbar
-        :captured-at-utc="snapshot?.capturedAtUtc"
         :count="snapshot?.players.length ?? 0"
         :is-refreshing="isRefreshing"
         :state="state"
@@ -125,7 +124,6 @@ async function confirmKick(reason: string) {
 
       <OnlinePlayersState
         v-else-if="snapshot.players.length === 0"
-        :captured-at-utc="snapshot.capturedAtUtc"
         state="empty"
       />
 

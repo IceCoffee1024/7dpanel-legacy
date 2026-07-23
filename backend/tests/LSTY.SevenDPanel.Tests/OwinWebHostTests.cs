@@ -273,7 +273,6 @@ namespace LSTY.SevenDPanel.Tests
         public async Task Owner_with_empty_snapshot_returns_200_and_empty_array()
         {
             var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
-                new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
                 Array.Empty<PlayerSnapshot>()));
             var port = GetAvailablePort();
             var url = "http://127.0.0.1:" + port + "/";
@@ -296,9 +295,7 @@ namespace LSTY.SevenDPanel.Tests
                 var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
 
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.Equal(
-                    new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
-                    (DateTimeOffset?)payload["capturedAtUtc"]);
+                Assert.Equal(new[] { "players" }, payload.Properties().Select(property => property.Name));
                 Assert.Equal(0, ((JArray?)payload["players"])?.Count ?? 0);
                 Assert.Equal(1, query.CallCount);
             }
@@ -307,8 +304,9 @@ namespace LSTY.SevenDPanel.Tests
         [Fact]
         public async Task Owner_with_multiple_players_returns_camel_case_fields_and_sorted_results()
         {
+            var aliceObservedAt = new DateTimeOffset(2026, 7, 21, 10, 29, 0, TimeSpan.Zero);
+            var zedObservedAt = new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero);
             var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
-                new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
                 new[]
                 {
                     new PlayerSnapshot(
@@ -318,7 +316,8 @@ namespace LSTY.SevenDPanel.Tests
                         new PlayerPlatformIdentity("cross-2", "Epic"),
                         100,
                         20,
-                        90),
+                        90,
+                        zedObservedAt),
                     new PlayerSnapshot(
                         7,
                         "Alice",
@@ -326,7 +325,8 @@ namespace LSTY.SevenDPanel.Tests
                         null,
                         40,
                         18,
-                        95)
+                        95,
+                        aliceObservedAt)
                 }));
             var port = GetAvailablePort();
             var url = "http://127.0.0.1:" + port + "/";
@@ -357,12 +357,11 @@ namespace LSTY.SevenDPanel.Tests
                     "health",
                     "level",
                     "name",
+                    "observedAtUtc",
                     "ping",
                     "platformIdentity"
                 })), "unexpected player property names");
-                Assert.Equal(
-                    new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero),
-                    (DateTimeOffset?)payload["capturedAtUtc"]);
+                Assert.Equal(new[] { "players" }, payload.Properties().Select(property => property.Name));
                 Assert.Equal(2, players.Count);
                 Assert.Equal(7, (int?)players[0]["entityId"]);
                 Assert.Equal(42, (int?)players[1]["entityId"]);
@@ -373,6 +372,8 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal("Epic", (string?)players[1]["crossplatformIdentity"]?["platform"]);
                 Assert.Equal(40, (int?)players[0]["ping"]);
                 Assert.Equal(90, (int?)players[1]["health"]);
+                Assert.Equal(aliceObservedAt, (DateTimeOffset?)players[0]["observedAtUtc"]);
+                Assert.Equal(zedObservedAt, (DateTimeOffset?)players[1]["observedAtUtc"]);
             }
         }
 
@@ -412,15 +413,23 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
-        [Theory]
-        [InlineData(typeof(OnlinePlayerQueryBusyException), "online_player_query_busy")]
-        [InlineData(typeof(TimeoutException), "game_thread_timeout")]
-        [InlineData(typeof(OnlinePlayerSnapshotUnavailableException), "online_player_snapshot_unavailable")]
-        public async Task Online_player_query_errors_return_stable_problem_details(
-            Type exceptionType,
-            string expectedCode)
+        [Fact]
+        public async Task Old_online_player_observation_returns_its_original_timestamp()
         {
-            var query = new TestOnlinePlayerQuery(exceptionType);
+            var observedAtUtc = new DateTimeOffset(2026, 7, 21, 10, 30, 0, TimeSpan.Zero);
+            var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
+                new[]
+                {
+                    new PlayerSnapshot(
+                        7,
+                        "Alice",
+                        new PlayerPlatformIdentity("steam-1", "Steam"),
+                        null,
+                        40,
+                        18,
+                        95,
+                        observedAtUtc)
+                }));
             var port = GetAvailablePort();
             var url = "http://127.0.0.1:" + port + "/";
             var hub = new ServerEventHub(new ServerEventLiveWindow(4));
@@ -439,12 +448,12 @@ namespace LSTY.SevenDPanel.Tests
                 using var response = await client.SendAsync(
                     request,
                     TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
 
-                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-                await AssertProblemDetailsAsync(
-                    response,
-                    expectedCode,
-                    "/api/v1/players/online");
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal(new[] { "players" }, payload.Properties().Select(property => property.Name));
+                Assert.Equal(7, (int?)payload["players"]?[0]?["entityId"]);
+                Assert.Equal(observedAtUtc, (DateTimeOffset?)payload["players"]?[0]?["observedAtUtc"]);
                 Assert.Equal(1, query.CallCount);
             }
         }
@@ -1574,7 +1583,6 @@ namespace LSTY.SevenDPanel.Tests
                 if (failure != null)
                     return Task.FromException<OnlinePlayersSnapshot>(failure);
                 return Task.FromResult(snapshot ?? new OnlinePlayersSnapshot(
-                    DateTimeOffset.UtcNow,
                     Array.Empty<PlayerSnapshot>()));
             }
         }

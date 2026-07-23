@@ -48,9 +48,9 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);
                 services.AddSingleton<IRestrictedConsoleGateway, SevenDaysRestrictedConsoleGateway>();
                 services.AddSingleton<ExecuteConsoleCommandUseCase>();
-                services.AddSingleton<SevenDaysOnlinePlayerQuery>();
+                services.AddSingleton(serviceProvider => new SevenDaysOnlinePlayerProjection(log));
                 services.AddSingleton<IOnlinePlayerQuery>(serviceProvider =>
-                    serviceProvider.GetRequiredService<SevenDaysOnlinePlayerQuery>());
+                    serviceProvider.GetRequiredService<SevenDaysOnlinePlayerProjection>());
                 services.AddSingleton<GetOnlinePlayersUseCase>();
                 services.AddSingleton<SqlitePlayerActionAuditTrail>();
                 services.AddSingleton<IPlayerActionAuditTrail>(serviceProvider =>
@@ -90,10 +90,13 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(serviceProvider => new ConsoleLogRuntime(
                     serviceProvider.GetRequiredService<ConsoleLogService>(),
                     serviceProvider.GetRequiredService<ModHost>()));
+                services.AddSingleton(serviceProvider => new OnlinePlayerProjectionRuntime(
+                    serviceProvider.GetRequiredService<SevenDaysOnlinePlayerProjection>(),
+                    serviceProvider.GetRequiredService<ConsoleLogRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<ConsoleLogRuntime>());
+                    serviceProvider.GetRequiredService<OnlinePlayerProjectionRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {

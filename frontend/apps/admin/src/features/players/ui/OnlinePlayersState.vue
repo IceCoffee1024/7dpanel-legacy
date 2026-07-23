@@ -8,10 +8,8 @@ type DisplayState = OnlinePlayersState | 'empty'
 const props = withDefaults(defineProps<{
   state: DisplayState
   errorCode?: OnlinePlayersErrorCode
-  capturedAtUtc?: string
 }>(), {
   errorCode: null,
-  capturedAtUtc: undefined,
 })
 
 defineEmits<{
@@ -23,9 +21,7 @@ const content = computed(() => {
     return {
       icon: 'i-lucide-users',
       title: '当前没有在线玩家',
-      description: props.capturedAtUtc === undefined
-        ? ''
-        : `快照捕获于 ${new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(props.capturedAtUtc))}`,
+      description: '',
     }
   }
   if (props.state === 'forbidden') {

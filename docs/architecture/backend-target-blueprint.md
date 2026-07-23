@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-22"
+last_updated: "2026-07-23"
 document_role: Target
 ---
 
@@ -326,20 +326,32 @@ Harmony observation 只复制审计所需的不可变值，不在游戏主线程
 
 ### 在线玩家
 
-当前已实现 Owner-only 的只读纵向切片：`GetOnlinePlayersUseCase`、`IOnlinePlayerQuery`、`SevenDaysOnlinePlayerQuery` 和 `PlayersController` 通过独立 single-flight 在游戏主线程复制精简快照。以下 `ViewPlayers` 权限与通用角色授权仍是用户管理落地后的 Target，不是当前实现事实。
+在线玩家的批准目标是用 7DTD 玩家事件维护进程内最终一致投影，使 HTTP 查询只读取已经脱离游戏对象的不可变值。本文描述的是待实现并验证的 Target；当前 Owner-only 请求时主线程实现仍以[系统架构](../architecture.md)为准。以下 `ViewPlayers` 权限与通用角色授权仍是用户管理落地后的 Target，不是当前实现事实。
 
 ```text
+PlayerJoinedGame
+  -> record entity id, primary identity, and joined time membership
+
+SavePlayerData
+  -> copy one player's approved fields synchronously
+  -> atomically upsert matching membership and immutable observation
+
+PlayerDisconnected
+  -> conditionally remove matching membership and observation
+
 GET /api/v1/players/online
-  -> authentication
+  -> authentication and readiness
+  -> copy the current immutable projection
+  -> return each observation with its own observedAtUtc
   -> GetOnlinePlayersUseCase
-  -> authorize ViewPlayers
   -> IOnlinePlayerQuery
-  -> GameThreadDispatcher
-  -> map live players to immutable PlayerSnapshot values
+  -> copy the in-process projection
   -> HTTP response contracts
 ```
 
-请求尚未开始时可以取消或按启动截止时间返回不可用；一旦游戏主线程开始读取活动对象，就等待真实快照，不得把过期数据伪装成实时数据。每个新增生产 Gateway 必须根据其真实并发和成本选择 single-flight、有界容量或合并读取，不得无界投递。
+玩家状态以最近一次有效上传为准，通常接受约一个 30 秒上传周期的最终一致窗口；新连接在首次上传前可以暂不进入列表，同一响应中的玩家可以具有不同观察时间。每个返回玩家携带最后成功复制的 `observedAtUtc`；服务端不定义过期阈值或列表级新鲜度，也不因 observation 年龄或首次 observation 缺失拒绝可读结果。空 membership 返回 200 空列表。
+
+投影不周期扫描 `ConnectionManager` 或 `World`，不在请求时回退到游戏主线程，不监听或 patch `PlayerStats` 网络包，也不引入通用投影框架。保存、断开、查询复制与停止清理使用同一窄并发门禁保持 membership 和 observation 成对变化；关服先停止 OWIN，再逆序注销事件、拒绝新提交并清空投影。字段、身份与生命周期的完整批准边界见[在线玩家事件投影设计规格](../superpowers/specs/2026-07-22-online-player-event-projection-design.md)。
 
 ### 玩家管理动作
 

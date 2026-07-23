@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import type { OnlinePlayersState } from '../model/useOnlinePlayers'
 
-import { computed } from 'vue'
-
-const props = defineProps<{
+defineProps<{
   count: number
-  capturedAtUtc?: string
   isRefreshing: boolean
   state: OnlinePlayersState
 }>()
@@ -13,17 +10,6 @@ const props = defineProps<{
 defineEmits<{
   refresh: []
 }>()
-
-const capturedAtLabel = computed(() => props.capturedAtUtc === undefined
-  ? ''
-  : new Intl.DateTimeFormat('zh-CN', {
-      dateStyle: 'medium',
-      timeStyle: 'medium',
-    }).format(new Date(props.capturedAtUtc)))
-
-const freshness = computed(() => props.state === 'stale'
-  ? { icon: 'i-lucide-clock-alert', label: '数据已过期', color: 'warning' as const }
-  : { icon: 'i-lucide-circle-check', label: '数据为最新', color: 'success' as const })
 </script>
 
 <template>
@@ -49,14 +35,12 @@ const freshness = computed(() => props.state === 'stale'
     </template>
   </UDashboardNavbar>
 
-  <UDashboardToolbar v-if="capturedAtLabel">
+  <UDashboardToolbar>
     <template #left>
       <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <span class="font-medium text-highlighted">在线 {{ count }} 人</span>
-        <span class="text-muted">捕获于 {{ capturedAtLabel }}</span>
-        <UBadge :color="freshness.color" variant="subtle">
-          <UIcon :name="freshness.icon" class="size-4" />
-          {{ freshness.label }}
+        <UBadge v-if="state === 'stale'" color="warning" variant="subtle">
+          刷新失败，显示上次结果
         </UBadge>
       </div>
     </template>
