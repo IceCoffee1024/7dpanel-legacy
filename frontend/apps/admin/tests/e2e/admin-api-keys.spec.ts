@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+const authSessionStorageKey = '7dpanel.auth.session.v1'
 const adminUrl = process.env.SEVENDPANEL_ADMIN_URL
 const username = process.env.PANEL_USERNAME
 const password = process.env.PANEL_PASSWORD
@@ -92,6 +93,12 @@ test('client-side session expiry redirects to login and permits owner relogin', 
   await expect(page).toHaveURL(url => (
     url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
   ))
+  const authStorageIsAbsent = await page.evaluate(storageKey => (
+    localStorage.getItem(storageKey) === null
+    && sessionStorage.getItem(storageKey) === null
+  ), authSessionStorageKey)
+  expect(authStorageIsAbsent).toBe(true)
+
   await loginOwner(page, '/players')
   await expect(page.getByRole('heading', { name: '在线玩家', exact: true })).toBeVisible()
 })

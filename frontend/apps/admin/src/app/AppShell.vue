@@ -43,13 +43,21 @@ const searchGroups = [{
   items: navigation,
 }]
 
-const accountItems = computed<DropdownMenuItem[][]>(() => [[{
+const accountName = computed(() => auth.username ?? '')
+const accountRole = computed(() => auth.role ?? '')
+
+async function logout() {
+  auth.logout()
+  await router.replace('/login')
+}
+
+const accountItems = computed<DropdownMenuItem[][]>(() => [[
+  { label: accountName.value, type: 'label' },
+  { label: accountRole.value, type: 'label' },
+], [{
   label: '退出登录',
   icon: 'i-lucide-log-out',
-  onSelect: async () => {
-    auth.logout()
-    await router.replace('/login')
-  },
+  onSelect: logout,
 }]])
 
 defineShortcuts({
@@ -99,11 +107,13 @@ defineShortcuts({
             :ui="{ content: collapsed ? 'w-40' : 'w-(--reka-dropdown-menu-trigger-width)' }"
           >
             <UButton
-              aria-label="Owner 账号"
+              :aria-label="`${accountName} 账号`"
               block
+              class="min-w-0"
               color="neutral"
+              data-testid="account-menu-trigger"
               icon="i-lucide-circle-user-round"
-              label="Owner"
+              :label="accountName"
               :square="collapsed"
               :trailing-icon="collapsed ? undefined : 'i-lucide-chevrons-up-down'"
               variant="ghost"

@@ -1,4 +1,5 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Hosting;
 using Microsoft.Owin.Security;
@@ -60,6 +61,23 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
                     IssuedUtc = now,
                     ExpiresUtc = now.Add(options.AccessTokenLifetime)
                 }));
+            return Task.CompletedTask;
+        }
+
+        public override Task TokenEndpoint(OAuthTokenEndpointContext context)
+        {
+            if (context.Identity == null) return Task.CompletedTask;
+
+            var username = context.Identity.FindFirst(ClaimTypes.Name)?.Value;
+            var role = context.Identity.FindFirst(ClaimTypes.Role)?.Value;
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(role))
+            {
+                throw new InvalidOperationException(
+                    "The validated panel identity is missing its name or role claim.");
+            }
+
+            context.AdditionalResponseParameters["username"] = username;
+            context.AdditionalResponseParameters["role"] = role;
             return Task.CompletedTask;
         }
     }

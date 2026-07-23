@@ -8,10 +8,15 @@ import { AuthError, useAuthStore } from '../index'
 import LoginForm from './LoginForm.vue'
 
 const loginRequest = vi.hoisted(() => vi.fn())
+const toastAdd = vi.hoisted(() => vi.fn())
 
 vi.mock('../api/auth', async importOriginal => ({
   ...await importOriginal<typeof import('../api/auth')>(),
   loginWithPassword: loginRequest,
+}))
+
+vi.mock('@nuxt/ui/composables', () => ({
+  useToast: () => ({ add: toastAdd }),
 }))
 
 function deferred<T>() {
@@ -54,6 +59,9 @@ async function fillCredentials(wrapper: Awaited<ReturnType<typeof mountLoginForm
 describe('loginForm', () => {
   beforeEach(() => {
     loginRequest.mockReset()
+    toastAdd.mockReset()
+    localStorage.clear()
+    sessionStorage.clear()
   })
 
   it('labels the username and password fields with correct autocomplete values', async () => {
@@ -63,6 +71,50 @@ describe('loginForm', () => {
     expect(wrapper.get('#username').attributes('autocomplete')).toBe('username')
     expect(wrapper.get('label[for="password"]').text()).toBe('密码')
     expect(wrapper.get('#password').attributes('autocomplete')).toBe('current-password')
+  })
+
+  it('starts with remember login off and passes browser persistence after selection', async () => {
+    loginRequest.mockResolvedValue({
+      token: '7dp_t_id.secret',
+      expiresAt: Date.now() + 60_000,
+      username: 'server-owner',
+      role: 'Owner',
+    })
+    const { wrapper, pinia } = await mountLoginForm('/players')
+    const auth = useAuthStore(pinia)
+    const login = vi.spyOn(auth, 'login')
+    const remember = wrapper.get('button[role="checkbox"][aria-label="保持登录"]')
+
+    expect(remember.attributes('aria-checked')).toBe('false')
+    await remember.trigger('click')
+    expect(remember.attributes('aria-checked')).toBe('true')
+
+    await fillCredentials(wrapper)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(login).toHaveBeenCalledWith('Owner', 'top-secret-password', true)
+  })
+
+  it('warns about persistence degradation and still redirects after a successful login', async () => {
+    const { wrapper, pinia, router } = await mountLoginForm('/players')
+    const auth = useAuthStore(pinia)
+    auth.token = '7dp_t_id.secret'
+    auth.expiresAt = Date.now() + 60_000
+    auth.username = 'server-owner'
+    auth.role = 'Owner'
+    auth.persistenceWarning = true
+    vi.spyOn(auth, 'login').mockResolvedValue()
+    await fillCredentials(wrapper)
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(toastAdd).toHaveBeenCalledWith({
+      title: '会话无法持久保存，刷新或关闭页面后需要重新登录',
+      color: 'warning',
+    })
+    expect(router.currentRoute.value.fullPath).toBe('/players')
   })
 
   it('submits once and disables repeated submission while pending', async () => {

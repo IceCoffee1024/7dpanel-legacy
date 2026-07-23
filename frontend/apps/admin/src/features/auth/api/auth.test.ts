@@ -16,14 +16,18 @@ function requestJsonMock() {
 }
 
 describe('parseAccessToken', () => {
-  it('parses an opaque bearer token and computes its Unix millisecond expiry', () => {
+  it('parses an authenticated opaque bearer session and computes its Unix millisecond expiry', () => {
     expect(parseAccessToken({
-      access_token: 'opaque.token+/=',
+      access_token: '7dp_t_id.secret',
       token_type: 'bEaReR',
       expires_in: 90,
+      username: 'admin',
+      role: 'Owner',
     }, 1_000)).toEqual({
-      token: 'opaque.token+/=',
+      token: '7dp_t_id.secret',
       expiresAt: 91_000,
+      username: 'admin',
+      role: 'Owner',
     })
   })
 
@@ -33,6 +37,10 @@ describe('parseAccessToken', () => {
     ['a non-bearer token type', { access_token: 'token', token_type: 'Basic', expires_in: 60 }],
     ['a zero expiry', { access_token: 'token', token_type: 'Bearer', expires_in: 0 }],
     ['a fractional expiry', { access_token: 'token', token_type: 'Bearer', expires_in: 1.5 }],
+    ['a missing username', { access_token: 'token', token_type: 'Bearer', expires_in: 60, role: 'Owner' }],
+    ['an empty username', { access_token: 'token', token_type: 'Bearer', expires_in: 60, username: ' ', role: 'Owner' }],
+    ['a missing role', { access_token: 'token', token_type: 'Bearer', expires_in: 60, username: 'admin' }],
+    ['an unknown role', { access_token: 'token', token_type: 'Bearer', expires_in: 60, username: 'admin', role: 'Operator' }],
   ])('rejects %s with a stable invalid-response error', (_name, value) => {
     expect(() => parseAccessToken(value, 0)).toThrowError(expect.objectContaining({
       code: 'invalid-response',
@@ -50,6 +58,8 @@ describe('loginWithPassword', () => {
       access_token: 'opaque-token',
       token_type: 'Bearer',
       expires_in: 120,
+      username: 'admin',
+      role: 'Owner',
     })
     vi.spyOn(Date, 'now').mockReturnValue(5_000)
     const controller = new AbortController()
@@ -57,6 +67,8 @@ describe('loginWithPassword', () => {
     await expect(loginWithPassword('admin@example.com', 'secret value', controller.signal)).resolves.toEqual({
       token: 'opaque-token',
       expiresAt: 125_000,
+      username: 'admin',
+      role: 'Owner',
     })
 
     expect(requestJsonMock()).toHaveBeenCalledOnce()

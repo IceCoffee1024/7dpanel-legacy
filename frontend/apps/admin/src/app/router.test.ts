@@ -1,3 +1,4 @@
+import { flushPromises } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
@@ -22,8 +23,10 @@ function createTestRouter() {
 
 function authenticate(pinia: ReturnType<typeof createPinia>, expiresAt = Date.now() + 60_000) {
   const auth = useAuthStore(pinia)
-  auth.token = 'test-token'
+  auth.token = '7dp_t_test.secret'
   auth.expiresAt = expiresAt
+  auth.username = 'server-owner'
+  auth.role = 'Owner'
   return auth
 }
 
@@ -43,6 +46,20 @@ describe('createAdminRouter', () => {
     await router.push('/players')
 
     expect(router.currentRoute.value.fullPath).toBe('/players')
+  })
+
+  it('returns to login when an active protected session is cleared', async () => {
+    const { pinia, router } = createTestRouter()
+    const auth = authenticate(pinia)
+    await router.push('/players?tab=online')
+
+    auth.token = null
+    auth.expiresAt = null
+    auth.username = null
+    auth.role = null
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/players?tab=online')
   })
 
   it('redirects an anonymous API Key navigation to login', async () => {

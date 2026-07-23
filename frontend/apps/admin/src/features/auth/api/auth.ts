@@ -1,9 +1,8 @@
+import type { AuthSession } from '../model/authSession'
+
 import { HttpError, requestJson } from '../../../shared/api/http'
 
-export interface AccessToken {
-  token: string
-  expiresAt: number
-}
+export type AccessToken = AuthSession
 
 export type AuthErrorCode = 'invalid-credentials' | 'rate-limited' | 'unavailable' | 'invalid-response'
 
@@ -25,6 +24,8 @@ export function parseAccessToken(value: unknown, now: number): AccessToken {
   const token = response.access_token
   const tokenType = response.token_type
   const expiresIn = response.expires_in
+  const username = response.username
+  const role = response.role
 
   if (
     typeof token !== 'string'
@@ -34,6 +35,9 @@ export function parseAccessToken(value: unknown, now: number): AccessToken {
     || typeof expiresIn !== 'number'
     || !Number.isInteger(expiresIn)
     || expiresIn <= 0
+    || typeof username !== 'string'
+    || username.trim().length === 0
+    || (role !== 'Owner' && role !== 'Admin' && role !== 'Viewer')
   ) {
     throw new AuthError('invalid-response')
   }
@@ -41,6 +45,8 @@ export function parseAccessToken(value: unknown, now: number): AccessToken {
   return {
     token,
     expiresAt: now + expiresIn * 1000,
+    username,
+    role,
   }
 }
 

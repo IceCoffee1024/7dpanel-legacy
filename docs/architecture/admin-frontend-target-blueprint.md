@@ -86,7 +86,7 @@ shared     -X-> feature business code
 |---|---|---|---|
 | 服务器、玩家、备份、任务和审计 | 后端 | 查询、缓存、显示采样时间、按契约失效 | 把缓存值改写为新的权威事实 |
 | 搜索、筛选、排序、分页和时间范围 | URL | 可分享、可返回、刷新后恢复 | 只藏在组件内导致导航丢失 |
-| 当前操作者、角色和权限 | 后端会话 | 启动时恢复、控制导航和交互、处理过期 | 仅依据本地角色决定授权 |
+| 当前操作者、角色和权限 | 后端会话 | 从服务端确认的身份元数据恢复浏览器会话、控制导航和交互、处理过期 | 仅依据本地角色决定授权 |
 | 表单草稿、对话框和展开状态 | 所属 Feature | 在安全范围内保留和清理 | 将密码、初始化凭证或 Bearer Token 持久化 |
 | 当前界面语言 | `app/i18n` | 解析浏览器语言、不支持时回退 `en`、在 `zh-CN`/`en` 间切换并持久化非敏感偏好 | 由 Feature 各自保存语言或把语言偏好写入服务端业务状态 |
 | 长任务显示状态 | 后端作业与审计 | 跨页面、刷新和重连后恢复 | 只依赖内存 Toast 或单次 HTTP 响应 |
@@ -126,7 +126,7 @@ shared     -X-> feature business code
 ### Header 认证与 Token 生命周期
 
 - 产品不采用 Cookie 认证。目标 Admin 只通过 `Authorization` Header 发送 Bearer Access Token，不接受或发送 Basic 身份，不把 Token 放入 URL，也不设计 CSRF Token；如果未来引入浏览器自动附带的认证机制，必须重新评估 CSRF 边界。
-- 网站 Access Token 默认有效期 8 小时，客户端只在应用内存中保存，不写入 `localStorage`、`sessionStorage`、URL、日志或错误报告。页面刷新或 Token 到期后重新认证；产品不提供 refresh token 或浏览器会话恢复。
+- 网站 Access Token 默认有效期 8 小时。Auth Feature 只保存严格版本化的 `{ version, token, expiresAt, username, role }` 记录：未选择“保持登录”时只在 `sessionStorage` 恢复当前标签页，选择后才写入 `localStorage` 以恢复同一浏览器会话。记录不得进入 URL、Cookie、日志或错误报告；密码、完整 API Key 和 Authorization Header 前缀不进入记录。页面到期、登出、401、损坏记录或同源删除事件后重新认证；产品不提供 refresh token 或 silent refresh。
 - 用户创建的 API Key 只在创建成功对话框中短暂存在，关闭后必须清除，不能进入 Auth Store 或替代网站 Access Token。API Key 列表只保存元数据。
 - 配置引导凭据只通过登录表单进入请求，不写入 URL、浏览器持久存储、日志或遥测；页面不得加载第三方资源，
   避免认证数据通过 Referer 或外部脚本泄漏。
@@ -136,7 +136,7 @@ shared     -X-> feature business code
 ### SSE 与补取
 
 - 当前后端只接受 `Authorization` Header 中的 Access Token 或 API Key Bearer，拒绝 Basic、URL Token 和 Cookie 凭据。Admin SSE 必须使用能设置 Header、读取 401/403/429/503、主动取消并限制重连的 Fetch 型客户端，不能用原生 `EventSource` 或 QueryString Token 绕过安全边界。
-- Admin 自身使用内存 Access Token 建立 SSE；API Key 是外部集成凭据，不进入浏览器会话。原生 `EventSource` 不能设置 `Authorization` Header，不进入目标方案。
+- Admin 自身使用 Auth Store 当前 Access Token 建立 SSE；API Key 是外部集成凭据，不进入浏览器会话。原生 `EventSource` 不能设置 `Authorization` Header，不进入目标方案。
 - 每次连接先消费不推进游标的 `welcome`，再处理 replay/live；当前命名事件为 `console-log`、`game-ready` 和 `server-stopping`，`gap` 表示窗口或慢客户端缺口。
 - 每条事件包含可排序游标、事件类型和服务器时间；前端按游标去重，不使用到达时间伪造顺序。
 - 断线后保留当前日志和最后接收时间，使用最后游标重连或调用 REST 补取。
@@ -278,7 +278,7 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 数据表格 | 基础表格使用 Nuxt UI Table；应用直接导入分页、排序等 TanStack API 时添加 `@tanstack/vue-table` | 条件候选 | `@nuxt/ui` 已提供基础表格能力；传递依赖不构成应用可直接使用的 API 契约，不默认声明 `@tanstack/table-core` | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
 | API 契约代码生成 | `@hey-api/openapi-ts`（`devDependency`）；生成代码直接导入的运行时客户端包按实际用途声明 | 优先候选 | 仅在后端提供稳定、可重复获取的本地 OpenAPI 契约后采用；生成类型、SDK 和客户端必须输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务，并由可重复脚本和 CI 检查契约或生成结果漂移 | Web API 2 契约生成与 OpenAPI 版本、稳定错误码和分页模型、Fetch 的 Header Bearer/取消/超时、插件与锁定工具链兼容性、确定性输出、生成代码审查边界及运行时导入 |
 | 服务端状态 | 薄 API Client；出现真实查询缓存复杂度后评估 `@pinia/colada` | 条件候选 | Pinia Colada 只管理服务器权威数据的查询、去重、缓存、失效和 Mutation；采用后必须先注册 `pinia`，普通 Pinia Store 仍只管理客户端自有状态，不复制查询缓存。SSE 只更新对应查询或触发精确失效 | 至少两个真实查询消费者、缓存键和新鲜度、取消与去重、重试上限、会话过期、`Offline`/`Unknown`、乐观更新与回滚、SSE 补取和失效、DevTools、包体积，以及缺少 `networkMode` 和 `structuralSharing` 对目标流程的影响 |
-| 客户端全局状态 | `pinia` Setup Store | 已采用；登录与玩家切片自动化通过 | 跨路由会话由登录页、显式 Pinia Router guard、App Shell 和受保护 API 共同消费；只保存内存 Bearer 会话和客户端自有状态，不安装持久化插件，不复制玩家或其他服务器权威数据 | 真实 OWIN 下 Token 不进入 Storage/URL/日志仍需浏览器 smoke；HMR 和包体积继续随应用演进验证 |
+| 客户端全局状态 | `pinia` Setup Store | 已采用；认证、玩家和应用壳自动化通过 | 跨路由会话由 Auth Store、登录页、显式 Pinia Router guard、App Shell 和受保护 API 共同消费；Store 统一拥有严格浏览器会话恢复、到期、登出、401 和跨标签页删除，不安装通用持久化插件，也不复制玩家或其他服务器权威数据 | 真实 OWIN 下两种 Storage 合同、CSP 和敏感信息边界仍需浏览器 smoke；HMR 和包体积继续随应用演进验证 |
 | 进程内瞬时事件 | 优先使用 props/emits、显式 Feature API、路由状态和查询失效；确有解耦需求时评估 `mitt` | 条件候选 | 只传递无持久状态、无需权威恢复的应用级通知；必须定义集中式 TypeScript 事件映射，不承载服务器事实、业务命令、权限或长任务结果 | 明确生产者与至少两个独立消费者、订阅释放、重复注册、事件顺序、异常隔离、测试可追踪性及 HMR 行为 |
 | Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
 | SSE | Header Bearer 全阶段使用 Fetch 型客户端；实现时比较无依赖 Fetch parser、`event-source-plus` 与 `@microsoft/fetch-event-source` | Fetch 型边界已批准；具体库为条件候选 | 必须设置 `Authorization` Header、检查 401/403/429/503、主动取消并限制重连，禁止 QueryString Token；产品不采用 Cookie 认证，原生 `EventSource` 不进入目标方案；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | Content-Type、Welcome/命名事件、Last-Event-ID/游标、Header Bearer 生命周期、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
@@ -299,7 +299,7 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | ESLint formatter | Antfu formatters 与直接 `devDependency` `eslint-plugin-format` | Admin 目标采用 | 统一格式化 CSS、HTML、Markdown 和 Vue `<style>`；精确版本和脚本由应用清单拥有，不把格式化成功等同于类型或业务验证 | 首次自动修复差异、Prettier/dprint 行为、生成文件排除、编辑器保存行为和 CI 非交互执行 |
 | 单元与组件测试运行器 | `vitest` | 已采用；当前自动化证据见[测试策略](../test.md) | 复用 Vite 的 ESM、TypeScript、Vue SFC 和路径解析链路，负责认证 Store、API 映射、查询状态和组件行为测试；一次性 run 模式通过共享 Vite 配置排除 `tests/e2e/` | 覆盖率 provider、watch 与 CI 固定任务尚未建立；当前 happy-dom teardown 噪声的根因仍待定位 |
 | Vue 组件测试 | `@vue/test-utils` + `happy-dom`；仅在实际 Web API 兼容缺口出现时回退评估 `jsdom` | 已采用；登录、路由与玩家组件自动化通过 | 通过 `mount` 验证登录、路由和玩家页面可见行为；共享挂载器负责 Nuxt UI、Router 和真实/测试 Pinia，不默认使用浅挂载或只依赖快照 | 真实焦点、CSS、视口和浏览器布局仍由 Playwright 负责，不能从 happy-dom 结果推导 |
-| 浏览器端到端测试 | Playwright | Chromium 门禁基础已建立；真实 suite 未验证 | 配置使用真实 OWIN base URL、失败 trace/截图和 Desktop Chrome；Owner suite 覆盖匿名重定向、登录、8 小时 Token、API Key 创建/一次性显示/复制/使用/撤销、深链接刷新、Authorization Header、请求 URL、Storage/Cookie/控制台和 `390x844` 水平溢出，不 mock 后端 | 本轮因 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 缺失而 6 项 skip；服务启停、真实玩家、真实布局、控制台泄漏和关服后 Stale 仍需受控环境证据 |
+| 浏览器端到端测试 | Playwright | Chromium 门禁基础已建立；当前真实 suite 未验证 | 配置使用真实 OWIN base URL、失败 trace/截图和 Desktop Chrome；Owner suite 覆盖匿名重定向、登录、8 小时 Token、默认标签页会话、显式浏览器会话、身份显示、登出/到期/损坏记录清理、API Key 创建/一次性显示/复制/使用/撤销、深链接刷新、Authorization Header、请求 URL、Storage/Cookie/控制台和 `390x844` 水平溢出，不 mock 后端 | 本轮因 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 缺失而 8 项未执行；服务启停、真实玩家、真实布局、CSP 控制台泄漏和关服后 Stale 仍需受控环境证据 |
 
 ### 工程清单约束
 
@@ -353,7 +353,7 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - `NFR-01`：断开公网后核心管理能力可用，生产资源不存在第三方运行依赖；
 - `NFR-02`：所有写操作都能区分排队、执行、成功、失败和未知，不以 HTTP 200 替代游戏结果；
 - `NFR-03`：`zh-CN` 与 `en` 的全部 P0 页面和表单通过 E2E，覆盖浏览器语言匹配、默认回退 `en`、登录前后切换、偏好持久化、缺失键、Valibot 内置错误、Nuxt UI 文案、日期数字格式和稳定服务端错误码映射；
-- `NFR-04`：默认凭据可在批准的明文 HTTP 边界完成网站登录，Basic 被拒绝，Access Token 只进入 `Authorization` Header 和应用内存，API Key 完整值只显示一次，错误、到期及 QueryString 凭据被拒绝，且客户端不使用 Cookie 认证；
+- `NFR-04`：默认凭据可在批准的明文 HTTP 边界完成网站登录，Basic 被拒绝，Access Token 只进入 `Authorization` Header 和批准的版本化浏览器会话记录，API Key 完整值只显示一次，错误、到期及 QueryString 凭据被拒绝，且客户端不使用 Cookie 认证；
 - 320 CSS 像素、常用桌面和宽屏下无不可达操作、文本遮挡或布局跳动；
 - 键盘、焦点、语义标签、状态非纯颜色表达、减少动态效果和 WCAG 2.2 AA 对比度；
 - 真实 OWIN 静态托管下的深链接刷新、缓存、API 路由隔离、SSE、登录和正常关服；
@@ -377,15 +377,15 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 
 - Admin 全工程 lint 基线已在当前工具链下通过；自动修复审查和移除无直接导入的兼容依赖仍应在对应依赖变更中单独评估；
 - Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
-- OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩、缓存头和 CSP；
+- OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩和缓存头；当前 Admin 文档 CSP 已有 Katana 自动化，仍需真实 OWIN 浏览器控制台验证；
 - REST 分页与查询游标仍待定义；Problem Details、认证 SSE 路由、Welcome/命名事件、`Last-Event-ID`、gap 和补取窗口已有后端契约，但前端类型映射、Header Bearer 生命周期、有界重连和浏览器验证尚未实现；
-- 登录限速和认证配置异常反馈；8 小时 Access Token 的到期重登、API Key 一次性显示/清除与撤销已有组件和受控时间自动化，仍缺真实 OWIN 浏览器证据；
+- 登录限速和认证配置异常反馈；8 小时 Access Token 的到期重登、默认标签页/显式浏览器会话、账号身份显示、API Key 一次性显示/清除与撤销已有组件和受控时间自动化，仍缺真实 OWIN 浏览器证据；
 - 日志典型速率、浏览器保留窗口、渲染预算和是否需要虚拟列表；
 - 生产包体积预算、最低浏览器范围和自动化可访问性门槛；
 - Nuxt UI standalone Vue 在目标密度、响应式表格和键盘操作上的原型证据；
 - `vue-i18n`、Nuxt UI locale 与 `@valibot/i18n` 的语言标识映射、按需加载、缺失键门禁和同步切换原型；
 - Windows/Linux Mod 发布物中的静态资源路径和真实进程 smoke。
-- 当前 Playwright Owner/API Key suite 已建立缺前置条件时的明确 skip 门禁，但尚未在真实 OWIN、真实凭据和受控在线玩家环境执行；`390x844` 真实渲染、Header-only Access Token/API Key 浏览器证据和关服后 Stale 仍未取得。
+- 当前 8 项 Playwright Owner/API Key suite 已建立缺前置条件时的明确 skip 门禁，但尚未在真实 OWIN、真实凭据和受控在线玩家环境执行；`390x844` 真实渲染、Header-only Access Token/API Key 浏览器证据、两种浏览器会话、CSP 控制台和关服后 Stale 仍未取得。
 
 这些缺口在首个 Admin 纵向切片的变更设计和实施计划中逐项关闭。未经代码、自动化测试和真实 OWIN 发布验证，
 不得把候选框架、目录或运行链路提升为当前架构事实。

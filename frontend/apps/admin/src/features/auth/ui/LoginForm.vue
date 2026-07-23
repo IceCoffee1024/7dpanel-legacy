@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { useToast } from '@nuxt/ui/composables'
+import { computed, reactive, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '../index'
@@ -9,10 +10,12 @@ const credentials = reactive({
   username: '',
   password: '',
 })
+const rememberLogin = shallowRef(false)
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 const errorMessage = computed(() => {
   if (auth.error === null)
@@ -30,8 +33,14 @@ async function submit() {
 
   const password = credentials.password
   try {
-    await auth.login(credentials.username, password)
+    await auth.login(credentials.username, password, rememberLogin.value)
     if (auth.isAuthenticated) {
+      if (auth.persistenceWarning) {
+        toast.add({
+          title: '会话无法持久保存，刷新或关闭页面后需要重新登录',
+          color: 'warning',
+        })
+      }
       await router.replace(resolveSafeRedirect(route.query.redirect, router))
     }
   }
@@ -61,6 +70,13 @@ async function submit() {
         type="password"
       />
     </UFormField>
+
+    <UCheckbox
+      v-model="rememberLogin"
+      aria-label="保持登录"
+      description="关闭浏览器后，在访问令牌有效期内继续登录"
+      label="保持登录"
+    />
 
     <p v-if="errorMessage" role="alert" class="text-sm text-error">
       {{ errorMessage }}

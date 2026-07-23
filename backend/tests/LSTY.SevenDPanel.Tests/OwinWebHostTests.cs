@@ -126,8 +126,10 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.NotNull(successSchema?["properties"]?["access_token"]);
                 Assert.NotNull(successSchema?["properties"]?["token_type"]);
                 Assert.NotNull(successSchema?["properties"]?["expires_in"]);
+                Assert.NotNull(successSchema?["properties"]?["username"]);
+                Assert.NotNull(successSchema?["properties"]?["role"]);
                 Assert.Equal(
-                    new[] { "access_token", "expires_in", "token_type" },
+                    new[] { "access_token", "expires_in", "role", "token_type", "username" },
                     successSchema!["required"]!.Values<string>().OrderBy(value => value).ToArray());
                 var errorSchema = tokenOperation["responses"]?["400"]?["content"]?
                     ["application/json"]?["schema"];
@@ -1556,6 +1558,10 @@ namespace LSTY.SevenDPanel.Tests
         [Fact]
         public async Task Admin_assets_spa_routes_and_api_precedence_run_in_real_katana_host()
         {
+            const string expectedCsp =
+                "default-src 'self'; base-uri 'self'; object-src 'none'; " +
+                "frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+                "img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'";
             var assetRoot = Path.Combine(Path.GetTempPath(), "7dpanel-admin-" + Guid.NewGuid().ToString("N"));
             var assetsDirectory = Path.Combine(assetRoot, "assets");
             var conflictingApiDirectory = Path.Combine(assetRoot, "api", "v1");
@@ -1583,16 +1589,32 @@ namespace LSTY.SevenDPanel.Tests
                     var rootBody = await rootResponse.Content.ReadAsStringAsync();
                     Assert.Equal(HttpStatusCode.OK, rootResponse.StatusCode);
                     Assert.Contains("7DPanel Admin", rootBody);
+                    Assert.Equal(
+                        expectedCsp,
+                        rootResponse.Headers.GetValues("Content-Security-Policy").Single());
 
                     var spaResponse = await client.GetAsync(url + "overview", TestContext.Current.CancellationToken);
                     var spaBody = await spaResponse.Content.ReadAsStringAsync();
                     Assert.Equal(HttpStatusCode.OK, spaResponse.StatusCode);
                     Assert.Contains("7DPanel Admin", spaBody);
+                    Assert.Equal(
+                        expectedCsp,
+                        spaResponse.Headers.GetValues("Content-Security-Policy").Single());
+
+                    var indexResponse = await client.GetAsync(url + "index.html", TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, indexResponse.StatusCode);
+                    Assert.Equal(
+                        expectedCsp,
+                        indexResponse.Headers.GetValues("Content-Security-Policy").Single());
+                    Assert.DoesNotContain("unsafe-eval", expectedCsp);
+                    Assert.DoesNotContain("http:", expectedCsp);
+                    Assert.DoesNotContain("https:", expectedCsp);
 
                     var assetResponse = await client.GetAsync(url + "assets/app.js", TestContext.Current.CancellationToken);
                     var assetBody = await assetResponse.Content.ReadAsStringAsync();
                     Assert.Equal(HttpStatusCode.OK, assetResponse.StatusCode);
                     Assert.Contains("panelLoaded", assetBody);
+                    Assert.False(assetResponse.Headers.Contains("Content-Security-Policy"));
 
                     var missingAssetResponse = await client.GetAsync(url + "assets/missing.js", TestContext.Current.CancellationToken);
                     Assert.Equal(HttpStatusCode.NotFound, missingAssetResponse.StatusCode);
@@ -1608,6 +1630,13 @@ namespace LSTY.SevenDPanel.Tests
                     Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
                     AssertHealthContract(apiBody);
                     Assert.DoesNotContain("static content must not win", apiBody);
+                    Assert.False(apiResponse.Headers.Contains("Content-Security-Policy"));
+
+                    var openApiResponse = await client.GetAsync(
+                        url + "swagger/v1/swagger.json",
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, openApiResponse.StatusCode);
+                    Assert.False(openApiResponse.Headers.Contains("Content-Security-Policy"));
 
                     var missingApiResponse = await client.GetAsync(url + "api/v1/missing", TestContext.Current.CancellationToken);
                     Assert.Equal(HttpStatusCode.NotFound, missingApiResponse.StatusCode);
@@ -2059,6 +2088,8 @@ namespace LSTY.SevenDPanel.Tests
 
                 Assert.Equal(HttpStatusCode.OK, tokenResponse.StatusCode);
                 Assert.Equal("bearer", ((string?)tokenPayload["token_type"])?.ToLowerInvariant());
+                Assert.Equal("test-owner", (string?)tokenPayload["username"]);
+                Assert.Equal("Owner", (string?)tokenPayload["role"]);
                 var accessToken = (string?)tokenPayload["access_token"];
                 Assert.False(string.IsNullOrWhiteSpace(accessToken));
 
@@ -2946,6 +2977,8 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal("invalid_grant", (string?)payload["error"]);
                 Assert.False(string.IsNullOrWhiteSpace((string?)payload["error_description"]));
                 Assert.Null(payload["code"]);
+                Assert.Null(payload["username"]);
+                Assert.Null(payload["role"]);
                 Assert.NotEqual(
                     "application/problem+json",
                     response.Content.Headers.ContentType?.MediaType);

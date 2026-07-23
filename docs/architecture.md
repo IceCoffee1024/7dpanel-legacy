@@ -65,7 +65,7 @@ flowchart LR
 
 - 后端 DLL 和 Admin 构建资源随同一个 Mod 目录部署，并在 7DTD 进程内提供 HTTP 服务。
 - 7DTD 拥有 Mod 生命周期；当前 SevenDays Adapter 把 `GameStartDone` 转换为 `IModRuntime.MarkGameReady()`，并把两个关闭事件转换为 `IModRuntime.Stop()`。
-- 默认配置提供唯一引导 `Owner` 的启动同步来源；password grant 实际验证 SQLite 中固定 `Subject=owner` 的当前用户，并签发跨进程持久化的 8 小时默认不透明 Access Token。Bearer 验证按结构严格分流 Access Token 与 API Key、重新读取当前用户状态和角色；静态资源和健康 API 保持匿名，浏览器不能直接访问 7DTD 对象、Mod 配置文件或数据库。
+- 默认配置提供唯一引导 `Owner` 的启动同步来源；password grant 实际验证 SQLite 中固定 `Subject=owner` 的当前用户，并在成功 OAuth 响应中附加服务端确认的 `username` 和 `role`，同时签发跨进程持久化的 8 小时默认不透明 Access Token。Bearer 验证按结构严格分流 Access Token 与 API Key、重新读取当前用户状态和角色；静态资源和健康 API 保持匿名，浏览器不能直接访问 7DTD 对象、Mod 配置文件或数据库。
 - 当前身份切片只有 `Owner` claims 和引导同步，不提供 `Admin`/`Viewer` 管理、Cookie、refresh token 或完整权限管理；健康 `ok` 不能推导游戏已经就绪或可管理。
 - 首版目标仍是单服自托管，但当前切片只验证所在 Mod 进程的 HTTP 存活。
 
@@ -79,7 +79,7 @@ flowchart LR
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、动态控制台命令、Owner-only 在线玩家查询与踢出路由；公开运行时 OpenAPI JSON 与 Swagger UI；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、NSwag OWIN、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志和玩家事件；提供有界日志/事件服务、容量 32 的命令 FIFO、最终 `executeCommand` Harmony observation、容量 256 的异步审计服务、事件驱动在线玩家投影、类型化踢出 Adapter 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration、持久身份/Token、玩家动作审计、完整命令审计和审计 gap | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
-| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/`、`/players` 与 `/api-keys`、显式 Pinia Router guard、内存 Access Token 会话、共享同源 HTTP 边界、健康、在线玩家与 API Key Feature、局部查询状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Nuxt UI、Vite |
+| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/`、`/players` 与 `/api-keys`、显式 Pinia Router guard、由 Auth Store 统一拥有的版本化浏览器会话、共享同源 HTTP 边界、健康、在线玩家与 API Key Feature、局部查询状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Nuxt UI、Vite |
 
 当前已由控制台命令纵向切片创建 Application 项目，但尚无 Domain 项目；SQLite Persistence Adapter 是首个 Local Adapter。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向、六个产品 DLL 的发布门禁和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
@@ -127,14 +127,15 @@ flowchart LR
 ### OWIN、Web API 与静态资源
 
 - `OwinWebHost` 使用 `WebApp.Start(url, configure)` 创建宿主，并在 `Dispose` 中释放返回的 `IDisposable`。
-- `OwinStartup` 要求 Bootstrap 显式传入根 `IServiceProvider`。当前顺序为请求关联标识、Problem Details 异常边界、认证限流、请求 scope、OAuth authorization server、Active Bearer、公开 OpenAPI/Swagger UI、Web API、SPA fallback 和 StaticFiles；`/api`、`/api/*`、`/assets`、`/assets/*`、`/swagger` 和 `/swagger/*` 不参与 SPA fallback。
+- `OwinStartup` 要求 Bootstrap 显式传入根 `IServiceProvider`。当前顺序为请求关联标识、Problem Details 异常边界、认证限流、请求 scope、OAuth authorization server、Active Bearer、公开 OpenAPI/Swagger UI、Web API、Admin 文档 CSP、SPA fallback 和 StaticFiles；`/api`、`/api/*`、`/assets`、`/assets/*`、`/swagger` 和 `/swagger/*` 不参与 SPA fallback。
 - OWIN middleware 为每个请求创建唯一 `IServiceScope`，其生命周期覆盖完整下游响应；bridging handler 把该 scope 的 non-owning Web API dependency scope 写入请求。正常路径只有 OWIN middleware 释放实际 scope；Web API resolver 的 fallback scope 只用于没有 OWIN scope 的非标准宿主路径。Controller 使用 `ActivatorUtilities` 构造，避免容器与 Web API 双重拥有 Controller。
 - Admin 资源根目录由 Bootstrap 显式传入。目录缺失时记录日志并保留健康 API 可用；运行时不猜测仓库路径。
+- `AdminDocumentSecurityHeadersMiddleware` 只为 Admin 根、`/index.html` 与无扩展名 SPA fallback 的 `GET`/`HEAD` 文档设置固定 `Content-Security-Policy`。策略只允许同源脚本、连接、字体和表单提交，样式仅额外允许 `unsafe-inline`；禁止对象、嵌入、第三方运行时脚本、`unsafe-eval`、`http:` 和 `https:` 来源。API、Swagger、SSE 和静态资源不会被附加该文档响应头。
 - `OpenApiConfiguration` 分别注册 `/swagger/v1/swagger.json` 的运行时 OpenAPI 3 生成和 `/swagger` 的 Swagger UI，并把 UI 固定指向该 JSON 路径。Controller 路由由 NSwag 反射；`PanelOpenApiDocumentProcessor` 手工补充 OWIN 拥有的 password grant token operation 和唯一 Bearer scheme，`PanelOpenApiOperationProcessor` 按 Web API 授权 metadata 补充 Bearer 要求，并描述 SSE、API Key 管理、共享 Problem Details schema 与实际状态码。两个公开入口不要求认证，也不调用 Application 或游戏/审计端口。
 - `RequestCorrelationMiddleware` 只接受不超过 64 个允许字符的 `X-Request-ID`，并让响应 Header 与 Problem Details `traceId` 一致。非 OAuth 协议错误使用 `application/problem+json`；`instance` 只含 Path，未知 `/api/*` 也进入统一错误契约。三个 JSON body Controller 不使用 DataAnnotations 或全局验证 Filter：各 Action 在既有认证、凭据类型和游戏就绪优先级内显式检查 Web API `ModelState`，把 JSON 语法或字段类型绑定失败映射为安全的 400 `invalid_request_body`，再以端点稳定错误码处理已经成功反序列化的语义无效输入；Handler/Middleware 只规范化框架错误和未处理失败，不推断端点语义。
 - Web API 以 `OwinPassThroughExceptionHandler` 清除顶层默认 500 Result，让 Controller、依赖解析、路由和 MessageHandler 中可继续选择响应的未知异常保留原始堆栈并传播到外层 OWIN；`OwinUnhandledExceptionLogger` 只记录已不能再选择响应的写出阶段异常，可处理异常仍只由外层 OWIN 记录，避免双重日志。`ApiProblemDetailsHandler` 只规范化已经形成的错误响应，不负责记录原异常。`OperationCanceledException` 继续作为宿主控制流传播，不生成 500 或错误日志。
 - Problem Details 外层通过 non-owning write-tracking stream 区分尚未开始和已经写出的响应；只有前者能在记录完整异常与 traceId 后被改写为统一 500，SSE 或其他已开始 body 发生异常时由 Web API logger 记录原异常与 traceId，随后中止响应且不追加错误 JSON。
-- `POST /api/v1/auth/token` 只支持 password grant，返回数据库只保存 secret hash 的不透明 Access Token；默认有效期为 8 小时（`28800` 秒），Token 跨 7DTD 进程重启保留，最多保留 128 个未到期 Token。限流只覆盖该密码登录端点，按远端地址限制为每分钟 20 次、最多 1024 个地址 bucket。
+- `POST /api/v1/auth/token` 只支持 password grant，返回数据库只保存 secret hash 的不透明 Access Token，以及成功身份的 `username` 和 `role`；默认有效期为 8 小时（`28800` 秒），Token 跨 7DTD 进程重启保留，最多保留 128 个未到期 Token。限流只覆盖该密码登录端点，按远端地址限制为每分钟 20 次、最多 1024 个地址 bucket。
 - `GET /api/v1/events/stream` 要求 `Owner`、`Admin` 或 `Viewer` 的 Header Bearer Access Token/API Key 身份，拒绝 Basic、QueryString Token 和 Cookie 凭据，并按 Welcome、replay、live 和 heartbeat 顺序输出命名事件。`Last-Event-ID` 只接受非负十进制整数。
 - `GET /api/v1/api-keys` 列出当前主体的安全元数据；`POST /api/v1/api-keys` 只允许网站 Access Token 创建 1 至 80 个 Unicode 字符名称、可选 UTC 到期时间的 API Key，完整值只在 201 响应中返回并附带 `Cache-Control: no-store`；`DELETE /api/v1/api-keys/{keyId}` 也只允许网站 Access Token 撤销当前主体自己的 Key。API Key 验证使用 `7dp_k_` 格式与 SHA-256 secret 摘要，单个主体最多 32 个未撤销 Key，并最多每小时写入一次 `lastUsedAtUtc`。
 - `POST /api/v1/console/commands` 接受任意非空原文 `{ "command": "..." }`，成功返回该原文及本次独立输出；畸形 JSON 或 `command` 类型错误返回 `invalid_request_body`，成功绑定后的缺少/空白命令返回 `console_command_required`。游戏未就绪、队满、服务不可用和主线程启动超时使用稳定 Problem Details，且未经认证的请求不会进入用例。未知命令作为 7DTD 的真实控制台输出返回，不由 Web 层维护第二套注册表。
@@ -159,10 +160,10 @@ GET /
 - `useServerHealth` 只拥有页面局部状态。首次请求是 loading；成功后是 fresh；没有成功数据的失败是 offline；已有成功数据后失败或 60 秒未获得新样本是 stale。
 - 新请求取消旧请求，组件卸载时取消当前请求并清理 stale timer。
 - 开发期 Vite proxy 从 `.env.local` 的 `VITE_BACKEND_URL` 读取上游目标；生产代码和构建产物不包含该目标地址。
-- `createAdminRouter` 显式接收与应用相同的 Pinia 实例；未认证访问带 `requiresAuth` 的 `/`、`/players` 或 `/api-keys` 时跳转 `/login`，已认证访问 `/login` 时跳转安全返回目标或 `/players`。安全返回目标只接受生成路由表中存在的站内路径。
-- Auth Setup Store 只保存 Token 与到期时间，按到期时间清理会话并计算 `Authorization` Header；不安装持久化插件。密码只存在于登录表单局部 state 和请求调用栈，提交结束后清空。
+- `createAdminRouter` 显式接收与应用相同的 Pinia 实例；未认证访问带 `requiresAuth` 的 `/`、`/players` 或 `/api-keys` 时跳转 `/login`，已认证访问 `/login` 时跳转安全返回目标或 `/players`。它还订阅 Auth Store 的认证状态：到期、401 或其他标签页删除会话时，当前受保护路由立即带完整站内返回目标跳转登录。安全返回目标只接受生成路由表中存在的站内路径。
+- Auth Setup Store 保存 Token、到期时间及服务端确认的用户名和角色，按到期时间清理会话并计算 `Authorization` Header。其 Feature 自有的严格 codec 和 Browser Repository 只接受版本化 `{ version, token, expiresAt, username, role }` 记录：默认会话只写 `sessionStorage`，显式“保持登录”只写 `localStorage`；有效 local 记录优先，损坏、到期、登出、401 和同源 `storage` 删除事件清除相关状态。每次 Storage getter 与操作都可失败并降级为当前页面内存会话，不安装通用持久化插件。密码只存在于登录表单局部 state 和请求调用栈，提交结束后清空。
 - `shared/api/requestJson` 固定相对 `/api/v1/` 路径和 `credentials: 'omit'`，统一取消、超时、JSON 与 Problem Details 映射。Auth Feature 自己映射 password grant，Players Feature 自己验证玩家 DTO；玩家快照和轮询状态不进入 Pinia。
-- `ApiKeysView` 只接受内存 Access Token 的 Authorization Header，维护 API Key 列表、创建、撤销与会话过期状态；完整 Key 只存于一次性创建结果对话框，关闭后清除，复制反馈不包含该值。`/api-keys` 已加入受保护生成路由、侧栏导航和 `g-k` 快捷键。
+- `ApiKeysView` 只接受 Auth Store 当前 Access Token 的 Authorization Header，维护 API Key 列表、创建、撤销与会话过期状态；完整 Key 只存于一次性创建结果对话框，关闭后清除，复制反馈不包含该值。`/api-keys` 已加入受保护生成路由、侧栏导航和 `g-k` 快捷键。
 - `useOnlinePlayers` 首次进入立即请求，每 10 秒刷新；页面隐藏时暂停，恢复后立即刷新；请求使用 single-flight 与取消。任何通过严格 DTO 校验的成功响应进入 Fresh；Admin 以 90 秒作为自己的行级展示策略，只对旧 observation 标记“数据可能已过期”。401 或本地会话到期清除会话并回到登录页；403 映射 Forbidden、暂停自动轮询但保留手动刷新；有旧快照的刷新失败映射 Stale 并提示正在显示上次结果，无旧快照映射 Offline。
 - 玩家桌面表格和移动列表只负责呈现并向 `OnlinePlayersView` 上抛完整玩家快照。`useKickPlayer` 在页面局部维护单次 HTTP 提交、`AbortController` 和稳定反馈；确认对话框固定目标，原因 trim 后限制为 1 至 200 字符，提交期间不可关闭。成功关闭并通知后刷新；离线、身份变化和 403 关闭旧目标；busy、未就绪、超时和审计意图不可用保留输入；网络或审计终态不可确认显示未知且不自动重试。
 - 生成的客户端路由表当前包含 `/`、`/login`、`/players` 和 `/api-keys`。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
@@ -177,7 +178,7 @@ GET /
 | `GET /api/v1/health` | `HealthController` | Admin 使用的版本化健康入口，返回同一精确契约 |
 | `GET /swagger` | NSwag Swagger UI middleware | 公开同源 API 文档页面，固定读取 `/swagger/v1/swagger.json` |
 | `GET /swagger/v1/swagger.json` | NSwag OpenAPI middleware | 公开运行时 OpenAPI 3 文档；Controller 反射加集中处理器补充 OWIN 与协议 metadata |
-| `POST /api/v1/auth/token` | OAuth authorization server middleware | 只接受 password grant；协议错误保持 OAuth JSON，成功返回 SQLite 持久的不透明 Bearer Token |
+| `POST /api/v1/auth/token` | OAuth authorization server middleware | 只接受 password grant；协议错误保持 OAuth JSON，成功返回 SQLite 持久的不透明 Bearer Token 与服务端确认的 `username`、`role` |
 | `GET /api/v1/events/stream` | `ServerEventsController` | Header Bearer Access Token/API Key 认证的 Welcome、replay 和多命名 live SSE；建流前错误使用 Problem Details |
 | `GET /api/v1/api-keys` | `ApiKeysController` | 返回当前主体 API Key 的安全元数据，不返回完整 Key 或 secret 摘要 |
 | `POST /api/v1/api-keys` | `ApiKeysController` | 仅网站 Access Token 可创建当前主体的 API Key；完整 Key 仅在本次 201 响应返回 |
@@ -216,7 +217,7 @@ GET /
 | Async interfaces | Mod 发布 `Microsoft.Bcl.AsyncInterfaces 10.0.10`（程序集 `10.0.0.10`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再依赖游戏目录中的 6.x 文件；发布脚本要求 Mod 目录存在固定新版 |
 | Unsafe | Mod 发布 `System.Runtime.CompilerServices.Unsafe 6.1.2`（程序集 `6.0.3.0`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再排除 runtime；发布脚本要求 Mod 目录存在固定新版 |
 | 有界日志与命令通道 | `System.Threading.Channels 10.0.10`、`System.Threading.Tasks.Extensions 4.6.3` | 控制台日志、HTTP 命令 FIFO、异步审计自动化、net48 Release Rebuild 和隔离发布清单通过；Channels 的 net462 资产声明 Bcl AsyncInterfaces `10.0.10` 与 Tasks.Extensions `4.6.3` 最低依赖，当前发布闭包解析为这组已验证版本。升级发布物已在 Windows `v3.0.1-b4` 完成启动，shutdown 后进程与 listener 已释放；本轮未重复真实命令、写锁恢复、容量路径或 acknowledgement 时序 | 三条通道容量和生命周期独立；发布 Channels、Tasks.Extensions 和 Unsafe，仍不复制 Harmony、LogLibrary 或 Unity 程序集；Linux Mono 仍待验证 |
-| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | API Key API 解析、局部状态、对话框/视图、页面和路由定向自动化已通过；完整 Admin 单元/组件测试 229 项、lint、typecheck 和生产构建均通过。真实 Owner E2E 已扩展为 API Key 场景但因缺少环境变量而 skip；Vitest 输出的 happy-dom teardown/外部连接噪声尚未定位 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器 API Key、踢出、`390x844` 真实渲染或真实动作结果证据 |
+| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | Auth codec/Repository/Store、身份响应解析、登录/账号菜单和路由定向自动化通过；完整 Admin 单元/组件测试 267 项、lint、typecheck 和生产构建均通过。当前 8 项真实 Owner Playwright 场景已覆盖标签页/浏览器会话、身份显示、损坏记录和清理合同，但缺少受控 OWIN 环境而未执行；Vitest 输出的 happy-dom teardown/外部连接噪声尚未定位 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器 API Key、踢出、`390x844` 真实渲染或真实动作结果证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
 
@@ -248,6 +249,7 @@ GET /
 ### 安全性
 
 - 健康 API 和 Admin 静态页面保持匿名；生产事件流和受保护 REST 只接受 Header Bearer Access Token/API Key，Basic、Cookie 和 QueryString 凭据不能建立身份。默认监听全部网络接口并提供已知引导凭据，当前阶段接受任何可访问 18080 端口的客户端作为持久 `Owner` 认证；服主仍可自行收窄监听、网络来源或替换凭据。
+- 浏览器会话只在同源 `sessionStorage` 或经用户选择的 `localStorage` 中保存严格版本化记录；两者仍受同源 XSS 风险影响。Admin HTML 的 CSP、无第三方运行时脚本、无 `unsafe-eval`、严格记录解析和泄漏测试是补偿控制，不构成浏览器 Storage 的客户端加密或替代服务端 Bearer 复验。
 - 按 `NFR-05`，能够读取服务器本地文件系统的主体位于产品信任边界内；`config.json`、SQLite、备份和服务端日志不提供针对该主体的静态保密保证。该决定不改变 Web 边界：网络客户端仍只能通过认证与授权接口访问管理数据，凭据和有效 Token 不得进入 API 响应、错误详情、前端资产、产品日志或版本库。
 - 非 OAuth API 错误不返回配置文件路径、QueryString、凭据或内部异常堆栈；OAuth 协议错误保留标准 `error`/`error_description` body。
 - `.env.local`、`config.json` 和运行数据不进入版本库发布模板或前端生产包。
@@ -269,6 +271,7 @@ GET /
 - **Consolidated bounded console log service:** 游戏同步日志回调只创建一个 entry 并执行一次 `TryWrite`；一个服务集中拥有订阅、Channel、consumer、窗口接线、停止和内部计数，避免为单一实现增加 source/sink/options/state/statistics 层。有界容量和单 consumer 防止下游延迟、无限内存与逐日志任务膨胀，代价是过载时普通日志允许有证据地丢弃。
 - **Constrained named server events:** 只允许当前有真实生产者和消费者的 `console-log`、`game-ready` 与 `server-stopping` 进入同一 sequence/window/Hub；`welcome` 和 `gap` 是连接级控制事件。该边界不反射扫描 `ModEvents`，也不升级为领域 Event Bus。
 - **Configuration-seeded persistent owner:** `config.json` 在过渡阶段只为固定 `Subject=owner` 提供引导数据；password grant 和不透明 Header Bearer 都以 SQLite 当前状态为准。Access Token 默认有效 8 小时；API Key 只保存 secret 摘要、绑定创建者并继承其当前角色。该方案保持现有服主入口并支持跨重启凭据，代价是用户管理落地前配置仍是 Owner 凭据变更来源；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
+- **Explicit browser session persistence:** Auth Store 统一协调会话恢复、到期、登出、401 和跨标签页事件。默认标签页会话优先限制生命周期；用户明确选择后才使用浏览器会话。它们共享原 Token 到期与同源 XSS 风险，因而不引入 refresh token、Cookie、客户端加密包装或通用 Pinia 持久化插件。
 - **Trusted local filesystem boundary:** `NFR-05` 把服务器本地文件读取能力视为受信任运维权限，因此当前架构不为配置、SQLite、备份或服务端日志增加静态加密层；网络认证、授权和敏感值输出约束仍独立成立。
 - **Pinned reference submodule:** 使用固定的只读参考提交避免复制反编译材料；协作者需要相应私有仓库访问权限。
 

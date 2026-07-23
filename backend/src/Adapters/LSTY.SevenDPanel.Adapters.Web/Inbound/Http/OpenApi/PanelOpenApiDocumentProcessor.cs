@@ -94,9 +94,17 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 Type = JsonObjectType.Integer,
                 Description = "Lifetime in seconds."
             };
+            schema.Properties["username"] = CreateStringProperty("Authenticated user name.");
+            var role = CreateStringProperty("Current panel role.");
+            role.Enumeration.Add("Owner");
+            role.Enumeration.Add("Admin");
+            role.Enumeration.Add("Viewer");
+            schema.Properties["role"] = role;
             schema.RequiredProperties.Add("access_token");
             schema.RequiredProperties.Add("token_type");
             schema.RequiredProperties.Add("expires_in");
+            schema.RequiredProperties.Add("username");
+            schema.RequiredProperties.Add("role");
             return schema;
         }
 

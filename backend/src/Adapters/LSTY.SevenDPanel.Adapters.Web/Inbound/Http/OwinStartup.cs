@@ -48,6 +48,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             }
 
             var fileSystem = new PhysicalFileSystem(assetRoot);
+            app.Use<AdminDocumentSecurityHeadersMiddleware>();
             app.Use(async (context, next) =>
             {
                 if (!ShouldUseSpaFallback(context.Request.Method, context.Request.Path.Value))
@@ -134,7 +135,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             app.UseWebApi(config);
         }
 
-        private static bool ShouldUseSpaFallback(string method, string path)
+        internal static bool ShouldUseSpaFallback(string method, string? path)
         {
             if (!string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
@@ -142,7 +143,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 return false;
             }
 
-            var normalizedPath = string.IsNullOrEmpty(path) ? "/" : path;
+            var normalizedPath = string.IsNullOrEmpty(path) ? "/" : path!;
             if (string.Equals(normalizedPath, "/api", StringComparison.OrdinalIgnoreCase)
                 || normalizedPath.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
             {
