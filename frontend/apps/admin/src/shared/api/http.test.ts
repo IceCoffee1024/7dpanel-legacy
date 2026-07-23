@@ -35,6 +35,14 @@ describe('requestJson', () => {
     }))
   })
 
+  it('returns undefined for a successful no-content response', async () => {
+    fetchMock().mockResolvedValue(new Response(null, { status: 204 }))
+
+    await expect(requestJson<void>('/api/v1/api-keys/key-1', {
+      method: 'DELETE',
+    })).resolves.toBeUndefined()
+  })
+
   it('maps only stable Problem Details fields without retaining detail', async () => {
     fetchMock().mockResolvedValue(new Response(JSON.stringify({
       status: 403,

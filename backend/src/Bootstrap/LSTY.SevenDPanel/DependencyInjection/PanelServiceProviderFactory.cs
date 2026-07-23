@@ -44,6 +44,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton<IPanelAccessTokenStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
+                services.AddSingleton<IPanelApiKeyStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton(_ => new ConsoleLogService(log));
                 services.AddSingleton<IServerEventStream>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);

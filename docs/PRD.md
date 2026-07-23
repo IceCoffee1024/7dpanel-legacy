@@ -130,13 +130,15 @@ last_updated: "2026-07-23"
 
 ### CAP-05: 管理员权限与审计
 
-- **用户结果：** 服主能使用可跨重启保留的管理身份安全登录，并在争议或异常发生后追溯责任。
+- **用户结果：** 服主能使用可跨重启保留的管理身份登录网站，为自动化创建可独立撤销的 API Key，并在争议或异常发生后追溯责任。
 - **Priority:** P0
 - **Requirements:**
   - 身份迁移过渡期继续以 `config.json` 中的 `username` 和 `password` 作为现有登录入口；系统每次启动都把这组配置同步到唯一的引导 `Owner`，其身份标识固定为 `owner`，配置变化不得创建第二个引导用户。
-  - Basic 与 OAuth password grant 都必须针对当前持久用户记录验证凭据，并从该用户的当前状态重建身份声明，不得继续以仅存在于当前进程的配置身份作为认证结果。
-  - 登录签发不透明且可过期、可撤销的 Bearer Token；客户端只能通过 `Authorization` Header 携带 Token，产品不提供 Cookie 会话、CSRF Token 或 refresh token。
-  - 用户被禁用、Token 被撤销或 Token 已过期时，所有后续认证必须失败关闭；已经建立的认证实时连接也必须在下一次复验边界关闭。
+  - 网站登录必须针对当前持久用户记录验证用户名和密码，并从该用户的当前状态重建身份声明；产品不得通过 Basic Authentication 接受用户名和密码。
+  - 网站登录签发默认有效期 8 小时、不透明且可撤销的 Bearer Access Token；浏览器登录后的 API 与实时连接只使用该 Token，不提供 Cookie 会话、CSRF Token 或 refresh token。Token 过期或页面刷新导致内存会话丢失后，用户必须重新登录。
+  - 已登录用户可以创建、列出和撤销自己的 API Key。完整 API Key 只在创建成功时返回一次，后续只能查看名称、安全标识、创建时间、最后使用时间、到期时间和状态；丢失后只能撤销并重新创建。
+  - API Key 绑定创建者并继承创建者的当前角色，不保存独立角色副本；创建者被禁用后其 Key 必须失效，创建者角色变化后 Key 权限必须同步变化。API Key 不得用于创建另一把 API Key。
+  - Access Token 与 API Key 都只能通过 `Authorization` Header 携带。用户被禁用、凭据被撤销或凭据已过期时，所有后续认证必须失败关闭；已经建立的认证实时连接也必须在下一次复验边界关闭。
   - 过渡阶段不提供用户管理能力；该能力以后落地并能够安全维护至少一个 `Owner` 后，才移除 `config.json` 对引导 `Owner` 的同步职责。
   - 首版管理角色为 `Owner`、`Admin` 和 `Viewer`；`Viewer` 是管理面板只读角色，不代表未来可能加入的玩家身份。
   - 生产 API 和实时连接必须在返回受保护数据前验证管理身份；认证失败和权限不足使用一致、可追踪且不泄露账号存在性或内部异常的错误响应。
@@ -144,20 +146,24 @@ last_updated: "2026-07-23"
   - 审计记录可按时间、操作者、目标和动作检索；记录不可用时明确提示。
 - **验收标准：**
   - Given 服务首次启动或重启，When 配置有效，Then 系统创建或更新同一个身份标识为 `owner` 的引导 `Owner`；即使配置用户名或密码发生变化，也不会创建第二个引导用户。
-  - Given 服主提交有效的配置凭据，When 通过 Basic 或 OAuth password grant 登录，Then 系统针对持久用户记录完成验证，并使用该用户当前状态建立认证身份；若请求 Token，则只返回不透明 Bearer Token。
-  - Given Bearer Token 出现在 QueryString、Cookie 或其他非 `Authorization` Header 位置，When 请求受保护资源，Then 该 Token 不会建立认证身份。
-  - Given 用户已禁用或 Token 已撤销或过期，When 请求受保护 API 或到达认证实时连接的复验边界，Then 请求被拒绝或连接被关闭，且不会继续返回受保护数据。
+  - Given 服主提交有效的配置凭据，When 通过网站登录，Then 系统针对持久用户记录完成验证，并签发默认有效期 8 小时的不透明 Access Token；Given 客户端改用 Basic Authentication，Then 请求不会建立认证身份。
+  - Given 已登录用户创建 API Key，When 创建成功，Then 完整 Key 只在本次结果中返回；Given 用户稍后列出 Key，Then 结果只包含元数据且不能恢复完整 Key。
+  - Given 用户使用自己的 Access Token，When 创建、列出或撤销 API Key，Then 只能管理自己的 Key；Given 使用 API Key 尝试创建另一把 Key，Then 请求被拒绝。
+  - Given API Key 的创建者被禁用或角色发生变化，When 该 Key 再次请求受保护资源，Then Key 失效或按创建者当前角色授权，不保留创建时权限。
+  - Given Access Token 或 API Key 出现在 QueryString、Cookie 或其他非 `Authorization` Header 位置，When 请求受保护资源，Then 该凭据不会建立认证身份。
+  - Given 用户已禁用或 Access Token/API Key 已撤销或过期，When 请求受保护 API 或到达认证实时连接的复验边界，Then 请求被拒绝或连接被关闭，且不会继续返回受保护数据。
   - Given 普通访问者无管理权限，When 其尝试执行管理动作，Then 操作被拒绝且不改变游戏状态。
   - Given 请求缺少、携带无效或已过期的管理身份，When 请求受保护 API 或生产实时连接，Then 服务端在返回任何受保护数据前拒绝请求，并提供可关联排查的错误标识。
   - Given 管理动作成功或失败，Then 审计记录包含操作者、目标、时间、动作和结果。
 
 ## 核心用户旅程
 
-1. 服主部署 Mod DLL，并以 `config.json` 中的引导 `Owner` 凭据登录；服务重启后仍识别为同一个管理身份。
+1. 服主部署 Mod DLL，并以 `config.json` 中的引导 `Owner` 凭据登录；网站获得默认有效期 8 小时的 Access Token，服务重启后仍识别为同一个管理身份。
 2. 面板自动识别当前服务端，验证可管理状态，并展示服务器运行状态和在线玩家。
-3. 服主通过网页查看日志、发布公告或处理玩家管理事件。
-4. 服主开启计划备份，确认最近一次备份成功。
-5. 服务端异常或数据问题发生时，服主查看备份状态并确认恢复；面板展示恢复结果和审计记录。
+3. 服主可以在面板创建一次性显示的 API Key，供脚本或第三方集成按其当前角色访问同一受保护接口，也可以独立撤销该 Key。
+4. 服主通过网页查看日志、发布公告或处理玩家管理事件。
+5. 服主开启计划备份，确认最近一次备份成功。
+6. 服务端异常或数据问题发生时，服主查看备份状态并确认恢复；面板展示恢复结果和审计记录。
 
 ## 产品级约束
 
@@ -178,8 +184,13 @@ last_updated: "2026-07-23"
 
 ### NFR-04: 过渡持久身份与传输边界
 
-- **Requirement:** 身份迁移过渡期允许发布模板和缺失配置时生成的 `config.json` 默认提供 `username` / `password`，并以 `allowInsecureHttp=true` 接受明文 HTTP 上的 Basic 与 password grant；该已知凭据和明文传输风险属于当前阶段明确接受的运行假设。每次启动必须把配置凭据同步到身份标识固定为 `owner` 的唯一引导 `Owner`，Basic 与 password grant 必须验证该持久用户的当前状态。访问 Token 必须是不透明、可过期且可撤销的 Bearer 凭据，只能出现在 `Authorization` Header，不得进入 URL、Cookie、产品日志、错误详情、前端构建产物或版本库；产品不采用 Cookie 认证，不提供 CSRF Token 或 refresh token。配置缺失、解析失败、用户禁用、Token 无效、撤销或过期以及授权失败均不得退化为匿名访问。用户管理能力进入发布范围并能够安全维护至少一个 `Owner` 后，必须移除配置引导身份和已知默认凭据，并恢复加密传输要求。
-- **Verification:** 检查 `config.example.json`、缺失配置时生成的 `config.json` 和运行时选项保持同一过渡默认值；验证每次启动只创建或更新同一个引导 `Owner`，配置用户名或密码变化后旧凭据失效且不会产生第二个引导用户；验证 Basic 与 password grant 根据持久用户当前状态建立身份。验证 Bearer Token 仅通过 `Authorization` Header 生效，无效、撤销或过期 Token、禁用用户、QueryString Token、Cookie Token 和权限不足均被拒绝，且 Token 不出现在 URL、日志、错误详情或前端产物中；认证实时连接必须在心跳或 Token 有效期边界复验，并在失效时关闭。未来移除配置引导身份的发布门禁必须重新验证发布物无可登录默认凭据，并在 HTTPS 或受控本机反向代理链路上完成认证实时连接验收。
+- **Requirement:** 身份迁移过渡期允许发布模板和缺失配置时生成的 `config.json` 默认提供 `admin` / `password`，并以 `allowInsecureHttp=true` 接受明文 HTTP 上的网站密码登录；该已知凭据和明文传输风险属于当前阶段明确接受的运行假设。每次启动必须把配置凭据同步到身份标识固定为 `owner` 的唯一引导 `Owner`，网站登录必须验证该持久用户的当前状态，且所有接口都不得接受 Basic Authentication。默认 8 小时的网站 Access Token 和用户创建的 API Key 必须是不透明、可撤销的 Header-only Bearer 凭据，不得进入 URL、Cookie、产品日志、错误详情、前端构建产物或版本库；完整 API Key 只允许在创建结果中显示一次。产品不采用 Cookie 认证，不提供 CSRF Token 或 refresh token。配置缺失、解析失败、用户禁用、凭据无效、撤销或过期以及授权失败均不得退化为匿名访问。用户管理能力进入发布范围并能够安全维护至少一个 `Owner` 后，必须移除配置引导身份和已知默认凭据，并恢复加密传输要求。
+- **Verification:** 检查 `config.example.json`、缺失配置时生成的 `config.json` 和运行时选项保持同一过渡默认值；验证每次启动只创建或更新同一个引导 `Owner`，配置用户名或密码变化后旧凭据失效且不会产生第二个引导用户；验证网站密码登录根据持久用户当前状态建立身份，而 Basic Authentication 在 API 与实时连接上均被拒绝。验证 Access Token 和 API Key 仅通过 `Authorization` Header 生效，无效、撤销或过期凭据、禁用用户、QueryString 凭据、Cookie 凭据和权限不足均被拒绝；验证完整 API Key 只出现一次且不会进入后续列表、日志、错误详情或前端持久存储；认证实时连接必须在心跳或凭据有效期边界复验，并在失效时关闭。未来移除配置引导身份的发布门禁必须重新验证发布物无可登录默认凭据，并在 HTTPS 或受控本机反向代理链路上完成认证实时连接验收。
+
+### NFR-05: 服务器本地文件信任边界
+
+- **Requirement:** 能够读取 7DPanel 所在服务器本地文件系统的主体视为受信任运维者；首版不以防止该主体读取、复制或离线分析 `config.json`、SQLite 数据库、备份和服务端日志为安全目标，也不承诺这些本地文件静态加密。该边界不扩大到网络客户端、浏览器、前端生产资产、版本库或产品日志/API 响应中的意外披露：不具备服务器本地文件读取权限的主体仍不得通过产品接口取得配置凭据、有效 Token 或未授权管理数据。
+- **Verification:** 安全审查不把服务器本地文件读取者获得配置或 SQLite 内容判定为产品漏洞；继续验证发布物和版本库不包含服务器自有 `config.json`、运行时数据库或有效凭据，API、错误详情、前端资产和产品日志不向网络客户端泄露配置凭据或有效 Token，受保护资源仍执行认证与授权。
 
 ## 假设与依赖
 

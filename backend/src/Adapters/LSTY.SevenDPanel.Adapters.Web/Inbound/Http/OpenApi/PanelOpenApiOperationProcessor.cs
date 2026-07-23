@@ -13,16 +13,12 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
         public bool Process(OperationProcessorContext context)
         {
             DescribeServerEventStream(context);
+            DescribeApiKeyManagement(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
 
             context.OperationDescription.Operation.Security =
                 new System.Collections.Generic.List<OpenApiSecurityRequirement>();
-            context.OperationDescription.Operation.Security.Add(
-                new OpenApiSecurityRequirement
-                {
-                    { "Basic", Array.Empty<string>() }
-                });
             context.OperationDescription.Operation.Security.Add(
                 new OpenApiSecurityRequirement
                 {
@@ -72,6 +68,56 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             };
         }
 
+        private static void DescribeApiKeyManagement(OperationProcessorContext context)
+        {
+            var operation = context.OperationDescription.Operation;
+            var path = context.OperationDescription.Path;
+            var method = context.OperationDescription.Method;
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/api-keys", StringComparison.Ordinal))
+            {
+                operation.Responses["200"] = OpenApiResponses.Json(
+                    "API Key metadata for the authenticated subject.",
+                    CreateApiKeyMetadataListSchema());
+                return;
+            }
+
+            if (method == OpenApiOperationMethod.Post &&
+                string.Equals(path, "/api/v1/api-keys", StringComparison.Ordinal))
+            {
+                operation.Description =
+                    "Creates an API Key for the authenticated subject. " +
+                    "Only a website Access Token can create API Keys. " +
+                    "The complete API Key is returned only in this response.";
+                operation.Responses.Remove("200");
+                var response = OpenApiResponses.Json(
+                    "A newly created API Key, including its one-time complete value.",
+                    CreateCreatedApiKeySchema());
+                response.Headers["Cache-Control"] = new OpenApiHeader
+                {
+                    Description = "Prevents storage of the one-time complete API Key.",
+                    IsRequired = true,
+                    Schema = new JsonSchema { Type = JsonObjectType.String },
+                    Example = "no-store"
+                };
+                operation.Responses["201"] = response;
+                return;
+            }
+
+            if (method == OpenApiOperationMethod.Delete &&
+                string.Equals(path, "/api/v1/api-keys/{keyId}", StringComparison.Ordinal))
+            {
+                operation.Description =
+                    "Revokes an API Key owned by the authenticated subject. " +
+                    "Only a website Access Token can revoke API Keys.";
+                operation.Responses.Remove("200");
+                operation.Responses["204"] = new OpenApiResponse
+                {
+                    Description = "The API Key is revoked or was already revoked."
+                };
+            }
+        }
+
         private static void DescribeProblemResponses(OperationProcessorContext context)
         {
             var statusCodes = GetProblemStatusCodes(
@@ -115,8 +161,95 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 return new[] { "400", "401", "403", "409", "500", "503" };
             }
 
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/api-keys", StringComparison.Ordinal))
+            {
+                return new[] { "401", "403", "500" };
+            }
+
+            if (method == OpenApiOperationMethod.Post &&
+                string.Equals(path, "/api/v1/api-keys", StringComparison.Ordinal))
+            {
+                return new[] { "400", "401", "403", "409", "415", "500" };
+            }
+
+            if (method == OpenApiOperationMethod.Delete &&
+                string.Equals(path, "/api/v1/api-keys/{keyId}", StringComparison.Ordinal))
+            {
+                return new[] { "401", "403", "404", "500" };
+            }
+
             return Array.Empty<string>();
         }
+
+        private static JsonSchema CreateApiKeyMetadataListSchema()
+        {
+            return new JsonSchema
+            {
+                Type = JsonObjectType.Array,
+                Item = CreateApiKeyMetadataSchema()
+            };
+        }
+
+        private static JsonSchema CreateCreatedApiKeySchema()
+        {
+            var schema = new JsonSchema { Type = JsonObjectType.Object };
+            schema.Properties["id"] = CreateStringProperty("Public API Key identifier.");
+            schema.Properties["name"] = CreateStringProperty("User-provided API Key name.");
+            schema.Properties["apiKey"] = CreateStringProperty(
+                "Complete API Key. This value is returned only once.");
+            schema.Properties["createdAtUtc"] = CreateStringProperty("Creation time in UTC.");
+            schema.Properties["expiresAtUtc"] = CreateNullableStringProperty(
+                "Expiration time in UTC, when configured.");
+            schema.RequiredProperties.Add("id");
+            schema.RequiredProperties.Add("name");
+            schema.RequiredProperties.Add("apiKey");
+            schema.RequiredProperties.Add("createdAtUtc");
+            schema.RequiredProperties.Add("expiresAtUtc");
+            return schema;
+        }
+
+        private static JsonSchema CreateApiKeyMetadataSchema()
+        {
+            var schema = new JsonSchema { Type = JsonObjectType.Object };
+            schema.Properties["id"] = CreateStringProperty("Public API Key identifier.");
+            schema.Properties["displayPrefix"] = CreateStringProperty(
+                "Safe API Key prefix for display.");
+            schema.Properties["name"] = CreateStringProperty("User-provided API Key name.");
+            schema.Properties["createdAtUtc"] = CreateStringProperty("Creation time in UTC.");
+            schema.Properties["lastUsedAtUtc"] = CreateNullableStringProperty(
+                "Most recent accepted use time in UTC, when available.");
+            schema.Properties["expiresAtUtc"] = CreateNullableStringProperty(
+                "Expiration time in UTC, when configured.");
+            var status = CreateStringProperty("Current API Key status.");
+            status.Enumeration.Add("active");
+            status.Enumeration.Add("expired");
+            status.Enumeration.Add("revoked");
+            schema.Properties["status"] = status;
+            schema.RequiredProperties.Add("id");
+            schema.RequiredProperties.Add("displayPrefix");
+            schema.RequiredProperties.Add("name");
+            schema.RequiredProperties.Add("createdAtUtc");
+            schema.RequiredProperties.Add("lastUsedAtUtc");
+            schema.RequiredProperties.Add("expiresAtUtc");
+            schema.RequiredProperties.Add("status");
+            return schema;
+        }
+
+        private static JsonSchemaProperty CreateStringProperty(string description) =>
+            new JsonSchemaProperty
+            {
+                Type = JsonObjectType.String,
+                Description = description
+            };
+
+        private static JsonSchemaProperty CreateNullableStringProperty(string description) =>
+            new JsonSchemaProperty
+            {
+                Type = JsonObjectType.String,
+                Description = description,
+                IsNullableRaw = true
+            };
 
         private static bool RequiresAuthorization(OperationProcessorContext context)
         {

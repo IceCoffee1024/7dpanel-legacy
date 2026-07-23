@@ -10,6 +10,7 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/login', component: { template: '<div />' }, meta: { public: true } },
     { path: '/players', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
   ],
 }))
 
@@ -42,6 +43,14 @@ describe('createAdminRouter', () => {
     await router.push('/players')
 
     expect(router.currentRoute.value.fullPath).toBe('/players')
+  })
+
+  it('redirects an anonymous API Key navigation to login', async () => {
+    const { router } = createTestRouter()
+
+    await router.push('/api-keys')
+
+    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/api-keys')
   })
 
   it('redirects an authenticated login navigation to players', async () => {

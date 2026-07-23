@@ -114,7 +114,7 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays`、`Persistence.Sqlite`
 |---|---|---|---|---|---|
 | Web API 与 OWIN Self Host | Web Adapter | `Microsoft.AspNet.WebApi.*`、`Microsoft.Owin.*` | 已采用 | 升级 7DTD、Mono、HTTP 管线或当前包基线 | `net48` 与游戏 Mono 进程内加载、路由、关闭释放、程序集冲突和安全公告 |
 | Mod 内存程序集定位 | Bootstrap | 游戏提供的 `0_TFP_Harmony` + 受限 `Assembly.Location` postfix | 已采用并通过 Windows 真实进程；Linux 待验证 | 7DTD Mod Loader、Harmony 或程序集加载方式变化 | 只修正当前 Mod 内原位置为空的程序集，先于 SQLite/OWIN 组合；7DPanel 不发布 Harmony，不覆盖已有位置或其他 Mod |
-| 持久认证与生产 SSE | Web Adapter / Persistence Adapter / Bootstrap | `Microsoft.Owin.Security.OAuth` + 自有 Basic middleware + SQLite 用户与 Header-only 不透明 Bearer | 引导 `Owner`、持久 Token 与 SSE 复验已采用 | 用户管理、角色或认证公开面变化 | Basic 与 password grant 读取同一持久用户、Token 撤销与到期、统一 Problem Details、Header-only Bearer、连接配额、SSE 周期复验、命名事件和真实 Mono 加载；产品不采用 Cookie、CSRF Token 或 refresh token，当前实现边界见[系统架构](../architecture.md#owinweb-api-与静态资源) |
+| 持久认证与生产 SSE | Web Adapter / Persistence Adapter / Bootstrap | `Microsoft.Owin.Security.OAuth` password grant + SQLite 用户、Header-only Access Token 与 API Key | 引导 `Owner`、持久 Access Token、移除 Basic、用户 API Key 与 SSE 复验已采用；真实 Mono 验收仍待执行 | 用户管理、角色或认证公开面变化 | password grant 读取持久用户、8 小时默认 Access Token、API Key 一次性明文/当前角色继承、撤销与到期、统一 Problem Details、Header-only Bearer、连接配额、SSE 周期复验和真实 Mono 加载；产品不采用 Cookie、CSRF Token 或 refresh token，目标变更见[认证设计规格](../superpowers/specs/2026-07-22-api-key-authentication-design.md)，当前实现边界见[系统架构](../architecture.md#owinweb-api-与静态资源) |
 | 本地 SQLite 与原生运行时 | Persistence Adapter / Bootstrap | `Microsoft.Data.Sqlite`、`SQLitePCLRaw.bundle_e_sqlite3`/`e_sqlite3` | 认证数据库和标准 Batteries 已采用并通过 Windows 真实进程；Linux 待验证 | 首个审计、作业持久化或平台支持变化 | `<ModDirectory>/data/7dpanel.db` 的创建与权限、五个 Framework64 宿主兼容程序集、Windows/Linux x64 原生资产、WAL、并发写入、发布边界和正常关服 |
 | 业务 SQL | Persistence Adapter | `Dapper` | 已采用 | 首个新增持久能力或 Dapper 版本变化 | 参数绑定、事务所有权、连接生命周期、并发写入和目标 Mono 加载；不得承担 schema 迁移 |
 | 数据库迁移 | Persistence Adapter | `DbUp`（`dbup-core`、`dbup-sqlite`） | 已采用 | 新 migration、升级/恢复策略或 DbUp 版本变化 | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径；不得承载运行时业务查询 |
@@ -274,11 +274,11 @@ ModMain
             -> create or update; never create a second bootstrap user
        -> start OWIN
 
-HTTP Basic or OAuth password grant
+OAuth password grant
   -> load the persisted user by login name
   -> verify the submitted password and current enabled state
   -> rebuild claims from the current persisted user
-  -> Basic request continues with those claims, or password grant issues Bearer
+  -> issue an 8-hour-by-default opaque Access Token
 
 Bearer login result
   -> generate token id + high-entropy secret
@@ -286,16 +286,16 @@ Bearer login result
   -> return the opaque token once; never persist the plaintext secret
 
 Authorization: Bearer <opaque-token>
-  -> split token id and secret
-  -> load token record and current user
-  -> compare the submitted secret hash
-  -> reject expired or revoked token and disabled or missing user
+  -> select Access Token or API Key from its strict prefix
+  -> load the credential record and current user
+  -> compare the submitted high-entropy secret hash
+  -> reject expired or revoked credentials and disabled or missing users
   -> rebuild claims from the current user; fail closed on every invalid state
 ```
 
-`config.json` 只在本过渡阶段承担引导数据来源；它不是绕过 SQLite 的第二套认证后端。每次启动的同步以稳定 `Subject=owner` 定位同一个 `Owner`，配置用户名或密码变化只更新该身份。Basic 与 OAuth password grant 随后都读取 SQLite 当前记录；用户禁用或数据读取失败必须拒绝认证。
+`config.json` 只在本过渡阶段承担引导数据来源；它不是绕过 SQLite 的第二套认证后端。每次启动的同步以稳定 `Subject=owner` 定位同一个 `Owner`，配置用户名或密码变化只更新该身份。OAuth password grant 随后读取 SQLite 当前记录；用户禁用或数据读取失败必须拒绝认证。目标系统不接受 Basic Authentication。
 
-Bearer Token 对客户端保持不透明，数据库只保存高熵 secret 的摘要，token id 只承担记录定位。Token 只允许出现在 `Authorization` Header，不接受 QueryString 或 Cookie；产品不建立 Cookie 会话，因此不引入 CSRF Token，也不签发 refresh token。过渡期没有用户管理 API；等后续用户管理能力可以安全维护至少一个 `Owner` 后，再删除配置同步、已知默认凭据和相应引导代码。每个用例仍然必须独立执行权限检查，并保持稳定的 401/403 Problem Details，具体当前事实见[系统架构](../architecture.md#本地配置与状态)。
+Access Token 与 API Key 对客户端保持不透明，数据库只保存高熵 secret 的摘要，公开 ID 只承担记录定位。两类凭据只允许出现在 `Authorization` Header，不接受 QueryString 或 Cookie；产品不建立 Cookie 会话，因此不引入 CSRF Token，也不签发 refresh token。API Key 绑定创建者并继承其当前角色，完整值只在创建时返回一次，且不能创建另一把 Key。过渡期没有用户管理 API；等后续用户管理能力可以安全维护至少一个 `Owner` 后，再删除配置同步、已知默认凭据和相应引导代码。每个用例仍然必须独立执行权限检查，并保持稳定的 401/403 Problem Details，完整边界见[认证设计规格](../superpowers/specs/2026-07-22-api-key-authentication-design.md)。
 
 ### 动态控制台命令
 
@@ -475,11 +475,13 @@ backend/
 |   |   |   |-- SynchronizeBootstrapOwnerUseCase.cs # 启动时同步稳定 Subject=owner
 |   |   |   |-- LoginUseCase.cs                  # 密码和 Bearer Token 流程
 |   |   |   |-- LogoutUseCase.cs                 # 撤销当前 Bearer Token
+|   |   |   |-- ApiKeys/                         # 创建、列出和撤销当前用户 API Key
 |   |   |   |-- AuthorizationService.cs          # 操作者和权限协调
 |   |   |   |-- Models/AuthenticatedActor.cs     # 不可变操作者快照
 |   |   |   `-- Ports/
 |   |   |       |-- IIdentityStore.cs            # 用户和密码摘要
 |   |   |       |-- IAccessTokenStore.cs         # Token 摘要、到期和撤销
+|   |   |       |-- IApiKeyStore.cs               # API Key 元数据、摘要和撤销
 |   |   |       |-- IPasswordHasher.cs           # 版本化密码摘要
 |   |   |       `-- ISecureTokenGenerator.cs     # Token id 和高熵 secret
 |   |   |-- ServerStatus/

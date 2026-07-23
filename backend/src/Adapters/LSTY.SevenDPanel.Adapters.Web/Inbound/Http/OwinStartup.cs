@@ -83,9 +83,11 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
             var credentialStore = serviceProvider.GetRequiredService<IPanelCredentialStore>();
             var accessTokenStore = serviceProvider.GetRequiredService<IPanelAccessTokenStore>();
+            var apiKeyStore = serviceProvider.GetRequiredService<IPanelApiKeyStore>();
             var verifier = new PanelCredentialVerifier(credentialStore);
-            var accessTokens = new PersistentAccessTokenProvider(
+            var bearerCredentials = new PersistentBearerCredentialProvider(
                 accessTokenStore,
+                apiKeyStore,
                 credentialStore);
 
             app.UseOAuthAuthorizationServer(new OAuthAuthorizationServerOptions
@@ -94,20 +96,16 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 TokenEndpointPath = new PathString(HttpRoutes.TokenEndpoint),
                 AccessTokenExpireTimeSpan = authentication.AccessTokenLifetime,
                 AccessTokenFormat = RejectingAuthenticationTicketFormat.Instance,
-                AccessTokenProvider = accessTokens,
+                AccessTokenProvider = bearerCredentials,
                 AuthorizationCodeFormat = RejectingAuthenticationTicketFormat.Instance,
                 Provider = new PanelOAuthAuthorizationServerProvider(authentication, verifier),
                 RefreshTokenFormat = RejectingAuthenticationTicketFormat.Instance
             });
-            app.Use<BasicAuthenticationMiddleware>(new BasicAuthenticationOptions(
-                "7DPanel",
-                authentication.AllowInsecureHttp,
-                verifier));
             app.UseOAuthBearerAuthentication(new OAuthBearerAuthenticationOptions
             {
                 AuthenticationMode = AuthenticationMode.Active,
                 AccessTokenFormat = RejectingAuthenticationTicketFormat.Instance,
-                AccessTokenProvider = accessTokens,
+                AccessTokenProvider = bearerCredentials,
                 Realm = "7DPanel"
             });
         }

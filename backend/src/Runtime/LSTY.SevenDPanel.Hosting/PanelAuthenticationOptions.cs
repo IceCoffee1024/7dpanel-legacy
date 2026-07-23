@@ -5,7 +5,7 @@ namespace LSTY.SevenDPanel.Hosting
 {
     public sealed class PanelAuthenticationOptions
     {
-        public const int DefaultAccessTokenLifetimeMinutes = 30;
+        public const int DefaultAccessTokenLifetimeMinutes = 480;
         public const int MinimumAccessTokenLifetimeMinutes = 5;
         public const int MaximumAccessTokenLifetimeMinutes = 1440;
 

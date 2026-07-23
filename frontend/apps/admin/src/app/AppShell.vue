@@ -27,6 +27,14 @@ const navigation = [
       sidebarOpen.value = false
     },
   },
+  {
+    label: 'API Keys',
+    icon: 'i-lucide-key-round',
+    to: '/api-keys',
+    onSelect: () => {
+      sidebarOpen.value = false
+    },
+  },
 ] satisfies NavigationMenuItem[]
 
 const searchGroups = [{
@@ -47,6 +55,7 @@ const accountItems = computed<DropdownMenuItem[][]>(() => [[{
 defineShortcuts({
   'g-o': () => router.push('/'),
   'g-p': () => router.push('/players'),
+  'g-k': () => router.push('/api-keys'),
 })
 </script>
 

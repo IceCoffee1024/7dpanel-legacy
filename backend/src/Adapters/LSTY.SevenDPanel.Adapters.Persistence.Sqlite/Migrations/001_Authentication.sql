@@ -1,9 +1,10 @@
 CREATE TABLE users (
     subject TEXT NOT NULL PRIMARY KEY,
     username TEXT NOT NULL COLLATE BINARY,
+    role TEXT NOT NULL CHECK (role IN ('Owner', 'Admin', 'Viewer')),
     password_salt BLOB NOT NULL,
     password_hash BLOB NOT NULL,
-    password_iterations INTEGER NOT NULL CHECK (password_iterations >= 100000),
+    password_iterations INTEGER NOT NULL CHECK (password_iterations = 1000),
     enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
     updated_utc INTEGER NOT NULL
 );
@@ -31,3 +32,24 @@ CREATE INDEX ix_access_tokens_expiration
 
 CREATE INDEX ix_access_tokens_oldest
     ON access_tokens (issued_utc, token_id);
+
+CREATE TABLE api_keys (
+    key_id TEXT NOT NULL PRIMARY KEY,
+    subject TEXT NOT NULL,
+    name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 80),
+    secret_hash BLOB NOT NULL,
+    created_utc INTEGER NOT NULL,
+    last_used_utc INTEGER NULL,
+    expires_utc INTEGER NULL,
+    revoked_utc INTEGER NULL,
+    CONSTRAINT fk_api_keys_users
+        FOREIGN KEY (subject) REFERENCES users (subject) ON DELETE CASCADE,
+    CONSTRAINT ck_api_keys_expiration
+        CHECK (expires_utc IS NULL OR expires_utc > created_utc)
+);
+
+CREATE INDEX ix_api_keys_subject_created
+    ON api_keys (subject, created_utc DESC, key_id DESC);
+
+CREATE INDEX ix_api_keys_active_subject
+    ON api_keys (subject, revoked_utc);

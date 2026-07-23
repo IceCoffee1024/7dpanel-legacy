@@ -9,13 +9,17 @@ using System.Security.Claims;
 using System.Threading;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
+using LSTY.SevenDPanel.Hosting.Authentication;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
-    [Authorize(Roles = "Owner,Admin,Viewer")]
+    [Authorize(Roles = AllowedRolesValue)]
     [RoutePrefix("api/v1/events")]
     public sealed class ServerEventsController : ApiController
     {
+        private const string AllowedRolesValue = "Owner,Admin,Viewer";
+        private static readonly string[] AllowedRoles = AllowedRolesValue.Split(',');
+
         private readonly ServerEventSseSession session;
 
         public ServerEventsController(ServerEventSseSession session)
@@ -36,8 +40,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     "Last-Event-ID must be a non-negative integer.");
             }
 
-            if (!TryReadAuthorization(out var subject, out var bearerToken) ||
-                !session.TryAuthorize(subject, bearerToken))
+            if (!TryReadAuthorization(out var subject, out var bearerToken, out var credentialType) ||
+                !session.TryAuthorize(subject, bearerToken, credentialType, AllowedRoles))
             {
                 return ApiProblemDetailsFactory.CreateResponse(
                     Request,
@@ -71,10 +75,14 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             return response;
         }
 
-        private bool TryReadAuthorization(out string subject, out string? bearerToken)
+        private bool TryReadAuthorization(
+            out string subject,
+            out string? bearerToken,
+            out PanelCredentialType credentialType)
         {
             subject = string.Empty;
             bearerToken = null;
+            credentialType = PanelCredentialType.AccessToken;
             if (!(User?.Identity is ClaimsIdentity identity)) return false;
 
             subject = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
@@ -90,6 +98,12 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 bearerToken = authorization.Parameter;
                 if (string.IsNullOrWhiteSpace(bearerToken)) return false;
             }
+
+            var credentialTypeValue = identity.FindFirst(PanelClaimTypes.CredentialType)?.Value;
+            if (string.Equals(credentialTypeValue, "api_key", StringComparison.Ordinal))
+                credentialType = PanelCredentialType.ApiKey;
+            else if (!string.Equals(credentialTypeValue, "access_token", StringComparison.Ordinal))
+                return false;
 
             return true;
         }

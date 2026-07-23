@@ -197,6 +197,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 authenticationStore,
                 provider.GetRequiredService<IPanelAccessTokenStore>());
+            Assert.Same(
+                authenticationStore,
+                provider.GetRequiredService<IPanelApiKeyStore>());
             var commandService = provider.GetRequiredService<SevenDaysConsoleCommandService>();
             Assert.Same(
                 commandService,

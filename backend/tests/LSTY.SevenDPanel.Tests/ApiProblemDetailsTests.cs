@@ -95,6 +95,27 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal("existing-error", await ReadTextAsync(context.Response.Body));
         }
 
+        [Fact]
+        public async Task Owin_fallback_does_not_echo_an_api_key_in_the_problem_instance()
+        {
+            const string apiKey = "7dp_k_test-key_sssssssssssssssssssssssssssssssssss";
+            var context = CreateContext("/api/v1/api-keys/" + apiKey);
+            var middleware = CreateMiddleware(
+                owinContext =>
+                {
+                    owinContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    return Task.CompletedTask;
+                },
+                _ => { });
+
+            await middleware.Invoke(context);
+
+            var payload = await ReadJsonAsync(context.Response.Body);
+            Assert.Equal((int)HttpStatusCode.Unauthorized, context.Response.StatusCode);
+            Assert.Equal("/api/v1/api-keys", (string?)payload["instance"]);
+            Assert.DoesNotContain(apiKey, payload.ToString());
+        }
+
         [Theory]
         [InlineData(HttpStatusCode.Forbidden, "forbidden")]
         [InlineData(HttpStatusCode.MethodNotAllowed, "method_not_allowed")]
