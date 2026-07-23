@@ -65,24 +65,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             }
             if (!ModelState.IsValid)
             {
-                var isExpirationError = ModelState
-                    .Where(entry => entry.Value.Errors.Count > 0)
-                    .All(entry => IsExpirationField(entry.Key));
-
-                if (isExpirationError)
-                {
-                    return ApiProblemDetailsFactory.CreateResponse(
-                        Request,
-                        HttpStatusCode.BadRequest,
-                        "invalid_api_key_expiration",
-                        "The API Key expiration must be a valid UTC timestamp later than its creation time.");
-                }
-
-                return ApiProblemDetailsFactory.CreateResponse(
-                    Request,
-                    HttpStatusCode.BadRequest,
-                    "invalid_api_key_name",
-                    "The API Key name must be a string containing between 1 and 80 characters.");
+                return ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);
             }
 
             var now = DateTimeOffset.UtcNow;
@@ -143,13 +126,6 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             subject = identity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             credentialType = identity?.FindFirst(PanelClaimTypes.CredentialType)?.Value;
             return !string.IsNullOrWhiteSpace(subject) && !string.IsNullOrWhiteSpace(credentialType);
-        }
-
-        private static bool IsExpirationField(string key)
-        {
-            var expirationField = nameof(ApiKeyCreateRequest.ExpiresAtUtc);
-            return string.Equals(key, expirationField, StringComparison.OrdinalIgnoreCase)
-                || key.EndsWith("." + expirationField, StringComparison.OrdinalIgnoreCase);
         }
 
         private HttpResponseMessage CreateProblem(ApiKeyCreateStatus status)

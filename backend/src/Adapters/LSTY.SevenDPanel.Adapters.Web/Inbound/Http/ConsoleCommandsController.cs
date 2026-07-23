@@ -37,6 +37,11 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             ConsoleCommandRequest? request,
             CancellationToken cancellationToken)
         {
+            if (!ModelState.IsValid)
+            {
+                return ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);
+            }
+
             if (request == null || string.IsNullOrWhiteSpace(request.Command))
             {
                 return ApiProblemDetailsFactory.CreateResponse(

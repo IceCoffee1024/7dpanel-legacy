@@ -83,6 +83,16 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
                 GetSafeInstance(request));
         }
 
+        public static HttpResponseMessage CreateInvalidRequestBodyResponse(
+            HttpRequestMessage request)
+        {
+            return CreateResponse(
+                request,
+                HttpStatusCode.BadRequest,
+                "invalid_request_body",
+                "The JSON request body is invalid.");
+        }
+
         public static HttpResponseMessage CreateResponse(
             HttpRequestMessage request,
             HttpStatusCode statusCode,

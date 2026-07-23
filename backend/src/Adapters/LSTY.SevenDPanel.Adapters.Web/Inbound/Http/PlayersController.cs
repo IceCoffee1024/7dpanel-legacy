@@ -85,6 +85,11 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     "The game is not ready to kick players.");
             }
 
+            if (!ModelState.IsValid)
+            {
+                return ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);
+            }
+
             if (entityId < 0 || body?.ExpectedPlatformIdentity == null ||
                 string.IsNullOrWhiteSpace(body.ExpectedPlatformIdentity.CombinedId) ||
                 string.IsNullOrWhiteSpace(body.ExpectedPlatformIdentity.Platform))

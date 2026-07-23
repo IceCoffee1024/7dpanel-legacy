@@ -689,6 +689,84 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Theory]
+        [InlineData("{\"command\":", "invalid_request_body")]
+        [InlineData("{\"command\":{}}", "invalid_request_body")]
+        [InlineData("{\"command\":\"   \"}", "console_command_required")]
+        public async Task Invalid_console_command_request_returns_stable_problem_details(
+            string body,
+            string expectedCode)
+        {
+            var gateway = new TestConsoleCommandGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateJsonPostRequest(url + "api/v1/console/commands", body))
+            {
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var problem = await AssertProblemDetailsAsync(
+                    response,
+                    expectedCode,
+                    "/api/v1/console/commands");
+                if (expectedCode == "invalid_request_body")
+                    Assert.Equal("The JSON request body is invalid.", (string?)problem["detail"]);
+                Assert.Null(gateway.Request);
+            }
+        }
+
+        [Fact]
+        public async Task Anonymous_invalid_console_command_request_requires_authentication_first()
+        {
+            var gateway = new TestConsoleCommandGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateJsonPostRequest(
+                url + "api/v1/console/commands",
+                "{\"command\":{}"))
+            {
+                host.Start();
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "authentication_required",
+                    "/api/v1/console/commands");
+                Assert.Null(gateway.Request);
+            }
+        }
+
         [Fact]
         public async Task Console_command_rejects_requests_before_game_ready()
         {
@@ -720,6 +798,44 @@ namespace LSTY.SevenDPanel.Tests
                 await AssertProblemDetailsAsync(
                     response,
                     "game_not_ready",
+                    "/api/v1/console/commands");
+                Assert.Null(gateway.Request);
+            }
+        }
+
+        [Fact]
+        public async Task Invalid_console_command_body_is_rejected_before_game_readiness()
+        {
+            var gateway = new TestConsoleCommandGateway();
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway,
+                gameReadiness: GameReadinessState.Loading);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateJsonPostRequest(
+                url + "api/v1/console/commands",
+                "{\"command\":{}}"))
+            {
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                await AssertProblemDetailsAsync(
+                    response,
+                    "invalid_request_body",
                     "/api/v1/console/commands");
                 Assert.Null(gateway.Request);
             }
@@ -1057,6 +1173,7 @@ namespace LSTY.SevenDPanel.Tests
         [InlineData(7, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\",\"confirmed\":false}", "player_kick_confirmation_required")]
         [InlineData(7, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"   \",\"confirmed\":true}", "invalid_player_kick_reason")]
         [InlineData(7, "{\"reason\":\"rule violation\",\"confirmed\":true}", "invalid_player_identity")]
+        [InlineData(7, "{\"expectedPlatformIdentity\":\"steam-1\",\"reason\":\"rule violation\",\"confirmed\":true}", "invalid_request_body")]
         [InlineData(-1, "{\"expectedPlatformIdentity\":{\"combinedId\":\"steam-1\",\"platform\":\"Steam\"},\"reason\":\"rule violation\",\"confirmed\":true}", "invalid_player_identity")]
         public async Task Invalid_kick_request_returns_stable_problem_without_audit_or_action(
             int entityId,
@@ -1194,6 +1311,22 @@ namespace LSTY.SevenDPanel.Tests
                 expectedAuditCalls: 0,
                 gameReadiness: GameReadinessState.Loading);
         }
+
+            [Fact]
+            public async Task Game_not_ready_rejects_invalid_kick_body_before_binding_errors()
+            {
+                var actions = new TestPlayerActions();
+                var audit = new TestPlayerActionAuditTrail();
+                await AssertKickProblemAsync(
+                "{\"expectedPlatformIdentity\":\"steam-1\"}",
+                HttpStatusCode.ServiceUnavailable,
+                "game_not_ready",
+                actions,
+                audit,
+                expectedActionCalls: 0,
+                expectedAuditCalls: 0,
+                gameReadiness: GameReadinessState.Loading);
+            }
 
         public static IEnumerable<object[]> KickFailureCases()
         {
@@ -2162,6 +2295,22 @@ namespace LSTY.SevenDPanel.Tests
                         "/api/v1/api-keys");
                 }
 
+                using (var invalidCreateRequest = CreateJsonPostRequest(
+                    url + "api/v1/api-keys",
+                    "{\"name\":{}}"))
+                {
+                    invalidCreateRequest.Headers.Authorization =
+                        CreateBearerAuthorization(TestApiKey);
+                    using var invalidCreateResponse = await client.SendAsync(
+                        invalidCreateRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.Forbidden, invalidCreateResponse.StatusCode);
+                    await AssertProblemDetailsAsync(
+                        invalidCreateResponse,
+                        "access_token_required",
+                        "/api/v1/api-keys");
+                }
+
                 using (var revokeRequest = new HttpRequestMessage(
                     HttpMethod.Delete,
                     url + "api/v1/api-keys/not-a-real-key"))
@@ -2327,7 +2476,7 @@ namespace LSTY.SevenDPanel.Tests
                     Assert.Equal(HttpStatusCode.BadRequest, malformedNameResponse.StatusCode);
                     await AssertProblemDetailsAsync(
                         malformedNameResponse,
-                        "invalid_api_key_name",
+                        "invalid_request_body",
                         "/api/v1/api-keys");
                 }
 
@@ -2362,7 +2511,7 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal(HttpStatusCode.BadRequest, malformedExpirationResponse.StatusCode);
                 await AssertProblemDetailsAsync(
                     malformedExpirationResponse,
-                    "invalid_api_key_expiration",
+                    "invalid_request_body",
                     "/api/v1/api-keys");
             }
         }
@@ -2958,16 +3107,16 @@ namespace LSTY.SevenDPanel.Tests
             string url,
             string command)
         {
-            return new HttpRequestMessage(
-                HttpMethod.Post,
-                url + "api/v1/console/commands")
-            {
-                Content = new StringContent(
-                    "{\"command\":" + Newtonsoft.Json.JsonConvert.SerializeObject(command) + "}",
-                    Encoding.UTF8,
-                    "application/json")
-            };
+            return CreateJsonPostRequest(
+                url + "api/v1/console/commands",
+                "{\"command\":" + Newtonsoft.Json.JsonConvert.SerializeObject(command) + "}");
         }
+
+        private static HttpRequestMessage CreateJsonPostRequest(string url, string body) =>
+            new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            };
 
         private static HttpRequestMessage CreatePlayersRequest(string url)
         {
