@@ -389,6 +389,40 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Openapi_document_describes_json_success_schemas_for_http_response_actions()
+        {
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(false, out _);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var document = await GetOpenApiDocumentAsync(client, url);
+
+                AssertJsonSuccessSchema(
+                    document,
+                    "/api/v1/players/online",
+                    "get",
+                    "OnlinePlayersResponse");
+                AssertJsonSuccessSchema(
+                    document,
+                    "/api/v1/players/{entityId}/kick",
+                    "post",
+                    "KickPlayerResponse");
+                AssertJsonSuccessSchema(
+                    document,
+                    "/api/v1/console/commands",
+                    "post",
+                    "ConsoleCommandResponse");
+            }
+        }
+
+        [Fact]
         public async Task Swagger_requests_do_not_invoke_game_or_audit_dependencies()
         {
             var consoleGateway = new TestConsoleCommandGateway();
@@ -2754,6 +2788,21 @@ namespace LSTY.SevenDPanel.Tests
                     (string?)document["paths"]?[path]?[method]?["responses"]?[statusCode]?
                         ["content"]?["application/problem+json"]?["schema"]?["$ref"]);
             }
+        }
+
+        private static void AssertJsonSuccessSchema(
+            JObject document,
+            string path,
+            string method,
+            string schemaName)
+        {
+            var content = Assert.IsType<JObject>(
+                document["paths"]?[path]?[method]?["responses"]?["200"]?["content"]);
+            var mediaType = Assert.Single(content.Properties());
+            Assert.Equal("application/json", mediaType.Name);
+            Assert.Equal(
+                "#/components/schemas/" + schemaName,
+                (string?)mediaType.Value["schema"]?["$ref"]);
         }
 
         private static void AssertResponseCodes(

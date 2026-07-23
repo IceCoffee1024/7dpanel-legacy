@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Description;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
@@ -31,6 +32,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         [HttpPost]
         [Route("")]
+        [ResponseType(typeof(ConsoleCommandResponse))]
         public async Task<HttpResponseMessage> Post(
             ConsoleCommandRequest? request,
             CancellationToken cancellationToken)

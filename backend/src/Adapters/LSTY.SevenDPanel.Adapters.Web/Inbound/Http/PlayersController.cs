@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Description;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Hosting;
@@ -34,6 +35,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         [HttpGet]
         [Route("online")]
+        [ResponseType(typeof(OnlinePlayersResponse))]
         public async System.Threading.Tasks.Task<HttpResponseMessage> Get(CancellationToken cancellationToken)
         {
             if (runtimeStatus.GameReadiness != GameReadinessState.Ready)
@@ -57,6 +59,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         [HttpPost]
         [Route("{entityId:int}/kick")]
+        [ResponseType(typeof(KickPlayerResponse))]
         public async Task<HttpResponseMessage> Kick(
             int entityId,
             KickPlayerRequestBody? body,
