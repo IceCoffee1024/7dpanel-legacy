@@ -114,7 +114,7 @@ last_updated: "2026-07-23"
 
   复跑步骤 2，预期全部通过。
 
-- [ ] **步骤 5：提交任务 1（需用户授权）**
+- [x] **步骤 5：提交任务 1（需用户授权）**
 
   ```powershell
   git add backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/Authentication/PanelOAuthAuthorizationServerProvider.cs backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/OpenApi/PanelOpenApiDocumentProcessor.cs backend/tests/LSTY.SevenDPanel.Tests/OwinWebHostTests.cs
@@ -211,7 +211,7 @@ last_updated: "2026-07-23"
 
   预期：Admin 文档 CSP 断言和 OWIN 全部集成测试通过。
 
-- [ ] **步骤 5：提交任务 2（需用户授权）**
+- [x] **步骤 5：提交任务 2（需用户授权）**
 
   ```powershell
   git add backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/AdminDocumentSecurityHeadersMiddleware.cs backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/OwinStartup.cs backend/tests/LSTY.SevenDPanel.Tests/OwinWebHostTests.cs
@@ -467,7 +467,7 @@ persistenceWarning: ShallowRef<boolean>
 
   Router 测试不再直接只写 token/expiry；测试 helper 写入完整 username/role，或为 Router 创建注入 fake repository 的 Store。复跑步骤 4，预期通过。
 
-- [ ] **步骤 7：提交任务 4（需用户授权）**
+- [x] **步骤 7：提交任务 4（需用户授权）**
 
   ```powershell
   pnpm exec vitest run src/features/auth src/app/router.test.ts
@@ -561,7 +561,7 @@ persistenceWarning: ShallowRef<boolean>
 
   预期全部通过。
 
-- [ ] **步骤 5：提交任务 5（需用户授权）**
+- [x] **步骤 5：提交任务 5（需用户授权）**
 
   ```powershell
   git add frontend/apps/admin/src/features/auth/ui/LoginForm.vue frontend/apps/admin/src/features/auth/ui/LoginForm.test.ts frontend/apps/admin/src/app/AppShell.vue frontend/apps/admin/src/app/AppShell.test.ts
@@ -665,7 +665,7 @@ persistenceWarning: ShallowRef<boolean>
 
   预期只有本计划范围内的实现、测试和文档文件；无空白错误、占位符或生成发布物。
 
-- [ ] **步骤 7：提交任务 6（需用户授权）**
+- [x] **步骤 7：提交任务 6（需用户授权）**
 
   ```powershell
   git add frontend/apps/admin/tests/e2e/admin-online-players.spec.ts frontend/apps/admin/tests/e2e/admin-api-keys.spec.ts docs/design.md docs/architecture.md docs/test.md docs/architecture/admin-frontend-target-blueprint.md
