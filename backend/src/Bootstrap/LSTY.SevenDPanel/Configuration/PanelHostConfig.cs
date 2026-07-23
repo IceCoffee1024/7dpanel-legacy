@@ -34,7 +34,7 @@ namespace LSTY.SevenDPanel.Configuration
             return new PanelAuthenticationConfig
             {
                 Enabled = true,
-                Username = "username",
+                Username = "admin",
                 Password = "password",
                 AccessTokenLifetimeMinutes = PanelAuthenticationOptions.DefaultAccessTokenLifetimeMinutes,
                 AllowInsecureHttp = true

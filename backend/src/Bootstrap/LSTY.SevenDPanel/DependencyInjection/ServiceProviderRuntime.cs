@@ -31,13 +31,28 @@ namespace LSTY.SevenDPanel.DependencyInjection
 
         public void Stop()
         {
-            var provider = Interlocked.Exchange(ref serviceProvider, null);
+            var provider = Volatile.Read(ref serviceProvider);
             if (provider == null) return;
 
-            var failures = new List<Exception>();
-            try { inner.Stop(); } catch (Exception ex) { failures.Add(ex); }
-            try { provider.Dispose(); } catch (Exception ex) { failures.Add(ex); }
-            if (failures.Count > 0) throw new AggregateException(failures);
+            try
+            {
+                inner.Stop();
+            }
+            catch (Exception ex)
+            {
+                throw new AggregateException(ex);
+            }
+
+            provider = Interlocked.Exchange(ref serviceProvider, null);
+            if (provider == null) return;
+            try
+            {
+                provider.Dispose();
+            }
+            catch (Exception ex)
+            {
+                throw new AggregateException(ex);
+            }
         }
 
         public void Dispose() => Stop();

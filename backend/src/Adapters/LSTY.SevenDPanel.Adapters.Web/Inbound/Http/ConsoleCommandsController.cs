@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
+using ApplicationConsoleCommandRequest =
+    LSTY.SevenDPanel.Application.ConsoleCommands.ConsoleCommandRequest;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
@@ -50,30 +53,43 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     "The game is not ready to execute console commands.");
             }
 
+            var identity = User?.Identity as ClaimsIdentity;
+            var actorSubject = identity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(actorSubject))
+            {
+                return ApiProblemDetailsFactory.CreateResponse(
+                    Request,
+                    HttpStatusCode.Unauthorized,
+                    "authentication_required",
+                    "Authentication is required to execute console commands.");
+            }
+
             try
             {
                 var result = await useCase
-                    .ExecuteAsync(request.Command!, cancellationToken)
+                    .ExecuteAsync(
+                        new ApplicationConsoleCommandRequest(actorSubject!, request.Command!),
+                        cancellationToken)
                     .ConfigureAwait(false);
                 return Request.CreateResponse(
                     HttpStatusCode.OK,
                     new ConsoleCommandResponse(result.Command, result.Output));
             }
-            catch (ConsoleCommandNotSupportedException)
-            {
-                return ApiProblemDetailsFactory.CreateResponse(
-                    Request,
-                    HttpStatusCode.BadRequest,
-                    "console_command_not_supported",
-                    "The console command is not supported.");
-            }
-            catch (ConsoleCommandBusyException)
+                catch (ConsoleCommandQueueFullException)
             {
                 return ApiProblemDetailsFactory.CreateResponse(
                     Request,
                     HttpStatusCode.ServiceUnavailable,
-                    "console_command_busy",
-                    "Another console command is already in progress.");
+                    "console_command_queue_full",
+                    "The console command queue is full.");
+            }
+                catch (ConsoleCommandUnavailableException)
+            {
+                return ApiProblemDetailsFactory.CreateResponse(
+                    Request,
+                    HttpStatusCode.ServiceUnavailable,
+                    "console_command_unavailable",
+                    "The console command service is unavailable.");
             }
             catch (TimeoutException)
             {

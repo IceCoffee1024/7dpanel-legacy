@@ -16,18 +16,35 @@ a consolidated bounded in-process server-event stream, Katana self-hosting,
 `/health` plus `/api/v1/health`, unified API Problem Details, a
 configuration-seeded SQLite `Owner`, SQLite-backed Basic authentication,
 persistent opaque Bearer tokens, and the authenticated
-`/api/v1/events/stream`. The authenticated read-only `version` command is the
-first verified main-thread Application slice. `GET /api/v1/players/online`
+`/api/v1/events/stream`. Authenticated `Owner` and `Admin` requests can submit
+any non-empty command registered with 7DTD through a bounded capacity-32 FIFO;
+each request keeps its own raw command and output while execution remains
+serialized on the game thread. A separate Harmony patch observes the final
+`SdtdConsole.executeCommand` call for built-in, third-party Mod, and other
+standard console callers, then a capacity-256 worker persists best-effort raw
+audits and visible gap records to SQLite without changing command behavior.
+No structured command SSE is emitted. `GET /api/v1/players/online`
 adds an Owner-only snapshot with entity id, name, opaque platform identities,
 ping, level, health, and capture time; it excludes IP, location, ban state,
 combat statistics, and offline history. User/role management,
-state-changing game actions, arbitrary console commands, and other product
-capabilities are not implemented yet.
+additional player actions, audit-query APIs, and other product capabilities
+are not implemented yet.
+
+The embedded host also exposes public runtime API documentation at `/swagger`
+and `/swagger/v1/swagger.json`. NSwag reflects the Web API controllers at
+runtime; a centralized Web Adapter document processor adds the OWIN-owned
+password-grant token operation, and an operation processor describes the
+existing Basic/Bearer alternatives, SSE response, and Problem Details errors.
+The documentation endpoints intentionally have no access control and do not
+invoke the console, player-query, player-action, or audit ports. The Web
+Adapter owns `NSwag.AspNet.Owin`; no controller uses `NSwag.Annotations`.
 
 Bootstrap compiles against the game-provided `0_TFP_Harmony/0Harmony.dll` and
-applies one scoped `Assembly.Location` compatibility patch before runtime
-composition. This supports assemblies loaded from memory without publishing a
-second Harmony copy inside the 7DPanel Mod.
+applies a scoped `Assembly.Location` compatibility patch before runtime
+composition. After SQLite migration, it installs the separately owned command
+observation patch; normal shutdown unpatches only that Harmony id after the
+HTTP command and audit workers stop. This supports assemblies loaded from
+memory without publishing a second Harmony copy inside the 7DPanel Mod.
 
 Bootstrap is the only Microsoft.Extensions.DependencyInjection composition
 root. It owns one validated root provider for the Mod lifetime; the OWIN
@@ -40,6 +57,9 @@ its connection pools after OWIN stops.
 Development publish, server-control, and health-check helpers are documented in
 the [script guide](scripts/README.md). Machine-specific values belong in the
 ignored `.env.local`; the tracked `.env.example` defines the available keys.
+The publish gate includes the NSwag, NJsonSchema, and Namotion runtime closure
+while continuing to remove `Newtonsoft.Json.dll`; JSON serialization uses the
+copy supplied by the game process.
 
 At runtime, `config.example.json` is the versioned template and `config.json` is
 the server-owned configuration. The Mod creates a default `config.json` when it
@@ -52,7 +72,7 @@ test compares those values with `config.example.json` so the operator template
 cannot silently drift from fallback behavior.
 
 During the current framework-building phase, the `authentication` object is
-enabled by default with the known credentials `username` / `password`, a
+enabled by default with the known credentials `admin` / `password`, a
 30-minute access-token lifetime, and `allowInsecureHttp: true`. These values are
 present in both the versioned template and a newly generated `config.json`, so
 they are not secrets. On each start they seed the single SQLite user with

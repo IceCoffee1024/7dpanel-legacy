@@ -53,7 +53,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
         {
             if (string.Equals(
                     request.Path.Value,
-                    "/api/v1/auth/token",
+                    HttpRoutes.TokenEndpoint,
                     StringComparison.OrdinalIgnoreCase))
             {
                 return true;

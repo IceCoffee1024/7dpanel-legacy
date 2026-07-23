@@ -13,6 +13,7 @@ using System.Web.Http.Hosting;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
@@ -137,19 +138,36 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public void Runtime_aggregates_stop_and_provider_disposal_failures()
+        public void Runtime_keeps_provider_when_inner_stop_fails()
         {
-            var runtime = new RecordingRuntime(new List<string>(), true);
-            var provider = new RecordingDisposable(new List<string>(), true);
+            var order = new List<string>();
+            var runtime = new RecordingRuntime(order, true);
+            var provider = new RecordingDisposable(order, true);
             var subject = new ServiceProviderRuntime(runtime, provider);
 
             var exception = Assert.Throws<AggregateException>(() => subject.Stop());
 
-            Assert.Equal(2, exception.InnerExceptions.Count);
-            Assert.Equal(
-                new[] { "runtime failure", "provider failure" },
-                exception.InnerExceptions.Select(failure => failure.Message));
+            Assert.Equal("runtime failure", Assert.Single(exception.InnerExceptions).Message);
+            Assert.Equal(new[] { "runtime" }, order);
         }
+
+            [Fact]
+            public void Runtime_keeps_provider_until_a_timed_out_inner_stop_can_complete()
+            {
+                var order = new List<string>();
+                var runtime = new TimeoutOnceRuntime(order);
+                var provider = new RecordingDisposable(order);
+                var subject = new ServiceProviderRuntime(runtime, provider);
+
+                Assert.Throws<AggregateException>(() => subject.Stop());
+                Assert.Equal(new[] { "runtime-timeout" }, order);
+
+                subject.Stop();
+
+                Assert.Equal(
+                new[] { "runtime-timeout", "runtime-complete", "provider" },
+                order);
+            }
 
         [Fact]
         public void Composition_root_disposes_the_owned_sqlite_connection_factory()
@@ -179,8 +197,16 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 authenticationStore,
                 provider.GetRequiredService<IPanelAccessTokenStore>());
-            Assert.IsType<SevenDaysRestrictedConsoleGateway>(
-                provider.GetRequiredService<IRestrictedConsoleGateway>());
+            var commandService = provider.GetRequiredService<SevenDaysConsoleCommandService>();
+            Assert.Same(
+                commandService,
+                provider.GetRequiredService<IConsoleCommandGateway>());
+            var commandAuditStore = provider.GetRequiredService<SqliteConsoleCommandAuditStore>();
+            Assert.Same(
+                commandAuditStore,
+                provider.GetRequiredService<IConsoleCommandAuditStore>());
+            Assert.NotNull(provider.GetRequiredService<ConsoleCommandAuditService>());
+            Assert.NotNull(provider.GetRequiredService<ConsoleCommandRuntime>());
             Assert.NotNull(provider.GetRequiredService<ExecuteConsoleCommandUseCase>());
             var onlinePlayerQuery = provider.GetRequiredService<SevenDaysOnlinePlayerProjection>();
             Assert.Same(
@@ -341,6 +367,36 @@ namespace LSTY.SevenDPanel.Tests
             {
                 order.Add("runtime");
                 if (failOnStop) throw new InvalidOperationException("runtime failure");
+            }
+        }
+
+        private sealed class TimeoutOnceRuntime : IModRuntime
+        {
+            private readonly IList<string> order;
+            private bool firstStop = true;
+
+            public TimeoutOnceRuntime(IList<string> order)
+            {
+                this.order = order;
+            }
+
+            public void Start()
+            {
+            }
+
+            public void MarkGameReady()
+            {
+            }
+
+            public void Stop()
+            {
+                if (firstStop)
+                {
+                    firstStop = false;
+                    order.Add("runtime-timeout");
+                    throw new TimeoutException("runtime still owns background work");
+                }
+                order.Add("runtime-complete");
             }
         }
 

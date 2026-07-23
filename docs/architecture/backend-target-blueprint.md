@@ -299,30 +299,9 @@ Bearer Token 对客户端保持不透明，数据库只保存高熵 secret 的�
 
 ### 动态控制台命令
 
-```text
-POST /api/v1/console/commands
-  -> authenticate Owner or Admin
-  -> validate non-empty command text and game readiness
-  -> enqueue one independent HTTP command work item in bounded FIFO
-  -> GameThreadDispatcher
-  -> SdtdConsole.ExecuteSync(raw command)
-  -> copy this invocation's output before leaving the game thread
-  -> complete the HTTP request
+动态控制台命令、容量 32 的 HTTP FIFO、最终 `SdtdConsole.executeCommand` Harmony observation、容量 256 的 fail-open 异步 SQLite 审计和独立关服生命周期已经实现并提升到[当前系统架构](../architecture.md#7dtd-主线程调度边界)。批准的变更边界与决策历史保留在[动态控制台命令设计规格](../superpowers/specs/2026-07-22-dynamic-console-commands-design.md)，不再由本 Target 蓝图重复维护。
 
-SdtdConsole.executeCommand from any standard caller
-  -> Harmony observation at the final shared execution point
-  -> immutable audit snapshot after execution
-  -> bounded asynchronous audit writer
-  -> SQLite command audit, best effort and fail-open
-```
-
-7DPanel 不再维护控制台命令白名单；Application 只协调授权、请求生命周期和技术中立结果，SevenDays Adapter 把完整命令文本交给 7DTD 已注册命令集合解释。HTTP 入口拥有独立的有界 FIFO，每个请求都是不可合并的工作项；容量不足时明确拒绝新请求，不把等待者无界追加到 7DTD 主线程。请求尚未开始时可以取消，开始后必须等待真实同步结果或明确标记结果未知，不能因 HTTP 断开伪造失败。
-
-7DTD 自有 `ExecuteAsync` 队列及 `Update()` 消费语义保持不变。7DPanel 不用 Harmony 替换、清空或重新调度原生队列，而是在最终共享的 `SdtdConsole.executeCommand` 执行点观察正常控制台调用。因此内置命令、第三方 Mod 注册命令以及 Telnet、游戏 Web/GUI 和其他标准调用方可以进入同一审计边界；直接调用游戏 API 或绕过 `SdtdConsole.executeCommand` 的第三方代码不受此边界治理。
-
-Harmony observation 只复制审计所需的不可变值，不在游戏主线程等待 SQLite、执行网络 I/O 或同步通知订阅者。执行后的审计通过独立有界异步写入路径保存完整原始命令和参数、可识别来源、时间、输出及可判断结果；写入失败不得改变原命令结果或阻止命令执行，但必须产生可见告警并标记审计缺口。该审计容量不得与可丢弃的 `console-log` 管线共享，现有 `Log.LogCallbacksExtended`、`ServerEventLiveWindow`、`ServerEventHub` 和 `console-log` SSE 保持原职责，不新增结构化命令 SSE。
-
-首个动态命令切片不添加应用级输入或输出长度限制，也不承诺命令级资源隔离。实现必须保留运行时和协议层的真实失败，不得把“暂无限制”解释为无限内存、无限队列或绕过宿主固有限制。详细批准边界见[动态控制台命令设计规格](../superpowers/specs/2026-07-22-dynamic-console-commands-design.md)。
+Windows `v3.0.1-b4` 在线人工 smoke 已验证内置/第三方 Mod 注册命令、HTTP/非 HTTP 标准入口审计、原文参数、多行输出和并发输出隔离。本蓝图仅保留尚未成为当前证据的后续目标：验证 7DTD 原生 `ExecuteAsync` 队列不变、SQLite 故障告警/gap 和正常关服 Patch 卸载；在 Windows/Linux 建立主线程帧预算与典型命令负载基线。未来若增加应用级输入/输出限制、命令资源隔离或审计查询 API，必须作为新的产品与架构变更单独批准。
 
 ### 在线玩家
 

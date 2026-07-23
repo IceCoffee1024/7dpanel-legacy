@@ -113,6 +113,11 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("services.AddSingleton<SevenDaysPlayerActions>();", providerFactorySource);
             Assert.Contains("services.AddSingleton<IPlayerActions>", providerFactorySource);
             Assert.Contains("services.AddSingleton<KickPlayerUseCase>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SqliteConsoleCommandAuditStore>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IConsoleCommandAuditStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SevenDaysConsoleCommandService>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IConsoleCommandGateway>", providerFactorySource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new ConsoleCommandRuntime(", providerFactorySource);
             Assert.Contains("playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);", providerFactorySource);
             Assert.Contains("ValidateOnBuild = true", providerFactorySource);
             Assert.Contains("ValidateScopes = true", providerFactorySource);
@@ -131,17 +136,34 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(webHostIndex > recoveryIndex,
                 "Pending player actions must be recovered before the OWIN host is created.");
             var candidateRuntimeIndex = modMainSource.IndexOf("candidateRuntime = PanelServiceProviderFactory.CreateRuntime(", StringComparison.Ordinal);
-            var candidateAdapterIndex = modMainSource.IndexOf("candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateRuntime);", StringComparison.Ordinal);
+            var commandHarmonyIndex = modMainSource.IndexOf(
+                "candidateCommandHarmony = ConsoleCommandHarmonyRuntime.Install(candidateRuntime);",
+                StringComparison.Ordinal);
+            var candidateAdapterIndex = modMainSource.IndexOf(
+                "candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateCommandHarmony);",
+                StringComparison.Ordinal);
             var registerIndex = modMainSource.IndexOf("candidateAdapter.RegisterAndStart();", StringComparison.Ordinal);
             var publishRuntimeIndex = modMainSource.IndexOf("runtime = candidateRuntime;", StringComparison.Ordinal);
             var publishAdapterIndex = modMainSource.IndexOf("adapter = candidateAdapter;", StringComparison.Ordinal);
             Assert.True(registerIndex >= 0, "Bootstrap must start the candidate lifecycle adapter.");
-            Assert.True(candidateRuntimeIndex >= 0 && candidateAdapterIndex > candidateRuntimeIndex,
-                "Bootstrap must build the validated service provider before lifecycle registration.");
+            Assert.True(candidateRuntimeIndex >= 0 && commandHarmonyIndex > candidateRuntimeIndex,
+                "Bootstrap must build the validated service provider before installing command Harmony.");
+            Assert.True(candidateAdapterIndex > commandHarmonyIndex,
+                "Bootstrap must bind lifecycle registration to the command Harmony runtime proxy.");
             Assert.True(publishRuntimeIndex > registerIndex, "Bootstrap must publish the runtime only after lifecycle registration succeeds.");
             Assert.True(publishAdapterIndex > registerIndex, "Bootstrap must publish the adapter only after lifecycle registration succeeds.");
             Assert.Contains("candidateAdapter?.Dispose();", modMainSource);
             Assert.Contains("candidateRuntime?.Dispose();", modMainSource);
+            Assert.Contains("candidateCommandHarmony?.Dispose();", modMainSource);
+
+            var providerUpgradeIndex = providerFactorySource.LastIndexOf(
+                ".Upgrade();",
+                StringComparison.Ordinal);
+            var resolveRuntimeIndex = providerFactorySource.IndexOf(
+                "provider.GetRequiredService<IModRuntime>();",
+                StringComparison.Ordinal);
+            Assert.True(providerUpgradeIndex >= 0 && resolveRuntimeIndex > providerUpgradeIndex,
+                "SQLite migrations must complete before command services can start accepting observations.");
 
             var registeredIndex = lifecycleSource.IndexOf("registered = true;", StringComparison.Ordinal);
             var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);
@@ -266,6 +288,45 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Nswag_packages_are_owned_by_the_web_adapter()
+        {
+            var projects = Directory
+                .GetFiles(SourceRoot, "*.csproj", SearchOption.AllDirectories)
+                .Select(path => new
+                {
+                    Path = path,
+                    Packages = XDocument.Load(path)
+                        .Descendants("PackageReference")
+                        .Select(element => new
+                        {
+                            Name = (string)element.Attribute("Include"),
+                            Version = (string)element.Attribute("Version")
+                        })
+                        .Where(package => !string.IsNullOrWhiteSpace(package.Name))
+                        .ToArray()
+                })
+                .ToArray();
+
+            var nswagOwner = Assert.Single(projects, project =>
+                project.Packages.Any(package =>
+                    string.Equals(package.Name, "NSwag.AspNet.Owin", StringComparison.OrdinalIgnoreCase)));
+            Assert.True(IsIn(nswagOwner.Path, "Adapters", "LSTY.SevenDPanel.Adapters.Web"));
+            Assert.Equal(
+                "14.7.1",
+                nswagOwner.Packages.Single(package =>
+                    string.Equals(package.Name, "NSwag.AspNet.Owin", StringComparison.OrdinalIgnoreCase)).Version);
+
+            Assert.DoesNotContain(projects.SelectMany(project => project.Packages), package =>
+                string.Equals(package.Name, "NSwag.Annotations", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(projects, project =>
+                !IsIn(project.Path, "Adapters", "LSTY.SevenDPanel.Adapters.Web") &&
+                project.Packages.Any(package =>
+                    package.Name.StartsWith("NSwag", StringComparison.OrdinalIgnoreCase) ||
+                    package.Name.StartsWith("NJsonSchema", StringComparison.OrdinalIgnoreCase) ||
+                    package.Name.StartsWith("Namotion", StringComparison.OrdinalIgnoreCase)));
+        }
+
+        [Fact]
         public void Publish_script_enforces_runtime_dependency_boundary()
         {
             var publishScript = File.ReadAllText(Path.Combine(
@@ -321,6 +382,19 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("'dbup-core.dll'", publishScript);
             Assert.Contains("'dbup-sqlite.dll'", publishScript);
             Assert.Contains("'Microsoft.Data.Sqlite.dll'", publishScript);
+            Assert.Contains("'Namotion.Reflection.dll'", requiredNames);
+            Assert.Contains("'NJsonSchema.Annotations.dll'", requiredNames);
+            Assert.Contains("'NJsonSchema.dll'", requiredNames);
+            Assert.Contains("'NJsonSchema.NewtonsoftJson.dll'", requiredNames);
+            Assert.Contains("'NSwag.AspNet.Owin.dll'", requiredNames);
+            Assert.Contains("'NSwag.Core.dll'", requiredNames);
+            Assert.Contains("'NSwag.Generation.dll'", requiredNames);
+            Assert.Contains("'NSwag.Generation.WebApi.dll'", requiredNames);
+            Assert.Contains("'System.IO.Pipelines.dll'", requiredNames);
+            Assert.Contains("'System.Text.Encodings.Web.dll'", requiredNames);
+            Assert.Contains("'System.Text.Json.dll'", requiredNames);
+            Assert.Contains("'Newtonsoft.Json.dll'", forbiddenNames);
+            Assert.DoesNotContain("'Newtonsoft.Json.dll'", requiredNames);
             Assert.DoesNotContain("'SQLitePCLRaw.batteries_v2.dll'", forbiddenNames);
             Assert.Contains("'SQLitePCLRaw.batteries_v2.dll'", requiredNames);
             Assert.Contains("'SQLitePCLRaw.batteries_v2.dll.config'", requiredNames);
