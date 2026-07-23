@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Http.ExceptionHandling;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
@@ -93,6 +94,57 @@ namespace LSTY.SevenDPanel.Tests
 
             Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
             Assert.Equal("existing-error", await ReadTextAsync(context.Response.Body));
+        }
+
+        [Fact]
+        public async Task Web_api_logger_records_exception_when_no_response_can_be_selected()
+        {
+            const string requestId = "stream-write-failure";
+            const string failureMessage = "stream serialization failed";
+            var logs = new List<string>();
+            IExceptionLogger logger = new OwinUnhandledExceptionLogger(logs.Add);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "http://localhost/api/v1/events/stream");
+            request.Headers.Add(RequestCorrelationMiddleware.HeaderName, requestId);
+            var exceptionContext = new ExceptionContext(
+                new InvalidOperationException(failureMessage),
+                new ExceptionContextCatchBlock(
+                    "StreamContent",
+                    isTopLevel: true,
+                    callsHandler: false),
+                request);
+
+            await logger.LogAsync(
+                new ExceptionLoggerContext(exceptionContext),
+                CancellationToken.None);
+
+            var log = Assert.Single(logs);
+            Assert.Contains(requestId, log);
+            Assert.Contains(failureMessage, log);
+        }
+
+        [Fact]
+        public async Task Web_api_logger_defers_handleable_exception_to_owin_boundary()
+        {
+            var logs = new List<string>();
+            IExceptionLogger logger = new OwinUnhandledExceptionLogger(logs.Add);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "http://localhost/api/v1/failure");
+            var exceptionContext = new ExceptionContext(
+                new InvalidOperationException("handled outside Web API"),
+                new ExceptionContextCatchBlock(
+                    "BufferContent",
+                    isTopLevel: true,
+                    callsHandler: true),
+                request);
+
+            await logger.LogAsync(
+                new ExceptionLoggerContext(exceptionContext),
+                CancellationToken.None);
+
+            Assert.Empty(logs);
         }
 
         [Fact]

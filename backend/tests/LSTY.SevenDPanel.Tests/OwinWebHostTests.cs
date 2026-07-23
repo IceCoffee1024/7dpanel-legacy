@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using LSTY.SevenDPanel.Application;
@@ -838,6 +839,52 @@ namespace LSTY.SevenDPanel.Tests
                     "invalid_request_body",
                     "/api/v1/console/commands");
                 Assert.Null(gateway.Request);
+            }
+        }
+
+        [Fact]
+        public async Task Unhandled_web_api_exception_reaches_owin_problem_details_boundary()
+        {
+            const string requestId = "unhandled-console-command";
+            const string failureMessage = "unexpected gateway failure";
+            var logs = new List<string>();
+            var gateway = new TestConsoleCommandGateway(
+                new InvalidOperationException(failureMessage));
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                consoleGateway: gateway);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider, log: logs.Add)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = CreateConsoleCommandRequest(url, "version"))
+            {
+                request.Headers.Add(RequestCorrelationMiddleware.HeaderName, requestId);
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = await AssertProblemDetailsAsync(
+                    response,
+                    "internal_server_error",
+                    "/api/v1/console/commands");
+
+                Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+                Assert.Equal(requestId, (string?)payload["traceId"]);
+                Assert.DoesNotContain(failureMessage, payload.ToString());
+                var log = Assert.Single(
+                    logs,
+                    entry => entry.Contains("Unhandled 7DPanel API exception."));
+                Assert.Contains(requestId, log);
+                Assert.Contains(failureMessage, log);
             }
         }
 
@@ -1824,6 +1871,48 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.True(SpinWait.SpinUntil(
                     () => hub.SubscriberCount == 0,
                     TimeSpan.FromSeconds(5)));
+            }
+        }
+
+        [Fact]
+        public async Task Event_stream_write_failure_is_logged_with_request_id()
+        {
+            const string requestId = "event-stream-write-failure";
+            const string failureMessage = "event replay failed";
+            var logs = new List<string>();
+            var serverEvents = new ThrowingReplayServerEventStream(
+                new InvalidOperationException(failureMessage));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            using var provider = CreateWebServiceProvider(true, serverEvents);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider, log: logs.Add)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                url + "api/v1/events/stream"))
+            {
+                request.Headers.Add(RequestCorrelationMiddleware.HeaderName, requestId);
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal("text/event-stream", response.Content.Headers.ContentType?.MediaType);
+                Assert.True(SpinWait.SpinUntil(
+                    () => logs.Any(entry =>
+                        entry.Contains(requestId) && entry.Contains(failureMessage)),
+                    TimeSpan.FromSeconds(5)));
+                Assert.Single(
+                    logs,
+                    entry => entry.Contains("Unhandled 7DPanel API exception."));
             }
         }
 
@@ -3209,7 +3298,7 @@ namespace LSTY.SevenDPanel.Tests
 
         private static ServiceProvider CreateWebServiceProvider(
             bool enableConsoleLogStream,
-            ServerEventHub hub,
+            IServerEventStream hub,
             bool allowInsecureHttp = true,
             IConsoleCommandGateway? consoleGateway = null,
             GameReadinessState gameReadiness = GameReadinessState.Ready,
@@ -3691,6 +3780,50 @@ namespace LSTY.SevenDPanel.Tests
             public IDataProtector Create(params string[] purposes) =>
                 throw new PlatformNotSupportedException(
                     "The test host does not provide a default data protector.");
+        }
+
+        private sealed class ThrowingReplayServerEventStream : IServerEventStream
+        {
+            private readonly Exception failure;
+
+            public ThrowingReplayServerEventStream(Exception failure)
+            {
+                this.failure = failure;
+            }
+
+            public IReadOnlyList<ServerEvent> ReadAfter(
+                long? afterSequence,
+                int limit,
+                out bool hasGap)
+            {
+                hasGap = false;
+                throw failure;
+            }
+
+            public bool TrySubscribe(
+                int capacity,
+                out IServerEventSubscription? subscription)
+            {
+                subscription = new PendingServerEventSubscription();
+                return true;
+            }
+        }
+
+        private sealed class PendingServerEventSubscription : IServerEventSubscription
+        {
+            public bool IsOverflowed => false;
+
+            public Task<ServerEvent?> ReadAsync(CancellationToken cancellationToken) =>
+                Task.Delay(Timeout.Infinite, cancellationToken)
+                    .ContinueWith(
+                        _ => (ServerEvent?)null,
+                        cancellationToken,
+                        TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
+
+            public void Dispose()
+            {
+            }
         }
 
         private static async Task<string?> ReadLineWithTimeoutAsync(StreamReader reader)

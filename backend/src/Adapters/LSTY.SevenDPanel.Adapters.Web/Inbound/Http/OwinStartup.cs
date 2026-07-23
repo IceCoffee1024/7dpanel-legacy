@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Web.Http;
+using System.Web.Http.ExceptionHandling;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
@@ -38,7 +39,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 app.Use<AuthenticationRateLimitMiddleware>(new AuthenticationAttemptLimiter());
             app.Use<ScopedServiceProviderMiddleware>(serviceProvider);
             ConfigureAuthentication(app, serviceProvider, authentication);
-            ConfigureApi(app, serviceProvider);
+            ConfigureApi(app, serviceProvider, log);
 
             if (string.IsNullOrWhiteSpace(assetRoot) || !Directory.Exists(assetRoot))
             {
@@ -112,10 +113,17 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         private static void ConfigureApi(
             IAppBuilder app,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            Action<string>? log)
         {
             var config = new HttpConfiguration();
             config.DependencyResolver = new MicrosoftDependencyResolver(serviceProvider);
+            config.Services.Add(
+                typeof(IExceptionLogger),
+                new OwinUnhandledExceptionLogger(log));
+            config.Services.Replace(
+                typeof(IExceptionHandler),
+                new OwinPassThroughExceptionHandler());
             config.MessageHandlers.Insert(0, new OwinScopeBridgingHandler());
             config.MessageHandlers.Add(new ApiProblemDetailsHandler());
             config.MapHttpAttributeRoutes();

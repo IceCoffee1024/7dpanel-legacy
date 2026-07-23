@@ -132,7 +132,8 @@ flowchart LR
 - Admin 资源根目录由 Bootstrap 显式传入。目录缺失时记录日志并保留健康 API 可用；运行时不猜测仓库路径。
 - `OpenApiConfiguration` 分别注册 `/swagger/v1/swagger.json` 的运行时 OpenAPI 3 生成和 `/swagger` 的 Swagger UI，并把 UI 固定指向该 JSON 路径。Controller 路由由 NSwag 反射；`PanelOpenApiDocumentProcessor` 手工补充 OWIN 拥有的 password grant token operation 和唯一 Bearer scheme，`PanelOpenApiOperationProcessor` 按 Web API 授权 metadata 补充 Bearer 要求，并描述 SSE、API Key 管理、共享 Problem Details schema 与实际状态码。两个公开入口不要求认证，也不调用 Application 或游戏/审计端口。
 - `RequestCorrelationMiddleware` 只接受不超过 64 个允许字符的 `X-Request-ID`，并让响应 Header 与 Problem Details `traceId` 一致。非 OAuth 协议错误使用 `application/problem+json`；`instance` 只含 Path，未知 `/api/*` 也进入统一错误契约。三个 JSON body Controller 不使用 DataAnnotations 或全局验证 Filter：各 Action 在既有认证、凭据类型和游戏就绪优先级内显式检查 Web API `ModelState`，把 JSON 语法或字段类型绑定失败映射为安全的 400 `invalid_request_body`，再以端点稳定错误码处理已经成功反序列化的语义无效输入；Handler/Middleware 只规范化框架错误和未处理失败，不推断端点语义。
-- Problem Details 外层通过 non-owning write-tracking stream 区分尚未开始和已经写出的响应；只有前者能被改写为统一 500，SSE 或其他已开始 body 发生异常时只记录 traceId 并结束响应，不追加错误 JSON。
+- Web API 以 `OwinPassThroughExceptionHandler` 清除顶层默认 500 Result，让 Controller、依赖解析、路由和 MessageHandler 中可继续选择响应的未知异常保留原始堆栈并传播到外层 OWIN；`OwinUnhandledExceptionLogger` 只记录已不能再选择响应的写出阶段异常，可处理异常仍只由外层 OWIN 记录，避免双重日志。`ApiProblemDetailsHandler` 只规范化已经形成的错误响应，不负责记录原异常。`OperationCanceledException` 继续作为宿主控制流传播，不生成 500 或错误日志。
+- Problem Details 外层通过 non-owning write-tracking stream 区分尚未开始和已经写出的响应；只有前者能在记录完整异常与 traceId 后被改写为统一 500，SSE 或其他已开始 body 发生异常时由 Web API logger 记录原异常与 traceId，随后中止响应且不追加错误 JSON。
 - `POST /api/v1/auth/token` 只支持 password grant，返回数据库只保存 secret hash 的不透明 Access Token；默认有效期为 8 小时（`28800` 秒），Token 跨 7DTD 进程重启保留，最多保留 128 个未到期 Token。限流只覆盖该密码登录端点，按远端地址限制为每分钟 20 次、最多 1024 个地址 bucket。
 - `GET /api/v1/events/stream` 要求 `Owner`、`Admin` 或 `Viewer` 的 Header Bearer Access Token/API Key 身份，拒绝 Basic、QueryString Token 和 Cookie 凭据，并按 Welcome、replay、live 和 heartbeat 顺序输出命名事件。`Last-Event-ID` 只接受非负十进制整数。
 - `GET /api/v1/api-keys` 列出当前主体的安全元数据；`POST /api/v1/api-keys` 只允许网站 Access Token 创建 1 至 80 个 Unicode 字符名称、可选 UTC 到期时间的 API Key，完整值只在 201 响应中返回并附带 `Cache-Control: no-store`；`DELETE /api/v1/api-keys/{keyId}` 也只允许网站 Access Token 撤销当前主体自己的 Key。API Key 验证使用 `7dp_k_` 格式与 SHA-256 secret 摘要，单个主体最多 32 个未撤销 Key，并最多每小时写入一次 `lastUsedAtUtc`。
@@ -235,7 +236,7 @@ GET /
 ### 可靠性
 
 - `ModHost` 的启停/就绪状态、重复启停、停止后禁止重启和游戏就绪终态已有单元测试；`ConsoleLogRuntime` 另验证日志服务先启动、先停止并转发就绪状态。
-- OWIN 集成测试使用真实 Katana Host 验证端口释放、API/静态资源优先级、SPA fallback、缺失资源、缺失资产目录、关联标识、统一 404、Bearer challenge、OAuth password grant 与协议错误、限流 429、拒绝 Basic/QueryString/Cookie 凭据，以及生产 SSE 的 Welcome、命名 replay、gap、无效游标、建流前 503 和断开释放；同一主机还验证公开 OpenAPI JSON/UI、固定文档路径、完整路由、唯一 Bearer 方案、API Key 管理、SSE/Problem Details 契约、Swagger 路径不进入 SPA fallback，以及文档请求无业务端口副作用。
+- OWIN 集成测试使用真实 Katana Host 验证端口释放、API/静态资源优先级、SPA fallback、缺失资源、缺失资产目录、关联标识、统一 404、Web API 可处理异常到外层 OWIN 的原异常与 traceId 日志、安全 500 且响应不泄漏内部消息、已开始 SSE 的不可处理写出异常只记录一次并中止响应、Bearer challenge、OAuth password grant 与协议错误、限流 429、拒绝 Basic/QueryString/Cookie 凭据，以及生产 SSE 的 Welcome、命名 replay、gap、无效游标、建流前 503 和断开释放；同一主机还验证公开 OpenAPI JSON/UI、固定文档路径、完整路由、唯一 Bearer 方案、API Key 管理、SSE/Problem Details 契约、Swagger 路径不进入 SPA fallback，以及文档请求无业务端口副作用。
 - `SevenDaysGameLifecycleAdapterTests` 通过可替换事件边界执行三个回调，并覆盖订阅顺序、逆序回滚、异常保留与订阅所有权；真实静态 `ModEvents` wrapper 仍由官方进程 smoke 提供兼容证据。
 - 控制台日志测试覆盖六字段 entry、sequence/淘汰/gap、回调线程与 consumer 隔离、队满拒绝、保序消费、单项失败、订阅失败、停止排空和注销后摘要；生产 `Log.LogCallbacksExtended` delegate 与 Channels 加载由官方进程 smoke 验证。
 - 主线程 Dispatcher 与命令 FIFO 的确定性测试覆盖接收顺序、等待容量、独立结果、排队取消/启动超时保证不执行、开始后取消不能替换真实结果、单项异常隔离及停止边界；Application/Katana 测试覆盖原文、actor、并发独立输出、队满/不可用 Problem Details 和无结构化命令事件。Patch/审计测试覆盖 token/output 快照、来源、异常透明、observer/tokenizer fail-open、Store failure、gap 恢复和正常关服卸载自身 Patch。
