@@ -1,13 +1,13 @@
 ---
 state: Current
-last_updated: "2026-07-22"
+last_updated: "2026-07-23"
 ---
 
 # 7DPanel 测试策略
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-22 的合并后 Release 全量门禁共 268 项 xUnit 自动化全部通过且 0 跳过，覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作/控制台命令审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、动态命令 FIFO、最终执行点 Harmony observation、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、公开运行时 OpenAPI/Swagger、Harmony 生命周期和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 182 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-22 的远程 Windows 7DTD `v3.0.1-b4` 在线证据确认当前动态命令发布物的健康与 Basic 认证、内置和第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出及并发输出隔离；本轮未关服，也未执行 SQLite 故障注入、原生异步队列不变检查或 Swagger Unity Mono smoke。Owner 踢出和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-22 的合并后 Release 全量门禁共 268 项 xUnit 自动化全部通过且 0 跳过，覆盖生命周期、命名服务器事件、Problem Details、SQLite migration 与玩家动作/控制台命令审计、引导 `Owner`、持久 Bearer、Basic/OAuth、认证限流、SSE 周期复验、Microsoft DI 请求作用域、动态命令 FIFO、最终执行点 Harmony observation、Application 控制台命令/在线玩家查询/踢出用例、主线程 Dispatcher 状态竞态、类型化 SevenDays 踢出、认证命令/玩家 API、公开运行时 OpenAPI/Swagger、Harmony 生命周期和静态 Admin 托管。Admin 当前 12 个 Vitest 文件共 182 项自动化全部通过，并通过 lint、typecheck 与 Vite 生产构建。Playwright Chromium suite 已建立 4 项真实 Owner 场景，但本次没有配置或执行真实 OWIN 浏览器门禁。2026-07-23 的远程 Windows 7DTD `v3.0.1-b4` 闭环 smoke 在既有动态命令证据上进一步验证公开 Swagger UI/OpenAPI 的 Unity Mono 加载与访问、Telnet 原生异步队列、真实 SQLite 写锁期间命令 fail-open、解锁后的 `store_failure` gap 恢复、当前二进制正常关服排空、进程/监听释放和重复启停。Owner 踢出、真实浏览器门禁、自动归档和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -139,6 +139,8 @@ last_updated: "2026-07-22"
 
 2026-07-21 在引入 Application 控制台命令切片后重新执行 `Publish-Mod.cmd -> Start-Server.cmd -> authenticated command -> Stop-Server.cmd -> unavailable check`。发布门禁确认 Bootstrap、Application、Hosting、Web、SevenDays 和 Persistence 六个产品 DLL，7DTD 日志确认 `LSTY.SevenDPanel.Application.dll` 与其余当前程序集从 Mod 目录加载。第一轮启动因外部 EOS backend `NoConnection` 在 `GameStartDone` 前自行退出，7DPanel 仍排空 52 个已接受事件并释放 OWIN；该失败未归因于 Mod，也未用重跑隐藏。重试后命令端点在加载期连续 9 次返回 503 `game_not_ready`，游戏就绪后 `POST /api/v1/console/commands` 返回 HTTP 200、`command=version` 和 5 行真实输出，首行为 `Game version: V 3.0.1 (b4) Compatibility Version: V 3.0.1`。Telnet 正常关服后健康端点不可达；服主旧三字段 `config.json` 保持 71 字节且 SHA-256 为 `9130C9804B03BCC762FA5E7D91C2983214E6F08174B23EE7E007016F4E106A9B`。本轮没有前端变化，按风险分级未执行浏览器检查。
 
+2026-07-23 在合并提交 `a98ad6b` 上执行 Windows `v3.0.1-b4` 闭环 smoke。发布物中的 Namotion.Reflection、NJsonSchema 和 NSwag 程序集均由 Unity Mono 从 Mod 目录加载；匿名 `/swagger` 返回 UI，`/swagger/v1/swagger.json` 返回有效 OpenAPI 3 文档并包含 `/api/v1/auth/token` 与 `/api/v1/console/commands`。认证 HTTP `version` 返回真实游戏输出并形成 `source=7dpanel-http` 审计；Telnet `version` 返回结果且形成 `source=network`、空 actor、`completion_kind=Completed` 审计，证明未替换的 `SdtdConsole.ExecuteAsync` 队列仍由 `SdtdConsole.Update` 消费。对 `7dpanel.db` 持有 `BEGIN IMMEDIATE` 写锁超过 5 秒 default timeout 后，唯一测试命令仍返回游戏结果，失败审计未落盘且日志记录 fail-open 告警；释放锁后的恢复命令与 `reason=store_failure`、`dropped_count>=1` gap 成功持久化。正常关服摘要为 `accepted=9`、`consumed=8`、`droppedFull=0`、`rejectedStopping=0`、`consumerFailures=1`、`highWater=1`、`unrecoveredGaps=0`、`unrecoveredDropped=0`，随后 OWIN 停止、进程退出、健康端点不可达；再次启动后健康、Swagger 和命令审计仍正常，并再次完成正常关服。日志没有 `FileNotFoundException`、`TypeLoadException`、ModEvent 或 OWIN 启停错误。该证据是开发期人工 smoke，尚未自动归档或提升为候选发布证据；未执行真实玩家踢出、浏览器 E2E 或 Linux 进程门禁。
+
 ### 浏览器端到端测试
 
 - 覆盖引导 `Owner` 登录、未来用户与角色管理、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
@@ -192,7 +194,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 构建默认使用 `7dtd-reference/v3.0.1-b4`。兼容性验证需要切换版本或引用根目录时，使用 MSBuild `/p:SevenDaysGameVersion=...` 和 `/p:SevenDaysReferenceRoot=...` 显式覆盖。后续仍需补充：
 
 - 玩家动作审计已具备自动化锁竞争与启动恢复证据；仍需验证迁移失败、真实关服期间动作终态，以及自动化真实游戏事件和控制台日志突发。只读 `version` 的 Windows 主线程往返已经通过。
-- 动态控制台命令、容量 32 HTTP FIFO、最终执行点 Harmony observation 和容量 256 fail-open SQLite 命令审计已有单元、SQLite、Katana、生命周期与发布物自动化证据；Windows `v3.0.1-b4` 在线人工 smoke 进一步验证内置/第三方命令、HTTP/非 HTTP 来源审计、完整原文参数、多行输出和并发输出隔离。仍必须验证原生异步队列不变、真实 SQLite 故障告警/gap 恢复，以及当前二进制正常关服排空和 Patch 卸载。
+- 动态控制台命令、容量 32 HTTP FIFO、最终执行点 Harmony observation 和容量 256 fail-open SQLite 命令审计已有单元、SQLite、Katana、生命周期与发布物自动化证据；Windows `v3.0.1-b4` 人工 smoke 进一步验证内置/第三方命令、HTTP/非 HTTP 来源审计、完整原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 故障告警/gap 恢复、当前二进制正常关服排空和重复启停。仍需自动归档该流程并补充真实容量饱和与 Linux 进程门禁。
 - 在受控真实 OWIN Owner 环境执行现有 Playwright suite，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；当前已具备依赖锁定、lint、typecheck、182 项 Vitest 和 Vite 8 生产构建证据。
 - 在 Windows `v3.0.1-b4` 受控玩家上执行真实踢出，保存玩家收到的批准原因、原生 API 返回后约 0.5 秒断开、在线列表更新和 `player_action_audit` 对应终态；在此之前不得把自动化 `Succeeded` 解释为真实玩家已经离线。
 - 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite、NSwag/NJsonSchema/Namotion/System.Text.Json 和双平台 SQLite Native RID；当前 Windows 发布脚本已在隔离临时目录校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、11 个 OpenAPI 运行时程序集、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，并移除 `Newtonsoft.Json.dll`。项目引用、SQLite provider、Harmony 应用顺序、DI/NSwag 包归属和 Adapter 方向已有本地测试门禁。
@@ -222,10 +224,9 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 | 缺口 | 影响与处理 |
 |---|---|
-| 动态控制台命令真实进程门禁仅部分执行 | 自动化覆盖原文/actor 透传、容量 32 FIFO、并发输出隔离、最终执行点 Patch、容量 256 异步审计、SQLite gap、fail-open 和关服卸载；Windows `v3.0.1-b4` 在线人工 smoke 已确认内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出和并发输出隔离，但不能宣称原生异步队列不变、真实 SQLite 故障告警/gap 恢复或当前二进制正常关服 Patch 卸载已通过。 |
+| Windows 动态命令闭环 smoke 尚未自动归档 | Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；但流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与 182 项 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；本轮未启动真实服务器，也未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
 | Admin 登录、在线玩家与踢出真实浏览器门禁未执行 | Playwright 已定义 4 项登录/玩家基础场景，但本轮未设置真实环境或运行该 suite，且尚未增加真实踢出场景。未执行真实 OWIN、`390x844` 踢出对话框渲染、键盘/遮罩关闭锁定或成功刷新；这些结果不得从 182 项 Vitest 推导。 |
-| 运行时 Swagger 尚无真实 Unity Mono 证据 | 公开 JSON/UI、路由、安全、SSE、Problem Details、无业务副作用、依赖所有权和隔离发布布局已通过 Windows Katana/本地门禁；本轮未启动 7DTD，也未证明 NSwag/NJsonSchema/Namotion 在 `v3.0.1-b4` Unity Mono 中加载或 `/swagger` 可访问。依赖或运行时文档能力进入候选发布前必须补 Windows 真实进程 smoke，Linux 支持仍需对应 Linux smoke。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |

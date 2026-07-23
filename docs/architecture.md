@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-07-22"
+last_updated: "2026-07-23"
 ---
 
 # 7DPanel 系统架构
@@ -121,6 +121,7 @@ flowchart LR
 - 委托异常由 Dispatcher 写入 Task；`TaskCompletionSource` 使用 `RunContinuationsAsynchronously`，避免调用方 continuation 在游戏主线程内联运行。Dispatcher 本身不拥有通用队列、容量、逐帧 pump 或独立生命周期；动态命令 FIFO、在线玩家查询和踢出 single-flight 分别由具体消费者拥有。只有完全绕过 `SdtdConsole`，且不访问 Unity 对象、游戏主线程集合或其他未证明线程安全状态的类型化操作，才能依据实际依赖单独决定线程边界。
 - 2026-07-21 Windows `v3.0.1-b4` 真实进程 smoke 在 `GameStartDone` 前取得 9 次 `game_not_ready`，就绪后命令返回 HTTP 200 和 5 行真实输出，首行为 `Game version: V 3.0.1 (b4) Compatibility Version: V 3.0.1`；随后 Telnet 正常关服且监听释放。前一轮启动因 EOS `NoConnection` 在游戏就绪前退出，保留为外部失败证据；后续重试通过且服主三字段配置的 71 字节与 SHA-256 均未改变。
 - 2026-07-22 在同版 Windows 真实进程和当前动态命令发布物上完成追加人工 smoke：健康端点与 Basic 认证正常，HTTP `version` 返回 200、5 行独立真实输出且首行仍为上述版本文本；HTTP 执行在 SQLite 形成 `source=7dpanel-http`、`actor_subject=owner`、`completion_kind=Completed` 的完整审计，Telnet/游戏控制台执行也形成非 HTTP 来源审计。受控测试还确认第三方 Mod 注册命令可直接执行、带空白与参数的命令原文可持久化、多行输出可按序保存，以及多个 HTTP 请求获得各自输出。本轮未关服，因此不提供当前二进制的排空、Patch 卸载或端口释放证据。
+- 2026-07-23 在同版 Windows 真实进程和合并提交 `a98ad6b` 上完成闭环 smoke。Telnet `version` 返回真实结果并形成 `source=network`、空 actor、`completion_kind=Completed` 的审计，证明 7DTD 原生 `SdtdConsole.ExecuteAsync -> SdtdConsole.Update -> executeCommand -> SendLines` 队列仍可工作。受控 `BEGIN IMMEDIATE` 写锁超过 SQLite 5 秒 default timeout 时，HTTP 命令仍返回游戏真实结果，日志记录 `Console command audit persistence failed; command execution continues.`；释放锁并执行下一条命令后，失败命令没有伪造审计，恢复命令与 `reason=store_failure`、`dropped_count>=1` 的 gap 成功持久化。正常关服摘要为 `accepted=9`、`consumed=8`、`droppedFull=0`、`rejectedStopping=0`、`consumerFailures=1`、`highWater=1`、`unrecoveredGaps=0`、`unrecoveredDropped=0`，随后 OWIN 停止、进程退出、listener 不可用；再次启动后健康、Swagger 和命令审计仍正常，并再次完成正常关服。该证据关闭当前 Windows 二进制的原生异步队列、SQLite fail-open/gap 恢复、审计排空、Patch 生命周期和重复启停缺口；Linux 真实进程仍待验证。
 
 ### OWIN、Web API 与静态资源
 
@@ -201,13 +202,13 @@ GET /
 | Web API 2 | Core/Owin `5.3.0`，Client `6.0.0` | 健康、Problem Details 和认证命名 SSE 通过 Katana 自动化与 Windows 真实进程 | 实现健康、统一错误和生产事件流；Linux Mono 仍待验证 |
 | Katana/OWIN | `Microsoft.Owin`、Hosting、HttpListener、StaticFiles `4.2.3` | 静态托管、路由、认证、流式响应和启停通过 Katana 自动化与 Windows 真实进程 | 认证位于受保护 Web API 前，静态 Admin 和健康端点保持匿名 |
 | OWIN 认证 | `Microsoft.Owin.Security.OAuth 4.2.3` + 自有 Basic middleware | 持久凭据/Token bridge、限流、无宿主 data protector 回退和 SSE 周期复验通过自动化；password grant、Bearer Welcome 与跨进程 Token 已通过 Windows Mono smoke | 显式拒绝 authorization-code/refresh/self-contained ticket format；不支持 refresh token、JWT、QueryString Token、Cookie 或通配 CORS |
-| OpenAPI | `NSwag.AspNet.Owin 14.7.1`，传递依赖 NJsonSchema `11.6.1` 与 Namotion.Reflection `3.5.0` | 公开 JSON/UI、Controller 与 OWIN token 路由、Basic/Bearer 替代关系、SSE、Problem Details 和无业务副作用通过 Katana 自动化；精确运行时闭包通过本地发布脚本 | 仅 Web Adapter 直接引用 NSwag；不安装 `NSwag.Annotations`；尚未在 7DTD Unity Mono 进程验证程序集加载和页面访问 |
+| OpenAPI | `NSwag.AspNet.Owin 14.7.1`，传递依赖 NJsonSchema `11.6.1` 与 Namotion.Reflection `3.5.0` | 公开 JSON/UI、Controller 与 OWIN token 路由、Basic/Bearer 替代关系、SSE、Problem Details 和无业务副作用通过 Katana 自动化；精确运行时闭包通过本地发布脚本；Windows `v3.0.1-b4` Unity Mono 已加载全部闭包并访问 JSON/UI | 仅 Web Adapter 直接引用 NSwag；不安装 `NSwag.Annotations`；Linux Mono 仍待验证 |
 | 组合根依赖注入 | `Microsoft.Extensions.DependencyInjection 8.0.1`、Abstractions `8.0.2` | Provider 验证、scope/bridge/释放自动化和发布清单通过；当前版本已由 Windows Mono 加载并完成两轮启停 | implementation 只属于 Bootstrap，Web Adapter 只直接引用 Abstractions；根 Provider 后于 OWIN/运行时释放 |
 | JSON | 游戏提供的 `Newtonsoft.Json 13.0.2` | 精确 camelCase 响应已在集成测试和真实进程验证 | 不随 Mod 发布另一份 `Newtonsoft.Json.dll` |
 | SQLite 持久化 | Dapper `2.1.79`、DbUp Core `6.0.15`、DbUp SQLite `6.0.4`、Microsoft.Data.Sqlite `10.0.9`、SQLitePCLRaw bundle/native `2.1.12` | migration/store 集成测试、Release 构建、Windows/Linux x64 本地发布清单和 Windows `v3.0.1-b4` 标准 Batteries 真实进程通过；Linux Mono 待验证 | 短连接、WAL、5 秒 default timeout、逐 migration 事务；Bootstrap 发布五个 Framework64 宿主兼容程序集，Persistence Adapter 显式布置两个 RID native asset，并由标准 bundle 初始化，不保留 shim、绝对路径加载或显式 provider 绑定 |
 | Async interfaces | Mod 发布 `Microsoft.Bcl.AsyncInterfaces 10.0.10`（程序集 `10.0.0.10`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再依赖游戏目录中的 6.x 文件；发布脚本要求 Mod 目录存在固定新版 |
 | Unsafe | Mod 发布 `System.Runtime.CompilerServices.Unsafe 6.1.2`（程序集 `6.0.3.0`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再排除 runtime；发布脚本要求 Mod 目录存在固定新版 |
-| 有界日志与命令通道 | `System.Threading.Channels 8.0.0`、`System.Threading.Tasks.Extensions 4.6.3` | 控制台日志、HTTP 命令 FIFO、异步审计自动化和本地发布清单通过；动态命令已有 Windows Mono 在线证据，原生异步队列不变、SQLite 故障恢复和当前二进制正常关服排空仍待验证 | 三条通道容量和生命周期独立；发布 Channels、Tasks.Extensions 和 Unsafe，仍不复制 Harmony、LogLibrary 或 Unity 程序集 |
+| 有界日志与命令通道 | `System.Threading.Channels 8.0.0`、`System.Threading.Tasks.Extensions 4.6.3` | 控制台日志、HTTP 命令 FIFO、异步审计自动化和本地发布清单通过；Windows Mono 已验证原生异步队列、SQLite 写锁 fail-open/gap 恢复、当前二进制关服排空和重复启停 | 三条通道容量和生命周期独立；发布 Channels、Tasks.Extensions 和 Unsafe，仍不复制 Harmony、LogLibrary 或 Unity 程序集；Linux Mono 仍待验证 |
 | Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | lint、typecheck、182 项 Vitest、生产构建通过；Playwright 真实 Owner suite 已建立但本轮未执行；旧健康切片具备 Vite 8 真实 OWIN smoke 和 Chromium 人工证据 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器踢出、`390x844` 真实渲染或真实动作结果证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
@@ -219,6 +220,7 @@ GET /
 - 发布脚本是增量的，不清空整个 Mod 目录；已有 `config.json` 和 `data/` 保持不变。
 - 2026-07-21 较早的 Windows 7DTD `v3.0.1-b4` smoke 使用现已删除的自定义 loader 和 SQLitePCLRaw `2.1.11`，只保留为历史兼容证据。
 - 同日当前标准 Batteries/SQLitePCLRaw `2.1.12` 二进制完成 Windows `v3.0.1-b4` 真实进程 smoke：游戏从独立 `0_TFP_Harmony` 加载 `0Harmony`，`Assembly.Location` 补丁在 `3.071s` 成功并先于 `3.388s` database upgrade，OWIN 在 `7.775s` 启动，`StartGame done` 在 `65.392s` 出现。健康端点返回精确三字段 200；Basic/Bearer SSE 均以 Welcome 开始，Bearer replay 包含 `console-log` 和 `game-ready`，关服连接收到 `server-stopping`。正常停止摘要为 `accepted=188`、`consumed=188`、无丢弃或 consumer failure，OWIN 停止、进程退出且端点不可达；兼容性错误扫描为 0。Linux 真实进程仍待验证。
+- 2026-07-23 合并后的 Windows `v3.0.1-b4` 发布物再次完成真实进程 smoke：Namotion.Reflection、NJsonSchema 和 NSwag 运行时程序集均从 Mod 目录加载，`/swagger` 返回 UI，`/swagger/v1/swagger.json` 返回有效 OpenAPI 3 文档并包含 token 与动态命令路由；日志没有 `FileNotFoundException`、`TypeLoadException`、ModEvent 或 OWIN 启停错误。受控 SQLite 写锁验证命令执行 fail-open 与后续 `store_failure` gap 恢复，正常关服时没有 unrecovered gap；进程退出、端点不可达并可再次启动和关服。该记录是开发期人工证据，未归档为候选发布证据。
 - 开发期发布、启停和健康检查入口见[后端脚本指南](../backend/scripts/README.md)。辅助脚本不属于产品运行时。
 - 当前生产关服流程先停止 `ModHost`/console-log，再停止 HTTP 命令 FIFO 并拒绝未开始项，最后排空命令审计；各阶段失败聚合且后续阶段仍执行。命令 Harmony 随后只卸载自身 id，根 Provider 在所有内部运行时成功停止后才释放并清空 SQLite 连接池；审计排空超时会保留 Provider 所有权并允许后续 Stop 重试，避免 consumer 访问已释放 Store。`GameThreadDispatcher` 没有独立生命周期；等待中的 HTTP 命令可取消，已经开始的同步命令返回真实结果。通用游戏动作排空和可观察 HTTP draining 仍未实现。
 
@@ -265,9 +267,9 @@ GET /
 - `GameStartDone` readiness 已进入每连接 Welcome 和一次 `game-ready` 事件，但尚无可重复查询的认证服务器状态端点；就绪前 `503` 和写请求 draining 拒绝仍是目标设计。
 - Owner 踢出链路已有 Application、SQLite、SevenDays、Katana 和 Admin 自动化，但尚未在 Windows `v3.0.1-b4` 真实进程验证拒绝原因、约 0.5 秒延迟断开、在线列表变化与 SQLite 审计一致性。关服竞态、帧预算、指标和 Linux 主线程证据仍缺失，不能从自动化或只读 `version` 证据推导真实状态变更验收已经完成。
 - 控制台日志已有认证 SSE，但没有 REST 查询、跨重启游标或持久化；Windows 正常负载没有触发容量饱和，真实容量饱和与 Linux Mono 基线仍缺失。
-- 动态命令、FIFO、Harmony observation 和 SQLite 审计已有自动化、发布物和 Windows `v3.0.1-b4` 在线真实进程证据；HTTP/非 HTTP 来源、第三方注册命令、原文参数、多行输出和并发输出隔离已经验证。原生 `ExecuteAsync` 队列不变、真实 SQLite 锁故障恢复、当前二进制正常关服排空与 Patch 卸载仍需真实进程证据。
+- 动态命令、FIFO、Harmony observation 和 SQLite 审计已有自动化、发布物和 Windows `v3.0.1-b4` 真实进程证据；HTTP/非 HTTP 来源、第三方注册命令、原文参数、多行输出、并发输出隔离、原生 `ExecuteAsync` 队列、真实 SQLite 锁故障恢复、正常关服排空、Patch 生命周期和重复启停均已验证。真实容量饱和、自动归档和 Linux Mono 基线仍缺失。
 - 默认全接口明文监听并启用已知引导凭据；任何能够访问 18080 端口的客户端都可以作为持久 `Owner` 认证，这是当前过渡阶段明确接受、但在用户管理进入发布范围后必须移除的暴露风险。
 - 当前标准 Batteries 的 Microsoft.Data.Sqlite/`e_sqlite3` 和进程期 `Assembly.Location` 补丁已通过本地 net48 构建、测试、双平台发布清单和 Windows 官方 7DTD 进程 smoke；Linux 官方进程 smoke 仍缺失。
 - Linux x64 已有本地发布布局证据，但没有本项目官方进程运行证据。
-- 公开 Swagger JSON/UI 已通过 Windows Katana 自动化和本地发布清单，但新增 NSwag/NJsonSchema/Namotion 程序集尚未在 Windows 或 Linux `v3.0.1-b4` Unity Mono 进程加载，也未在真实服务器访问 `/swagger`；不能从本地 `net48` 或 publish 通过推导该兼容性。
+- 公开 Swagger JSON/UI 已通过 Windows Katana 自动化、本地发布清单和 Windows `v3.0.1-b4` Unity Mono 真实进程验证；NSwag/NJsonSchema/Namotion 程序集从 Mod 目录加载，真实服务器可访问 UI 与 OpenAPI 3 JSON。Linux Unity Mono 兼容性仍不能从 Windows 或 publish 结果推导。
 - 编译使用的 publicized `Assembly-CSharp.dll` 与官方运行时材料职责不同；升级游戏版本时必须重新验证构建和真实进程行为。
