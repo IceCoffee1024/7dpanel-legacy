@@ -1,4 +1,5 @@
 using System.Web.Http;
+using System.Web.Http.Description;
 using LSTY.SevenDPanel.Hosting;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
@@ -9,6 +10,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         [HttpGet]
         [Route("health")]
         [Route("api/v1/health")]
+        [ResponseType(typeof(HealthResponse))]
         public IHttpActionResult Get()
         {
             return Ok(new HealthResponse("ok", ProductInfo.Name, ProductInfo.Version));

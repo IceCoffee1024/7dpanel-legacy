@@ -389,7 +389,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Openapi_document_describes_json_success_schemas_for_http_response_actions()
+        public async Task Openapi_document_describes_success_response_schemas()
         {
             var port = GetAvailablePort();
             var url = "http://127.0.0.1:" + port + "/";
@@ -404,6 +404,16 @@ namespace LSTY.SevenDPanel.Tests
                 host.Start();
                 var document = await GetOpenApiDocumentAsync(client, url);
 
+                AssertJsonSuccessSchema(
+                    document,
+                    "/health",
+                    "get",
+                    "HealthResponse");
+                AssertJsonSuccessSchema(
+                    document,
+                    "/api/v1/health",
+                    "get",
+                    "HealthResponse");
                 AssertJsonSuccessSchema(
                     document,
                     "/api/v1/players/online",
@@ -428,6 +438,12 @@ namespace LSTY.SevenDPanel.Tests
                     document,
                     requestMediaType.Value["schema"],
                     "command");
+                AssertSchemaProperties(
+                    document,
+                    "HealthResponse",
+                    "product",
+                    "status",
+                    "version");
                 AssertSchemaProperties(document, "ConsoleCommandResponse", "command", "output");
                 AssertSchemaProperties(document, "OnlinePlayersResponse", "players");
                 AssertSchemaProperties(
@@ -438,6 +454,7 @@ namespace LSTY.SevenDPanel.Tests
                     "requestedAtUtc",
                     "status",
                     "target");
+                AssertSuccessResponsesDescribeContent(document);
             }
         }
 
@@ -2857,6 +2874,41 @@ namespace LSTY.SevenDPanel.Tests
                     .Select(property => property.Name)
                     .OrderBy(propertyName => propertyName)
                     .ToArray());
+        }
+
+        private static void AssertSuccessResponsesDescribeContent(JObject document)
+        {
+            var operations = document["paths"]!
+                .Children<JProperty>()
+                .SelectMany(path => path.Value.Children<JProperty>())
+                .Where(operation => operation.Value["responses"] != null);
+
+            foreach (var operation in operations)
+            {
+                var successResponses = operation.Value["responses"]!
+                    .Children<JProperty>()
+                    .Where(response =>
+                        int.TryParse(response.Name, out var statusCode) &&
+                        statusCode >= 200 &&
+                        statusCode < 300)
+                    .ToArray();
+                Assert.NotEmpty(successResponses);
+                foreach (var response in successResponses)
+                {
+                    if (response.Name == "204")
+                    {
+                        Assert.Null(response.Value["content"]);
+                        continue;
+                    }
+
+                    var content = Assert.IsType<JObject>(response.Value["content"]);
+                    Assert.NotEmpty(content.Properties());
+                    Assert.Null(content["application/octet-stream"]);
+                    Assert.All(
+                        content.Properties(),
+                        mediaType => Assert.NotNull(mediaType.Value["schema"]));
+                }
+            }
         }
 
         private static void AssertResponseCodes(
