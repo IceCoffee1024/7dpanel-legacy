@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-23"
+last_updated: "2026-07-24"
 document_role: Target
 ---
 
@@ -305,7 +305,7 @@ Windows `v3.0.1-b4` 在线人工 smoke 已验证内置/第三方 Mod 注册命�
 
 ### 在线玩家
 
-在线玩家的批准目标是用 7DTD 玩家事件维护进程内最终一致投影，使 HTTP 查询只读取已经脱离游戏对象的不可变值。本文描述的是待实现并验证的 Target；当前 Owner-only 请求时主线程实现仍以[系统架构](../architecture.md)为准。以下 `ViewPlayers` 权限与通用角色授权仍是用户管理落地后的 Target，不是当前实现事实。
+在线玩家的批准目标是用 7DTD 玩家事件维护进程内最终一致投影，使 HTTP 查询只读取已经脱离游戏对象的不可变值。本文描述的是待实现并验证的 Target；当前已实现的精简事件投影仍以[系统架构](../architecture.md)为准。以下扩展字段、`ViewPlayers` 权限与通用角色授权不是当前实现事实。
 
 ```text
 PlayerJoinedGame
@@ -330,7 +330,29 @@ GET /api/v1/players/online
 
 玩家状态以最近一次有效上传为准，通常接受约一个 30 秒上传周期的最终一致窗口；新连接在首次上传前可以暂不进入列表，同一响应中的玩家可以具有不同观察时间。每个返回玩家携带最后成功复制的 `observedAtUtc`；服务端不定义过期阈值或列表级新鲜度，也不因 observation 年龄或首次 observation 缺失拒绝可读结果。空 membership 返回 200 空列表。
 
-投影不周期扫描 `ConnectionManager` 或 `World`，不在请求时回退到游戏主线程，不监听或 patch `PlayerStats` 网络包，也不引入通用投影框架。保存、断开、查询复制与停止清理使用同一窄并发门禁保持 membership 和 observation 成对变化；关服先停止 OWIN，再逆序注销事件、拒绝新提交并清空投影。字段、身份与生命周期的完整批准边界见[在线玩家事件投影设计规格](../superpowers/specs/2026-07-22-online-player-event-projection-design.md)。
+一次成功 observation 固定复制以下 25 个 HTTP 字段，且共享同一个 `observedAtUtc`：
+
+| HTTP 字段 | `SavePlayerData` 回调内来源 | 类型与规则 |
+|---|---|---|
+| `entityId`、`name` | `ClientInfo.entityId`、`PlayerDataFile.metadata.Name` | 非负整数、非空字符串 |
+| `platformIdentity`、`crossplatformIdentity` | `ClientInfo.PlatformId`、`ClientInfo.CrossplatformId` | 结构化 `combinedId`/`platform`；跨平台身份可空 |
+| `deviceType` | `ClientInfo.device` | `linux`、`mac`、`windows`、`playStation`、`xbox` 或 `unknown` |
+| `ip`、`compatibilityVersion` | `ClientInfo.ip`、`ClientInfo.compatibilityVersion` | 可空非空白字符串；只有 IP 属性访问异常可将本字段降级为空且不拒绝其他有效字段 |
+| `ping`、`discordUserId` | `ClientInfo.ping`、`ClientInfo.DiscordUserId` | ping 为整数；Discord `0` 映射为 `null`，否则用十进制字符串避免 JavaScript 精度损失 |
+| `permissionLevel` | `GameManager.Instance.adminTools.Users.GetUserPermissionLevel(ClientInfo)` | 原生身份、跨平台身份和组权限中的最小整数；未匹配为 `1000` |
+| `position` | `PlayerDataFile.ecd.pos` | 有限浮点 `{ x, y, z }`，API 保留观察值精度 |
+| `isDead`、`health`、`maxHealth` | `PlayerDataFile.bDead`、`ecd.stats.Health.Value`、`ecd.stats.Health.ModifiedMax` | 布尔值；两个有限浮点生命值沿用 C# `(int)` 向零截断为整数，不强加 `health <= maxHealth` 推导规则 |
+| `level` | `PlayerDataFile.metadata.Level` | 整数 |
+| `score`、`zombieKills`、`playerKills`、`deaths` | `PlayerDataFile` 同名字段 | 整数 |
+| `totalTimePlayedMinutes` | `PlayerDataFile.totalTimePlayed` | 有限非负浮点分钟 |
+| `distanceWalkedMeters` | `PlayerDataFile.distanceWalked` | 有限非负浮点米 |
+| `totalItemsCrafted` | `PlayerDataFile.totalItemsCrafted` | 非负整数 |
+| `longestLifeMinutes`、`currentLifeMinutes` | `PlayerDataFile.longestLife`、`PlayerDataFile.currentLife` | 有限非负浮点分钟 |
+| `observedAtUtc` | 注入 UTC clock | 完成全部字段复制后、提交 observation 前捕获 |
+
+`ip`、`compatibilityVersion`、`discordUserId` 和 `crossplatformIdentity` 使用明确空值；其他字段无效、权限读取失败或转换失败时拒绝整次 observation，保留上一条有效值。投影不保存 `ClientInfo`、`PlayerDataFile`、`EntityPlayer`、Unity 向量或权限对象，也不重复返回可由 `permissionLevel` 推导的 `isAdmin`。
+
+投影不周期扫描 `ConnectionManager` 或 `World`，不在请求时回退到游戏主线程，不监听或 patch `PlayerStats` 网络包，也不引入通用投影框架。保存、断开、查询复制与停止清理使用同一窄并发门禁保持 membership 和 observation 成对变化；关服先停止 OWIN，再逆序注销事件、拒绝新提交并清空投影。扩展字段与 Admin 详情的批准边界见[在线玩家详情设计规格](../superpowers/specs/2026-07-24-online-player-details-design.md)；既有事件生命周期和并发依据见[在线玩家事件投影设计规格](../superpowers/specs/2026-07-22-online-player-event-projection-design.md)。
 
 ### 玩家管理动作
 

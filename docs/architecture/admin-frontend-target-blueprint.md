@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-23"
+last_updated: "2026-07-24"
 document_role: Target
 ---
 
@@ -94,6 +94,27 @@ shared     -X-> feature business code
 
 服务端状态缓存与客户端交互状态必须分离。不得为了方便把全部 API 数据复制进一个全局 Store。全局状态只用于确有
 跨路由生命周期的客户端协调；服务器数据仍由查询层根据键、时间戳和失效规则管理。
+
+### 在线玩家详情状态
+
+Players Feature 在现有查询快照之外只增加一个页面局部详情选择，不把玩家或抽屉状态放入 Pinia：
+
+```text
+OnlinePlayersView
+  -> useOnlinePlayers: last validated server snapshot
+  -> selectedPlayerKey: entityId + platformIdentity.combinedId
+  -> selectedPlayer: update from latest snapshot until unavailable locks
+  -> OnlinePlayersTable / OnlinePlayersList: emit viewDetails(player)
+  -> OnlinePlayerDetailsSlideover: read-only details and kickPlayer(player)
+  -> KickPlayerDialog: independent fixed action target
+```
+
+- `OnlinePlayersView` 继续作为组合面，拥有抽屉开关、稳定选择键和最后详情 observation；Table、List 与 Slideover 只接收只读 props 并上抛类型化事件。
+- 尚未锁存 unavailable 时，成功刷新用 entity ID 与原生 `combinedId` 同时匹配选中玩家；匹配时替换详情 observation，未匹配时保留最后值并锁存 unavailable。该状态直到关闭抽屉才清除，后续同身份重现也不自动恢复，不从相同或复用 entity ID 的新会话偷换详情目标。
+- 关闭抽屉时清除详情选择和最后 observation。详情选择不复用现有踢出 `selectedPlayer`；只有用户从当前详情发起踢出时，才把当时完整玩家值复制为独立危险操作目标。
+- `OnlinePlayerDetailsSlideover` 使用 Nuxt UI `USlideover` 表达仪表盘次要详情，窄屏占满可用宽度；踢出仍由现有阻断式确认对话框负责。详情踢出能力由现有授权、`state === 'fresh'` 和未锁存 unavailable 共同决定；Stale、Offline、Forbidden、Session expired 或游戏未就绪时不从旧详情发起新动作。抽屉分区使用普通布局和分隔，不创建嵌套卡片。
+- Players Feature 自己拥有设备、时长、整数坐标/距离和空值格式化。坐标与距离四舍五入后按当前语言显示整数，分钟值转换为天/小时/分钟；所有传输空值统一显示“未知”。纯格式化函数保持无状态，只有出现第二个真实 Feature 消费者后才提升到 `shared`。
+- API 边界严格验证 25 字段、位置对象、设备枚举、有限数值和可空字符串。无效新响应不能覆盖最后成功快照或当前详情；前端不根据本地角色删除响应字段，也不承担敏感字段授权。
 
 ### 统一结果状态
 
