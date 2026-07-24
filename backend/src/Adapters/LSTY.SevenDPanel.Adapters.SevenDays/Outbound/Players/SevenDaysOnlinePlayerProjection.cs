@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,9 +17,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             new ConcurrentDictionary<int, OnlinePlayerMembership>();
         private readonly object updateGate = new object();
         private readonly Func<Action<OnlinePlayerIdentitySource>, IDisposable>? subscribeJoined;
-        private readonly Func<Action<OnlinePlayerObservation>, IDisposable>? subscribeSave;
+        private readonly Func<Action<global::ClientInfo?, global::PlayerDataFile?>, IDisposable>? subscribeSave;
+        private readonly Func<Action, IDisposable>? subscribeSaveForTest;
         private readonly Func<Action<OnlinePlayerIdentitySource>, IDisposable>? subscribeDisconnected;
-        private readonly Func<OnlinePlayerObservation, OnlinePlayerObservation>? copyObservation;
+        private readonly Func<global::ClientInfo?, global::PlayerDataFile?, OnlinePlayerObservation>? copyObservation;
+        private readonly Func<OnlinePlayerObservation>? copyObservationForTest;
         private readonly Action<string>? log;
         private IDisposable? joinedSubscription;
         private IDisposable? saveSubscription;
@@ -36,22 +39,36 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 SubscribeJoined,
                 SubscribeSave,
                 SubscribeDisconnected,
-                observation => observation,
+                (client, playerData) => CopyObservation(client, playerData, () => DateTimeOffset.UtcNow),
                 log ?? (_ => { }))
         {
         }
 
-        internal SevenDaysOnlinePlayerProjection(
+        private SevenDaysOnlinePlayerProjection(
             Func<Action<OnlinePlayerIdentitySource>, IDisposable> subscribeJoined,
-            Func<Action<OnlinePlayerObservation>, IDisposable> subscribeSave,
+            Func<Action<global::ClientInfo?, global::PlayerDataFile?>, IDisposable> subscribeSave,
             Func<Action<OnlinePlayerIdentitySource>, IDisposable> subscribeDisconnected,
-            Func<OnlinePlayerObservation, OnlinePlayerObservation> copyObservation,
+            Func<global::ClientInfo?, global::PlayerDataFile?, OnlinePlayerObservation> copyObservation,
             Action<string> log)
         {
             this.subscribeJoined = subscribeJoined ?? throw new ArgumentNullException(nameof(subscribeJoined));
             this.subscribeSave = subscribeSave ?? throw new ArgumentNullException(nameof(subscribeSave));
             this.subscribeDisconnected = subscribeDisconnected ?? throw new ArgumentNullException(nameof(subscribeDisconnected));
             this.copyObservation = copyObservation ?? throw new ArgumentNullException(nameof(copyObservation));
+            this.log = log ?? throw new ArgumentNullException(nameof(log));
+        }
+
+        internal SevenDaysOnlinePlayerProjection(
+            Func<Action<OnlinePlayerIdentitySource>, IDisposable> subscribeJoined,
+            Func<Action, IDisposable> subscribeSave,
+            Func<Action<OnlinePlayerIdentitySource>, IDisposable> subscribeDisconnected,
+            Func<OnlinePlayerObservation> copyObservation,
+            Action<string> log)
+        {
+            this.subscribeJoined = subscribeJoined ?? throw new ArgumentNullException(nameof(subscribeJoined));
+            subscribeSaveForTest = subscribeSave ?? throw new ArgumentNullException(nameof(subscribeSave));
+            this.subscribeDisconnected = subscribeDisconnected ?? throw new ArgumentNullException(nameof(subscribeDisconnected));
+            copyObservationForTest = copyObservation ?? throw new ArgumentNullException(nameof(copyObservation));
             this.log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
@@ -62,7 +79,9 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             try
             {
                 joinedSubscription = subscribeJoined!(HandleJoined);
-                saveSubscription = subscribeSave!(HandleSave);
+                saveSubscription = subscribeSaveForTest != null
+                    ? subscribeSaveForTest(HandleSaveForTest)
+                    : subscribeSave!(HandleSave);
                 disconnectedSubscription = subscribeDisconnected!(HandleDisconnected);
             }
             catch
@@ -174,11 +193,21 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             JoinForTest(source.EntityId, source.CombinedId);
         }
 
-        private void HandleSave(OnlinePlayerObservation source)
+        private void HandleSave(global::ClientInfo? client, global::PlayerDataFile? playerData)
+        {
+            HandleSave(() => copyObservation!(client, playerData));
+        }
+
+        private void HandleSaveForTest()
+        {
+            HandleSave(copyObservationForTest!);
+        }
+
+        private void HandleSave(Func<OnlinePlayerObservation> readObservation)
         {
             try
             {
-                var observation = copyObservation!(source);
+                var observation = readObservation();
                 UpsertForTest(observation);
             }
             catch
@@ -226,12 +255,13 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             return new Subscription(() => ModEvents.PlayerJoinedGame.UnregisterHandler(callback));
         }
 
-        private static IDisposable SubscribeSave(Action<OnlinePlayerObservation> handler)
+        private static IDisposable SubscribeSave(
+            Action<global::ClientInfo?, global::PlayerDataFile?> handler)
         {
             ModEvents.ModEventHandlerDelegate<ModEvents.SSavePlayerDataData> callback =
                 delegate(ref ModEvents.SSavePlayerDataData data)
                 {
-                    handler(CopyObservation(data.ClientInfo, data.PlayerDataFile, DateTimeOffset.UtcNow));
+                    handler(data.ClientInfo, data.PlayerDataFile);
                 };
             ModEvents.SavePlayerData.RegisterHandler(callback);
             return new Subscription(() => ModEvents.SavePlayerData.UnregisterHandler(callback));
@@ -262,7 +292,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
         private static OnlinePlayerObservation CopyObservation(
             global::ClientInfo? client,
             global::PlayerDataFile? playerData,
-            DateTimeOffset observedAtUtc)
+            Func<DateTimeOffset> utcClock)
         {
             if (client == null) throw new InvalidOperationException("Client information is unavailable.");
             if (playerData == null) throw new InvalidOperationException("Player data is unavailable.");
@@ -271,16 +301,107 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             if (playerData.ecd?.stats?.Health == null)
                 throw new InvalidOperationException("The player health is unavailable.");
 
+            var entityId = client.entityId;
+            var name = RequirePlayerName(playerData.metadata.Name);
+            var platformIdentity = CreateIdentity(client.PlatformId);
+            var crossplatformIdentity = CreateOptionalIdentity(client.CrossplatformId);
+            var deviceType = MapDeviceType(client.device);
+            var ip = CopyNullableIp(() => client.ip);
+            var ping = client.ping;
+            var compatibilityVersion = NormalizeOptionalString(client.compatibilityVersion);
+            var discordUserId = FormatDiscordUserId(client.DiscordUserId);
+            var permissionLevel = GameManager.Instance.adminTools.Users.GetUserPermissionLevel(client);
+            var position = new PlayerPosition(
+                playerData.ecd.pos.x,
+                playerData.ecd.pos.y,
+                playerData.ecd.pos.z);
+            var isDead = playerData.bDead;
+            var health = TruncateFiniteToInt(playerData.ecd.stats.Health.Value, "health");
+            var maxHealth = TruncateFiniteToInt(playerData.ecd.stats.Health.ModifiedMax, "max health");
+            var level = playerData.metadata.Level;
+            var score = playerData.score;
+            var zombieKills = playerData.zombieKills;
+            var playerKills = playerData.playerKills;
+            var deaths = playerData.deaths;
+            var totalTimePlayedMinutes = RequireNonNegativeFinite(
+                playerData.totalTimePlayed,
+                "total time played");
+            var distanceWalkedMeters = RequireNonNegativeFinite(
+                playerData.distanceWalked,
+                "distance walked");
+            var totalItemsCrafted = playerData.totalItemsCrafted;
+            var longestLifeMinutes = RequireNonNegativeFinite(playerData.longestLife, "longest life");
+            var currentLifeMinutes = RequireNonNegativeFinite(playerData.currentLife, "current life");
+            var observedAtUtc = utcClock();
+
             var player = new PlayerSnapshot(
-                client.entityId,
-                playerData.metadata.Name,
-                CreateIdentity(client.PlatformId),
-                CreateOptionalIdentity(client.CrossplatformId),
-                client.ping,
-                playerData.metadata.Level,
-                checked((int)playerData.ecd.stats.Health.Value),
+                entityId,
+                name,
+                platformIdentity,
+                crossplatformIdentity,
+                deviceType,
+                ip,
+                ping,
+                compatibilityVersion,
+                discordUserId,
+                permissionLevel,
+                position,
+                isDead,
+                health,
+                maxHealth,
+                level,
+                score,
+                zombieKills,
+                playerKills,
+                deaths,
+                totalTimePlayedMinutes,
+                distanceWalkedMeters,
+                totalItemsCrafted,
+                longestLifeMinutes,
+                currentLifeMinutes,
                 observedAtUtc);
             return new OnlinePlayerObservation(player, observedAtUtc);
+        }
+
+        internal static string? CopyNullableIp(Func<string?> readIp)
+        {
+            if (readIp == null) throw new ArgumentNullException(nameof(readIp));
+
+            try
+            {
+                return NormalizeOptionalString(readIp());
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        internal static int TruncateFiniteToInt(float value, string fieldName)
+        {
+            if (!IsFinite(value))
+                throw new InvalidOperationException("The player " + fieldName + " is invalid.");
+
+            return checked((int)value);
+        }
+
+        internal static string? FormatDiscordUserId(ulong value) =>
+            value == 0 ? null : value.ToString(CultureInfo.InvariantCulture);
+
+        private static PlayerDeviceType MapDeviceType(global::ClientInfo.EDeviceType deviceType) =>
+            MapDeviceType((int)deviceType);
+
+        internal static PlayerDeviceType MapDeviceType(int deviceType)
+        {
+            switch (deviceType)
+            {
+                case (int)global::ClientInfo.EDeviceType.Linux: return PlayerDeviceType.Linux;
+                case (int)global::ClientInfo.EDeviceType.Mac: return PlayerDeviceType.Mac;
+                case (int)global::ClientInfo.EDeviceType.Windows: return PlayerDeviceType.Windows;
+                case (int)global::ClientInfo.EDeviceType.PlayStation: return PlayerDeviceType.PlayStation;
+                case (int)global::ClientInfo.EDeviceType.Xbox: return PlayerDeviceType.Xbox;
+                default: return PlayerDeviceType.Unknown;
+            }
         }
 
         private static PlayerPlatformIdentity CreateIdentity(global::PlatformUserIdentifierAbs? identity)
@@ -296,6 +417,28 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
         private static PlayerPlatformIdentity? CreateOptionalIdentity(
             global::PlatformUserIdentifierAbs? identity) =>
             identity == null ? null : CreateIdentity(identity);
+
+        private static string RequirePlayerName(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new InvalidOperationException("The player name is unavailable.");
+
+            return value;
+        }
+
+        private static string? NormalizeOptionalString(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? null : value;
+
+        private static float RequireNonNegativeFinite(float value, string fieldName)
+        {
+            if (!IsFinite(value) || value < 0)
+                throw new InvalidOperationException("The player " + fieldName + " is invalid.");
+
+            return value;
+        }
+
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
 
         private static string RequireIdentityValue(string? value)
         {

@@ -12,9 +12,18 @@ export {
 } from './api/onlinePlayers'
 export type {
   OnlinePlayer,
+  OnlinePlayerDeviceType,
+  OnlinePlayerPosition,
   OnlinePlayersSnapshot,
   PlayerIdentity,
 } from './api/onlinePlayers'
+export {
+  formatDeviceType,
+  formatDurationMinutes,
+  formatNullable,
+  formatPosition,
+  formatRoundedNumber,
+} from './model/onlinePlayerFormatting'
 export { useKickPlayer } from './model/useKickPlayer'
 export type {
   KickPlayerController,

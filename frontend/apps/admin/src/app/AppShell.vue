@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+import { defineShortcuts } from '@nuxt/ui/composables'
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'

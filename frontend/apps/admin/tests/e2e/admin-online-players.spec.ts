@@ -79,6 +79,99 @@ async function expectAuthStorageAbsent(page: import('@playwright/test').Page) {
   expect(authStorageIsAbsent).toBe(true)
 }
 
+type OnlinePlayerStage = 'initial' | 'updated' | 'missing' | 'reappeared'
+
+function onlinePlayersResponse(stage: OnlinePlayerStage) {
+  const primaryName = stage === 'updated'
+    ? 'Player Updated'
+    : stage === 'reappeared'
+      ? 'Player Reappeared'
+      : 'Player'
+  const primaryPlayer = {
+    entityId: 7,
+    name: primaryName,
+    platformIdentity: {
+      combinedId: 'Steam_76561198000000000',
+      platform: 'Steam',
+    },
+    crossplatformIdentity: {
+      combinedId: 'EOS_12345678901234567',
+      platform: 'EOS',
+    },
+    deviceType: 'windows',
+    ip: '192.0.2.10',
+    ping: 42,
+    compatibilityVersion: 'V 3.0.1',
+    discordUserId: '18446744073709551615',
+    permissionLevel: 1000,
+    position: { x: 100.5, y: 51, z: 200.25 },
+    isDead: false,
+    health: 93,
+    maxHealth: 100,
+    level: 18,
+    score: stage === 'updated' ? 900 : 827,
+    zombieKills: 317,
+    playerKills: 2,
+    deaths: 4,
+    totalTimePlayedMinutes: 4823.5,
+    distanceWalkedMeters: 127540.75,
+    totalItemsCrafted: 2360,
+    longestLifeMinutes: 920.25,
+    currentLifeMinutes: 134.5,
+    observedAtUtc: stage === 'updated'
+      ? '2026-07-23T08:00:10Z'
+      : '2026-07-23T07:59:00Z',
+  }
+  const nullablePlayer = {
+    entityId: 42,
+    name: 'Nullable Player',
+    platformIdentity: {
+      combinedId: 'Steam_76561198000000000_with_a_deliberately_long_identity_value',
+      platform: 'Steam',
+    },
+    crossplatformIdentity: null,
+    deviceType: 'unknown',
+    ip: null,
+    ping: 1,
+    compatibilityVersion: null,
+    discordUserId: null,
+    permissionLevel: 1000,
+    position: { x: -100.5, y: 51, z: -200.25 },
+    isDead: true,
+    health: 0,
+    maxHealth: 100,
+    level: 1,
+    score: 0,
+    zombieKills: 0,
+    playerKills: 0,
+    deaths: 1,
+    totalTimePlayedMinutes: 0,
+    distanceWalkedMeters: 9_876_543.21,
+    totalItemsCrafted: 0,
+    longestLifeMinutes: 0,
+    currentLifeMinutes: 0,
+    observedAtUtc: '2026-07-23T07:59:00Z',
+  }
+
+  return {
+    players: stage === 'missing'
+      ? [nullablePlayer]
+      : [primaryPlayer, nullablePlayer],
+  }
+}
+
+async function interceptOnlinePlayers(
+  page: import('@playwright/test').Page,
+  getStage: () => OnlinePlayerStage,
+) {
+  await page.route('**/api/v1/players/online', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(onlinePlayersResponse(getStage())),
+    })
+  })
+}
+
 test('redirects an anonymous players deep link to login', async ({ page }) => {
   await page.goto('/players')
 
@@ -240,3 +333,89 @@ test('players layout has no horizontal overflow at 390 by 844', async ({ page })
   ))
   expect(hasHorizontalOverflow).toBe(false)
 })
+
+test('synthetic complete observations render in the details slideover and lock unavailable targets', async ({ page }) => {
+  let stage: OnlinePlayerStage = 'initial'
+  await interceptOnlinePlayers(page, () => stage)
+  await page.goto('/players')
+  await loginOwner(page)
+
+  const primaryDetailsButton = page.getByRole('button', { name: '查看玩家详情：Player' })
+  await primaryDetailsButton.click()
+  const dialog = page.getByRole('dialog')
+
+  await expect(dialog.getByRole('heading', { name: '身份' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: '连接' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: '当前状态' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: '累计统计' })).toBeVisible()
+  await expect(dialog.getByText('101, 51, 200')).toBeVisible()
+  await expect(dialog.getByText('127,541')).toBeVisible()
+  await expect(dialog.getByText('3 天 8 小时 24 分钟')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '复制平台身份' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '复制跨平台身份' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '复制 Discord 用户 ID' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '复制 IP 地址' })).toBeVisible()
+
+  stage = 'updated'
+  await page.getByRole('button', { name: '刷新在线玩家' }).click()
+  await expect(dialog.getByText('Player Updated')).toBeVisible()
+
+  stage = 'missing'
+  await page.getByRole('button', { name: '刷新在线玩家' }).click()
+  await expect(dialog.getByRole('alert')).toContainText('该玩家观察已不可用')
+  await expect(dialog.getByText('Player Updated')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '踢出玩家' })).toHaveCount(0)
+
+  stage = 'reappeared'
+  await page.getByRole('button', { name: '刷新在线玩家' }).click()
+  await expect(dialog.getByRole('alert')).toBeVisible()
+  await expect(dialog.getByText('Player Updated')).toBeVisible()
+
+  await page.getByRole('button', { name: '取消' }).click()
+  const reappearedDetailsButton = page.getByRole('button', { name: '查看玩家详情：Player Reappeared' })
+  await reappearedDetailsButton.click()
+  await expect(page.getByRole('dialog').getByRole('alert')).toHaveCount(0)
+  await expect(page.getByRole('dialog').getByRole('button', { name: '踢出玩家' })).toBeVisible()
+})
+
+for (const viewport of [
+  { name: 'desktop', width: 1280, height: 900 },
+  { name: 'mobile-390', width: 390, height: 844 },
+  { name: 'mobile-320', width: 320, height: 844 },
+]) {
+  test(`details remain accessible without horizontal overflow at ${viewport.name}`, async ({ page }) => {
+    const stage: OnlinePlayerStage = 'initial'
+    await page.setViewportSize({ width: viewport.width, height: viewport.height })
+    await interceptOnlinePlayers(page, () => stage)
+    await page.goto('/players')
+    await loginOwner(page)
+
+    const detailsButton = page.getByRole('button', { name: '查看玩家详情：Nullable Player' })
+    await detailsButton.click()
+    const dialog = page.getByRole('dialog')
+
+    await expect(dialog.getByText('未知', { exact: true })).toHaveCount(4)
+    await expect(dialog.getByText('-101, 51, -200')).toBeVisible()
+    await expect(dialog.getByText('9,876,543')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: '复制跨平台身份' })).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: '复制 Discord 用户 ID' })).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: '复制 IP 地址' })).toHaveCount(0)
+    await expect(dialog.locator('button').filter({ hasText: '踢出玩家' })).toBeVisible()
+
+    const bodyHasScrollableOverflow = await dialog.evaluate((element) => {
+      return Array.from(element.querySelectorAll<HTMLElement>('*')).some((child) => {
+        const style = getComputedStyle(child)
+        return (style.overflowY === 'auto' || style.overflowY === 'scroll')
+          && child.scrollHeight > child.clientHeight
+      })
+    })
+    const hasHorizontalOverflow = await page.evaluate(() => (
+      document.documentElement.scrollWidth > document.documentElement.clientWidth
+    ))
+    expect(bodyHasScrollableOverflow).toBe(true)
+    expect(hasHorizontalOverflow).toBe(false)
+
+    await page.keyboard.press('Escape')
+    await expect(detailsButton).toBeFocused()
+  })
+}

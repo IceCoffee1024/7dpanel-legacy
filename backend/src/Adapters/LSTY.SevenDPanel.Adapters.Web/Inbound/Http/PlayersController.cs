@@ -208,15 +208,48 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 player.Name,
                 ToIdentityResponse(player.PlatformIdentity),
                 player.CrossplatformIdentity == null ? null : ToIdentityResponse(player.CrossplatformIdentity),
+                ToDeviceType(player.DeviceType),
+                player.Ip,
                 player.Ping,
-                player.Level,
+                player.CompatibilityVersion,
+                player.DiscordUserId,
+                player.PermissionLevel,
+                new OnlinePlayerPositionResponse(
+                    player.Position.X,
+                    player.Position.Y,
+                    player.Position.Z),
+                player.IsDead,
                 player.Health,
+                player.MaxHealth,
+                player.Level,
+                player.Score,
+                player.ZombieKills,
+                player.PlayerKills,
+                player.Deaths,
+                player.TotalTimePlayedMinutes,
+                player.DistanceWalkedMeters,
+                player.TotalItemsCrafted,
+                player.LongestLifeMinutes,
+                player.CurrentLifeMinutes,
                 player.ObservedAtUtc);
         }
 
         private static OnlinePlayerPlatformIdentityResponse ToIdentityResponse(PlayerPlatformIdentity identity)
         {
             return new OnlinePlayerPlatformIdentityResponse(identity.CombinedId, identity.Platform);
+        }
+
+        private static string ToDeviceType(PlayerDeviceType deviceType)
+        {
+            switch (deviceType)
+            {
+                case PlayerDeviceType.Linux: return "linux";
+                case PlayerDeviceType.Mac: return "mac";
+                case PlayerDeviceType.Windows: return "windows";
+                case PlayerDeviceType.PlayStation: return "playStation";
+                case PlayerDeviceType.Xbox: return "xbox";
+                default: return "unknown";
+            }
         }
     }
 
@@ -237,18 +270,52 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             string name,
             OnlinePlayerPlatformIdentityResponse platformIdentity,
             OnlinePlayerPlatformIdentityResponse? crossplatformIdentity,
+            string deviceType,
+            string? ip,
             int ping,
-            int level,
+            string? compatibilityVersion,
+            string? discordUserId,
+            int permissionLevel,
+            OnlinePlayerPositionResponse position,
+            bool isDead,
             int health,
+            int maxHealth,
+            int level,
+            int score,
+            int zombieKills,
+            int playerKills,
+            int deaths,
+            float totalTimePlayedMinutes,
+            float distanceWalkedMeters,
+            uint totalItemsCrafted,
+            float longestLifeMinutes,
+            float currentLifeMinutes,
             DateTimeOffset observedAtUtc)
         {
             EntityId = entityId;
             Name = name;
             PlatformIdentity = platformIdentity;
             CrossplatformIdentity = crossplatformIdentity;
+            DeviceType = deviceType;
+            Ip = ip;
             Ping = ping;
-            Level = level;
+            CompatibilityVersion = compatibilityVersion;
+            DiscordUserId = discordUserId;
+            PermissionLevel = permissionLevel;
+            Position = position;
+            IsDead = isDead;
             Health = health;
+            MaxHealth = maxHealth;
+            Level = level;
+            Score = score;
+            ZombieKills = zombieKills;
+            PlayerKills = playerKills;
+            Deaths = deaths;
+            TotalTimePlayedMinutes = totalTimePlayedMinutes;
+            DistanceWalkedMeters = distanceWalkedMeters;
+            TotalItemsCrafted = totalItemsCrafted;
+            LongestLifeMinutes = longestLifeMinutes;
+            CurrentLifeMinutes = currentLifeMinutes;
             ObservedAtUtc = observedAtUtc.ToString("O", CultureInfo.InvariantCulture);
         }
 
@@ -260,13 +327,63 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         public OnlinePlayerPlatformIdentityResponse? CrossplatformIdentity { get; }
 
+        public string DeviceType { get; }
+
+        public string? Ip { get; }
+
         public int Ping { get; }
 
-        public int Level { get; }
+        public string? CompatibilityVersion { get; }
+
+        public string? DiscordUserId { get; }
+
+        public int PermissionLevel { get; }
+
+        public OnlinePlayerPositionResponse Position { get; }
+
+        public bool IsDead { get; }
 
         public int Health { get; }
 
+        public int MaxHealth { get; }
+
+        public int Level { get; }
+
+        public int Score { get; }
+
+        public int ZombieKills { get; }
+
+        public int PlayerKills { get; }
+
+        public int Deaths { get; }
+
+        public float TotalTimePlayedMinutes { get; }
+
+        public float DistanceWalkedMeters { get; }
+
+        public uint TotalItemsCrafted { get; }
+
+        public float LongestLifeMinutes { get; }
+
+        public float CurrentLifeMinutes { get; }
+
         public string ObservedAtUtc { get; }
+    }
+
+    public sealed class OnlinePlayerPositionResponse
+    {
+        public OnlinePlayerPositionResponse(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public float X { get; }
+
+        public float Y { get; }
+
+        public float Z { get; }
     }
 
     public sealed class OnlinePlayerPlatformIdentityResponse

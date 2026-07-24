@@ -12,11 +12,11 @@ a buildable and testable `net48` solution with the Mod lifecycle, in-process
 OWIN hosting, SQLite-backed bootstrap Owner authentication, persistent opaque
 Bearer tokens, authenticated named SSE, and dynamic console commands that run
 through the game main thread. The backend also exposes an Owner-only
-event-projected online-player snapshot and typed online-player kick action with
+event-projected 25-field online-player snapshot and typed online-player kick action with
 audit records. The Admin application currently provides an Owner login, explicit
-tab/browser Bearer session persistence, protected Overview, online-player, and
-API Key routes, and complete English/Simplified Chinese support for those
-surfaces. It does not yet consume SSE or the console command API. Full user management, other
+tab/browser Bearer session persistence, protected Overview, a compact online-player
+list with a read-only details slideover, and API Key routes, with complete
+English/Simplified Chinese support for those surfaces. It does not yet consume SSE or the console command API. Full user management, other
 state-changing game actions, backups, announcements, and audit-query
 experiences are not implemented. The
 Marketing application has not been initialized.

@@ -15,15 +15,12 @@ namespace LSTY.SevenDPanel.Tests
             var expected = new OnlinePlayersSnapshot(
                 new[]
                 {
-                    new PlayerSnapshot(
-                        1,
-                        "Alice",
-                        new PlayerPlatformIdentity("steam:alice", "steam"),
-                        null,
-                        42,
-                        10,
-                        100,
-                        new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero))
+                    CreatePlayer(
+                        entityId: 1,
+                        name: "Alice",
+                        platformIdentity: new PlayerPlatformIdentity("steam:alice", "steam"),
+                        crossplatformIdentity: null,
+                        observedAtUtc: new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero))
                 });
             var query = new RecordingOnlinePlayerQuery(expected);
             var useCase = new GetOnlinePlayersUseCase(query);
@@ -39,18 +36,15 @@ namespace LSTY.SevenDPanel.Tests
         {
             var source = new List<PlayerSnapshot>
             {
-                new PlayerSnapshot(
-                    1,
-                    "Alice",
-                    new PlayerPlatformIdentity("steam:alice", "steam"),
-                    null,
-                    42,
-                    10,
-                        100,
-                        new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero))
+                CreatePlayer(
+                    entityId: 1,
+                    name: "Alice",
+                    platformIdentity: new PlayerPlatformIdentity("steam:alice", "steam"),
+                    crossplatformIdentity: null,
+                    observedAtUtc: new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero))
             };
 
-                    var snapshot = new OnlinePlayersSnapshot(source);
+            var snapshot = new OnlinePlayersSnapshot(source);
             source.Clear();
 
             Assert.Single(snapshot.Players);
@@ -70,17 +64,97 @@ namespace LSTY.SevenDPanel.Tests
         public void PlayerSnapshot_preserves_the_observation_time()
         {
             var observedAtUtc = new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero);
-            var player = new PlayerSnapshot(
-                1,
-                "Alice",
-                new PlayerPlatformIdentity("steam:alice", "steam"),
-                null,
-                42,
-                10,
-                100,
-                observedAtUtc);
+            var player = CreatePlayer(
+                entityId: 1,
+                name: "Alice",
+                platformIdentity: new PlayerPlatformIdentity("steam:alice", "steam"),
+                crossplatformIdentity: null,
+                observedAtUtc: observedAtUtc);
 
             Assert.Equal(observedAtUtc, player.ObservedAtUtc);
+        }
+
+        [Fact]
+        public void PlayerSnapshot_preserves_the_complete_observation()
+        {
+            var observedAtUtc = new DateTimeOffset(2026, 7, 24, 9, 30, 0, TimeSpan.Zero);
+            var player = CreatePlayer(observedAtUtc);
+
+            Assert.Equal(171, player.EntityId);
+            Assert.Equal("Player", player.Name);
+            Assert.Equal("Steam_76561198000000000", player.PlatformIdentity.CombinedId);
+            Assert.Equal("EOS_0002", player.CrossplatformIdentity?.CombinedId);
+            Assert.Equal(PlayerDeviceType.Windows, player.DeviceType);
+            Assert.Equal("192.0.2.10", player.Ip);
+            Assert.Equal(42, player.Ping);
+            Assert.Equal("V 3.0.1", player.CompatibilityVersion);
+            Assert.Equal("18446744073709551615", player.DiscordUserId);
+            Assert.Equal(1000, player.PermissionLevel);
+            Assert.Equal(100.5f, player.Position.X);
+            Assert.Equal(51f, player.Position.Y);
+            Assert.Equal(200.25f, player.Position.Z);
+            Assert.False(player.IsDead);
+            Assert.Equal(93, player.Health);
+            Assert.Equal(100, player.MaxHealth);
+            Assert.Equal(18, player.Level);
+            Assert.Equal(827, player.Score);
+            Assert.Equal(317, player.ZombieKills);
+            Assert.Equal(2, player.PlayerKills);
+            Assert.Equal(4, player.Deaths);
+            Assert.Equal(4823.5f, player.TotalTimePlayedMinutes);
+            Assert.Equal(127540.75f, player.DistanceWalkedMeters);
+            Assert.Equal(2360u, player.TotalItemsCrafted);
+            Assert.Equal(920.25f, player.LongestLifeMinutes);
+            Assert.Equal(134.5f, player.CurrentLifeMinutes);
+            Assert.Equal(observedAtUtc, player.ObservedAtUtc);
+        }
+
+        [Fact]
+        public void PlayerPosition_rejects_non_finite_axes()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PlayerPosition(float.NaN, 0, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PlayerPosition(0, float.PositiveInfinity, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PlayerPosition(0, 0, float.NegativeInfinity));
+        }
+
+        [Fact]
+        public void PlayerSnapshot_preserves_null_optional_values()
+        {
+            var player = CreatePlayer(
+                includeCrossplatformIdentity: false,
+                ip: null,
+                compatibilityVersion: null,
+                discordUserId: null);
+
+            Assert.Null(player.CrossplatformIdentity);
+            Assert.Null(player.Ip);
+            Assert.Null(player.CompatibilityVersion);
+            Assert.Null(player.DiscordUserId);
+        }
+
+        [Fact]
+        public void PlayerSnapshot_rejects_invalid_required_values()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => CreatePlayer(entityId: -1));
+            Assert.Throws<ArgumentException>(() => CreatePlayer(name: "   "));
+            Assert.Throws<ArgumentNullException>(() => CreatePlayer(includePlatformIdentity: false));
+        }
+
+        [Fact]
+        public void PlayerSnapshot_rejects_empty_optional_strings()
+        {
+            Assert.Throws<ArgumentException>(() => CreatePlayer(ip: " "));
+            Assert.Throws<ArgumentException>(() => CreatePlayer(compatibilityVersion: " "));
+            Assert.Throws<ArgumentException>(() => CreatePlayer(discordUserId: " "));
+        }
+
+        [Fact]
+        public void PlayerSnapshot_rejects_invalid_cumulative_values()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => CreatePlayer(totalTimePlayedMinutes: -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => CreatePlayer(distanceWalkedMeters: float.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => CreatePlayer(longestLifeMinutes: float.PositiveInfinity));
+            Assert.Throws<ArgumentOutOfRangeException>(() => CreatePlayer(currentLifeMinutes: -1));
         }
 
         [Theory]
@@ -89,15 +163,11 @@ namespace LSTY.SevenDPanel.Tests
         public void PlayerSnapshot_rejects_an_empty_player_name(string name)
         {
             Assert.Throws<ArgumentException>(() =>
-                new PlayerSnapshot(
-                    1,
-                    name,
-                    new PlayerPlatformIdentity("steam:alice", "steam"),
-                    null,
-                    42,
-                    10,
-                    100,
-                    DateTimeOffset.UtcNow));
+                CreatePlayer(
+                    name: name,
+                    platformIdentity: new PlayerPlatformIdentity("steam:alice", "steam"),
+                    crossplatformIdentity: null,
+                    observedAtUtc: DateTimeOffset.UtcNow));
         }
 
         [Theory]
@@ -107,6 +177,54 @@ namespace LSTY.SevenDPanel.Tests
         {
             Assert.Throws<ArgumentException>(() =>
                 new PlayerPlatformIdentity(combinedId, "steam"));
+        }
+
+        private static PlayerSnapshot CreatePlayer(
+            DateTimeOffset? observedAtUtc = null,
+            int entityId = 171,
+            string name = "Player",
+            bool includePlatformIdentity = true,
+            bool includeCrossplatformIdentity = true,
+            PlayerPlatformIdentity? platformIdentity = null,
+            PlayerPlatformIdentity? crossplatformIdentity = null,
+            string? ip = "192.0.2.10",
+            string? compatibilityVersion = "V 3.0.1",
+            string? discordUserId = "18446744073709551615",
+            float totalTimePlayedMinutes = 4823.5f,
+            float distanceWalkedMeters = 127540.75f,
+            float longestLifeMinutes = 920.25f,
+            float currentLifeMinutes = 134.5f)
+        {
+            return new PlayerSnapshot(
+                entityId,
+                name,
+                platformIdentity ?? (includePlatformIdentity
+                    ? new PlayerPlatformIdentity("Steam_76561198000000000", "Steam")
+                    : null!),
+                crossplatformIdentity ?? (includeCrossplatformIdentity
+                    ? new PlayerPlatformIdentity("EOS_0002", "EOS")
+                    : null),
+                PlayerDeviceType.Windows,
+                ip,
+                42,
+                compatibilityVersion,
+                discordUserId,
+                1000,
+                new PlayerPosition(100.5f, 51f, 200.25f),
+                false,
+                93,
+                100,
+                18,
+                827,
+                317,
+                2,
+                4,
+                totalTimePlayedMinutes,
+                distanceWalkedMeters,
+                2360u,
+                longestLifeMinutes,
+                currentLifeMinutes,
+                observedAtUtc ?? new DateTimeOffset(2026, 7, 24, 9, 30, 0, TimeSpan.Zero));
         }
 
         private sealed class RecordingOnlinePlayerQuery : IOnlinePlayerQuery

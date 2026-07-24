@@ -1,4 +1,4 @@
-import type { OnlinePlayersSnapshot } from '../api/onlinePlayers'
+import type { OnlinePlayer, OnlinePlayersSnapshot } from '../api/onlinePlayers'
 import type { OnlinePlayersController, VisibilitySource } from './useOnlinePlayers'
 
 import { flushPromises, mount } from '@vue/test-utils'
@@ -25,17 +25,36 @@ function deferred<T>(): Deferred<T> {
 }
 
 function snapshot(observedAtUtc: string): OnlinePlayersSnapshot {
+  const player: OnlinePlayer = {
+    entityId: 7,
+    name: 'Amy',
+    observedAtUtc,
+    platformIdentity: { combinedId: 'steam:amy', platform: 'Steam' },
+    crossplatformIdentity: null,
+    deviceType: 'windows',
+    ip: '192.0.2.10',
+    ping: 42,
+    compatibilityVersion: 'V 3.0.1',
+    discordUserId: '18446744073709551615',
+    permissionLevel: 1000,
+    position: { x: 100.5, y: 51, z: 200.25 },
+    isDead: false,
+    health: 100,
+    maxHealth: 100,
+    level: 10,
+    score: 827,
+    zombieKills: 317,
+    playerKills: 2,
+    deaths: 4,
+    totalTimePlayedMinutes: 4823.5,
+    distanceWalkedMeters: 127540.75,
+    totalItemsCrafted: 2360,
+    longestLifeMinutes: 920.25,
+    currentLifeMinutes: 134.5,
+  }
+
   return Object.freeze({
-    players: Object.freeze([{
-      entityId: 7,
-      name: 'Amy',
-      observedAtUtc,
-      platformIdentity: { combinedId: 'steam:amy', platform: 'Steam' },
-      crossplatformIdentity: null,
-      ping: 42,
-      level: 10,
-      health: 100,
-    }]),
+    players: Object.freeze([player]),
   })
 }
 

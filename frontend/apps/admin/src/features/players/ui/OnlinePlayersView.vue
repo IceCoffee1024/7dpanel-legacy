@@ -2,7 +2,7 @@
 import type { OnlinePlayer } from '../api/onlinePlayers'
 
 import { useToast } from '@nuxt/ui/composables'
-import { computed, ref, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -10,6 +10,7 @@ import { useKickPlayer } from '../model/useKickPlayer'
 import { useOnlinePlayers } from '../model/useOnlinePlayers'
 
 import KickPlayerDialog from './KickPlayerDialog.vue'
+import OnlinePlayerDetailsSlideover from './OnlinePlayerDetailsSlideover.vue'
 import OnlinePlayersList from './OnlinePlayersList.vue'
 import OnlinePlayersState from './OnlinePlayersState.vue'
 import OnlinePlayersTable from './OnlinePlayersTable.vue'
@@ -25,6 +26,13 @@ function redirectToLogin() {
     query: { redirect: '/players' },
   })
 }
+const sessionExpired = shallowRef(false)
+
+function handleSessionExpired() {
+  sessionExpired.value = true
+  void redirectToLogin()
+}
+
 const {
   state,
   snapshot,
@@ -32,7 +40,7 @@ const {
   isRefreshing,
   refresh,
 } = useOnlinePlayers({
-  onSessionExpired: redirectToLogin,
+  onSessionExpired: handleSessionExpired,
 })
 const {
   isSubmitting: isKickSubmitting,
@@ -40,11 +48,19 @@ const {
   submit: submitKick,
   clearFeedback: clearKickFeedback,
 } = useKickPlayer({
-  onSessionExpired: redirectToLogin,
+  onSessionExpired: handleSessionExpired,
 })
 
-const copyFeedback = ref<string | null>(null)
+interface SelectedPlayerKey {
+  entityId: number
+  combinedId: string
+}
+
+const copyFeedback = shallowRef<string | null>(null)
 const selectedPlayer = shallowRef<OnlinePlayer | null>(null)
+const detailsKey = shallowRef<SelectedPlayerKey | null>(null)
+const detailsPlayer = shallowRef<OnlinePlayer | null>(null)
+const detailsUnavailable = shallowRef(false)
 const kickDialogOpen = computed({
   get: () => selectedPlayer.value !== null,
   set: (open: boolean) => {
@@ -52,21 +68,71 @@ const kickDialogOpen = computed({
       selectedPlayer.value = null
   },
 })
-const canKick = computed(() => kickFeedback.value?.code !== 'forbidden')
+const authorizedToKick = computed(() =>
+  !sessionExpired.value && kickFeedback.value?.code !== 'forbidden')
+const detailsCanKick = computed(() =>
+  authorizedToKick.value
+  && state.value === 'fresh'
+  && !sessionExpired.value
+  && !detailsUnavailable.value)
+const detailsOpen = computed({
+  get: () => detailsPlayer.value !== null,
+  set: (open: boolean) => {
+    if (!open)
+      closeDetails()
+  },
+})
 
-async function copyIdentity(combinedId: string) {
+async function copyValue(value: string) {
   try {
     if (!navigator.clipboard) {
       throw new Error('Clipboard API unavailable')
     }
 
-    await navigator.clipboard.writeText(combinedId)
+    await navigator.clipboard.writeText(value)
     copyFeedback.value = t('players.copy.success')
   }
   catch {
     copyFeedback.value = t('players.copy.failure')
   }
 }
+
+function openDetails(player: OnlinePlayer) {
+  detailsKey.value = {
+    entityId: player.entityId,
+    combinedId: player.platformIdentity.combinedId,
+  }
+  detailsPlayer.value = player
+  detailsUnavailable.value = false
+}
+
+function closeDetails() {
+  detailsKey.value = null
+  detailsPlayer.value = null
+  detailsUnavailable.value = false
+}
+
+function openDetailsKickDialog() {
+  if (detailsPlayer.value !== null && detailsCanKick.value)
+    openKickDialog(detailsPlayer.value)
+}
+
+watch([state, snapshot], ([nextState, nextSnapshot]) => {
+  if (nextState !== 'fresh' || nextSnapshot === null || detailsUnavailable.value)
+    return
+  const target = detailsKey.value
+  if (target === null || detailsPlayer.value === null)
+    return
+
+  const matchingPlayer = nextSnapshot.players.find(player =>
+    player.entityId === target.entityId
+    && player.platformIdentity.combinedId === target.combinedId)
+  if (matchingPlayer === undefined) {
+    detailsUnavailable.value = true
+    return
+  }
+  detailsPlayer.value = matchingPlayer
+})
 
 function openKickDialog(player: OnlinePlayer) {
   clearKickFeedback()
@@ -132,14 +198,14 @@ async function confirmKick(reason: string) {
       <template v-else>
         <OnlinePlayersTable
           :players="snapshot.players"
-          :can-kick="canKick"
-          @copy-identity="copyIdentity"
+          :can-kick="authorizedToKick"
+          @view-details="openDetails"
           @kick-player="openKickDialog"
         />
         <OnlinePlayersList
           :players="snapshot.players"
-          :can-kick="canKick"
-          @copy-identity="copyIdentity"
+          :can-kick="authorizedToKick"
+          @view-details="openDetails"
           @kick-player="openKickDialog"
         />
         <p
@@ -161,5 +227,14 @@ async function confirmKick(reason: string) {
     :feedback="kickFeedback"
     @confirm="confirmKick"
     @cancel="closeKickDialog"
+  />
+
+  <OnlinePlayerDetailsSlideover
+    v-model:open="detailsOpen"
+    :player="detailsPlayer"
+    :unavailable="detailsUnavailable"
+    :can-kick="detailsCanKick"
+    @copy-value="copyValue"
+    @kick-player="openDetailsKickDialog"
   />
 </template>

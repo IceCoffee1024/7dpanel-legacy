@@ -1031,7 +1031,7 @@ namespace LSTY.SevenDPanel.Tests
             var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
                 new[]
                 {
-                    new PlayerSnapshot(
+                    CreateOnlinePlayer(
                         42,
                         "Zed",
                         new PlayerPlatformIdentity("steam-2", "Steam"),
@@ -1039,8 +1039,15 @@ namespace LSTY.SevenDPanel.Tests
                         100,
                         20,
                         90,
-                        zedObservedAt),
-                    new PlayerSnapshot(
+                        zedObservedAt,
+                        PlayerDeviceType.Xbox,
+                        "198.51.100.7",
+                        "V 3.0.1",
+                        "18446744073709551615",
+                        0,
+                        true,
+                        score: 827),
+                    CreateOnlinePlayer(
                         7,
                         "Alice",
                         new PlayerPlatformIdentity("steam-1", "Steam"),
@@ -1074,14 +1081,31 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(players.All(item => ((JObject)item).Properties().Select(property => property.Name).OrderBy(name => name).SequenceEqual(new[]
                 {
+                    "compatibilityVersion",
                     "crossplatformIdentity",
+                    "currentLifeMinutes",
+                    "deaths",
+                    "deviceType",
+                    "discordUserId",
+                    "distanceWalkedMeters",
                     "entityId",
                     "health",
+                    "ip",
+                    "isDead",
                     "level",
+                    "longestLifeMinutes",
+                    "maxHealth",
                     "name",
                     "observedAtUtc",
+                    "permissionLevel",
                     "ping",
-                    "platformIdentity"
+                    "platformIdentity",
+                    "playerKills",
+                    "position",
+                    "score",
+                    "totalItemsCrafted",
+                    "totalTimePlayedMinutes",
+                    "zombieKills"
                 })), "unexpected player property names");
                 Assert.Equal(new[] { "players" }, payload.Properties().Select(property => property.Name));
                 Assert.Equal(2, players.Count);
@@ -1092,8 +1116,34 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal("Steam", (string?)players[0]["platformIdentity"]?["platform"]);
                 Assert.Equal("cross-2", (string?)players[1]["crossplatformIdentity"]?["combinedId"]);
                 Assert.Equal("Epic", (string?)players[1]["crossplatformIdentity"]?["platform"]);
+                Assert.Equal(JTokenType.Null, players[0]["crossplatformIdentity"]?.Type);
+                Assert.Equal("xbox", (string?)players[1]["deviceType"]);
+                Assert.Equal(JTokenType.Null, players[0]["ip"]?.Type);
+                Assert.Equal("198.51.100.7", (string?)players[1]["ip"]);
+                Assert.Equal(JTokenType.Null, players[0]["compatibilityVersion"]?.Type);
+                Assert.Equal("V 3.0.1", (string?)players[1]["compatibilityVersion"]);
+                Assert.Equal(JTokenType.Null, players[0]["discordUserId"]?.Type);
+                Assert.Equal("18446744073709551615", (string?)players[1]["discordUserId"]);
+                Assert.Equal(1000, (int?)players[0]["permissionLevel"]);
+                Assert.Equal(0, (int?)players[1]["permissionLevel"]);
+                Assert.Equal(new[] { "x", "y", "z" }, players[1]["position"]!
+                    .Children<JProperty>().Select(property => property.Name).OrderBy(name => name));
+                Assert.Equal(100.5f, (float?)players[1]["position"]?["x"]);
+                Assert.Equal(51f, (float?)players[1]["position"]?["y"]);
+                Assert.Equal(200.25f, (float?)players[1]["position"]?["z"]);
+                Assert.True((bool?)players[1]["isDead"]);
                 Assert.Equal(40, (int?)players[0]["ping"]);
                 Assert.Equal(90, (int?)players[1]["health"]);
+                Assert.Equal(100, (int?)players[1]["maxHealth"]);
+                Assert.Equal(827, (int?)players[1]["score"]);
+                Assert.Equal(317, (int?)players[1]["zombieKills"]);
+                Assert.Equal(2, (int?)players[1]["playerKills"]);
+                Assert.Equal(4, (int?)players[1]["deaths"]);
+                Assert.Equal(4823.5f, (float?)players[1]["totalTimePlayedMinutes"]);
+                Assert.Equal(127540.75f, (float?)players[1]["distanceWalkedMeters"]);
+                Assert.Equal(2360u, (uint?)players[1]["totalItemsCrafted"]);
+                Assert.Equal(920.25f, (float?)players[1]["longestLifeMinutes"]);
+                Assert.Equal(134.5f, (float?)players[1]["currentLifeMinutes"]);
                 Assert.Equal(aliceObservedAt, (DateTimeOffset?)players[0]["observedAtUtc"]);
                 Assert.Equal(zedObservedAt, (DateTimeOffset?)players[1]["observedAtUtc"]);
             }
@@ -1142,7 +1192,7 @@ namespace LSTY.SevenDPanel.Tests
             var query = new TestOnlinePlayerQuery(new OnlinePlayersSnapshot(
                 new[]
                 {
-                    new PlayerSnapshot(
+                    CreateOnlinePlayer(
                         7,
                         "Alice",
                         new PlayerPlatformIdentity("steam-1", "Steam"),
@@ -3040,6 +3090,51 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal("ok", (string?)payload["status"]);
             Assert.Equal("7DPanel", (string?)payload["product"]);
             Assert.Equal("0.1.0", (string?)payload["version"]);
+        }
+
+        private static PlayerSnapshot CreateOnlinePlayer(
+            int entityId,
+            string name,
+            PlayerPlatformIdentity platformIdentity,
+            PlayerPlatformIdentity? crossplatformIdentity,
+            int ping,
+            int level,
+            int health,
+            DateTimeOffset observedAtUtc,
+            PlayerDeviceType deviceType = PlayerDeviceType.Windows,
+            string? ip = null,
+            string? compatibilityVersion = null,
+            string? discordUserId = null,
+            int permissionLevel = 1000,
+            bool isDead = false,
+            int score = 0)
+        {
+            return new PlayerSnapshot(
+                entityId,
+                name,
+                platformIdentity,
+                crossplatformIdentity,
+                deviceType,
+                ip,
+                ping,
+                compatibilityVersion,
+                discordUserId,
+                permissionLevel,
+                new PlayerPosition(100.5f, 51f, 200.25f),
+                isDead,
+                health,
+                100,
+                level,
+                score,
+                317,
+                2,
+                4,
+                4823.5f,
+                127540.75f,
+                2360u,
+                920.25f,
+                134.5f,
+                observedAtUtc);
         }
 
         private static async Task<JObject> AssertProblemDetailsAsync(
