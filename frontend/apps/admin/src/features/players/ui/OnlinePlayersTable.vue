@@ -3,8 +3,9 @@ import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { OnlinePlayer } from '../api/onlinePlayers'
 
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { formatOnlinePlayerObservedAt, isOnlinePlayerObservationStale } from '../model/onlinePlayerFreshness'
+import { isOnlinePlayerObservationStale } from '../model/onlinePlayerFreshness'
 
 const props = withDefaults(defineProps<{
   players: readonly OnlinePlayer[]
@@ -17,22 +18,23 @@ const emit = defineEmits<{
   copyIdentity: [combinedId: string]
   kickPlayer: [player: OnlinePlayer]
 }>()
+const { d, t } = useI18n()
 
-const columns: TableColumn<OnlinePlayer>[] = [
-  { accessorKey: 'name', header: '玩家' },
-  { id: 'platform', header: '平台' },
-  { id: 'crossplatform', header: '跨平台身份' },
-  { accessorKey: 'level', header: '等级' },
-  { accessorKey: 'health', header: '生命值' },
-  { accessorKey: 'ping', header: '延迟' },
-  { id: 'actions', header: '操作' },
-]
+const columns = computed<TableColumn<OnlinePlayer>[]>(() => [
+  { accessorKey: 'name', header: t('players.fields.player') },
+  { id: 'platform', header: t('players.fields.platform') },
+  { id: 'crossplatform', header: t('players.fields.crossplatformIdentity') },
+  { accessorKey: 'level', header: t('players.fields.level') },
+  { accessorKey: 'health', header: t('players.fields.health') },
+  { accessorKey: 'ping', header: t('players.fields.ping') },
+  { id: 'actions', header: t('players.fields.actions') },
+])
 
 const tableData = computed(() => props.players as OnlinePlayer[])
 
 function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
   return [{
-    label: '踢出玩家',
+    label: t('players.actions.kick'),
     icon: 'i-lucide-log-out',
     onSelect: () => emit('kickPlayer', player),
   }]
@@ -60,7 +62,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
             entity {{ row.original.entityId }}
           </p>
           <p class="mt-1 text-xs text-muted">
-            更新于 {{ formatOnlinePlayerObservedAt(row.original.observedAtUtc) }}
+            {{ t('players.fields.updatedAt', { time: d(new Date(row.original.observedAtUtc), 'playerObservation') }) }}
           </p>
           <UBadge
             v-if="isOnlinePlayerObservationStale(row.original.observedAtUtc)"
@@ -68,7 +70,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
             color="warning"
             variant="subtle"
           >
-            数据可能已过期
+            {{ t('players.fields.stale') }}
           </UBadge>
         </div>
       </template>
@@ -79,7 +81,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
           <div class="identity-value__content">
             <code>{{ row.original.platformIdentity.combinedId }}</code>
             <UButton
-              :aria-label="`复制 ${row.original.platformIdentity.platform} 身份`"
+              :aria-label="t('players.actions.copyIdentity', { platform: row.original.platformIdentity.platform })"
               color="neutral"
               :data-testid="`copy-platform-identity-table-${row.original.entityId}`"
               icon="i-lucide-copy"
@@ -98,7 +100,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
           <div class="identity-value__content">
             <code>{{ row.original.crossplatformIdentity.combinedId }}</code>
             <UButton
-              :aria-label="`复制 ${row.original.crossplatformIdentity.platform} 身份`"
+              :aria-label="t('players.actions.copyIdentity', { platform: row.original.crossplatformIdentity.platform })"
               color="neutral"
               icon="i-lucide-copy"
               size="xs"
@@ -108,7 +110,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
             />
           </div>
         </div>
-        <span v-else class="text-sm text-dimmed">未绑定</span>
+        <span v-else class="text-sm text-dimmed">{{ t('players.fields.unbound') }}</span>
       </template>
 
       <template #level-cell="{ row }">
@@ -123,7 +125,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
       <template #actions-cell="{ row }">
         <UDropdownMenu v-if="canKick" :items="playerActions(row.original)">
           <UButton
-            :aria-label="`玩家操作：${row.original.name}`"
+            :aria-label="t('players.actions.playerActions', { name: row.original.name })"
             class="size-8"
             color="neutral"
             icon="i-lucide-ellipsis-vertical"

@@ -3,6 +3,7 @@ import type { ApiKeysFeedback } from '../model/useApiKeys'
 
 import { mount } from '@vue/test-utils'
 import { expect, it } from 'vitest'
+import { nextTick } from 'vue'
 
 import RevokeApiKeyDialog from './RevokeApiKeyDialog.vue'
 
@@ -98,11 +99,25 @@ it('emits confirmation once and locks cancellation while submitting', async () =
 
 it('emits a destructive confirmation and keeps stable failure feedback visible', async () => {
   const wrapper = mountDialog({
-    feedback: { code: 'revoke-failed', message: '撤销 API Key 失败，请稍后重试' },
+    feedback: { code: 'revoke-failed' },
   })
 
   await wrapper.get('[data-testid="confirm-revoke-api-key"]').trigger('click')
 
   expect(wrapper.emitted('confirm')).toEqual([[]])
   expect(wrapper.get('[role="status"]').text()).toBe('撤销 API Key 失败，请稍后重试')
+})
+
+it('switches to English without changing the selected Key metadata', async () => {
+  const wrapper = mountDialog({
+    feedback: { code: 'revoke-failed' },
+  })
+
+  wrapper.vm.$i18n.locale = 'en'
+  await nextTick()
+
+  expect(wrapper.text()).toContain('Revoke API Key')
+  expect(wrapper.text()).toContain('Failed to revoke API Key')
+  expect(wrapper.text()).toContain(apiKey.name)
+  expect(wrapper.text()).toContain(apiKey.displayPrefix)
 })

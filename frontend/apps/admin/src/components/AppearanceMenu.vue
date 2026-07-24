@@ -2,15 +2,17 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useColorMode } from '@vueuse/core'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 defineProps<{
   collapsed?: boolean
 }>()
 
 const colorMode = useColorMode()
+const { t } = useI18n()
 
 const items = computed<DropdownMenuItem[][]>(() => [[{
-  label: '浅色',
+  label: t('appearance.light'),
   icon: 'i-lucide-sun',
   type: 'checkbox',
   checked: colorMode.value === 'light',
@@ -19,7 +21,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
     colorMode.value = 'light'
   },
 }, {
-  label: '深色',
+  label: t('appearance.dark'),
   icon: 'i-lucide-moon',
   type: 'checkbox',
   checked: colorMode.value === 'dark',
@@ -28,7 +30,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
     colorMode.value = 'dark'
   },
 }, {
-  label: '跟随系统',
+  label: t('appearance.system'),
   icon: 'i-lucide-monitor',
   type: 'checkbox',
   checked: colorMode.value === 'auto',
@@ -46,14 +48,14 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
     :ui="{ content: collapsed ? 'w-40' : 'w-(--reka-dropdown-menu-trigger-width)' }"
   >
     <UButton
-      label="外观"
+      :label="t('appearance.label')"
       icon="i-lucide-sun-moon"
       :trailing-icon="collapsed ? undefined : 'i-lucide-chevrons-up-down'"
       color="neutral"
       variant="ghost"
       block
       :square="collapsed"
-      :aria-label="collapsed ? '外观' : undefined"
+      :aria-label="collapsed ? t('appearance.label') : undefined"
       class="data-[state=open]:bg-elevated"
       :ui="{ trailingIcon: 'text-dimmed' }"
     />

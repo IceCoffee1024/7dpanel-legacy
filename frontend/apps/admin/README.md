@@ -2,7 +2,10 @@
 
 The self-hosted administration interface for 7DPanel. The current application
 contains the responsive product shell, an Owner login flow, a protected
-Overview route, and a protected online players route.
+Overview route, protected online players and API Key routes, and complete
+English/Simplified Chinese support for those current surfaces. The first visit
+uses the browser language preferences, falls back to English, and stores an
+explicit language choice separately from authentication.
 
 ## Development
 
@@ -57,6 +60,10 @@ When any required variable is absent, the suite reports its real-environment
 tests as skipped. A skipped suite is not evidence that the browser smoke passed.
 An unsupported browser value fails during Playwright configuration instead of
 silently selecting another browser.
+
+The browser suite also covers locale negotiation, language switching before and
+after login, refresh persistence, logout retention, technical identity stability,
+and English layout at `390x844`.
 
 ## Package Ownership
 

@@ -2,7 +2,8 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { OnlinePlayer } from '../api/onlinePlayers'
 
-import { formatOnlinePlayerObservedAt, isOnlinePlayerObservationStale } from '../model/onlinePlayerFreshness'
+import { useI18n } from 'vue-i18n'
+import { isOnlinePlayerObservationStale } from '../model/onlinePlayerFreshness'
 
 withDefaults(defineProps<{
   players: readonly OnlinePlayer[]
@@ -15,10 +16,11 @@ const emit = defineEmits<{
   copyIdentity: [combinedId: string]
   kickPlayer: [player: OnlinePlayer]
 }>()
+const { d, t } = useI18n()
 
 function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
   return [{
-    label: '踢出玩家',
+    label: t('players.actions.kick'),
     icon: 'i-lucide-log-out',
     onSelect: () => emit('kickPlayer', player),
   }]
@@ -37,7 +39,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
             entity {{ player.entityId }} · {{ player.ping }} ms
           </p>
           <p class="mt-1 text-xs text-muted">
-            更新于 {{ formatOnlinePlayerObservedAt(player.observedAtUtc) }}
+            {{ t('players.fields.updatedAt', { time: d(new Date(player.observedAtUtc), 'playerObservation') }) }}
           </p>
           <UBadge
             v-if="isOnlinePlayerObservationStale(player.observedAtUtc)"
@@ -45,7 +47,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
             color="warning"
             variant="subtle"
           >
-            数据可能已过期
+            {{ t('players.fields.stale') }}
           </UBadge>
         </div>
         <div class="flex shrink-0 items-center gap-1">
@@ -54,7 +56,7 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
           </UBadge>
           <UDropdownMenu v-if="canKick" :items="playerActions(player)">
             <UButton
-              :aria-label="`玩家操作：${player.name}`"
+              :aria-label="t('players.actions.playerActions', { name: player.name })"
               class="size-8"
               color="neutral"
               icon="i-lucide-ellipsis-vertical"
@@ -67,13 +69,13 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
 
       <dl class="player-details mt-4 grid gap-x-5 gap-y-4">
         <div>
-          <dt>平台身份</dt>
+          <dt>{{ t('players.fields.platformIdentity') }}</dt>
           <dd>
             <span class="block text-xs text-muted">{{ player.platformIdentity.platform }}</span>
             <span class="identity-row">
               <code>{{ player.platformIdentity.combinedId }}</code>
               <UButton
-                :aria-label="`复制 ${player.platformIdentity.platform} 身份`"
+                :aria-label="t('players.actions.copyIdentity', { platform: player.platformIdentity.platform })"
                 color="neutral"
                 :data-testid="`copy-platform-identity-list-${player.entityId}`"
                 icon="i-lucide-copy"
@@ -87,13 +89,13 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
         </div>
 
         <div>
-          <dt>跨平台身份</dt>
+          <dt>{{ t('players.fields.crossplatformIdentity') }}</dt>
           <dd v-if="player.crossplatformIdentity">
             <span class="block text-xs text-muted">{{ player.crossplatformIdentity.platform }}</span>
             <span class="identity-row">
               <code>{{ player.crossplatformIdentity.combinedId }}</code>
               <UButton
-                :aria-label="`复制 ${player.crossplatformIdentity.platform} 身份`"
+                :aria-label="t('players.actions.copyIdentity', { platform: player.crossplatformIdentity.platform })"
                 color="neutral"
                 icon="i-lucide-copy"
                 size="xs"
@@ -104,24 +106,24 @@ function playerActions(player: OnlinePlayer): DropdownMenuItem[] {
             </span>
           </dd>
           <dd v-else class="text-dimmed">
-            未绑定
+            {{ t('players.fields.unbound') }}
           </dd>
         </div>
 
         <div>
-          <dt>等级</dt>
+          <dt>{{ t('players.fields.level') }}</dt>
           <dd class="font-mono tabular-nums">
             {{ player.level }}
           </dd>
         </div>
         <div>
-          <dt>生命值</dt>
+          <dt>{{ t('players.fields.health') }}</dt>
           <dd class="font-mono tabular-nums">
             {{ player.health }}
           </dd>
         </div>
         <div>
-          <dt>延迟</dt>
+          <dt>{{ t('players.fields.ping') }}</dt>
           <dd class="font-mono tabular-nums">
             {{ player.ping }} ms
           </dd>

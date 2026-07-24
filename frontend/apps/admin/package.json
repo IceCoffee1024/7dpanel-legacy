@@ -20,15 +20,19 @@
   "dependencies": {
     "@nuxt/ui": "^4.10.0",
     "@unhead/vue": "^2.1.15",
+    "@valibot/i18n": "^1.2.0",
     "@vueuse/core": "^14.3.0",
     "pinia": "3.0.4",
     "tailwindcss": "^4.3.2",
+    "valibot": "^1.4.2",
     "vue": "^3.5.40",
+    "vue-i18n": "^11.4.7",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.1.0",
     "@iconify-json/lucide": "^1.2.118",
+    "@intlify/unplugin-vue-i18n": "^11.2.4",
     "@playwright/test": "^1.61.1",
     "@types/node": "^24.0.0",
     "@vitejs/plugin-vue": "^6.0.8",

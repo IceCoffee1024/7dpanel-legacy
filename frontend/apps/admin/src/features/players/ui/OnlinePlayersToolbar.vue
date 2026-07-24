@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { OnlinePlayersState } from '../model/useOnlinePlayers'
+import { useI18n } from 'vue-i18n'
 
 defineProps<{
   count: number
@@ -10,18 +11,20 @@ defineProps<{
 defineEmits<{
   refresh: []
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
-  <UDashboardNavbar title="在线玩家">
+  <UDashboardNavbar :title="t('players.title')">
     <template #leading>
       <UDashboardSidebarCollapse />
     </template>
 
     <template #right>
-      <UTooltip text="刷新在线玩家">
+      <UTooltip :text="t('players.refresh')">
         <UButton
-          aria-label="刷新在线玩家"
+          :aria-label="t('players.refresh')"
           class="size-8"
           color="neutral"
           icon="i-lucide-refresh-cw"
@@ -38,9 +41,9 @@ defineEmits<{
   <UDashboardToolbar>
     <template #left>
       <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-        <span class="font-medium text-highlighted">在线 {{ count }} 人</span>
+        <span class="font-medium text-highlighted">{{ t('players.onlineCount', { count }) }}</span>
         <UBadge v-if="state === 'stale'" color="warning" variant="subtle">
-          刷新失败，显示上次结果
+          {{ t('players.refreshStale') }}
         </UBadge>
       </div>
     </template>

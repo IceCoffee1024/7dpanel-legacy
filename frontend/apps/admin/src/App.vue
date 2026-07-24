@@ -5,9 +5,11 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppShell from './app/AppShell.vue'
+import { useAdminLocale } from './app/i18n'
 
 const colorMode = useColorMode()
 const route = useRoute()
+const { nuxtLocale } = useAdminLocale()
 const themeColor = computed(() => colorMode.value === 'dark' ? '#18181b' : '#ffffff')
 
 useHead({
@@ -18,7 +20,7 @@ useHead({
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="nuxtLocale">
     <RouterView v-if="route.meta.public" />
     <AppShell v-else />
   </UApp>

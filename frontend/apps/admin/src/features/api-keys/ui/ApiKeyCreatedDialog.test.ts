@@ -2,6 +2,7 @@ import type { CreatedApiKey } from '../api/apiKeys'
 
 import { mount } from '@vue/test-utils'
 import { afterEach, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 
 import ApiKeyCreatedDialog from './ApiKeyCreatedDialog.vue'
 
@@ -89,4 +90,16 @@ it('emits closure only from the explicit completion action', async () => {
   await wrapper.get('[data-testid="close-created-api-key"]').trigger('click')
 
   expect(wrapper.emitted('update:open')).toEqual([[false]])
+})
+
+it('switches guidance to English without changing the one-time secret', async () => {
+  const wrapper = mountDialog()
+
+  wrapper.vm.$i18n.locale = 'en'
+  await nextTick()
+
+  expect(wrapper.text()).toContain('API Key created')
+  expect(wrapper.text()).toContain('Copy and save it now')
+  expect(wrapper.get('[data-testid="one-time-api-key"]').text()).toBe(createdApiKey.apiKey)
+  expect(wrapper.text()).toContain(createdApiKey.name)
 })

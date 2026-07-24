@@ -25,7 +25,6 @@ export type ApiKeysFeedbackCode
 
 export interface ApiKeysFeedback {
   code: ApiKeysFeedbackCode
-  message: string
 }
 
 export interface ApiKeysController {
@@ -59,22 +58,15 @@ export interface UseApiKeysOptions {
   onSessionExpired?: () => void
 }
 
-const sessionExpiredFeedback: ApiKeysFeedback = {
-  code: 'session-expired',
-  message: '会话已失效，请重新登录',
-}
-
-const forbiddenFeedback: ApiKeysFeedback = {
-  code: 'forbidden',
-  message: '无权管理 API Key',
-}
+const sessionExpiredFeedback: ApiKeysFeedback = { code: 'session-expired' }
+const forbiddenFeedback: ApiKeysFeedback = { code: 'forbidden' }
 
 function genericFeedback(action: 'load' | 'create' | 'revoke'): ApiKeysFeedback {
   if (action === 'load')
-    return { code: 'load-failed', message: '无法加载 API Key，请稍后重试' }
+    return { code: 'load-failed' }
   if (action === 'create')
-    return { code: 'create-failed', message: '创建 API Key 失败，请稍后重试' }
-  return { code: 'revoke-failed', message: '撤销 API Key 失败，请稍后重试' }
+    return { code: 'create-failed' }
+  return { code: 'revoke-failed' }
 }
 
 export function useApiKeys(options: UseApiKeysOptions = {}): ApiKeysController {

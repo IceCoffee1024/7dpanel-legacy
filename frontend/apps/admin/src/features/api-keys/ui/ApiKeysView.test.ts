@@ -3,7 +3,7 @@ import type { ApiKeysController, ApiKeysFeedback, ApiKeysState } from '../model/
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { readonly, shallowRef } from 'vue'
+import { nextTick, readonly, shallowRef } from 'vue'
 
 import ApiKeysView from './ApiKeysView.vue'
 
@@ -173,6 +173,18 @@ it('renders only safe metadata for each API Key', () => {
   expect(wrapper.text()).not.toContain('must-not-render')
 })
 
+it('switches metadata labels to English without translating the Key identity', async () => {
+  const { wrapper } = mountApiKeysView({ apiKeys: [apiKey] })
+
+  wrapper.vm.$i18n.locale = 'en'
+  await nextTick()
+
+  expect(wrapper.text()).toContain('Active')
+  expect(wrapper.text()).toContain('Created')
+  expect(wrapper.text()).toContain(apiKey.name)
+  expect(wrapper.text()).toContain(apiKey.displayPrefix)
+})
+
 it('submits creation through the controller and displays the one-time Key', async () => {
   const { wrapper, create, created } = mountApiKeysView({ state: 'empty' })
 
@@ -212,7 +224,7 @@ it('requires a fixed Key confirmation before revocation and leaves the row uncha
 it('redirects to login when the controller reports an expired session', () => {
   const { onSessionExpired } = mountApiKeysView({
     state: 'failed',
-    feedback: { code: 'session-expired', message: '会话已失效，请重新登录' },
+    feedback: { code: 'session-expired' },
   })
   onSessionExpired()
 

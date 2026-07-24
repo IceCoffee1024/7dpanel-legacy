@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { computed, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '../features/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { t } = useI18n()
 const sidebarOpen = shallowRef(false)
 
-const navigation = [
+const navigation = computed<NavigationMenuItem[]>(() => [
   {
-    label: '概览',
+    label: t('overview.title'),
     icon: 'i-lucide-layout-dashboard',
     to: '/',
     exact: true,
@@ -20,7 +22,7 @@ const navigation = [
     },
   },
   {
-    label: '玩家',
+    label: t('players.navigation'),
     icon: 'i-lucide-users',
     to: '/players',
     onSelect: () => {
@@ -35,13 +37,29 @@ const navigation = [
       sidebarOpen.value = false
     },
   },
-] satisfies NavigationMenuItem[]
+])
 
-const searchGroups = [{
+const searchGroups = computed(() => [{
   id: 'navigation',
-  label: '导航',
-  items: navigation,
-}]
+  label: t('shell.navigation'),
+  items: [
+    {
+      label: t('overview.title'),
+      icon: 'i-lucide-layout-dashboard',
+      to: '/',
+    },
+    {
+      label: t('players.navigation'),
+      icon: 'i-lucide-users',
+      to: '/players',
+    },
+    {
+      label: 'API Keys',
+      icon: 'i-lucide-key-round',
+      to: '/api-keys',
+    },
+  ],
+}])
 
 const accountName = computed(() => auth.username ?? '')
 const accountRole = computed(() => auth.role ?? '')
@@ -55,7 +73,7 @@ const accountItems = computed<DropdownMenuItem[][]>(() => [[
   { label: accountName.value, type: 'label' },
   { label: accountRole.value, type: 'label' },
 ], [{
-  label: '退出登录',
+  label: t('shell.signOut'),
   icon: 'i-lucide-log-out',
   onSelect: logout,
 }]])
@@ -84,7 +102,7 @@ defineShortcuts({
       <template #default="{ collapsed }">
         <UDashboardSearchButton
           :collapsed="collapsed"
-          label="搜索"
+          :label="t('shell.search')"
           class="bg-transparent ring-default"
         />
 
@@ -100,6 +118,7 @@ defineShortcuts({
       <template #footer="{ collapsed }">
         <div class="flex flex-col gap-1">
           <AppearanceMenu :collapsed="collapsed" />
+          <LocaleMenu :collapsed="collapsed" />
 
           <UDropdownMenu
             :items="accountItems"
@@ -107,7 +126,7 @@ defineShortcuts({
             :ui="{ content: collapsed ? 'w-40' : 'w-(--reka-dropdown-menu-trigger-width)' }"
           >
             <UButton
-              :aria-label="`${accountName} 账号`"
+              :aria-label="t('shell.account', { name: accountName })"
               block
               class="min-w-0"
               color="neutral"
@@ -124,8 +143,8 @@ defineShortcuts({
     </UDashboardSidebar>
 
     <UDashboardSearch
-      title="搜索"
-      placeholder="搜索页面"
+      :title="t('shell.search')"
+      :placeholder="t('shell.searchPages')"
       :groups="searchGroups"
     />
 

@@ -2,6 +2,7 @@ import ui from '@nuxt/ui/vue-plugin'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { AuthError, useAuthStore } from '../index'
@@ -71,6 +72,24 @@ describe('loginForm', () => {
     expect(wrapper.get('#username').attributes('autocomplete')).toBe('username')
     expect(wrapper.get('label[for="password"]').text()).toBe('密码')
     expect(wrapper.get('#password').attributes('autocomplete')).toBe('current-password')
+  })
+
+  it('switches to English without clearing safe form input', async () => {
+    const { wrapper } = await mountLoginForm()
+    await fillCredentials(wrapper)
+    const remember = wrapper.get('button[role="checkbox"]')
+    await remember.trigger('click')
+
+    wrapper.vm.$i18n.locale = 'en'
+    await nextTick()
+
+    expect(wrapper.get('label[for="username"]').text()).toBe('Username')
+    expect(wrapper.get('label[for="password"]').text()).toBe('Password')
+    expect(wrapper.get('button[type="submit"]').text()).toContain('Sign in')
+    expect(wrapper.text()).toContain('Keep me signed in')
+    expect(wrapper.get('input[autocomplete="username"]').element).toHaveProperty('value', 'Owner')
+    expect(wrapper.get('input[autocomplete="current-password"]').element).toHaveProperty('value', 'top-secret-password')
+    expect(remember.attributes('aria-checked')).toBe('true')
   })
 
   it('starts with remember login off and passes browser persistence after selection', async () => {

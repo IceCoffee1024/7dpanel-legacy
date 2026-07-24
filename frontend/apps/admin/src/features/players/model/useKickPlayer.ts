@@ -22,7 +22,6 @@ export type KickPlayerFeedbackCode
 
 export interface KickPlayerFeedback {
   code: KickPlayerFeedbackCode
-  message: string
 }
 
 export interface KickPlayerController {
@@ -46,51 +45,19 @@ export interface UseKickPlayerOptions {
   onSessionExpired?: () => void
 }
 
-const feedbackByProblemCode: Partial<Record<string, KickPlayerFeedback>> = {
-  player_not_online: {
-    code: 'player_not_online',
-    message: '玩家已不在线',
-  },
-  player_identity_changed: {
-    code: 'player_identity_changed',
-    message: '玩家身份已变化，请刷新后重试',
-  },
-  player_action_busy: {
-    code: 'player_action_busy',
-    message: '另一个踢出操作正在进行，请稍后重试',
-  },
-  game_not_ready: {
-    code: 'game_not_ready',
-    message: '游戏服务尚未就绪，请稍后重试',
-  },
-  game_thread_timeout: {
-    code: 'game_thread_timeout',
-    message: '游戏响应超时，请稍后重试',
-  },
-  audit_unavailable: {
-    code: 'audit_unavailable',
-    message: '审计服务暂不可用，请稍后重试',
-  },
-  player_kick_failed: {
-    code: 'player_kick_failed',
-    message: '踢出玩家失败',
-  },
+const feedbackByProblemCode: Partial<Record<string, KickPlayerFeedbackCode>> = {
+  player_not_online: 'player_not_online',
+  player_identity_changed: 'player_identity_changed',
+  player_action_busy: 'player_action_busy',
+  game_not_ready: 'game_not_ready',
+  game_thread_timeout: 'game_thread_timeout',
+  audit_unavailable: 'audit_unavailable',
+  player_kick_failed: 'player_kick_failed',
 }
 
-const sessionExpiredFeedback: KickPlayerFeedback = {
-  code: 'session_expired',
-  message: '会话已失效，请重新登录',
-}
-
-const forbiddenFeedback: KickPlayerFeedback = {
-  code: 'forbidden',
-  message: '无权踢出玩家',
-}
-
-const unknownFeedback: KickPlayerFeedback = {
-  code: 'unknown',
-  message: '结果尚无法确认',
-}
+const sessionExpiredFeedback: KickPlayerFeedback = { code: 'session_expired' }
+const forbiddenFeedback: KickPlayerFeedback = { code: 'forbidden' }
+const unknownFeedback: KickPlayerFeedback = { code: 'unknown' }
 
 function mapError(error: unknown): KickPlayerFeedback {
   if (!(error instanceof HttpError))
@@ -100,9 +67,9 @@ function mapError(error: unknown): KickPlayerFeedback {
   if (error.problemCode === 'audit_completion_unavailable')
     return unknownFeedback
   if (error.problemCode !== undefined) {
-    const stableFeedback = feedbackByProblemCode[error.problemCode]
-    if (stableFeedback !== undefined)
-      return stableFeedback
+    const stableCode = feedbackByProblemCode[error.problemCode]
+    if (stableCode !== undefined)
+      return { code: stableCode }
   }
   return unknownFeedback
 }

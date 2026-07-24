@@ -115,7 +115,7 @@ function mountOnlinePlayersView(values: ControllerValues = {}, kickOptions: {
             template: `
               <section v-if="open" data-testid="kick-dialog">
                 <span data-testid="kick-dialog-player">{{ player?.name }}</span>
-                <span v-if="feedback" role="status">{{ feedback.message }}</span>
+                <span v-if="feedback" role="status">{{ feedback.code }}</span>
                 <button data-testid="kick-dialog-confirm" @click="$emit('confirm', '违反服务器规则')">确认</button>
               </section>
             `,
@@ -250,10 +250,7 @@ it('closes, notifies and refreshes after a successful kick', async () => {
 })
 
 it.each(['player_not_online', 'player_identity_changed'] as const)('refreshes without retrying after %s', async (code) => {
-  const feedback: KickPlayerFeedback = {
-    code,
-    message: code === 'player_not_online' ? '玩家已不在线' : '玩家身份已变化，请刷新后重试',
-  }
+  const feedback: KickPlayerFeedback = { code }
   const { wrapper, refresh, submit } = mountOnlinePlayersView({
     state: 'fresh',
     snapshot: onePlayerSnapshot(),
@@ -270,16 +267,16 @@ it.each(['player_not_online', 'player_identity_changed'] as const)('refreshes wi
 })
 
 it.each([
-  ['player_action_busy', '另一个踢出操作正在进行，请稍后重试'],
-  ['game_not_ready', '游戏服务尚未就绪，请稍后重试'],
-  ['game_thread_timeout', '游戏响应超时，请稍后重试'],
-  ['audit_unavailable', '审计服务暂不可用，请稍后重试'],
-  ['unknown', '结果尚无法确认'],
-] as const)('keeps the fixed dialog open for %s feedback', async (code, message) => {
+  'player_action_busy',
+  'game_not_ready',
+  'game_thread_timeout',
+  'audit_unavailable',
+  'unknown',
+] as const)('keeps the fixed dialog open for %s feedback', async (code) => {
   const { wrapper, refresh } = mountOnlinePlayersView({
     state: 'fresh',
     snapshot: onePlayerSnapshot(),
-  }, { feedback: { code, message } })
+  }, { feedback: { code } })
 
   wrapper.getComponent(OnlinePlayersTable).vm.$emit('kickPlayer', player)
   await nextTick()
@@ -287,7 +284,7 @@ it.each([
   await flushPromises()
 
   expect(wrapper.get('[data-testid="kick-dialog-player"]').text()).toBe('Test Player')
-  expect(wrapper.get('[role="status"]').text()).toBe(message)
+  expect(wrapper.get('[role="status"]').text()).toBe(code)
   expect(refresh).not.toHaveBeenCalled()
   expect(toastAddMock).not.toHaveBeenCalled()
 })
@@ -308,7 +305,7 @@ it('hides kick actions after forbidden feedback', () => {
   const { wrapper } = mountOnlinePlayersView({
     state: 'fresh',
     snapshot: onePlayerSnapshot(),
-  }, { feedback: { code: 'forbidden', message: '无权踢出玩家' } })
+  }, { feedback: { code: 'forbidden' } })
 
   expect(wrapper.find('[aria-label="玩家操作：Test Player"]').exists()).toBe(false)
 })
@@ -317,7 +314,7 @@ it('closes the fixed dialog after a submitted action becomes forbidden', async (
   const { wrapper, submit } = mountOnlinePlayersView({
     state: 'fresh',
     snapshot: onePlayerSnapshot(),
-  }, { feedback: { code: 'forbidden', message: '无权踢出玩家' } })
+  }, { feedback: { code: 'forbidden' } })
 
   wrapper.getComponent(OnlinePlayersTable).vm.$emit('kickPlayer', player)
   await nextTick()
@@ -409,6 +406,36 @@ it.each([
   expect(wrapper.text()).toContain('93')
   expect(wrapper.text()).toContain('42')
   expect(wrapper.text()).not.toMatch(/IP|位置|封禁|击杀|死亡/)
+})
+
+it.each([
+  ['desktop table', OnlinePlayersTable],
+  ['mobile list', OnlinePlayersList],
+] as const)('switches the %s to English without translating player identities', async (_, component) => {
+  const detailedPlayer: OnlinePlayer = {
+    ...player,
+    crossplatformIdentity: {
+      combinedId: 'EOS_0002aabb',
+      platform: 'EOS',
+    },
+  }
+  const wrapper = mount(component, {
+    props: { players: [detailedPlayer] },
+    global: {
+      stubs: {
+        Icon: true,
+        UIcon: true,
+      },
+    },
+  })
+
+  wrapper.vm.$i18n.locale = 'en'
+  await nextTick()
+
+  expect(wrapper.text()).toContain('Updated')
+  expect(wrapper.text()).toContain('Test Player')
+  expect(wrapper.text()).toContain('Steam_76561198000000000')
+  expect(wrapper.text()).toContain('EOS_0002aabb')
 })
 
 it.each([

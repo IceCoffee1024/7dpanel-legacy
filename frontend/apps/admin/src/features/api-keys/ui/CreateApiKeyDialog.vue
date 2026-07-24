@@ -2,7 +2,9 @@
 import type { CreateApiKeyInput } from '../api/apiKeys'
 import type { ApiKeysFeedback } from '../model/useApiKeys'
 
+import * as v from 'valibot'
 import { computed, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   isCreating: boolean
@@ -13,12 +15,22 @@ const emit = defineEmits<{
   create: [input: CreateApiKeyInput]
 }>()
 const open = defineModel<boolean>('open', { required: true })
+const { t } = useI18n()
 const name = shallowRef('')
 const expiresAtUtc = shallowRef('')
+const ApiKeyNameSchema = v.pipe(
+  v.string(),
+  v.trim(),
+  v.minLength(1),
+  v.check(value => Array.from(value).length <= 80),
+)
 
 const normalizedName = computed(() => name.value.trim())
 const nameLength = computed(() => Array.from(normalizedName.value).length)
-const canCreate = computed(() => !props.isCreating && nameLength.value >= 1 && nameLength.value <= 80)
+const canCreate = computed(() => !props.isCreating && v.safeParse(ApiKeyNameSchema, name.value).success)
+const feedbackMessage = computed(() => props.feedback === null
+  ? ''
+  : t(`apiKeys.feedback.${props.feedback.code}`))
 const controlledOpen = computed({
   get: () => open.value,
   set: (value: boolean) => {
@@ -49,8 +61,8 @@ function create() {
 <template>
   <UModal
     v-model:open="controlledOpen"
-    title="创建 API Key"
-    description="完整 API Key 只会显示一次。"
+    :title="t('apiKeys.createDialog.title')"
+    :description="t('apiKeys.createDialog.description')"
     :dismissible="!isCreating"
     :close="isCreating ? false : undefined"
     :ui="{ footer: 'justify-end' }"
@@ -58,7 +70,7 @@ function create() {
     <template #body>
       <div class="space-y-5">
         <UFormField
-          label="名称"
+          :label="t('apiKeys.createDialog.name')"
           name="api-key-name"
           required
           :hint="`${nameLength}/80`"
@@ -69,14 +81,14 @@ function create() {
             :maxlength="80"
             autocomplete="off"
             class="w-full"
-            placeholder="例如：夜间备份"
+            :placeholder="t('apiKeys.createDialog.namePlaceholder')"
           />
         </UFormField>
 
         <UFormField
-          label="到期时间"
+          :label="t('apiKeys.createDialog.expiration')"
           name="api-key-expiration"
-          hint="可选，使用 UTC 时间戳"
+          :hint="t('apiKeys.createDialog.expirationHint')"
         >
           <UInput
             v-model="expiresAtUtc"
@@ -93,14 +105,14 @@ function create() {
           aria-live="polite"
           class="text-sm text-error"
         >
-          {{ feedback.message }}
+          {{ feedbackMessage }}
         </p>
       </div>
     </template>
 
     <template #footer>
       <UButton
-        label="取消"
+        :label="t('common.cancel')"
         color="neutral"
         variant="outline"
         :disabled="isCreating"
@@ -108,7 +120,7 @@ function create() {
       />
       <UButton
         data-testid="create-api-key-submit"
-        label="创建 API Key"
+        :label="t('apiKeys.create')"
         icon="i-lucide-key-round"
         :loading="isCreating"
         :disabled="!canCreate"

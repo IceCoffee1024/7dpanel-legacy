@@ -1,5 +1,8 @@
+import { dirname, resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import ui from '@nuxt/ui/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig, loadEnv } from 'vite'
@@ -14,6 +17,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vueRouter({
         dts: 'src/route-map.d.ts',
+      }),
+      VueI18nPlugin({
+        include: resolve(dirname(fileURLToPath(import.meta.url)), 'src/app/i18n/locales/**'),
       }),
       vue(),
       ui({

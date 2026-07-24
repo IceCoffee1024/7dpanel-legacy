@@ -3,6 +3,7 @@ import type { OnlinePlayer } from '../api/onlinePlayers'
 
 import { useToast } from '@nuxt/ui/composables'
 import { computed, ref, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useKickPlayer } from '../model/useKickPlayer'
@@ -16,6 +17,7 @@ import OnlinePlayersToolbar from './OnlinePlayersToolbar.vue'
 
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 
 function redirectToLogin() {
   return router.replace({
@@ -59,10 +61,10 @@ async function copyIdentity(combinedId: string) {
     }
 
     await navigator.clipboard.writeText(combinedId)
-    copyFeedback.value = '身份已复制'
+    copyFeedback.value = t('players.copy.success')
   }
   catch {
-    copyFeedback.value = '复制失败，请手动选择身份标识'
+    copyFeedback.value = t('players.copy.failure')
   }
 }
 
@@ -85,7 +87,7 @@ async function confirmKick(reason: string) {
 
   const result = await submitKick(target, reason)
   if (result !== null) {
-    toast.add({ title: `已踢出 ${target.name}`, color: 'success' })
+    toast.add({ title: t('players.kick.success', { name: target.name }), color: 'success' })
     selectedPlayer.value = null
     await refresh()
     return

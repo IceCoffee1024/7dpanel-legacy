@@ -135,10 +135,7 @@ describe('useKickPlayer', () => {
     expect(kick).not.toHaveBeenCalled()
     expect(expireSession).not.toHaveBeenCalled()
     expect(onSessionExpired).toHaveBeenCalledOnce()
-    expect(controller.feedback.value).toEqual({
-      code: 'session_expired',
-      message: '会话已失效，请重新登录',
-    })
+    expect(controller.feedback.value).toEqual({ code: 'session_expired' })
     wrapper.unmount()
   })
 
@@ -157,24 +154,21 @@ describe('useKickPlayer', () => {
     expect(kick).toHaveBeenCalledOnce()
     expect(expireSession).toHaveBeenCalledOnce()
     expect(onSessionExpired).toHaveBeenCalledOnce()
-    expect(controller.feedback.value).toEqual({
-      code: 'session_expired',
-      message: '会话已失效，请重新登录',
-    })
+    expect(controller.feedback.value).toEqual({ code: 'session_expired' })
     expect(JSON.stringify(controller.feedback.value)).not.toContain('secret server detail')
     wrapper.unmount()
   })
 
   it.each([
-    [new HttpError('http', 'forbidden', { status: 403 }), 'forbidden', '无权踢出玩家'],
-    [new HttpError('http', 'offline', { status: 409, problemCode: 'player_not_online' }), 'player_not_online', '玩家已不在线'],
-    [new HttpError('http', 'changed', { status: 409, problemCode: 'player_identity_changed' }), 'player_identity_changed', '玩家身份已变化，请刷新后重试'],
-    [new HttpError('http', 'busy', { status: 503, problemCode: 'player_action_busy' }), 'player_action_busy', '另一个踢出操作正在进行，请稍后重试'],
-    [new HttpError('http', 'not ready', { status: 503, problemCode: 'game_not_ready' }), 'game_not_ready', '游戏服务尚未就绪，请稍后重试'],
-    [new HttpError('http', 'timeout', { status: 503, problemCode: 'game_thread_timeout' }), 'game_thread_timeout', '游戏响应超时，请稍后重试'],
-    [new HttpError('http', 'audit', { status: 503, problemCode: 'audit_unavailable' }), 'audit_unavailable', '审计服务暂不可用，请稍后重试'],
-    [new HttpError('http', 'failed', { status: 500, problemCode: 'player_kick_failed' }), 'player_kick_failed', '踢出玩家失败'],
-  ] as const)('maps %s to stable feedback without retrying', async (error, code, message) => {
+    [new HttpError('http', 'forbidden', { status: 403 }), 'forbidden'],
+    [new HttpError('http', 'offline', { status: 409, problemCode: 'player_not_online' }), 'player_not_online'],
+    [new HttpError('http', 'changed', { status: 409, problemCode: 'player_identity_changed' }), 'player_identity_changed'],
+    [new HttpError('http', 'busy', { status: 503, problemCode: 'player_action_busy' }), 'player_action_busy'],
+    [new HttpError('http', 'not ready', { status: 503, problemCode: 'game_not_ready' }), 'game_not_ready'],
+    [new HttpError('http', 'timeout', { status: 503, problemCode: 'game_thread_timeout' }), 'game_thread_timeout'],
+    [new HttpError('http', 'audit', { status: 503, problemCode: 'audit_unavailable' }), 'audit_unavailable'],
+    [new HttpError('http', 'failed', { status: 500, problemCode: 'player_kick_failed' }), 'player_kick_failed'],
+  ] as const)('maps %s to stable feedback without retrying', async (error, code) => {
     const kick = vi.fn().mockRejectedValue(error)
     const { controller, wrapper } = mountComposable({
       auth: { authorizationHeader: 'Bearer token', expireSession: vi.fn() },
@@ -185,7 +179,7 @@ describe('useKickPlayer', () => {
     await flushPromises()
 
     expect(kick).toHaveBeenCalledOnce()
-    expect(controller.feedback.value).toEqual({ code, message })
+    expect(controller.feedback.value).toEqual({ code })
     wrapper.unmount()
   })
 
@@ -205,10 +199,7 @@ describe('useKickPlayer', () => {
     await flushPromises()
 
     expect(kick).toHaveBeenCalledOnce()
-    expect(controller.feedback.value).toEqual({
-      code: 'unknown',
-      message: '结果尚无法确认',
-    })
+    expect(controller.feedback.value).toEqual({ code: 'unknown' })
     wrapper.unmount()
   })
 

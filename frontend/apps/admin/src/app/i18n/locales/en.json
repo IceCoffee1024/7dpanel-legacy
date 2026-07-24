@@ -1,0 +1,170 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "reload": "Reload",
+    "backToOverview": "Back to overview"
+  },
+  "locale": {
+    "label": "Language",
+    "current": "Language: {language}",
+    "english": "English",
+    "simplifiedChinese": "简体中文"
+  },
+  "appearance": {
+    "label": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "auth": {
+    "brandDescription": "Server administration",
+    "pageTitle": "Sign in to the admin panel",
+    "pageDescription": "Continue with your Owner account.",
+    "login": "Sign in",
+    "username": "Username",
+    "password": "Password",
+    "remember": "Keep me signed in",
+    "rememberDescription": "Stay signed in after closing the browser, until the access token expires",
+    "errors": {
+      "rateLimited": "Too many requests. Try again later.",
+      "invalidCredentials": "The username or password is incorrect.",
+      "generic": "Sign-in failed. Try again later."
+    },
+    "persistenceWarning": "This session could not be saved. You will need to sign in again after refreshing or closing this page."
+  },
+  "overview": {
+    "title": "Overview",
+    "brandLabel": "7DPanel overview",
+    "status": {
+      "loadingTitle": "Getting server status",
+      "freshTitle": "The server is running normally",
+      "staleTitle": "The server status is stale",
+      "offlineTitle": "Server status is unavailable",
+      "loadingDescription": "Connecting to the backend health endpoint.",
+      "freshDescription": "The latest health check completed successfully.",
+      "staleDescription": "Keeping the last successful result while waiting for a new health check.",
+      "httpDescription": "The backend rejected the health check request.",
+      "offlineDescription": "No valid server status has been received yet.",
+      "lastSample": "Last successful sample: {time}",
+      "retry": "Check again"
+    }
+  },
+  "shell": {
+    "navigation": "Navigation",
+    "search": "Search",
+    "searchPages": "Search pages",
+    "account": "{name} account",
+    "signOut": "Sign out"
+  },
+  "players": {
+    "title": "Online players",
+    "navigation": "Players",
+    "refresh": "Refresh online players",
+    "onlineCount": "{count} online",
+    "refreshStale": "Refresh failed; showing the last result",
+    "state": {
+      "emptyTitle": "No players are online",
+      "forbiddenTitle": "You cannot view online players",
+      "forbiddenDescription": "Your current identity does not have permission to access online player data.",
+      "notReadyTitle": "The game is still loading",
+      "notReadyDescription": "The server is not ready to provide an online player snapshot. Try again later.",
+      "offlineTitle": "Online players are unavailable",
+      "offlineDescription": "No player snapshot is available. Check the service status and try again.",
+      "loading": "Loading online players"
+    },
+    "fields": {
+      "player": "Player",
+      "platform": "Platform",
+      "platformIdentity": "Platform identity",
+      "crossplatformIdentity": "Cross-platform identity",
+      "level": "Level",
+      "health": "Health",
+      "ping": "Ping",
+      "actions": "Actions",
+      "unbound": "Not linked",
+      "updatedAt": "Updated {time}",
+      "stale": "Data may be stale"
+    },
+    "actions": {
+      "copyIdentity": "Copy {platform} identity",
+      "playerActions": "Actions for {name}",
+      "kick": "Kick player"
+    },
+    "copy": {
+      "success": "Identity copied",
+      "failure": "Copy failed. Select and copy the identity manually."
+    },
+    "kick": {
+      "title": "Kick player",
+      "description": "Confirm the target identity and provide a reason for this action.",
+      "reason": "Reason",
+      "reasonPlaceholder": "Enter the reason that will be recorded in the audit log",
+      "success": "Kicked {name}",
+      "feedback": {
+        "session_expired": "Your session has expired. Sign in again.",
+        "forbidden": "You do not have permission to kick players.",
+        "player_not_online": "The player is no longer online.",
+        "player_identity_changed": "The player's identity changed. Refresh and try again.",
+        "player_action_busy": "Another kick is in progress. Try again later.",
+        "game_not_ready": "The game service is not ready. Try again later.",
+        "game_thread_timeout": "The game timed out. Try again later.",
+        "audit_unavailable": "The audit service is unavailable. Try again later.",
+        "player_kick_failed": "Failed to kick the player.",
+        "unknown": "Result could not be confirmed."
+      }
+    }
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "refresh": "Refresh API Key list",
+    "loading": "Loading API Keys",
+    "create": "Create API Key",
+    "state": {
+      "emptyTitle": "No API Keys yet",
+      "emptyDescription": "Create a Key for scripts or third-party integrations.",
+      "forbiddenTitle": "You cannot manage API Keys",
+      "forbiddenDescription": "Your current identity does not have permission to access API Keys.",
+      "failedTitle": "API Keys are unavailable",
+      "failedDescription": "No API Key list is available. Try again later."
+    },
+    "status": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "dates": {
+      "created": "Created {time}",
+      "lastUsed": "Last used {time}",
+      "expires": "Expires {time}"
+    },
+    "feedback": {
+      "session-expired": "Your session has expired. Sign in again.",
+      "forbidden": "You do not have permission to manage API Keys.",
+      "load-failed": "Failed to load API Keys. Try again later.",
+      "create-failed": "Failed to create API Key. Try again later.",
+      "revoke-failed": "Failed to revoke API Key. Try again later."
+    },
+    "createDialog": {
+      "title": "Create API Key",
+      "description": "The complete API Key will be shown only once.",
+      "name": "Name",
+      "namePlaceholder": "For example: nightly backup",
+      "expiration": "Expiration",
+      "expirationHint": "Optional, using a UTC timestamp"
+    },
+    "createdDialog": {
+      "title": "API Key created",
+      "description": "Copy and save it now. You cannot view the complete API Key again after closing this window.",
+      "copy": "Copy API Key",
+      "saved": "I saved it securely",
+      "copySuccess": "API Key copied",
+      "copyFailure": "Copy failed. Save the API Key manually."
+    },
+    "revokeDialog": {
+      "title": "Revoke API Key",
+      "description": "This cannot be undone. Requests using this Key will be rejected.",
+      "confirm": "Revoke API Key",
+      "ariaLabel": "Revoke API Key"
+    }
+  }
+}

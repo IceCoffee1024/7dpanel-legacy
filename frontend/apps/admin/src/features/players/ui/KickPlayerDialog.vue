@@ -2,7 +2,9 @@
 import type { OnlinePlayer } from '../api/onlinePlayers'
 import type { KickPlayerFeedback } from '../model/useKickPlayer'
 
+import * as v from 'valibot'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   player: OnlinePlayer | null
@@ -15,9 +17,11 @@ const emit = defineEmits<{
   cancel: []
 }>()
 const open = defineModel<boolean>('open', { required: true })
+const { t } = useI18n()
 
 const reason = ref('')
 let activeTargetKey: string | null = null
+const KickReasonSchema = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(200))
 
 const targetKey = computed(() => props.player === null
   ? null
@@ -25,8 +29,10 @@ const targetKey = computed(() => props.player === null
 const trimmedReason = computed(() => reason.value.trim())
 const canConfirm = computed(() => props.player !== null
   && !props.isSubmitting
-  && trimmedReason.value.length >= 1
-  && trimmedReason.value.length <= 200)
+  && v.safeParse(KickReasonSchema, reason.value).success)
+const feedbackMessage = computed(() => props.feedback === null
+  ? ''
+  : t(`players.kick.feedback.${props.feedback.code}`))
 const controlledOpen = computed({
   get: () => open.value,
   set: (value: boolean) => {
@@ -61,8 +67,8 @@ function confirm() {
 <template>
   <UModal
     v-model:open="controlledOpen"
-    title="踢出玩家"
-    description="确认目标身份并填写本次操作原因。"
+    :title="t('players.kick.title')"
+    :description="t('players.kick.description')"
     :dismissible="!isSubmitting"
     :close="isSubmitting ? false : undefined"
     :ui="{ footer: 'justify-end' }"
@@ -82,7 +88,7 @@ function confirm() {
         </div>
 
         <UFormField
-          label="踢出原因"
+          :label="t('players.kick.reason')"
           name="kick-reason"
           required
           :hint="`${reason.length}/200`"
@@ -93,7 +99,7 @@ function confirm() {
             :maxlength="200"
             :rows="4"
             class="w-full"
-            placeholder="请输入将记录到审计日志的原因"
+            :placeholder="t('players.kick.reasonPlaceholder')"
           />
         </UFormField>
 
@@ -103,7 +109,7 @@ function confirm() {
           aria-live="polite"
           class="text-sm text-error"
         >
-          {{ feedback.message }}
+          {{ feedbackMessage }}
         </p>
       </div>
     </template>
@@ -111,7 +117,7 @@ function confirm() {
     <template #footer>
       <UButton
         data-testid="cancel-kick-player"
-        label="取消"
+        :label="t('common.cancel')"
         color="neutral"
         variant="outline"
         :disabled="isSubmitting"
@@ -119,7 +125,7 @@ function confirm() {
       />
       <UButton
         data-testid="confirm-kick-player"
-        label="踢出玩家"
+        :label="t('players.actions.kick')"
         icon="i-lucide-log-out"
         color="error"
         :loading="isSubmitting"

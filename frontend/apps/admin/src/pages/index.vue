@@ -8,10 +8,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useServerHealth } from '../composables/useServerHealth'
 
 const { state, data, error, lastSuccessfulAt, refresh } = useServerHealth()
+const { d, t } = useI18n()
 
 const statusIcon = computed(() => {
   if (state.value === 'loading') {
@@ -28,47 +30,44 @@ const statusIcon = computed(() => {
 
 const statusTitle = computed(() => {
   if (state.value === 'loading') {
-    return '正在获取服务器状态'
+    return t('overview.status.loadingTitle')
   }
   if (state.value === 'fresh') {
-    return '服务器运行正常'
+    return t('overview.status.freshTitle')
   }
   if (state.value === 'stale') {
-    return '服务器状态已过期'
+    return t('overview.status.staleTitle')
   }
-  return '无法获取服务器状态'
+  return t('overview.status.offlineTitle')
 })
 
 const statusDescription = computed(() => {
   if (state.value === 'loading') {
-    return '正在连接后端健康端点。'
+    return t('overview.status.loadingDescription')
   }
   if (state.value === 'fresh') {
-    return '最近一次健康检查已成功完成。'
+    return t('overview.status.freshDescription')
   }
   if (state.value === 'stale') {
-    return '保留最后一次成功结果，等待新的健康检查。'
+    return t('overview.status.staleDescription')
   }
   return error.value?.code === 'http'
-    ? '后端拒绝了健康检查请求。'
-    : '尚未从后端获取有效的服务器状态。'
+    ? t('overview.status.httpDescription')
+    : t('overview.status.offlineDescription')
 })
 
 const lastSampleLabel = computed(() => {
   if (lastSuccessfulAt.value === null) {
     return ''
   }
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'medium',
-  }).format(lastSuccessfulAt.value)
+  return d(new Date(lastSuccessfulAt.value), 'medium')
 })
 </script>
 
 <template>
   <UDashboardPanel id="overview">
     <template #header>
-      <UDashboardNavbar title="概览">
+      <UDashboardNavbar :title="t('overview.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -101,7 +100,7 @@ const lastSampleLabel = computed(() => {
           </div>
 
           <p v-if="lastSampleLabel" class="mt-3 text-xs text-dimmed">
-            最近成功采样：{{ lastSampleLabel }}
+            {{ t('overview.status.lastSample', { time: lastSampleLabel }) }}
           </p>
 
           <UButton
@@ -109,7 +108,7 @@ const lastSampleLabel = computed(() => {
             class="mt-6"
             color="neutral"
             icon="i-lucide-refresh-cw"
-            label="重新检查"
+            :label="t('overview.status.retry')"
             variant="outline"
             @click="refresh"
           />

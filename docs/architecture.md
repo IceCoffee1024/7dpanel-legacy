@@ -79,7 +79,7 @@ flowchart LR
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、动态控制台命令、Owner-only 在线玩家查询与踢出路由；公开运行时 OpenAPI JSON 与 Swagger UI；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、NSwag OWIN、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志和玩家事件；提供有界日志/事件服务、容量 32 的命令 FIFO、最终 `executeCommand` Harmony observation、容量 256 的异步审计服务、事件驱动在线玩家投影、类型化踢出 Adapter 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration、持久身份/Token、玩家动作审计、完整命令审计和审计 gap | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
-| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/`、`/players` 与 `/api-keys`、显式 Pinia Router guard、由 Auth Store 统一拥有的版本化浏览器会话、共享同源 HTTP 边界、健康、在线玩家与 API Key Feature、局部查询状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Nuxt UI、Vite |
+| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/`、`/players` 与 `/api-keys`、显式 Pinia Router guard、由 Auth Store 统一拥有的版本化浏览器会话、`app/i18n` 统一拥有的中英文语言运行时、共享同源 HTTP 边界、健康、在线玩家与 API Key Feature、局部查询状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Vue I18n、Valibot、Nuxt UI、Vite |
 
 当前已由控制台命令纵向切片创建 Application 项目，但尚无 Domain 项目；SQLite Persistence Adapter 是首个 Local Adapter。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向、六个产品 DLL 的发布门禁和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
@@ -157,6 +157,9 @@ GET /
 ```
 
 - `fetchServerHealth` 始终使用相对同源 `/api/v1/health`，验证 `status`、非空 `product` 和非空 `version`，并区分取消、网络、HTTP 与无效响应错误。
+- `app/i18n` 只接受内部语言 `en` 与 `zh-CN`。首次访问依次解析 `navigator.languages`：英文标签映射 `en`，简体中文标签映射 `zh-CN`，繁体中文标签继续检查下一首选；没有匹配时回退 `en`。显式选择以严格版本化 `{ version: 1, locale }` 写入独立的 `localStorage` 键 `7dpanel.locale.v1`，损坏记录被清理，登出不删除语言偏好。
+- 同一个语言运行时同步 Vue I18n Composer、根文档 `lang`、Nuxt UI `UApp` locale 和 Valibot global `lang`。英语和简体中文产品文案集中在成对 JSON 目录，由 `@intlify/unplugin-vue-i18n` 构建期预编译；自动化要求叶子键、插值参数完全一致、值非空且不含 HTML。
+- 登录、玩家和 API Key 当前界面在语言切换时不重建路由、Auth Store 或表单 state。日期通过 Composer 当前 locale 格式化；玩家名、Steam/EOS ID、API Key 名称与前缀、角色和版本等技术值保持原样。玩家踢出与 API Key controller 只保存稳定反馈 code，由组件在渲染边界翻译，不显示任意服务端异常文本。
 - `useServerHealth` 只拥有页面局部状态。首次请求是 loading；成功后是 fresh；没有成功数据的失败是 offline；已有成功数据后失败或 60 秒未获得新样本是 stale。
 - 新请求取消旧请求，组件卸载时取消当前请求并清理 stale timer。
 - 开发期 Vite proxy 从 `.env.local` 的 `VITE_BACKEND_URL` 读取上游目标；生产代码和构建产物不包含该目标地址。
@@ -217,7 +220,7 @@ GET /
 | Async interfaces | Mod 发布 `Microsoft.Bcl.AsyncInterfaces 10.0.10`（程序集 `10.0.0.10`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再依赖游戏目录中的 6.x 文件；发布脚本要求 Mod 目录存在固定新版 |
 | Unsafe | Mod 发布 `System.Runtime.CompilerServices.Unsafe 6.1.2`（程序集 `6.0.3.0`） | Release 构建、发布清单和 Windows x64 Mono 真实进程加载通过 | 不再排除 runtime；发布脚本要求 Mod 目录存在固定新版 |
 | 有界日志与命令通道 | `System.Threading.Channels 10.0.10`、`System.Threading.Tasks.Extensions 4.6.3` | 控制台日志、HTTP 命令 FIFO、异步审计自动化、net48 Release Rebuild 和隔离发布清单通过；Channels 的 net462 资产声明 Bcl AsyncInterfaces `10.0.10` 与 Tasks.Extensions `4.6.3` 最低依赖，当前发布闭包解析为这组已验证版本。升级发布物已在 Windows `v3.0.1-b4` 完成启动，shutdown 后进程与 listener 已释放；本轮未重复真实命令、写锁恢复、容量路径或 acknowledgement 时序 | 三条通道容量和生命周期独立；发布 Channels、Tasks.Extensions 和 Unsafe，仍不复制 Harmony、LogLibrary 或 Unity 程序集；Linux Mono 仍待验证 |
-| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | Auth codec/Repository/Store、身份响应解析、登录/账号菜单和路由定向自动化通过；完整 Admin 单元/组件测试 267 项、lint、typecheck 和生产构建均通过。当前 8 项真实 Owner Playwright 场景已覆盖标签页/浏览器会话、身份显示、损坏记录和清理合同，但缺少受控 OWIN 环境而未执行；Vitest 输出的 happy-dom teardown/外部连接噪声尚未定位 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器 API Key、踢出、`390x844` 真实渲染或真实动作结果证据 |
+| Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Vue I18n `11.4.7`、Valibot `1.4.2`、`@valibot/i18n` `1.2.0`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | Auth 与 locale codec/Repository/runtime、身份响应解析、登录/账号/语言菜单、路由定向、全部当前页面双语、Valibot 表单边界、技术值稳定和 code-only 反馈自动化通过；完整 Admin 单元/组件测试 29 个文件、318 项，lint、typecheck 和生产构建均通过。当前 12 项真实 Owner Playwright 场景已完成测试发现，其中 4 项覆盖语言首选/回退、登录前切换、刷新持久化、登录/登出保留、身份稳定与英文窄屏，但缺少受控 OWIN 环境而未执行；Vitest 输出的 happy-dom teardown/外部连接噪声尚未定位 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器双语、API Key、踢出、`390x844` 真实渲染或真实动作结果证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
 

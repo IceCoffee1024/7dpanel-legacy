@@ -13,10 +13,10 @@ OWIN hosting, SQLite-backed bootstrap Owner authentication, persistent opaque
 Bearer tokens, authenticated named SSE, and dynamic console commands that run
 through the game main thread. The backend also exposes an Owner-only
 event-projected online-player snapshot and typed online-player kick action with
-audit records. The Admin application currently provides an Owner login, an
-in-memory Bearer session, protected Overview and online-player routes, and
-same-origin health and online-player queries with kick confirmation; it does not
-yet consume SSE or the console command API. Full user management, other
+audit records. The Admin application currently provides an Owner login, explicit
+tab/browser Bearer session persistence, protected Overview, online-player, and
+API Key routes, and complete English/Simplified Chinese support for those
+surfaces. It does not yet consume SSE or the console command API. Full user management, other
 state-changing game actions, backups, announcements, and audit-query
 experiences are not implemented. The
 Marketing application has not been initialized.

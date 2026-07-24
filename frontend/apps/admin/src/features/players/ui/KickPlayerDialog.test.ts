@@ -2,6 +2,7 @@ import type { KickPlayerFeedback, OnlinePlayer } from '..'
 
 import { mount } from '@vue/test-utils'
 import { expect, it } from 'vitest'
+import { nextTick } from 'vue'
 
 import KickPlayerDialog from './KickPlayerDialog.vue'
 
@@ -76,7 +77,7 @@ it('trims and emits a valid reason without clearing it on an unrelated parent re
   const wrapper = mountDialog()
   const textarea = wrapper.get('textarea')
   await textarea.setValue('  违反服务器规则  ')
-  await wrapper.setProps({ feedback: { code: 'player_action_busy', message: '请稍后重试' } })
+  await wrapper.setProps({ feedback: { code: 'player_action_busy' } })
 
   expect(wrapper.get('textarea').element.value).toBe('  违反服务器规则  ')
   await wrapper.get('[data-testid="confirm-kick-player"]').trigger('click')
@@ -120,13 +121,26 @@ it('locks textarea, cancellation, closing and confirmation while submitting', as
 
 it('renders only stable feedback as status', () => {
   const wrapper = mountDialog({
-    feedback: {
-      code: 'unknown',
-      message: '结果尚无法确认',
-    },
+    feedback: { code: 'unknown' },
   })
 
   const status = wrapper.get('[role="status"]')
   expect(status.text()).toBe('结果尚无法确认')
   expect(status.text()).not.toMatch(/token|exception|stack/i)
+})
+
+it('switches dialog and feedback to English without changing the target or reason', async () => {
+  const wrapper = mountDialog({
+    feedback: { code: 'unknown' },
+  })
+  await wrapper.get('textarea').setValue('  audit reason  ')
+
+  wrapper.vm.$i18n.locale = 'en'
+  await nextTick()
+
+  expect(wrapper.text()).toContain('Kick player')
+  expect(wrapper.text()).toContain('Result could not be confirmed')
+  expect(wrapper.text()).toContain('Test Player')
+  expect(wrapper.text()).toContain('Steam_76561198000000000')
+  expect(wrapper.get('textarea').element.value).toBe('  audit reason  ')
 })

@@ -2,6 +2,7 @@
 import type { OnlinePlayersErrorCode, OnlinePlayersState } from '../model/useOnlinePlayers'
 
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 type DisplayState = OnlinePlayersState | 'empty'
 
@@ -16,32 +17,34 @@ defineEmits<{
   refresh: []
 }>()
 
+const { t } = useI18n()
+
 const content = computed(() => {
   if (props.state === 'empty') {
     return {
       icon: 'i-lucide-users',
-      title: '当前没有在线玩家',
+      title: t('players.state.emptyTitle'),
       description: '',
     }
   }
   if (props.state === 'forbidden') {
     return {
       icon: 'i-lucide-shield-alert',
-      title: '无权查看在线玩家',
-      description: '当前身份没有访问在线玩家数据的权限。',
+      title: t('players.state.forbiddenTitle'),
+      description: t('players.state.forbiddenDescription'),
     }
   }
   if (props.errorCode === 'game-not-ready') {
     return {
       icon: 'i-lucide-loader-circle',
-      title: '游戏仍在加载',
-      description: '服务器尚未准备好在线玩家快照，请稍后重试。',
+      title: t('players.state.notReadyTitle'),
+      description: t('players.state.notReadyDescription'),
     }
   }
   return {
     icon: 'i-lucide-wifi-off',
-    title: '无法获取在线玩家',
-    description: '尚未获得可显示的玩家快照，请检查服务状态后重试。',
+    title: t('players.state.offlineTitle'),
+    description: t('players.state.offlineDescription'),
   }
 })
 </script>
@@ -49,7 +52,7 @@ const content = computed(() => {
 <template>
   <div
     v-if="state === 'loading'"
-    aria-label="正在加载在线玩家"
+    :aria-label="t('players.state.loading')"
     class="space-y-3"
     data-testid="players-loading"
   >
@@ -74,7 +77,7 @@ const content = computed(() => {
       <UButton
         color="neutral"
         icon="i-lucide-arrow-left"
-        label="返回概览"
+        :label="t('common.backToOverview')"
         to="/"
         variant="outline"
       />
@@ -84,7 +87,7 @@ const content = computed(() => {
       class="mt-6"
       color="neutral"
       icon="i-lucide-refresh-cw"
-      label="重新加载"
+      :label="t('common.reload')"
       variant="outline"
       @click="$emit('refresh')"
     />

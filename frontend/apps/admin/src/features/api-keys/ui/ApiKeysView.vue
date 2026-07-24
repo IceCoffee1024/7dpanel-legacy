@@ -2,6 +2,7 @@
 import type { ApiKeyMetadata, CreateApiKeyInput } from '../api/apiKeys'
 
 import { computed, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useApiKeys } from '../model/useApiKeys'
@@ -11,6 +12,7 @@ import CreateApiKeyDialog from './CreateApiKeyDialog.vue'
 import RevokeApiKeyDialog from './RevokeApiKeyDialog.vue'
 
 const router = useRouter()
+const { d, t } = useI18n()
 const {
   state,
   apiKeys,
@@ -52,23 +54,26 @@ const stateContent = computed(() => {
   if (state.value === 'empty') {
     return {
       icon: 'i-lucide-key-round',
-      title: '尚未创建 API Key',
-      description: '创建一把 Key 以供脚本或第三方集成使用。',
+      title: t('apiKeys.state.emptyTitle'),
+      description: t('apiKeys.state.emptyDescription'),
     }
   }
   if (state.value === 'forbidden') {
     return {
       icon: 'i-lucide-shield-alert',
-      title: '无权管理 API Key',
-      description: '当前身份没有访问 API Key 的权限。',
+      title: t('apiKeys.state.forbiddenTitle'),
+      description: t('apiKeys.state.forbiddenDescription'),
     }
   }
   return {
     icon: 'i-lucide-wifi-off',
-    title: '无法加载 API Key',
-    description: '尚未获得可显示的 API Key 列表，请稍后重试。',
+    title: t('apiKeys.state.failedTitle'),
+    description: t('apiKeys.state.failedDescription'),
   }
 })
+const feedbackMessage = computed(() => feedback.value === null
+  ? ''
+  : t(`apiKeys.feedback.${feedback.value.code}`))
 
 function openCreateDialog() {
   clearFeedback()
@@ -100,15 +105,15 @@ async function confirmRevoke() {
 <template>
   <UDashboardPanel id="api-keys">
     <template #header>
-      <UDashboardNavbar title="API Keys">
+      <UDashboardNavbar :title="t('apiKeys.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
 
         <template #right>
-          <UTooltip text="刷新 API Key 列表">
+          <UTooltip :text="t('apiKeys.refresh')">
             <UButton
-              aria-label="刷新 API Key 列表"
+              :aria-label="t('apiKeys.refresh')"
               class="size-8"
               color="neutral"
               icon="i-lucide-refresh-cw"
@@ -121,7 +126,7 @@ async function confirmRevoke() {
           </UTooltip>
           <UButton
             data-testid="create-api-key"
-            label="创建 API Key"
+            :label="t('apiKeys.create')"
             icon="i-lucide-key-round"
             :disabled="state === 'forbidden'"
             @click="openCreateDialog"
@@ -133,7 +138,7 @@ async function confirmRevoke() {
     <template #body>
       <div
         v-if="state === 'loading'"
-        aria-label="正在加载 API Key"
+        :aria-label="t('apiKeys.loading')"
         class="space-y-3"
         data-testid="api-keys-loading"
       >
@@ -157,7 +162,7 @@ async function confirmRevoke() {
         <UButton
           v-if="state === 'empty'"
           class="mt-6"
-          label="创建 API Key"
+          :label="t('apiKeys.create')"
           icon="i-lucide-key-round"
           @click="openCreateDialog"
         />
@@ -166,7 +171,7 @@ async function confirmRevoke() {
           class="mt-6"
           color="neutral"
           icon="i-lucide-refresh-cw"
-          label="重新加载"
+          :label="t('common.reload')"
           variant="outline"
           @click="refresh"
         />
@@ -175,7 +180,7 @@ async function confirmRevoke() {
           class="mt-6"
           color="neutral"
           icon="i-lucide-arrow-left"
-          label="返回概览"
+          :label="t('common.backToOverview')"
           to="/"
           variant="outline"
         />
@@ -196,19 +201,19 @@ async function confirmRevoke() {
                 :color="apiKey.status === 'active' ? 'success' : apiKey.status === 'expired' ? 'warning' : 'error'"
                 variant="subtle"
               >
-                {{ apiKey.status === 'active' ? '有效' : apiKey.status === 'expired' ? '已过期' : '已撤销' }}
+                {{ t(`apiKeys.status.${apiKey.status}`) }}
               </UBadge>
             </div>
             <code class="mt-1 block overflow-wrap-anywhere text-xs text-muted">
               {{ apiKey.displayPrefix }}
             </code>
             <p class="mt-2 text-xs text-muted">
-              创建于 {{ new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(apiKey.createdAtUtc)) }}
+              {{ t('apiKeys.dates.created', { time: d(new Date(apiKey.createdAtUtc), 'medium') }) }}
               <template v-if="apiKey.lastUsedAtUtc">
-                · 最近使用 {{ new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(apiKey.lastUsedAtUtc)) }}
+                · {{ t('apiKeys.dates.lastUsed', { time: d(new Date(apiKey.lastUsedAtUtc), 'medium') }) }}
               </template>
               <template v-if="apiKey.expiresAtUtc">
-                · 到期 {{ new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(apiKey.expiresAtUtc)) }}
+                · {{ t('apiKeys.dates.expires', { time: d(new Date(apiKey.expiresAtUtc), 'medium') }) }}
               </template>
             </p>
           </div>
@@ -216,7 +221,7 @@ async function confirmRevoke() {
           <UButton
             v-if="apiKey.status !== 'revoked'"
             :data-testid="`revoke-${apiKey.id}`"
-            aria-label="撤销 API Key"
+            :aria-label="t('apiKeys.revokeDialog.ariaLabel')"
             color="error"
             icon="i-lucide-trash-2"
             square
@@ -231,7 +236,7 @@ async function confirmRevoke() {
           aria-live="polite"
           class="text-sm text-error"
         >
-          {{ feedback.message }}
+          {{ feedbackMessage }}
         </p>
       </div>
     </template>

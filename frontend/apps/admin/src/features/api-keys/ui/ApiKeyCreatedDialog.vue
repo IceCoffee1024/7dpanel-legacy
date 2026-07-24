@@ -2,12 +2,14 @@
 import type { CreatedApiKey } from '../api/apiKeys'
 
 import { shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   createdApiKey: CreatedApiKey | null
 }>()
 
 const open = defineModel<boolean>('open', { required: true })
+const { t } = useI18n()
 const copyFeedback = shallowRef<string | null>(null)
 
 async function copyApiKey() {
@@ -19,10 +21,10 @@ async function copyApiKey() {
     if (!navigator.clipboard)
       throw new Error('Clipboard API unavailable')
     await navigator.clipboard.writeText(apiKey)
-    copyFeedback.value = 'API Key 已复制'
+    copyFeedback.value = t('apiKeys.createdDialog.copySuccess')
   }
   catch {
-    copyFeedback.value = '复制失败，请手动保存 API Key'
+    copyFeedback.value = t('apiKeys.createdDialog.copyFailure')
   }
 }
 </script>
@@ -30,8 +32,8 @@ async function copyApiKey() {
 <template>
   <UModal
     v-model:open="open"
-    title="API Key 已创建"
-    description="请立即复制并保存。关闭此窗口后将无法再次查看完整 API Key。"
+    :title="t('apiKeys.createdDialog.title')"
+    :description="t('apiKeys.createdDialog.description')"
     :dismissible="false"
     :close="false"
     :ui="{ footer: 'justify-end' }"
@@ -59,14 +61,14 @@ async function copyApiKey() {
     <template #footer>
       <UButton
         data-testid="copy-api-key"
-        label="复制 API Key"
+        :label="t('apiKeys.createdDialog.copy')"
         icon="i-lucide-copy"
         variant="outline"
         @click="copyApiKey"
       />
       <UButton
         data-testid="close-created-api-key"
-        label="我已安全保存"
+        :label="t('apiKeys.createdDialog.saved')"
         icon="i-lucide-check"
         @click="open = false"
       />

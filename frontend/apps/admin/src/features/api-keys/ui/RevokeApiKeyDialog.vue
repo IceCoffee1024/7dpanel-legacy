@@ -3,6 +3,7 @@ import type { ApiKeyMetadata } from '../api/apiKeys'
 import type { ApiKeysFeedback } from '../model/useApiKeys'
 
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   apiKey: ApiKeyMetadata | null
@@ -14,6 +15,10 @@ const emit = defineEmits<{
   confirm: []
 }>()
 const open = defineModel<boolean>('open', { required: true })
+const { t } = useI18n()
+const feedbackMessage = computed(() => props.feedback === null
+  ? ''
+  : t(`apiKeys.feedback.${props.feedback.code}`))
 const controlledOpen = computed({
   get: () => open.value,
   set: (value: boolean) => {
@@ -33,8 +38,8 @@ function confirm() {
 <template>
   <UModal
     v-model:open="controlledOpen"
-    title="撤销 API Key"
-    description="撤销后无法重新启用，使用这把 Key 的请求会被拒绝。"
+    :title="t('apiKeys.revokeDialog.title')"
+    :description="t('apiKeys.revokeDialog.description')"
     :dismissible="!isSubmitting"
     :close="isSubmitting ? false : undefined"
     :ui="{ footer: 'justify-end' }"
@@ -55,7 +60,7 @@ function confirm() {
           aria-live="polite"
           class="text-sm text-error"
         >
-          {{ feedback.message }}
+          {{ feedbackMessage }}
         </p>
       </div>
     </template>
@@ -63,7 +68,7 @@ function confirm() {
     <template #footer>
       <UButton
         data-testid="cancel-revoke-api-key"
-        label="取消"
+        :label="t('common.cancel')"
         color="neutral"
         variant="outline"
         :disabled="isSubmitting"
@@ -71,7 +76,7 @@ function confirm() {
       />
       <UButton
         data-testid="confirm-revoke-api-key"
-        label="撤销 API Key"
+        :label="t('apiKeys.revokeDialog.confirm')"
         icon="i-lucide-trash-2"
         color="error"
         :loading="isSubmitting"

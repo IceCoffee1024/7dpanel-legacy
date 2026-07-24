@@ -282,11 +282,11 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 | 进程内瞬时事件 | 优先使用 props/emits、显式 Feature API、路由状态和查询失效；确有解耦需求时评估 `mitt` | 条件候选 | 只传递无持久状态、无需权威恢复的应用级通知；必须定义集中式 TypeScript 事件映射，不承载服务器事实、业务命令、权限或长任务结果 | 明确生产者与至少两个独立消费者、订阅释放、重复注册、事件顺序、异常隔离、测试可追踪性及 HMR 行为 |
 | Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
 | SSE | Header Bearer 全阶段使用 Fetch 型客户端；实现时比较无依赖 Fetch parser、`event-source-plus` 与 `@microsoft/fetch-event-source` | Fetch 型边界已批准；具体库为条件候选 | 必须设置 `Authorization` Header、检查 401/403/429/503、主动取消并限制重连，禁止 QueryString Token；产品不采用 Cookie 认证，原生 `EventSource` 不进入目标方案；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | Content-Type、Welcome/命名事件、Last-Event-ID/游标、Header Bearer 生命周期、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
-| 表单与边界校验 | `valibot` | 优先候选 | 兼容 Nuxt UI Standard Schema，并以模块化 API 控制初始化、恢复和自动化表单的浏览器产物 | Nuxt UI Form 集成、异步服务端错误、传输 DTO 映射和团队使用成本 |
-| 产品文案国际化 | `vue-i18n` | 优先候选 | 统一管理 `zh-CN`、`en` 产品与业务文案、以 `en` 为默认回退和响应式语言切换；不负责组件库或 Valibot 自带消息 | 缺失键检测、按语言拆包、类型安全、CSP 和生产包体积 |
-| Vue I18n 构建期集成 | `@intlify/unplugin-vue-i18n`（`devDependency`） | 条件候选 | 只有语言资源采用 JSON/YAML、SFC `<i18n>` custom block，或实测需要构建期预编译与运行时裁剪时才引入；它扩展而不替代 `vue-i18n`，TypeScript 内联消息不要求该插件 | 与锁定 Vite/Vue/Vue I18n/Node.js 的兼容性、locale include 边界、runtime compiler、懒加载 chunk、HTML 消息安全、构建失败行为和包体积收益 |
+| 表单与边界校验 | `valibot` | 已采用；当前表单边界已验证 | 登录、踢出原因和 API Key 名称使用模块化 schema 驱动提交边界，兼容 Nuxt UI Standard Schema；当前分别保留服务端 200/80 Unicode 字符合同 | 后续异步服务端错误、更多传输 DTO 映射和团队使用成本 |
+| 产品文案国际化 | `vue-i18n` | 已采用；当前界面已验证 | 集中管理 `zh-CN`、`en` 产品与业务文案、以 `en` 为默认回退和响应式语言切换；当前全部已实现 Admin 页面完成迁移 | 后续 Feature 的键类型安全、CSP、生产包体积和真实浏览器双语门禁 |
+| Vue I18n 构建期集成 | `@intlify/unplugin-vue-i18n`（`devDependency`） | 已采用；生产构建通过 | 精确预编译 `src/app/i18n/locales/**` 的成对 JSON 目录，不启用 runtime compiler；消息自动化禁止 HTML 并检查缺失键和插值漂移 | 后续语言拆包需求、插件升级兼容性和生产包体积 |
 | Nuxt UI 组件语言 | `UApp :locale` | Admin 目标采用 | 让 Nuxt UI 内置文案和区域格式跟随应用当前语言；不能替代产品文案国际化 | `zh-CN`/`en` 映射、切换响应和组件覆盖范围 |
-| Valibot 内置错误翻译 | `@valibot/i18n` | 优先候选 | 多个表单统一使用官方内置 issue 翻译；只按需导入与 `zh-CN`/`en` 对应的官方语言模块或实际使用的子模块，并让 Valibot `lang` 与应用语言同步 | 简体中文 locale 标识、全局配置切换、缺失消息回退、自定义业务错误归属和包体积 |
+| Valibot 内置错误翻译 | `@valibot/i18n` | 已采用；语言同步已验证 | 只导入官方 `zh-CN` 子模块，英语使用 Valibot 内置消息；global `lang` 与应用语言同步，自定义业务反馈仍由产品目录拥有 | 后续实际呈现更多内置 issue 时的浏览器验证、自定义业务错误归属和包体积 |
 | 日历日期 | `@internationalized/date` | 条件候选 | Nuxt UI 内部使用该包；只有 7DPanel 源码直接导入 `CalendarDate`、`CalendarDateTime`、`Time` 或 `ZonedDateTime` 时才声明为直接依赖 | 序列化、服务器时区契约、日期与时刻语义以及 Nuxt UI 表单集成 |
 | 日期格式与计算 | `date-fns` | 条件候选 | 仅用于 `Intl` 和已有日期能力不足的纯函数格式化或计算 | 是否与 `@internationalized/date` 重复、locale 体积和时区语义 |
 | Head 管理 | `@unhead/vue` | Admin 目标采用 | 当前用于响应颜色模式更新 `theme-color`，保留模板中已经直接使用的轻量集成 | 后续页面标题、meta 所有权和是否仍有直接 API 需求 |

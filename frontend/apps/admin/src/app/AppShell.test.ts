@@ -2,6 +2,7 @@ import ui from '@nuxt/ui/vue-plugin'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { useAuthStore } from '../features/auth'
@@ -75,5 +76,23 @@ describe('appShell', () => {
 
     expect(auth.isAuthenticated).toBe(false)
     expect(router.currentRoute.value.fullPath).toBe('/login')
+  })
+
+  it('switches navigation and account commands to English without translating identity', async () => {
+    const { wrapper } = await mountAppShell()
+
+    wrapper.vm.$i18n.locale = 'en'
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Overview')
+    expect(wrapper.text()).toContain('Players')
+    expect(wrapper.get('[data-testid="account-menu-trigger"]').attributes('aria-label'))
+      .toBe('server-owner account')
+
+    await wrapper.get('[data-testid="account-menu-trigger"]').trigger('click')
+    await nextTick()
+
+    expect(document.body.textContent).toContain('Sign out')
+    expect(document.body.textContent).toContain('Owner')
   })
 })

@@ -2,6 +2,7 @@ import type { ApiKeysFeedback } from '../model/useApiKeys'
 
 import { mount } from '@vue/test-utils'
 import { expect, it } from 'vitest'
+import { nextTick } from 'vue'
 
 import CreateApiKeyDialog from './CreateApiKeyDialog.vue'
 
@@ -87,7 +88,7 @@ it.each([
 it('locks all controls while creating and shows only stable feedback', async () => {
   const wrapper = mountDialog({
     isCreating: true,
-    feedback: { code: 'create-failed', message: '创建 API Key 失败，请稍后重试' },
+    feedback: { code: 'create-failed' },
   })
 
   expect(wrapper.findAll('input').every(input => input.attributes('disabled') !== undefined)).toBe(true)
@@ -96,4 +97,21 @@ it('locks all controls while creating and shows only stable feedback', async () 
 
   expect(wrapper.emitted('update:open')).toBeUndefined()
   expect(wrapper.get('[role="status"]').text()).toBe('创建 API Key 失败，请稍后重试')
+})
+
+it('switches to English without clearing the name or expiration', async () => {
+  const wrapper = mountDialog({
+    feedback: { code: 'create-failed' },
+  })
+  const inputs = wrapper.findAll('input')
+  await inputs[0]!.setValue('nightly backup')
+  await inputs[1]!.setValue('2026-08-23T08:00:00Z')
+
+  wrapper.vm.$i18n.locale = 'en'
+  await nextTick()
+
+  expect(wrapper.text()).toContain('Create API Key')
+  expect(wrapper.text()).toContain('Failed to create API Key')
+  expect(inputs[0]!.element.value).toBe('nightly backup')
+  expect(inputs[1]!.element.value).toBe('2026-08-23T08:00:00Z')
 })
