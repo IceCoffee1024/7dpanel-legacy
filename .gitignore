@@ -25,4 +25,5 @@ backend/.env.local
 backend/src/Bootstrap/LSTY.SevenDPanel/config.json
 *.suo
 *.user
-.superpowers/
+/.superpowers/
+/.venv/
