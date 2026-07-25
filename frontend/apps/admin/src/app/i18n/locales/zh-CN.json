@@ -2,7 +2,9 @@
   "common": {
     "cancel": "取消",
     "reload": "重新加载",
-    "backToOverview": "返回概览"
+    "backToOverview": "返回概览",
+    "yes": "是",
+    "no": "否"
   },
   "locale": {
     "label": "语言",
@@ -36,17 +38,125 @@
     "title": "概览",
     "brandLabel": "7DPanel 概览",
     "status": {
-      "loadingTitle": "正在获取服务器状态",
-      "freshTitle": "服务器运行正常",
-      "staleTitle": "服务器状态已过期",
+      "title": "整体状态",
+      "loadingTitle": "正在加载",
+      "freshTitle": "运行正常",
+      "partialTitle": "部分数据不可用",
+      "staleTitle": "数据可能已过期",
       "offlineTitle": "无法获取服务器状态",
-      "loadingDescription": "正在连接后端健康端点。",
-      "freshDescription": "最近一次健康检查已成功完成。",
-      "staleDescription": "保留最后一次成功结果，等待新的健康检查。",
-      "httpDescription": "后端拒绝了健康检查请求。",
-      "offlineDescription": "尚未从后端获取有效的服务器状态。",
-      "lastSample": "最近成功采样：{time}",
-      "retry": "重新检查"
+      "partialDescription": "部分信息暂时不可用，其余数据仍可查看。",
+      "staleDescription": "刷新失败，正在保留最后一次有效结果。",
+      "offlineDescription": "尚未获得可显示的服务器快照。",
+      "lastSample": "最后采样：{time}",
+      "refresh": "刷新"
+    },
+    "metrics": {
+      "players": "在线人数",
+      "fps": "FPS",
+      "worldSession": "世界会话时长",
+      "process": "进程时长",
+      "gameTime": "游戏时间"
+    },
+    "duration": {
+      "day": "{count}天",
+      "hour": "{count}小时",
+      "minute": "{count}分钟"
+    },
+    "serverInformation": {
+      "title": "服务器信息",
+      "serverTitle": "服务器标题",
+      "save": "存档",
+      "worldName": "世界名",
+      "version": "版本",
+      "mode": "模式",
+      "difficulty": "难度",
+      "region": "地区",
+      "language": "语言",
+      "address": "IP / 端口",
+      "historicalPlayers": "历史玩家数"
+    },
+    "hostPlatform": {
+      "title": "主机平台",
+      "operatingSystem": "操作系统",
+      "osFamily": "系统系列",
+      "architecture": "架构",
+      "runtime": "运行时",
+      "cpu": "CPU",
+      "cores": "逻辑核心",
+      "device": "设备",
+      "publicIpv4": "公网 IPv4",
+      "publicIpv6": "公网 IPv6",
+      "systemUser": "系统用户",
+      "deviceId": "设备 ID"
+    },
+    "resources": {
+      "title": "资源与容量",
+      "physicalMemory": "物理内存",
+      "virtualAddressSpace": "虚拟地址空间",
+      "swap": "交换空间",
+      "rss": "RSS",
+      "managedHeap": "托管堆",
+      "otherMemory": "其他内存",
+      "storage": "磁盘卷"
+    },
+    "attention": {
+      "title": "注意事项",
+      "none": "当前没有需要处理的稳定注意事项。",
+      "unknown": "有一项状态需要关注。",
+      "codes": {
+        "low_disk_space": "至少一个磁盘卷的可用空间较低。"
+      }
+    },
+    "activity": {
+      "title": "最近活动",
+      "empty": "暂无最近活动",
+      "unknown": "服务器记录了一项活动",
+      "someone": "某位玩家",
+      "messages": {
+        "player_joined": "{player} 加入了服务器",
+        "player_left": "{player} 离开了服务器",
+        "server_started": "游戏服务已启动",
+        "server_stopped": "游戏服务已停止",
+        "restart_requested": "已请求重启",
+        "shutdown_requested": "已请求关服"
+      }
+    },
+    "restartPolicy": {
+      "title": "重启策略",
+      "enabled": "启用",
+      "expression": "表达式",
+      "timezone": "时区",
+      "warning": "警告",
+      "saveWorld": "保存世界",
+      "mode": "模式",
+      "customCommand": "自定义命令",
+      "configured": "已配置",
+      "notConfigured": "未配置",
+      "bloodMoonDelay": "血月延迟",
+      "historyRetention": "历史保留期",
+      "nextRestart": "下次重启"
+    },
+    "quickActions": {
+      "title": "快捷操作",
+      "warning": "以下操作会影响所有在线玩家，请确认已通知相关人员。",
+      "restart": "重启服务器",
+      "shutdown": "关闭服务器"
+    },
+    "restartDialog": {
+      "title": "确认重启服务器",
+      "description": "此操作将启动配置的重启脚本。",
+      "risk": "这是高风险操作，会中断当前会话，且不保证服务器能够成功重启。",
+      "confirm": "启动重启脚本",
+      "accepted": "重启脚本已启动",
+      "failed": "无法启动重启脚本，请稍后重试"
+    },
+    "shutdownDialog": {
+      "title": "确认关闭服务器",
+      "description": "此操作将请求游戏服务保存并关闭。",
+      "risk": "这是高风险操作，会断开所有在线玩家，关服后需要另行启动服务。",
+      "confirm": "确认关服",
+      "accepted": "关服请求已接受",
+      "failed": "无法提交关服请求，请稍后重试"
     }
   },
   "shell": {

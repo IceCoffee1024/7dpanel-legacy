@@ -66,4 +66,23 @@ describe('locale messages', () => {
       expect(message, key).not.toMatch(/<\/?[A-Z][^>]*>/i)
     }
   })
+
+  it('contains the complete overview dashboard and independent operation messages', () => {
+    const requiredKeys = [
+      'overview.status.partialTitle',
+      'overview.serverInformation.worldName',
+      'overview.hostPlatform.deviceId',
+      'overview.resources.virtualAddressSpace',
+      'overview.resources.swap',
+      'overview.activity.empty',
+      'overview.restartPolicy.nextRestart',
+      'overview.quickActions.restart',
+      'overview.restartDialog.accepted',
+      'overview.shutdownDialog.accepted',
+    ]
+    for (const key of requiredKeys) {
+      expect(enMessages.has(key), key).toBe(true)
+      expect(zhCNMessages.has(key), key).toBe(true)
+    }
+  })
 })

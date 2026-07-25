@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-07-24"
+last_updated: "2026-07-25"
 ---
 
 # 7DPanel 系统架构
@@ -12,6 +12,20 @@ last_updated: "2026-07-24"
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
 当前切片直接支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家快照、Owner 踢出、动态控制台命令与命令审计写入，以及 `CAP-05` 的配置引导 Owner、网站 Access Token、用户 API Key 与认证 SSE 基础，并落实 `NFR-01`、`NFR-02`、`NFR-04` 的自托管、未知结果不得显示为成功和管理凭证失败关闭约束。它不代表 `CAP-01` 的完整游戏状态、`CAP-02` 的其他玩家动作/日志页面、`CAP-05` 的审计查询或完整身份管理，以及其他 P0 能力已经完成。
+
+### 已批准但尚未实现的 Admin 综合概览第一阶段
+
+当前代码只在 `/` 读取健康信息；以下是已批准目标的边界记录，不是当前组件、接口、数据库或真实进程验证证据：
+
+- Application 层聚合面板、游戏、主机、近期活动和注意事项的独立概览快照，并保留各分区的可用状态与采样时间；
+- SevenDays Adapter 在受控游戏主线程复制游戏侧不可变快照，不把游戏活对象带出该边界；
+- Hosting 在 Windows 与 Linux 分别采样主机平台、进程与容量信息，并保留平台差异和分区失败；
+- SQLite Persistence Adapter 保存固定用途的近期活动及服务器操作审计，不把它们扩展为通用事件总线；
+- Web Adapter 依据服务端角色裁剪敏感主机字段，拒绝浏览器提交命令、脚本路径、参数或环境值；
+- Admin 只在页面局部拥有综合快照、部分失败、过期、确认和操作反馈，不能把服务器快照复制为新的全局权威状态；
+- Owner 启动预配置脚本时，`Process.Start` 仅表示脚本进程已创建，不能表示脚本已完成、服务器已重启或健康检查已成功；固定关服保持独立的权限、审计和结果语义。
+
+这些目标的完整未来职责分别由[后端目标架构蓝图](architecture/backend-target-blueprint.md)和[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)拥有；它们在实现和验证前不会提升为本文件的当前事实。
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据来自根目录只读私有子模块 `7dtd-reference/`；该子模块不是产品源码或发布内容。
 
@@ -224,6 +238,10 @@ GET /
 | Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Vue I18n `11.4.7`、Valibot `1.4.2`、`@valibot/i18n` `1.2.0`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | Auth 与 locale codec/Repository/runtime、身份响应解析、登录/账号/语言菜单、路由定向、全部当前页面双语、Valibot 表单边界、技术值稳定、25 字段 parser/格式化、详情抽屉状态机和 code-only 反馈自动化通过；完整 Admin 单元/组件测试 31 个文件、335 项，lint、typecheck 和生产构建均通过。当前 Owner Playwright suite 包含玩家详情抽屉的合成 25 字段场景，但缺少受控 OWIN 环境而未执行；Vitest 输出的 happy-dom teardown/外部连接噪声尚未定位 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器双语、API Key、详情抽屉窄屏、踢出或真实动作结果证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
+
+### 已批准但尚未实现的综合概览第一阶段依赖决定
+
+第一阶段目标不新增 npm 或 NuGet 包：后端复用当前 `net48` BCL、现有 Web/OWIN、SQLite 与平台边界，Admin 复用现有 Vue、Pinia、Fetch 与测试工具。此决定只约束未来实现的依赖范围，不表示当前项目清单已经包含综合概览功能，也不改变上表的当前验证状态。
 
 ## 部署与运维
 

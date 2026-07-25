@@ -139,6 +139,230 @@ namespace LSTY.SevenDPanel.Tests
                 example.Authentication.AccessTokenLifetimeMinutes);
             Assert.Equal(480, defaults.Authentication.AccessTokenLifetimeMinutes);
             Assert.Equal(defaults.Authentication.AllowInsecureHttp, example.Authentication.AllowInsecureHttp);
+            Assert.NotNull(example.Overview);
+            Assert.NotNull(defaults.Overview);
+            Assert.NotNull(example.Overview.PublicNetwork);
+            Assert.NotNull(defaults.Overview.PublicNetwork);
+            Assert.Equal(defaults.Overview.PublicNetwork.AutoDetectEnabled, example.Overview.PublicNetwork.AutoDetectEnabled);
+            Assert.False(defaults.Overview.PublicNetwork.AutoDetectEnabled);
+            Assert.Equal(defaults.Overview.PublicNetwork.DetectionEndpoint, example.Overview.PublicNetwork.DetectionEndpoint);
+            Assert.NotNull(example.Restart);
+            Assert.NotNull(defaults.Restart);
+            Assert.Equal(defaults.Restart.WindowsScript, example.Restart.WindowsScript);
+            Assert.Equal(defaults.Restart.LinuxScript, example.Restart.LinuxScript);
+            Assert.Equal(defaults.Restart.WorkingDirectory, example.Restart.WorkingDirectory);
+        }
+
+        [Fact]
+        public void Relative_restart_paths_are_normalized_under_the_mod_data_directory()
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "config.json");
+            File.WriteAllText(path,
+                "{\"Port\":19092,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Restart\":{\"WindowsScript\":\"scripts\\\\restart.cmd\",\"LinuxScript\":\"scripts/restart.sh\",\"WorkingDirectory\":\".\"}}");
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+
+                Assert.Equal(Path.Combine(directory, "data", "scripts", "restart.cmd"), options.Restart.WindowsScript);
+                Assert.Equal(Path.Combine(directory, "data", "scripts", "restart.sh"), options.Restart.LinuxScript);
+                Assert.Equal(Path.Combine(directory, "data"), options.Restart.WorkingDirectory);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [Theory]
+        [InlineData("scripts/restart.ps1")]
+        [InlineData("scripts/restart.cmd.bak")]
+        public void Windows_restart_script_requires_cmd_extension(string windowsScript)
+        {
+            var exception = Assert.Throws<InvalidDataException>(() =>
+                RestartScriptOptions.FromBinding(
+                    windowsScript,
+                    RestartScriptOptions.DefaultLinuxScript,
+                    RestartScriptOptions.DefaultWorkingDirectory,
+                    Path.GetTempPath()));
+
+            Assert.Equal("Windows restart script must use the .cmd extension.", exception.Message);
+            Assert.DoesNotContain(windowsScript, exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void Windows_restart_script_accepts_cmd_extension_case_insensitively()
+        {
+            var options = RestartScriptOptions.FromBinding(
+                "scripts/restart.CMD",
+                RestartScriptOptions.DefaultLinuxScript,
+                RestartScriptOptions.DefaultWorkingDirectory,
+                Path.GetTempPath());
+
+            Assert.EndsWith("restart.CMD", options.WindowsScript, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("scripts/restart.bash")]
+        [InlineData("scripts/restart.SH")]
+        public void Linux_restart_script_requires_case_sensitive_sh_extension(string linuxScript)
+        {
+            var exception = Assert.Throws<InvalidDataException>(() =>
+                RestartScriptOptions.FromBinding(
+                    RestartScriptOptions.DefaultWindowsScript,
+                    linuxScript,
+                    RestartScriptOptions.DefaultWorkingDirectory,
+                    Path.GetTempPath()));
+
+            Assert.Equal("Linux restart script must use the .sh extension.", exception.Message);
+            Assert.DoesNotContain(linuxScript, exception.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void Restart_script_paths_with_spaces_remain_supported()
+        {
+            var options = RestartScriptOptions.FromBinding(
+                "scripts/restart server.cmd",
+                "scripts/restart server.sh",
+                ".",
+                Path.GetTempPath());
+
+            Assert.EndsWith("restart server.cmd", options.WindowsScript, StringComparison.Ordinal);
+            Assert.EndsWith("restart server.sh", options.LinuxScript, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("scripts/%TEMP%.cmd")]
+        [InlineData("scripts/re\"start.cmd")]
+        [InlineData("scripts/re&start.cmd")]
+        [InlineData("scripts/re^start.cmd")]
+        public void Windows_restart_script_rejects_shell_sensitive_characters(
+            string windowsScript)
+        {
+            var exception = Assert.Throws<InvalidDataException>(() =>
+                RestartScriptOptions.FromBinding(
+                    windowsScript,
+                    RestartScriptOptions.DefaultLinuxScript,
+                    RestartScriptOptions.DefaultWorkingDirectory,
+                    Path.GetTempPath()));
+
+            Assert.Equal(
+                "Windows restart script contains unsupported characters.",
+                exception.Message);
+            Assert.DoesNotContain(windowsScript, exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData("scripts/re\"start.sh")]
+        [InlineData("scripts/re'start.sh")]
+        [InlineData("scripts/re$HOME.sh")]
+        [InlineData("scripts/re`id`.sh")]
+        public void Linux_restart_script_rejects_shell_sensitive_characters(
+            string linuxScript)
+        {
+            var exception = Assert.Throws<InvalidDataException>(() =>
+                RestartScriptOptions.FromBinding(
+                    RestartScriptOptions.DefaultWindowsScript,
+                    linuxScript,
+                    RestartScriptOptions.DefaultWorkingDirectory,
+                    Path.GetTempPath()));
+
+            Assert.Equal(
+                "Linux restart script contains unsupported characters.",
+                exception.Message);
+            Assert.DoesNotContain(linuxScript, exception.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void Invalid_overview_and_restart_sections_fall_back_without_replacing_host_or_authentication()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path,
+                "{\"Port\":19093,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{\"Enabled\":true,\"Username\":\"admin\",\"Password\":\"password\",\"AccessTokenLifetimeMinutes\":30,\"AllowInsecureHttp\":true}," +
+                "\"Overview\":{\"PublicNetwork\":{\"Ipv4\":\"not-an-ip\",\"AutoDetectEnabled\":true,\"DetectionEndpoint\":\"http://example.test/ip\"}}," +
+                "\"Restart\":{\"WindowsScript\":\"\",\"LinuxScript\":\"\",\"WorkingDirectory\":\"\"}}");
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+
+                Assert.Equal("http://127.0.0.1:19093/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.False(options.Overview.PublicNetwork.AutoDetectEnabled);
+                Assert.Null(options.Overview.PublicNetwork.DetectionEndpoint);
+                Assert.EndsWith(Path.Combine("data", "scripts", "restart-server.cmd"), options.Restart.WindowsScript);
+                Assert.EndsWith(Path.Combine("data", "scripts", "restart-server.sh"), options.Restart.LinuxScript);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Restart_path_escape_falls_back_only_the_restart_section()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path,
+                "{\"Port\":19094,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{\"Enabled\":true,\"Username\":\"admin\",\"Password\":\"password\",\"AccessTokenLifetimeMinutes\":30,\"AllowInsecureHttp\":true}," +
+                "\"Restart\":{\"WindowsScript\":\"../../restart-server.cmd\",\"LinuxScript\":\"scripts/restart-server.sh\",\"WorkingDirectory\":\".\"}}");
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+
+                Assert.Equal("http://127.0.0.1:19094/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.EndsWith(Path.Combine("data", "scripts", "restart-server.cmd"), options.Restart.WindowsScript);
+                Assert.EndsWith(Path.Combine("data", "scripts", "restart-server.sh"), options.Restart.LinuxScript);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Restart_path_with_nul_falls_back_only_the_restart_section()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path,
+                "{\"Port\":19095,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{\"Enabled\":true,\"Username\":\"admin\",\"Password\":\"password\",\"AccessTokenLifetimeMinutes\":30,\"AllowInsecureHttp\":true}," +
+                "\"Restart\":{\"WindowsScript\":\"scripts\\u0000restart.cmd\",\"LinuxScript\":\"scripts/restart-server.sh\",\"WorkingDirectory\":\".\"}}");
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+
+                Assert.Equal("http://127.0.0.1:19095/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.EndsWith(Path.Combine("data", "scripts", "restart-server.cmd"), options.Restart.WindowsScript);
+                Assert.EndsWith(Path.Combine("data", "scripts", "restart-server.sh"), options.Restart.LinuxScript);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Absolute_restart_paths_outside_the_data_directory_are_rejected_as_configuration_errors()
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N"));
+            var dataDirectory = Path.Combine(directory, "data");
+            var outsideScript = Path.Combine(directory, "restart-server.cmd");
+
+            Assert.Throws<InvalidDataException>(() => RestartScriptOptions.FromBinding(
+                outsideScript,
+                RestartScriptOptions.DefaultLinuxScript,
+                RestartScriptOptions.DefaultWorkingDirectory,
+                dataDirectory));
         }
 
         [Theory]

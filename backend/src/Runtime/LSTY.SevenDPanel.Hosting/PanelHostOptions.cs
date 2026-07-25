@@ -11,14 +11,21 @@ namespace LSTY.SevenDPanel.Hosting
         public const string DefaultScheme = "http";
 
         public PanelHostOptions(string url)
-            : this(url, false, PanelAuthenticationOptions.Disabled)
+            : this(
+                url,
+                false,
+                PanelAuthenticationOptions.Disabled,
+                PanelOverviewOptions.Disabled,
+                RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")))
         {
         }
 
         private PanelHostOptions(
             string url,
             bool allowWildcardHost,
-            PanelAuthenticationOptions authentication)
+            PanelAuthenticationOptions authentication,
+            PanelOverviewOptions overview,
+            RestartScriptOptions restart)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -31,6 +38,8 @@ namespace LSTY.SevenDPanel.Hosting
             {
                 Url = url.EndsWith("/", StringComparison.Ordinal) ? url : url + "/";
                 Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
+                Overview = overview ?? throw new ArgumentNullException(nameof(overview));
+                Restart = restart ?? throw new ArgumentNullException(nameof(restart));
                 return;
             }
 
@@ -44,16 +53,22 @@ namespace LSTY.SevenDPanel.Hosting
                 ? parsed.AbsoluteUri
                 : parsed.AbsoluteUri + "/";
             Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
+            Overview = overview ?? throw new ArgumentNullException(nameof(overview));
+            Restart = restart ?? throw new ArgumentNullException(nameof(restart));
         }
 
         public string Url { get; }
         public PanelAuthenticationOptions Authentication { get; }
+        public PanelOverviewOptions Overview { get; }
+        public RestartScriptOptions Restart { get; }
 
         public static PanelHostOptions FromBinding(
             int port,
             string? bindAddress,
             string? scheme,
-            PanelAuthenticationOptions? authentication = null)
+            PanelAuthenticationOptions? authentication = null,
+            PanelOverviewOptions? overview = null,
+            RestartScriptOptions? restart = null)
         {
             if (port < 1 || port > 65535)
             {
@@ -73,7 +88,9 @@ namespace LSTY.SevenDPanel.Hosting
             return new PanelHostOptions(
                 normalizedScheme + "://" + listenerHost + ":" + port + "/",
                 listenerHost == "*",
-                authentication ?? PanelAuthenticationOptions.Disabled);
+                authentication ?? PanelAuthenticationOptions.Disabled,
+                overview ?? PanelOverviewOptions.Disabled,
+                restart ?? RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")));
         }
     }
 }

@@ -11,15 +11,20 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Hosting;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
+using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
+using LSTY.SevenDPanel.Hosting.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
 using Xunit;
@@ -215,8 +220,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 onlinePlayerQuery,
                 provider.GetRequiredService<IOnlinePlayerQuery>());
-            Assert.IsType<PlayerHistoryRuntime>(
+            Assert.IsType<SevenDaysRecentActivityRuntime>(
                 provider.GetRequiredService<IModRuntime>());
+            Assert.NotNull(provider.GetRequiredService<PlayerHistoryRuntime>());
             Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
             Assert.NotNull(provider.GetRequiredService<IPlayerHistoryStore>());
             Assert.NotNull(provider.GetRequiredService<PlayerHistoryWriteService>());
@@ -250,6 +256,260 @@ namespace LSTY.SevenDPanel.Tests
                 if (Directory.Exists(dataDirectory))
                     Directory.Delete(dataDirectory, recursive: true);
             }
+        }
+
+        [Fact]
+        public void Runtime_graph_shares_writer_and_disposes_recorder()
+        {
+            var dataDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-di-tests",
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dataDirectory);
+            var runtime = PanelServiceProviderFactory.CreateRuntime(
+                PanelHostOptions.FromBinding(18080, "127.0.0.1", "http"),
+                dataDirectory,
+                null,
+                _ => { });
+            var providerField = typeof(ServiceProviderRuntime).GetField(
+                "serviceProvider",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(providerField);
+            var provider = Assert.IsAssignableFrom<IServiceProvider>(
+                providerField.GetValue(runtime));
+
+            var windows = provider.GetRequiredService<WindowsHostPlatformAdapter>();
+            var linux = provider.GetRequiredService<LinuxHostPlatformAdapter>();
+            Assert.Same(windows, provider.GetRequiredService<WindowsHostPlatformAdapter>());
+            Assert.Same(linux, provider.GetRequiredService<LinuxHostPlatformAdapter>());
+            Assert.True(
+                ReferenceEquals(provider.GetRequiredService<IHostPlatformAdapter>(), windows) ||
+                ReferenceEquals(provider.GetRequiredService<IHostPlatformAdapter>(), linux));
+            Assert.Same(
+                provider.GetRequiredService<HostOverviewQuery>(),
+                provider.GetRequiredService<IHostOverviewQuery>());
+            Assert.Same(
+                provider.GetRequiredService<SevenDaysGameOverviewQuery>(),
+                provider.GetRequiredService<IGameOverviewQuery>());
+            Assert.Same(
+                provider.GetRequiredService<SqliteServerOperationAuditTrail>(),
+                provider.GetRequiredService<IServerOperationAuditTrail>());
+            Assert.Same(
+                provider.GetRequiredService<RestartScriptLauncher>(),
+                provider.GetRequiredService<IRestartScriptLauncher>());
+            Assert.Same(
+                provider.GetRequiredService<SevenDaysShutdownServerGateway>(),
+                provider.GetRequiredService<IShutdownServerGateway>());
+            Assert.Same(
+                provider.GetRequiredService<GetOverviewUseCase>(),
+                provider.GetRequiredService<GetOverviewUseCase>());
+            Assert.Same(
+                provider.GetRequiredService<RestartServerUseCase>(),
+                provider.GetRequiredService<RestartServerUseCase>());
+            Assert.Same(
+                provider.GetRequiredService<ShutdownServerUseCase>(),
+                provider.GetRequiredService<ShutdownServerUseCase>());
+
+            var activityStore = provider.GetRequiredService<SqliteRecentActivityStore>();
+            var writer = provider.GetRequiredService<IRecentActivityWriter>();
+            Assert.Same(activityStore, provider.GetRequiredService<IRecentActivityQuery>());
+            Assert.Same(activityStore, writer);
+            var oauth = provider.GetRequiredService<PanelOAuthAuthorizationServerProvider>();
+            var recorder = provider.GetRequiredService<SevenDaysRecentActivityRecorder>();
+            var activityRuntime = Assert.IsType<SevenDaysRecentActivityRuntime>(
+                provider.GetRequiredService<IModRuntime>());
+            Assert.Same(
+                writer,
+                GetPrivateField<IRecentActivityWriter>(oauth, "recentActivityWriter"));
+            Assert.Same(
+                writer,
+                GetPrivateField<IRecentActivityWriter>(recorder, "writer"));
+            Assert.Same(
+                recorder,
+                GetPrivateField<SevenDaysRecentActivityRecorder>(activityRuntime, "recorder"));
+            Assert.False(GetPrivateField<bool>(recorder, "started"));
+
+            try
+            {
+                runtime.Dispose();
+
+                Assert.True(GetPrivateField<bool>(recorder, "disposed"));
+                Assert.False(GetPrivateField<bool>(recorder, "started"));
+                Assert.Null(GetPrivateField<IDisposable>(recorder, "joinedSubscription"));
+                Assert.Null(GetPrivateField<IDisposable>(recorder, "leftSubscription"));
+            }
+            finally
+            {
+                try { runtime.Dispose(); } catch { }
+                if (Directory.Exists(dataDirectory))
+                    Directory.Delete(dataDirectory, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void Activity_runtime_starts_once_and_unsubscribes_on_stop()
+        {
+            var subscriptions = 0;
+            var disposals = 0;
+            var recorder = new SevenDaysRecentActivityRecorder(
+                _ =>
+                {
+                    subscriptions++;
+                    return new CallbackDisposable(() => disposals++);
+                },
+                _ =>
+                {
+                    subscriptions++;
+                    return new CallbackDisposable(() => disposals++);
+                },
+                new NullRecentActivityWriter(),
+                _ => { });
+            var inner = new RecordingRuntime(new List<string>());
+            var subject = new SevenDaysRecentActivityRuntime(recorder, inner);
+
+            subject.Start();
+            subject.Start();
+            subject.Stop();
+            subject.Stop();
+
+            Assert.Equal(2, subscriptions);
+            Assert.Equal(2, disposals);
+            Assert.True(GetPrivateField<bool>(recorder, "disposed"));
+        }
+
+        [Fact]
+        public async Task Activity_runtime_serializes_stop_with_an_in_progress_start()
+        {
+            var subscriptions = 0;
+            var disposals = 0;
+            var recorder = new SevenDaysRecentActivityRecorder(
+                _ =>
+                {
+                    subscriptions++;
+                    return new CallbackDisposable(() => disposals++);
+                },
+                _ =>
+                {
+                    subscriptions++;
+                    return new CallbackDisposable(() => disposals++);
+                },
+                new NullRecentActivityWriter(),
+                _ => { });
+            var inner = new BlockingStartRuntime();
+            var subject = new SevenDaysRecentActivityRuntime(recorder, inner);
+            var stopAttempted = new ManualResetEventSlim();
+            var stopReturned = new ManualResetEventSlim();
+
+            var start = Task.Run(subject.Start);
+            Assert.True(inner.StartEntered.Wait(TimeSpan.FromSeconds(5)));
+            var stop = Task.Run(() =>
+            {
+                stopAttempted.Set();
+                subject.Stop();
+                stopReturned.Set();
+            });
+            Assert.True(stopAttempted.Wait(TimeSpan.FromSeconds(5)));
+            var returnedWhileStartWasBlocked = stopReturned.Wait(TimeSpan.FromMilliseconds(250));
+
+            inner.AllowStart.Set();
+            await start;
+            await stop;
+
+            Assert.False(returnedWhileStartWasBlocked);
+            Assert.False(inner.IsRunning);
+            Assert.Equal(1, inner.StartCalls);
+            Assert.Equal(1, inner.StopCalls);
+            Assert.Equal(2, subscriptions);
+            Assert.Equal(2, disposals);
+        }
+
+        [Fact]
+        public async Task Runtime_dispose_drains_accepted_activity_before_disposing_writer()
+        {
+            Action<string>? joined = null;
+            var writer = new DisposalAwareRecentActivityWriter();
+            var recorder = new SevenDaysRecentActivityRecorder(
+                handler =>
+                {
+                    joined = handler;
+                    return new CallbackDisposable(() => { });
+                },
+                _ => new CallbackDisposable(() => { }),
+                writer,
+                _ => { });
+            var services = new ServiceCollection();
+            services.AddSingleton(_ => writer);
+            services.AddSingleton(_ => recorder);
+            var provider = services.BuildServiceProvider();
+            provider.GetRequiredService<DisposalAwareRecentActivityWriter>();
+            provider.GetRequiredService<SevenDaysRecentActivityRecorder>();
+            var runtime = new ServiceProviderRuntime(
+                new SevenDaysRecentActivityRuntime(
+                    recorder,
+                    new RecordingRuntime(new List<string>())),
+                provider);
+            runtime.Start();
+
+            joined!("Amy");
+            Assert.True(writer.WriteEntered.Wait(TimeSpan.FromSeconds(5)));
+            var dispose = Task.Run(runtime.Dispose);
+            var writerDisposedBeforeWriteFinished =
+                writer.Disposed.Wait(TimeSpan.FromMilliseconds(250));
+
+            writer.CompleteWrite.TrySetResult(true);
+            await dispose;
+
+            Assert.False(writerDisposedBeforeWriteFinished);
+            Assert.True(writer.WriteFinished.IsSet);
+            Assert.True(writer.Disposed.IsSet);
+        }
+
+        [Fact]
+        public async Task Runtime_dispose_retry_keeps_provider_until_a_timed_out_write_finishes()
+        {
+            Action<string>? joined = null;
+            var logs = new List<string>();
+            var writer = new DisposalAwareRecentActivityWriter();
+            var recorder = new SevenDaysRecentActivityRecorder(
+                handler =>
+                {
+                    joined = handler;
+                    return new CallbackDisposable(() => { });
+                },
+                _ => new CallbackDisposable(() => { }),
+                writer,
+                logs.Add);
+            var services = new ServiceCollection();
+            services.AddSingleton(_ => writer);
+            services.AddSingleton(_ => recorder);
+            var provider = services.BuildServiceProvider();
+            provider.GetRequiredService<DisposalAwareRecentActivityWriter>();
+            provider.GetRequiredService<SevenDaysRecentActivityRecorder>();
+            var runtime = new ServiceProviderRuntime(
+                new SevenDaysRecentActivityRuntime(
+                    recorder,
+                    new RecordingRuntime(new List<string>())),
+                provider);
+            runtime.Start();
+            joined!("Amy");
+            Assert.True(writer.WriteEntered.Wait(TimeSpan.FromSeconds(5)));
+
+            Assert.Throws<AggregateException>(runtime.Dispose);
+            Assert.False(writer.Disposed.IsSet);
+            Assert.Equal(
+                new[] { "Recent activity drain timed out; runtime resources remain active." },
+                logs);
+            Assert.DoesNotContain("Amy", Assert.Single(logs), StringComparison.Ordinal);
+            var retry = Task.Run(runtime.Dispose);
+            var writerDisposedBeforeWriteFinished =
+                writer.Disposed.Wait(TimeSpan.FromMilliseconds(250));
+
+            writer.CompleteWrite.TrySetResult(true);
+            await retry;
+
+            Assert.False(writerDisposedBeforeWriteFinished);
+            Assert.True(writer.WriteFinished.IsSet);
+            Assert.True(writer.Disposed.IsSet);
         }
 
         [Fact]
@@ -316,6 +576,15 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        private static T? GetPrivateField<T>(object instance, string fieldName)
+        {
+            var field = instance.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(field);
+            return (T?)field.GetValue(instance);
+        }
+
         public sealed class ScopedProbeController : ApiController
         {
             public ScopedProbeController(ScopedProbe probe)
@@ -378,6 +647,37 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        private sealed class BlockingStartRuntime : IModRuntime
+        {
+            private int running;
+            private int startCalls;
+            private int stopCalls;
+
+            public ManualResetEventSlim StartEntered { get; } = new ManualResetEventSlim();
+            public ManualResetEventSlim AllowStart { get; } = new ManualResetEventSlim();
+            public bool IsRunning => Volatile.Read(ref running) != 0;
+            public int StartCalls => Volatile.Read(ref startCalls);
+            public int StopCalls => Volatile.Read(ref stopCalls);
+
+            public void Start()
+            {
+                Interlocked.Increment(ref startCalls);
+                StartEntered.Set();
+                AllowStart.Wait();
+                Volatile.Write(ref running, 1);
+            }
+
+            public void MarkGameReady()
+            {
+            }
+
+            public void Stop()
+            {
+                Interlocked.Increment(ref stopCalls);
+                Volatile.Write(ref running, 0);
+            }
+        }
+
         private sealed class TimeoutOnceRuntime : IModRuntime
         {
             private readonly IList<string> order;
@@ -424,6 +724,55 @@ namespace LSTY.SevenDPanel.Tests
                 order.Add("provider");
                 if (failOnDispose) throw new InvalidOperationException("provider failure");
             }
+        }
+
+        private sealed class CallbackDisposable : IDisposable
+        {
+            private Action? callback;
+
+            public CallbackDisposable(Action callback)
+            {
+                this.callback = callback;
+            }
+
+            public void Dispose()
+            {
+                Interlocked.Exchange(ref callback, null)?.Invoke();
+            }
+        }
+
+        private sealed class NullRecentActivityWriter : IRecentActivityWriter
+        {
+            public Task RecordPanelLoginSucceededAsync(string actorSubject, string actorDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordPlayerJoinedAsync(string playerDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordPlayerLeftAsync(string playerDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordRestartScriptStartedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordShutdownRequestedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordServerOperationFailedAsync(string actorSubject, string operationCode, string failureCode, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+        }
+
+        private sealed class DisposalAwareRecentActivityWriter : IRecentActivityWriter, IDisposable
+        {
+            public ManualResetEventSlim WriteEntered { get; } = new ManualResetEventSlim();
+            public ManualResetEventSlim WriteFinished { get; } = new ManualResetEventSlim();
+            public ManualResetEventSlim Disposed { get; } = new ManualResetEventSlim();
+            public TaskCompletionSource<bool> CompleteWrite { get; } =
+                new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            public Task RecordPanelLoginSucceededAsync(string actorSubject, string actorDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+
+            public async Task RecordPlayerJoinedAsync(string playerDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken)
+            {
+                WriteEntered.Set();
+                await CompleteWrite.Task;
+                WriteFinished.Set();
+            }
+
+            public Task RecordPlayerLeftAsync(string playerDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordRestartScriptStartedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordShutdownRequestedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task RecordServerOperationFailedAsync(string actorSubject, string operationCode, string failureCode, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+            public void Dispose() => Disposed.Set();
         }
 
         private sealed class ScopeCaptureHandler : HttpMessageHandler

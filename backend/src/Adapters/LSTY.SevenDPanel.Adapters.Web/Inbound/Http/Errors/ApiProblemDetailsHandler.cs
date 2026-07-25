@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
 {
@@ -13,6 +14,12 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors
         {
             var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if ((int)response.StatusCode < 400 || IsProblemDetails(response)) return response;
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized &&
+                request.GetRequestContext()?.Principal?.Identity?.IsAuthenticated == true)
+            {
+                response.StatusCode = HttpStatusCode.Forbidden;
+            }
 
             var description = Describe(response.StatusCode);
             var oldContent = response.Content;

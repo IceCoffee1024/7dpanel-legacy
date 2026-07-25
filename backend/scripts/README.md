@@ -117,6 +117,23 @@ Before SQLite composition, 7DPanel uses the game-provided Harmony to restore
 Mod. Startup fails before opening the database when that compatibility patch
 cannot produce a location.
 
+## Panel Restart Scripts
+
+Server owners may deploy a fixed restart script in the panel data directory
+and select its normalized path in the server-owned `config.json`. Use a `.cmd`
+script on Windows and a `.sh` script on Linux. The panel does not accept a
+script path, command, arguments, or environment variables from an HTTP request.
+
+The panel starts the configured script process and immediately releases its
+process handle. It does not wait for the script, track its exit status, or
+claim that the game server restarted successfully. The script is responsible
+for any shutdown, delay, startup, supervision, or remote-host behavior.
+
+Grant the game server account permission to read and execute the script and to
+access everything the script needs. Set the configured working directory so
+relative paths used by the script resolve predictably. Keep secrets out of the
+script and ensure the server owner controls all files reachable from it.
+
 The script removes and rejects game-provided assemblies plus obsolete
 `System.Data.SQLite.dll` and `SQLite.Interop.dll` assets. The managed
 `Microsoft.Bcl.AsyncInterfaces.dll` and

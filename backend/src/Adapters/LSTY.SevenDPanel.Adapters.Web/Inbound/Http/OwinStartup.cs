@@ -21,6 +21,22 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
     public static class OwinStartup
     {
+        public static void RegisterAuthenticationServices(
+            IServiceCollection services,
+            Action<string> log)
+        {
+            if (services == null) throw new ArgumentNullException(nameof(services));
+            if (log == null) throw new ArgumentNullException(nameof(log));
+
+            services.AddSingleton<PanelCredentialVerifier>();
+            services.AddSingleton(serviceProvider =>
+                new PanelOAuthAuthorizationServerProvider(
+                    serviceProvider.GetRequiredService<PanelAuthenticationOptions>(),
+                    serviceProvider.GetRequiredService<PanelCredentialVerifier>(),
+                    serviceProvider.GetRequiredService<LSTY.SevenDPanel.Application.IRecentActivityWriter>(),
+                    log));
+        }
+
         public static void Configure(
             IAppBuilder app,
             IServiceProvider serviceProvider,
@@ -86,7 +102,6 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             var credentialStore = serviceProvider.GetRequiredService<IPanelCredentialStore>();
             var accessTokenStore = serviceProvider.GetRequiredService<IPanelAccessTokenStore>();
             var apiKeyStore = serviceProvider.GetRequiredService<IPanelApiKeyStore>();
-            var verifier = new PanelCredentialVerifier(credentialStore);
             var bearerCredentials = new PersistentBearerCredentialProvider(
                 accessTokenStore,
                 apiKeyStore,
@@ -100,7 +115,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 AccessTokenFormat = RejectingAuthenticationTicketFormat.Instance,
                 AccessTokenProvider = bearerCredentials,
                 AuthorizationCodeFormat = RejectingAuthenticationTicketFormat.Instance,
-                Provider = new PanelOAuthAuthorizationServerProvider(authentication, verifier),
+                Provider = serviceProvider.GetRequiredService<PanelOAuthAuthorizationServerProvider>(),
                 RefreshTokenFormat = RejectingAuthenticationTicketFormat.Instance
             });
             app.UseOAuthBearerAuthentication(new OAuthBearerAuthenticationOptions

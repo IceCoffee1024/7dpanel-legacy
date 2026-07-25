@@ -28,6 +28,7 @@ export class HttpError extends Error {
 }
 
 export interface RequestJsonOptions extends Omit<RequestInit, 'signal'> {
+  expectedStatus?: number
   signal?: AbortSignal
   timeoutMs?: number
 }
@@ -54,7 +55,12 @@ export async function requestJson<T>(
     throw new HttpError('invalid', 'Request path must start with /api/v1/')
   }
 
-  const { signal: callerSignal, timeoutMs = 10_000, ...requestOptions } = options
+  const {
+    expectedStatus,
+    signal: callerSignal,
+    timeoutMs = 10_000,
+    ...requestOptions
+  } = options
   if (callerSignal?.aborted) {
     throw new HttpError('aborted', 'Request was aborted')
   }
@@ -105,6 +111,9 @@ export async function requestJson<T>(
       }
       throw new HttpError('http', `HTTP request failed with status ${response.status}`, fields)
     }
+
+    if (expectedStatus !== undefined && response.status !== expectedStatus)
+      throw new HttpError('invalid', 'Unexpected HTTP response status')
 
     if (response.status === 204)
       return undefined as T

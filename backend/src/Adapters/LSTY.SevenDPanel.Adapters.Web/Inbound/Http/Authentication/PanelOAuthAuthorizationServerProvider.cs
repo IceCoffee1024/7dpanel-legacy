@@ -1,6 +1,8 @@
 using System;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Hosting;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.OAuth;
@@ -12,13 +14,26 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
     {
         private readonly PanelAuthenticationOptions options;
         private readonly PanelCredentialVerifier verifier;
+        private readonly IRecentActivityWriter? recentActivityWriter;
+        private readonly Action<string> log;
 
         public PanelOAuthAuthorizationServerProvider(
             PanelAuthenticationOptions options,
             PanelCredentialVerifier verifier)
+            : this(options, verifier, null, null)
+        {
+        }
+
+        public PanelOAuthAuthorizationServerProvider(
+            PanelAuthenticationOptions options,
+            PanelCredentialVerifier verifier,
+            IRecentActivityWriter? recentActivityWriter,
+            Action<string>? log = null)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.verifier = verifier ?? throw new ArgumentNullException(nameof(verifier));
+            this.recentActivityWriter = recentActivityWriter;
+            this.log = log ?? (_ => { });
         }
 
         public override Task ValidateClientAuthentication(
@@ -28,7 +43,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
             return Task.CompletedTask;
         }
 
-        public override Task GrantResourceOwnerCredentials(
+        public override async Task GrantResourceOwnerCredentials(
             OAuthGrantResourceOwnerCredentialsContext context)
         {
             if (!options.AllowInsecureHttp &&
@@ -38,7 +53,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
                     StringComparison.OrdinalIgnoreCase))
             {
                 context.SetError("invalid_request", "HTTPS is required for password authentication.");
-                return Task.CompletedTask;
+                return;
             }
 
             if (!verifier.TryVerify(
@@ -47,7 +62,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
                 out var panelIdentity))
             {
                 context.SetError("invalid_grant", "The user name or password is incorrect.");
-                return Task.CompletedTask;
+                return;
             }
 
             var now = DateTimeOffset.UtcNow;
@@ -61,7 +76,37 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication
                     IssuedUtc = now,
                     ExpiresUtc = now.Add(options.AccessTokenLifetime)
                 }));
-            return Task.CompletedTask;
+
+            if (recentActivityWriter == null) return;
+
+            try
+            {
+                await Task.Run(
+                    async () =>
+                    {
+                        try
+                        {
+                            await recentActivityWriter.RecordPanelLoginSucceededAsync(
+                                panelIdentity.Subject,
+                                panelIdentity.Username,
+                                now,
+                                CancellationToken.None).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            WarnRecordingFailure();
+                        }
+                    }).ConfigureAwait(false);
+            }
+            catch
+            {
+                WarnRecordingFailure();
+            }
+        }
+
+        private void WarnRecordingFailure()
+        {
+            try { log("Recent activity recording failed; token issuance continues."); } catch { }
         }
 
         public override Task TokenEndpoint(OAuthTokenEndpointContext context)

@@ -1,8 +1,11 @@
 using System;
 using System.IO;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
+using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
@@ -11,6 +14,7 @@ using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
+using LSTY.SevenDPanel.Hosting.Platform;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,6 +38,9 @@ namespace LSTY.SevenDPanel.DependencyInjection
             {
                 var services = new ServiceCollection();
                 services.AddSingleton(options);
+                services.AddSingleton(options.Authentication);
+                services.AddSingleton(options.Overview);
+                services.AddSingleton(options.Restart);
                 services.AddSingleton(_ => new SqliteConnectionFactory(
                     Path.Combine(dataDirectory, "7dpanel.db")));
                 services.AddSingleton(serviceProvider => new SqliteDatabaseBootstrapper(
@@ -46,6 +53,56 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton<IPanelApiKeyStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
+                services.AddSingleton<SqliteRecentActivityStore>(serviceProvider =>
+                    new SqliteRecentActivityStore(
+                        serviceProvider.GetRequiredService<SqliteConnectionFactory>(),
+                        retentionLimit: 256));
+                services.AddSingleton<IRecentActivityQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteRecentActivityStore>());
+                services.AddSingleton<IRecentActivityWriter>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteRecentActivityStore>());
+                OwinStartup.RegisterAuthenticationServices(services, log);
+                services.AddSingleton(serviceProvider =>
+                    new SevenDaysRecentActivityRecorder(
+                        serviceProvider.GetRequiredService<IRecentActivityWriter>(),
+                        log));
+                services.AddSingleton<WindowsHostPlatformAdapter>();
+                services.AddSingleton<LinuxHostPlatformAdapter>();
+                services.AddSingleton<IHostPlatformAdapter>(serviceProvider =>
+                    Environment.OSVersion.Platform == PlatformID.Win32NT
+                        ? (IHostPlatformAdapter)serviceProvider.GetRequiredService<WindowsHostPlatformAdapter>()
+                        : serviceProvider.GetRequiredService<LinuxHostPlatformAdapter>());
+                services.AddSingleton<HostCpuSampler>();
+                services.AddSingleton<HostMemorySampler>();
+                services.AddSingleton(_ => new HostStorageSampler(dataDirectory));
+                services.AddSingleton(_ => new DeviceIdentityProvider("LSTY.SevenDPanel"));
+                services.AddSingleton(serviceProvider => new PublicNetworkAddressResolver(
+                    serviceProvider.GetRequiredService<PanelOverviewOptions>()));
+                services.AddSingleton(serviceProvider => new HostOverviewQuery(
+                    serviceProvider.GetRequiredService<IHostPlatformAdapter>(),
+                    serviceProvider.GetRequiredService<HostCpuSampler>(),
+                    serviceProvider.GetRequiredService<HostMemorySampler>(),
+                    serviceProvider.GetRequiredService<HostStorageSampler>(),
+                    serviceProvider.GetRequiredService<DeviceIdentityProvider>(),
+                    serviceProvider.GetRequiredService<PublicNetworkAddressResolver>()));
+                services.AddSingleton<IHostOverviewQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<HostOverviewQuery>());
+                services.AddSingleton<SevenDaysGameOverviewQuery>();
+                services.AddSingleton<IGameOverviewQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysGameOverviewQuery>());
+                services.AddSingleton<IRestartPolicyQuery, UnavailableRestartPolicyQuery>();
+                services.AddSingleton<GetOverviewUseCase>();
+                services.AddSingleton<SqliteServerOperationAuditTrail>();
+                services.AddSingleton<IServerOperationAuditTrail>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteServerOperationAuditTrail>());
+                services.AddSingleton<RestartScriptLauncher>();
+                services.AddSingleton<IRestartScriptLauncher>(serviceProvider =>
+                    serviceProvider.GetRequiredService<RestartScriptLauncher>());
+                services.AddSingleton<SevenDaysShutdownServerGateway>();
+                services.AddSingleton<IShutdownServerGateway>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysShutdownServerGateway>());
+                services.AddSingleton<RestartServerUseCase>();
+                services.AddSingleton<ShutdownServerUseCase>();
                 services.AddSingleton(_ => new ConsoleLogService(log));
                 services.AddSingleton<IServerEventStream>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);
@@ -120,10 +177,13 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(serviceProvider => new PlayerHistoryRuntime(
                     serviceProvider.GetRequiredService<PlayerHistoryWriteService>(),
                     serviceProvider.GetRequiredService<OnlinePlayerProjectionRuntime>()));
+                services.AddSingleton(serviceProvider => new SevenDaysRecentActivityRuntime(
+                    serviceProvider.GetRequiredService<SevenDaysRecentActivityRecorder>(),
+                    serviceProvider.GetRequiredService<PlayerHistoryRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<PlayerHistoryRuntime>());
+                    serviceProvider.GetRequiredService<SevenDaysRecentActivityRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {
@@ -140,6 +200,11 @@ namespace LSTY.SevenDPanel.DependencyInjection
             {
                 provider?.Dispose();
             }
+        }
+
+        private sealed class UnavailableRestartPolicyQuery : IRestartPolicyQuery
+        {
+            public RestartPolicySummary Query() => RestartPolicySummary.Unavailable();
         }
     }
 }

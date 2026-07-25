@@ -2,7 +2,9 @@
   "common": {
     "cancel": "Cancel",
     "reload": "Reload",
-    "backToOverview": "Back to overview"
+    "backToOverview": "Back to overview",
+    "yes": "Yes",
+    "no": "No"
   },
   "locale": {
     "label": "Language",
@@ -36,17 +38,125 @@
     "title": "Overview",
     "brandLabel": "7DPanel overview",
     "status": {
-      "loadingTitle": "Getting server status",
-      "freshTitle": "The server is running normally",
-      "staleTitle": "The server status is stale",
+      "title": "Overall status",
+      "loadingTitle": "Loading",
+      "freshTitle": "Running normally",
+      "partialTitle": "Some data is unavailable",
+      "staleTitle": "Data may be stale",
       "offlineTitle": "Server status is unavailable",
-      "loadingDescription": "Connecting to the backend health endpoint.",
-      "freshDescription": "The latest health check completed successfully.",
-      "staleDescription": "Keeping the last successful result while waiting for a new health check.",
-      "httpDescription": "The backend rejected the health check request.",
-      "offlineDescription": "No valid server status has been received yet.",
-      "lastSample": "Last successful sample: {time}",
-      "retry": "Check again"
+      "partialDescription": "Some information is temporarily unavailable; the remaining data is still shown.",
+      "staleDescription": "Refresh failed; keeping the last valid result.",
+      "offlineDescription": "No server snapshot is available yet.",
+      "lastSample": "Last sample: {time}",
+      "refresh": "Refresh"
+    },
+    "metrics": {
+      "players": "Online players",
+      "fps": "FPS",
+      "worldSession": "World session uptime",
+      "process": "Process uptime",
+      "gameTime": "Game time"
+    },
+    "duration": {
+      "day": "{count}d",
+      "hour": "{count}h",
+      "minute": "{count}m"
+    },
+    "serverInformation": {
+      "title": "Server information",
+      "serverTitle": "Server title",
+      "save": "Save game",
+      "worldName": "World name",
+      "version": "Version",
+      "mode": "Mode",
+      "difficulty": "Difficulty",
+      "region": "Region",
+      "language": "Language",
+      "address": "IP / port",
+      "historicalPlayers": "Historical players"
+    },
+    "hostPlatform": {
+      "title": "Host platform",
+      "operatingSystem": "Operating system",
+      "osFamily": "OS family",
+      "architecture": "Architecture",
+      "runtime": "Runtime",
+      "cpu": "CPU",
+      "cores": "Logical cores",
+      "device": "Device",
+      "publicIpv4": "Public IPv4",
+      "publicIpv6": "Public IPv6",
+      "systemUser": "System user",
+      "deviceId": "Device ID"
+    },
+    "resources": {
+      "title": "Resources and capacity",
+      "physicalMemory": "Physical memory",
+      "virtualAddressSpace": "Virtual address space",
+      "swap": "Swap",
+      "rss": "RSS",
+      "managedHeap": "Managed heap",
+      "otherMemory": "Other memory",
+      "storage": "Storage volumes"
+    },
+    "attention": {
+      "title": "Attention",
+      "none": "There are no stable attention items.",
+      "unknown": "A server state needs attention.",
+      "codes": {
+        "low_disk_space": "At least one storage volume is low on available space."
+      }
+    },
+    "activity": {
+      "title": "Recent activity",
+      "empty": "No recent activity",
+      "unknown": "The server recorded an activity",
+      "someone": "A player",
+      "messages": {
+        "player_joined": "{player} joined the server",
+        "player_left": "{player} left the server",
+        "server_started": "The game service started",
+        "server_stopped": "The game service stopped",
+        "restart_requested": "A restart was requested",
+        "shutdown_requested": "A shutdown was requested"
+      }
+    },
+    "restartPolicy": {
+      "title": "Restart policy",
+      "enabled": "Enabled",
+      "expression": "Expression",
+      "timezone": "Time zone",
+      "warning": "Warning",
+      "saveWorld": "Save world",
+      "mode": "Mode",
+      "customCommand": "Custom command",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "bloodMoonDelay": "Blood moon delay",
+      "historyRetention": "History retention",
+      "nextRestart": "Next restart"
+    },
+    "quickActions": {
+      "title": "Quick actions",
+      "warning": "These actions affect every online player. Confirm that affected people have been notified.",
+      "restart": "Restart server",
+      "shutdown": "Shut down server"
+    },
+    "restartDialog": {
+      "title": "Confirm server restart",
+      "description": "This action starts the configured restart script.",
+      "risk": "This is a high-risk action that interrupts the current session and does not guarantee that the server will restart successfully.",
+      "confirm": "Start restart script",
+      "accepted": "Restart script started",
+      "failed": "The restart script could not be started. Try again later."
+    },
+    "shutdownDialog": {
+      "title": "Confirm server shutdown",
+      "description": "This action asks the game service to save and shut down.",
+      "risk": "This is a high-risk action that disconnects every online player. The service must be started separately after shutdown.",
+      "confirm": "Shut down server",
+      "accepted": "Shutdown request accepted",
+      "failed": "The shutdown request could not be submitted. Try again later."
     }
   },
   "shell": {

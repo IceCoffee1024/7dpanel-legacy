@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError, requestJson } from './http'
 
+let timerCleanupRan = false
+
 function fetchMock() {
   return vi.mocked(fetch)
 }
@@ -15,11 +17,27 @@ function abortableFetch() {
 }
 
 describe('requestJson', () => {
+  it('rejects a successful response whose status does not match an expected status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 'accepted' }), {
+      headers: { 'content-type': 'application/json' },
+      status: 200,
+    })))
+
+    await expect(requestJson('/api/v1/server-operations/restart', {
+      expectedStatus: 202,
+      method: 'POST',
+    })).rejects.toMatchObject({
+      code: 'invalid',
+      message: 'Unexpected HTTP response status',
+    })
+  })
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn())
   })
 
   afterEach(() => {
+    vi.useRealTimers()
+    timerCleanupRan = true
     vi.unstubAllGlobals()
   })
 
@@ -149,6 +167,10 @@ describe('requestJson', () => {
 
     expect(signal?.aborted).toBe(true)
     await expect(errorPromise).resolves.toMatchObject({ code: 'timeout' })
+  })
+
+  it('restores real timers after timeout tests', () => {
+    expect(timerCleanupRan).toBe(true)
   })
 
   it('maps fetch failures to network', async () => {

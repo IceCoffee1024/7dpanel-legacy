@@ -49,11 +49,16 @@ namespace LSTY.SevenDPanel.Configuration
                 }
 
                 var authentication = CreateAuthenticationOptions(config.Authentication, log);
+                var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(configPath))!, "data");
+                var overview = CreateOverviewOptions(config.Overview, log);
+                var restart = CreateRestartScriptOptions(config.Restart, dataDirectory, log);
                 return PanelHostOptions.FromBinding(
                     config.Port,
                     config.BindAddress,
                     config.Scheme,
-                    authentication);
+                    authentication,
+                    overview,
+                    restart);
             }
             catch (Exception ex)
             {
@@ -64,10 +69,51 @@ namespace LSTY.SevenDPanel.Configuration
 
         private static PanelHostOptions CreateDefaultOptions()
         {
+            var dataDirectory = Path.Combine(AppContext.BaseDirectory, "data");
             return PanelHostOptions.FromBinding(
                 PanelHostOptions.DefaultPort,
                 PanelHostOptions.DefaultBindAddress,
-                PanelHostOptions.DefaultScheme);
+                PanelHostOptions.DefaultScheme,
+                restart: RestartScriptOptions.CreateDefault(dataDirectory));
+        }
+
+        private static PanelOverviewOptions CreateOverviewOptions(PanelOverviewConfig? config, Action<string>? log)
+        {
+            var network = config?.PublicNetwork ?? PublicNetworkConfig.CreateDefault();
+            try
+            {
+                return PanelOverviewOptions.FromBinding(
+                    network.Ipv4,
+                    network.Ipv6,
+                    network.AutoDetectEnabled,
+                    network.DetectionEndpoint);
+            }
+            catch (InvalidDataException ex)
+            {
+                log?.Invoke("Invalid 7DPanel overview configuration; public network detection disabled: " + ex.Message);
+                return PanelOverviewOptions.Disabled;
+            }
+        }
+
+        private static RestartScriptOptions CreateRestartScriptOptions(
+            RestartScriptConfig? config,
+            string dataDirectory,
+            Action<string>? log)
+        {
+            config ??= RestartScriptConfig.CreateDefault();
+            try
+            {
+                return RestartScriptOptions.FromBinding(
+                    config.WindowsScript,
+                    config.LinuxScript,
+                    config.WorkingDirectory,
+                    dataDirectory);
+            }
+            catch (InvalidDataException ex)
+            {
+                log?.Invoke("Invalid 7DPanel restart configuration; using safe defaults: " + ex.Message);
+                return RestartScriptOptions.CreateDefault(dataDirectory);
+            }
         }
 
         private static PanelAuthenticationOptions CreateAuthenticationOptions(

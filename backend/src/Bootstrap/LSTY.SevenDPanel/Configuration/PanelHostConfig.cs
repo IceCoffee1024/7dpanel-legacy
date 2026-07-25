@@ -8,6 +8,8 @@ namespace LSTY.SevenDPanel.Configuration
         public string? BindAddress { get; set; }
         public string? Scheme { get; set; }
         public PanelAuthenticationConfig? Authentication { get; set; }
+        public PanelOverviewConfig? Overview { get; set; }
+        public RestartScriptConfig? Restart { get; set; }
 
         public static PanelHostConfig CreateDefault()
         {
@@ -16,7 +18,49 @@ namespace LSTY.SevenDPanel.Configuration
                 Port = PanelHostOptions.DefaultPort,
                 BindAddress = PanelHostOptions.DefaultBindAddress,
                 Scheme = PanelHostOptions.DefaultScheme,
-                Authentication = PanelAuthenticationConfig.CreateDefault()
+                Authentication = PanelAuthenticationConfig.CreateDefault(),
+                Overview = PanelOverviewConfig.CreateDefault(),
+                Restart = RestartScriptConfig.CreateDefault()
+            };
+        }
+    }
+
+    public sealed class PanelOverviewConfig
+    {
+        public PublicNetworkConfig? PublicNetwork { get; set; }
+
+        public static PanelOverviewConfig CreateDefault()
+        {
+            return new PanelOverviewConfig { PublicNetwork = PublicNetworkConfig.CreateDefault() };
+        }
+    }
+
+    public sealed class PublicNetworkConfig
+    {
+        public string? Ipv4 { get; set; }
+        public string? Ipv6 { get; set; }
+        public bool AutoDetectEnabled { get; set; }
+        public string? DetectionEndpoint { get; set; }
+
+        public static PublicNetworkConfig CreateDefault()
+        {
+            return new PublicNetworkConfig { AutoDetectEnabled = false, DetectionEndpoint = null };
+        }
+    }
+
+    public sealed class RestartScriptConfig
+    {
+        public string? WindowsScript { get; set; }
+        public string? LinuxScript { get; set; }
+        public string? WorkingDirectory { get; set; }
+
+        public static RestartScriptConfig CreateDefault()
+        {
+            return new RestartScriptConfig
+            {
+                WindowsScript = RestartScriptOptions.DefaultWindowsScript,
+                LinuxScript = RestartScriptOptions.DefaultLinuxScript,
+                WorkingDirectory = RestartScriptOptions.DefaultWorkingDirectory
             };
         }
     }

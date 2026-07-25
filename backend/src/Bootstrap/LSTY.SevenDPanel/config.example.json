@@ -8,5 +8,18 @@
     "password": "password",
     "accessTokenLifetimeMinutes": 480,
     "allowInsecureHttp": true
+  },
+  "overview": {
+    "publicNetwork": {
+      "ipv4": null,
+      "ipv6": null,
+      "autoDetectEnabled": false,
+      "detectionEndpoint": null
+    }
+  },
+  "restart": {
+    "windowsScript": "scripts/restart-server.cmd",
+    "linuxScript": "scripts/restart-server.sh",
+    "workingDirectory": "."
   }
 }

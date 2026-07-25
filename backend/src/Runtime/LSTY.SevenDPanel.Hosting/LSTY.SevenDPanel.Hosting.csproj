@@ -3,4 +3,8 @@
     <AssemblyName>LSTY.SevenDPanel.Hosting</AssemblyName>
     <RootNamespace>LSTY.SevenDPanel.Hosting</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\LSTY.SevenDPanel.Application\LSTY.SevenDPanel.Application.csproj" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
 </Project>

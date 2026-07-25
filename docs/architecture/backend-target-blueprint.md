@@ -6,9 +6,10 @@ document_role: Target
 
 # 7DPanel 后端目标架构蓝图
 
-> 本文是 7DPanel 后端的批准目标设计，不是当前实现证据。当前系统事实以
-> [系统架构](../architecture.md)为准，产品行为以 [PRD](../PRD.md) 为准，验证要求以
-> [测试策略](../test.md) 为准。
+> 本文是 7DPanel 后端的批准目标设计，不是当前实现证据。**当前规范来源**是
+> [系统架构](../architecture.md)；产品行为以 [PRD](../PRD.md) 为准，验证要求以
+> [测试策略](../test.md) 为准。任何本蓝图中的未来目录、端口或运行链路，都必须先有代码和验证证据，
+> 才能提升为当前事实。
 
 ## 用途与生命周期
 
@@ -119,6 +120,7 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays`、`Persistence.Sqlite`
 | 业务 SQL | Persistence Adapter | `Dapper` | 已采用 | 首个新增持久能力或 Dapper 版本变化 | 参数绑定、事务所有权、连接生命周期、并发写入和目标 Mono 加载；不得承担 schema 迁移 |
 | 数据库迁移 | Persistence Adapter | `DbUp`（`dbup-core`、`dbup-sqlite`） | 已采用 | 新 migration、升级/恢复策略或 DbUp 版本变化 | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径；不得承载运行时业务查询 |
 | 有界后台队列 | Local Adapter / Runtime | `System.Threading.Channels` | 已批准 | 首个后台 consumer 或持久作业 | 容量、背压、公平性、异常传播、排空和 Mono 兼容性 |
+| Admin 综合概览第一阶段 | Application / Hosting / SevenDays / Persistence / Web | 复用当前 `net48` BCL、Web/OWIN、SQLite 与既有 Adapter 边界；不新增 NuGet 包 | 已批准，尚未实现 | 已批准的综合快照、主机采样、近期活动或服务器操作切片进入真实运行时 | Application 聚合与分区失败、Windows/Linux 平台采样、游戏主线程复制、SQLite 活动/操作审计、角色裁剪、脚本启动与固定关服；实际包清单仍以项目文件为准 |
 | 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection`、Abstractions | 已采用；当前版本线已通过 Windows Mono 复验 | 目标游戏 Mono、`Microsoft.Bcl.AsyncInterfaces`、`System.Runtime.CompilerServices.Unsafe` 或对象生命周期边界变化 | Bootstrap 唯一根 Provider、显式注册、`ValidateOnBuild`/`ValidateScopes`、OWIN 单请求 scope、Web API non-owning bridge、先停运行时再释放 Provider、发布体积和关服行为；当前实现证据见[系统架构](../architecture.md#owinweb-api-与静态资源) |
 | Mod 运行日志 | Bootstrap / SevenDays Adapter | 7DTD 提供的 `LogLibrary`（`Log.Out`、`Log.Warning`、`Log.Error`、`Log.Exception`） | 已采用 | 7DTD 日志 API 或目标版本发生变化 | 目标程序集加载、输出行为、异常记录和关服生命周期 |
 | 控制台日志采集 | SevenDays Adapter / ConsoleLogs | `LogLibrary.LogCallbacksExtended` + `System.Threading.Channels` 有界队列 | 已采用 | 7DTD 日志 API、游戏版本或当前容量基线变化 | 回调耗时、顺序、订阅与取消订阅、过载丢弃计数、Mono 兼容性和版本差异；当前实现证据见[系统架构](../architecture.md#7dtd-控制台日志采集边界) |
@@ -372,6 +374,31 @@ SavePlayerData (game thread)
 六个附加字段是可空 `playGroup`、`lastLoginUtc`、`gameStage`、`expToNextLevel`、`skillPoints` 和 `bedroll`。`lastLoginUtc` 是游戏持久玩家记录中的最近登录时间，不等于 `observedAtUtc`，不能用于推断连续在线。`playGroup`、`lastLoginUtc` 和 `bedroll` 来自按跨平台身份精确匹配的 `PersistentPlayerData`；床铺 `y == int.MaxValue` 映射为 `null`。`gameStage` 优先来自同一实体；进度优先来自在线 `EntityPlayer.Progression`，实体或 Progression 不可用时才按已验证的目标游戏版本布局解析 `progressionData`。解析必须校验版本与长度并恢复 stream position；任何额外字段不可用时只保存 `null`，不得使用零值占位、磁盘加载 `PlayerDataFile` 或让基础 observation 失败。
 
 生产者绝不等待、访问 SQLite 或为单次 Save 创建 `Task.Run`。消费者按接受顺序单独持久化，并仅在队列空闲或低水位时执行有限批次的确定性 UTC 分桶降采样；每名玩家的第一条和最新一条保留，30 天后的七日桶保留代表快照。队满、Store 失败和关服排空超时按玩家保存缺口及计数。启动必须在在线投影订阅前启动该消费者；关闭时先停止在线生产者、完成 writer、在截止时间内排空并尝试保存 pending gap。历史 SQLite 查询不依赖游戏就绪状态，只允许 `Owner` 经 Application use case 查询摘要、详情和倒序 keyset 快照。完整已批准设计见[历史玩家快照设计规格](../superpowers/specs/2026-07-25-player-history-design.md)。该纵向切片的当前实现与自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)；本蓝图仅保留后续演进约束，不构成额外实现证据。
+
+### 综合概览与服务器操作（第一阶段）
+
+本节是 `CAP-01`、`CAP-05` 与 `NFR-02` 的未来后端边界，不代表当前已经存在 Overview 路由、平台采样、近期活动或服务器操作实现。当前规范来源仍是[系统架构](../architecture.md)。
+
+```text
+authenticated overview request
+  -> Web authorization and response redaction
+  -> Application overview aggregation
+  -> independent panel / game / host / recent-activity snapshots
+  -> each section keeps availability and observed time
+
+Owner-only restart or shutdown request
+  -> independent explicit confirmation and operation audit
+  -> fixed server-side capability
+  -> typed accepted, completed, failed, or unknown result
+```
+
+- Application 聚合面板、游戏、主机、近期活动与注意事项，但不读取游戏活对象、`Process`、文件系统或 SQLite 细节；任一数据源失败保留对应分区状态，不能用其他来源填充成功。
+- SevenDays Adapter 只在受控主线程复制游戏基础快照并把不可变值交给 Application；主线程读取、游戏就绪和缓存失败各自保留真实状态，不让 Web 请求持有 `World`、`Entity` 或其他游戏活对象。
+- Hosting 拥有 Windows/Linux 平台采样，分别表达操作系统、进程、内存和本地固定卷的可用性与平台语义；单卷或单项采样失败不能抹去其他成功分区。
+- Persistence 只为固定用途保存近期活动和服务器操作审计；近期活动不保存凭据、脚本路径、命令行、完整控制台参数/输出或玩家 IP，也不成为通用 Event Bus。
+- Web 在服务端执行 `Owner`、`Admin`、`Viewer` 的 Overview 权限与敏感主机字段裁剪；重启脚本和固定关服均限 `Owner`，浏览器请求只能表达独立确认，不能提交命令、路径、参数或环境值。
+- 启动预配置脚本时，`Process.Start` 返回非空进程只表示脚本进程已创建；响应不得推导脚本已经完成、7DTD 已关闭或新服务器已经启动。固定关服不复用该状态或文案，并保持自己的审计与结果语义。
+- 本第一阶段不新增 NuGet 包；需要新增包或改变现有 Adapter 归属时，必须先更新本 Target 蓝图和依赖决策。
 
 ### 玩家管理动作
 
@@ -727,6 +754,7 @@ backend/
 
 目标设计仍需要以下真实实现和进程证据：
 
+- Admin 综合概览第一阶段的 Application 聚合、Windows/Linux 平台采样、SevenDays 主线程快照复制、SQLite 近期活动/服务器操作审计、Web 角色裁剪、脚本进程创建和固定关服；目前没有对应当前实现或真实进程证据；
 - 用于在线玩家快照和类型化玩家动作的稳定 `v3.0.1-b4` API；
 - `GameThreadDispatcher` 的排队取消、启动超时、执行异常和 Windows `version` 主线程往返已有当前证据；仍缺状态变更动作的关服竞态、多个生产 Gateway 的背压基线和 Linux 证据；
 - 控制台日志真实容量饱和与 Linux Unity Mono 行为；Windows `v3.0.1-b4` 的 `Log.LogCallbacksExtended`、`System.Threading.Channels`、正常负载和关服排空已有当前证据；
