@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Application;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,23 @@ namespace LSTY.SevenDPanel.Tests
 {
     public sealed class OverviewHttpTests
     {
+        [Fact]
+        public void Overview_attention_uses_required_member_metadata()
+        {
+            const string requiredMemberAttribute =
+                "System.Runtime.CompilerServices.RequiredMemberAttribute";
+            var responseType = typeof(OverviewAttentionHttpResponse);
+            var codeProperty = responseType.GetProperty(nameof(OverviewAttentionHttpResponse.Code));
+
+            Assert.Contains(
+                responseType.GetCustomAttributesData(),
+                attribute => attribute.AttributeType.FullName == requiredMemberAttribute);
+            Assert.NotNull(codeProperty);
+            Assert.Contains(
+                codeProperty!.GetCustomAttributesData(),
+                attribute => attribute.AttributeType.FullName == requiredMemberAttribute);
+        }
+
         [Fact]
         public async Task Overview_requires_authentication()
         {

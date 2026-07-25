@@ -40,7 +40,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 new HostOverviewHttpResponse(snapshot.Host, includeSensitive),
                 new RestartPolicyHttpResponse(snapshot.RestartPolicy),
                 new RecentActivityHttpResponse(snapshot.RecentActivity),
-                snapshot.Attention.Select(item => new OverviewAttentionHttpResponse(item)).ToArray());
+                snapshot.Attention.Select(item => new OverviewAttentionHttpResponse
+                {
+                    Code = item.Code
+                }).ToArray());
         }
 
         internal static string ToContract(AvailabilityState value) =>
@@ -283,11 +286,6 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
     public sealed class OverviewAttentionHttpResponse
     {
-        internal OverviewAttentionHttpResponse(OverviewAttention source)
-        {
-            Code = source.Code;
-        }
-
-        public string Code { get; }
+        public required string Code { get; init; }
     }
 }

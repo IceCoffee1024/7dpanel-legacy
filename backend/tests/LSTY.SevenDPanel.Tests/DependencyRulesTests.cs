@@ -331,6 +331,40 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void PolySharp_is_a_private_build_only_web_adapter_dependency()
+        {
+            var webProjectPath = Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.Web",
+                "LSTY.SevenDPanel.Adapters.Web.csproj");
+            var packageOwners = Directory
+                .GetFiles(SourceRoot, "*.csproj", SearchOption.AllDirectories)
+                .Where(path => XDocument.Load(path)
+                    .Descendants("PackageReference")
+                    .Any(element => string.Equals(
+                        (string?)element.Attribute("Include"),
+                        "PolySharp",
+                        StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+            var packageOwner = Assert.Single(packageOwners);
+            var project = XDocument.Load(packageOwner);
+            var package = Assert.Single(
+                project.Descendants("PackageReference"),
+                element => string.Equals(
+                    (string?)element.Attribute("Include"),
+                    "PolySharp",
+                    StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(webProjectPath, packageOwner, ignoreCase: true);
+            Assert.Equal("1.16.0", (string?)package.Attribute("Version"));
+            Assert.Equal("all", (string?)package.Element("PrivateAssets"));
+            Assert.Equal(
+                "runtime; build; native; contentfiles; analyzers",
+                (string?)package.Element("IncludeAssets"));
+        }
+
+        [Fact]
         public void Nswag_packages_are_owned_by_the_web_adapter()
         {
             var projects = Directory

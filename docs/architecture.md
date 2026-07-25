@@ -223,6 +223,7 @@ GET /
 |---|---|---|---|
 | 目标框架 | `.NET Framework 4.8` / `net48` | Release 构建通过 | 仍受游戏 Mono 可用 API 限制 |
 | C# 编译基线 | C# `11.0`，启用 Nullable Reference Types 和 Implicit Usings | Release Rebuild 已完成；2026-07-24 发布 `online-player-details` 时 `SevenDaysOnlinePlayerProjection.cs` 报告一条 `CS8603` nullable warning | 语言分析与全局 using 只影响编译期；生产运行时仍为游戏 Mono；该警告尚待单独修复 |
+| C# 旧框架语言 polyfill | Web Adapter 私有引用 `PolySharp 1.16.0` | 唯一依赖归属结构测试、`required` 元数据反射测试和概览 HTTP 契约测试通过 | source-only build dependency，只由实际使用 `required` 的编译单元拥有并补齐 `net48` 缺失的编译器类型；不进入 Mod 发布目录，`required` 不替代反序列化或领域运行时校验 |
 | 游戏运行时 | 7DTD `v3.0.1-b4` Mono BCL `4.6.57.0` | Windows 真实进程已验证 | 编译参考来自固定 `7dtd-reference` 版本；运行时使用未修改官方服务端 |
 | Mod 内存程序集定位 | 游戏提供的 `0_TFP_Harmony/0Harmony.dll`，程序集 `2.13.0.0` | Release 构建、源码顺序规则、本地发布排除和 Windows `v3.0.1-b4` 真实进程通过；Linux 待验证 | Bootstrap 以 `Private=false` 编译引用且 7DPanel 不发布 Harmony；补丁只修正当前 Mod 内原值为空的 `Assembly.Location`，必须先于 SQLite/OWIN 组合 |
 | Web API 2 | Core/Owin `5.3.0`，Client `6.0.0` | 健康、Problem Details 和认证命名 SSE 通过 Katana 自动化与 Windows 真实进程 | 实现健康、统一错误和生产事件流；Linux Mono 仍待验证 |
@@ -238,10 +239,6 @@ GET /
 | Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Vue I18n `11.4.7`、Valibot `1.4.2`、`@valibot/i18n` `1.2.0`、Nuxt UI `4.10.0`、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | Auth 与 locale codec/Repository/runtime、身份响应解析、登录/账号/语言菜单、路由定向、全部当前页面双语、Valibot 表单边界、技术值稳定、25 字段 parser/格式化、详情抽屉状态机和 code-only 反馈自动化通过；完整 Admin 单元/组件测试 31 个文件、335 项，lint、typecheck 和生产构建均通过。当前 Owner Playwright suite 包含玩家详情抽屉的合成 25 字段场景，但缺少受控 OWIN 环境而未执行；Vitest 输出的 happy-dom teardown/外部连接噪声尚未定位 | Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js；前端生产代码不包含 Playwright/Vitest；本轮没有真实浏览器双语、API Key、详情抽屉窄屏、踢出或真实动作结果证据 |
 
 未来通用后台工作队列、公开日志查询/流、完整角色/用户管理和其他候选依赖的批准状态只在[后端目标架构蓝图](architecture/backend-target-blueprint.md)中维护，不属于当前依赖矩阵。
-
-### 已批准但尚未实现的综合概览第一阶段依赖决定
-
-第一阶段目标不新增 npm 或 NuGet 包：后端复用当前 `net48` BCL、现有 Web/OWIN、SQLite 与平台边界，Admin 复用现有 Vue、Pinia、Fetch 与测试工具。此决定只约束未来实现的依赖范围，不表示当前项目清单已经包含综合概览功能，也不改变上表的当前验证状态。
 
 ## 部署与运维
 
