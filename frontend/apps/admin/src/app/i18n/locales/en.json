@@ -100,6 +100,12 @@
       "totalItemsCrafted": "Items crafted",
       "longestLifeMinutes": "Longest life",
       "currentLifeMinutes": "Current life",
+      "playGroup": "Play group",
+      "lastLoginUtc": "Last login (persistent record)",
+      "gameStage": "Game stage",
+      "expToNextLevel": "Experience to next level",
+      "skillPoints": "Skill points",
+      "bedroll": "Bedroll",
       "observedAt": "Observed at",
       "actions": "Actions",
       "unbound": "Not linked",
@@ -122,6 +128,7 @@
       "identity": "Identity",
       "connection": "Connection",
       "currentStatus": "Current status",
+      "progression": "Progression",
       "statistics": "Cumulative statistics",
       "unavailableTitle": "This player observation is unavailable",
       "unavailableDescription": "The latest successful refresh did not find the same identity. Close the details and select a player again."
@@ -147,6 +154,40 @@
         "audit_unavailable": "The audit service is unavailable. Try again later.",
         "player_kick_failed": "Failed to kick the player.",
         "unknown": "Result could not be confirmed."
+      }
+    },
+    "history": {
+      "title": "Player history",
+      "navigation": "History",
+      "online": "Online",
+      "sectionNavigation": "Player views",
+      "description": "Saved player observations; they do not imply continuous online time between observations.",
+      "searchPlaceholder": "Search by name or cross-platform ID",
+      "firstObserved": "First observed",
+      "lastObserved": "Last observed",
+      "totalObservations": "Total observations",
+      "retainedSnapshots": "Retained snapshots",
+      "loadMore": "Load more",
+      "timeline": "Observation timeline",
+      "snapshotDetails": "Historical snapshot details",
+      "gapCount": "History gaps (count · dropped observations)",
+      "unknown": "Unknown",
+      "unset": "Not set",
+      "quality": { "gaps": "Has history gaps", "compacted": "Downsampled", "complete": "Complete" },
+      "state": {
+        "emptyTitle": "No historical snapshots yet",
+        "forbiddenTitle": "You cannot view player history",
+        "forbiddenDescription": "Your current identity does not have permission to access historical player data.",
+        "notFoundTitle": "Historical player not found",
+        "failedTitle": "Player history is unavailable",
+        "failedDescription": "Saved data is kept. Try again later.",
+        "staleTitle": "Refresh failed; showing the last result"
+      },
+      "gap": {
+        "queue_full": "Write queue was full",
+        "store_failure": "History store failed",
+        "shutdown_timeout": "Shutdown drain timed out",
+        "description": "Dropped {count} observations"
       }
     }
   },

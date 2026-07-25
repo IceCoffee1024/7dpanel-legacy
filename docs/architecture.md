@@ -168,6 +168,7 @@ GET /
 - `shared/api/requestJson` 固定相对 `/api/v1/` 路径和 `credentials: 'omit'`，统一取消、超时、JSON 与 Problem Details 映射。Auth Feature 自己映射 password grant，Players Feature 自己验证玩家 DTO；玩家快照和轮询状态不进入 Pinia。
 - `ApiKeysView` 只接受 Auth Store 当前 Access Token 的 Authorization Header，维护 API Key 列表、创建、撤销与会话过期状态；完整 Key 只存于一次性创建结果对话框，关闭后清除，复制反馈不包含该值。`/api-keys` 已加入受保护生成路由、侧栏导航和 `g-k` 快捷键。
 - `useOnlinePlayers` 首次进入立即请求，每 10 秒刷新；页面隐藏时暂停，恢复后立即刷新；请求使用 single-flight 与取消。任何通过完整 25 字段严格 DTO 校验的成功响应进入 Fresh；Admin 以 90 秒作为自己的行级展示策略，只对旧 observation 标记“数据可能已过期”。401 或本地会话到期清除会话并回到登录页；403 映射 Forbidden、暂停自动轮询但保留手动刷新；有旧快照的刷新失败映射 Stale 并提示正在显示上次结果，无旧快照映射 Offline。
+- `PlayerSnapshot` 已扩充为 31 字段。每个有效 `crossplatformIdentity.combinedId` 的 Save observation 经容量 `1024`、单消费者的有界 Channel 尽力写入 SQLite 摘要、快照和 gap 三表；生产者只 `TryWrite`，不会等待 SQLite 或为单次 Save 创建任务。`GET /api/v1/players/history`、`/{crossplatformId}` 和 `/snapshots` 均为 Owner-only、只读且不依赖游戏 ready。历史列表与详情页面使用页面局部 Composition API 状态、严格冻结 DTO、取消过期请求和 keyset 分页；不轮询、不查询在线状态，也没有危险操作。`lastLoginUtc` 仅表示持久玩家记录的最近登录时间，不能推导持续在线。
 - 玩家桌面表格和移动列表只呈现高频比较字段并向 `OnlinePlayersView` 上抛完整玩家快照；详情抽屉按身份、连接、当前状态和累计统计分区显示完整 observation。`OnlinePlayersView` 在页面局部持有 `{ entityId, combinedId }` 选择键、最后 observation 和 unavailable 锁存：Fresh 刷新只更新同一实体与主身份；缺失或身份变化时保留最后值并禁用详情踢出直到关闭，不会把重用的 entity ID 偷换为新目标。`useKickPlayer` 在页面局部维护单次 HTTP 提交、`AbortController` 和稳定反馈；确认对话框固定目标，原因 trim 后限制为 1 至 200 字符，提交期间不可关闭。成功关闭并通知后刷新；离线、身份变化和 403 关闭旧目标；busy、未就绪、超时和审计意图不可用保留输入；网络或审计终态不可确认显示未知且不自动重试。
 - 生成的客户端路由表当前包含 `/`、`/login`、`/players` 和 `/api-keys`。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
 
@@ -246,6 +247,7 @@ GET /
 - 控制台日志测试覆盖六字段 entry、sequence/淘汰/gap、回调线程与 consumer 隔离、队满拒绝、保序消费、单项失败、订阅失败、停止排空和注销后摘要；生产 `Log.LogCallbacksExtended` delegate 与 Channels 加载由官方进程 smoke 验证。
 - 主线程 Dispatcher 与命令 FIFO 的确定性测试覆盖接收顺序、等待容量、独立结果、排队取消/启动超时保证不执行、开始后取消不能替换真实结果、单项异常隔离及停止边界；Application/Katana 测试覆盖原文、actor、并发独立输出、队满/不可用 Problem Details 和无结构化命令事件。Patch/审计测试覆盖 token/output 快照、来源、异常透明、observer/tokenizer fail-open、Store failure、gap 恢复和正常关服卸载自身 Patch。
 - Application 测试覆盖 25 字段不可变玩家快照、产品位置值、逐玩家观察时间和查询转发；SevenDays 投影测试覆盖 Join/Save/Disconnect、同次 Save 全字段替换、设备映射、Discord、可选 IP/诊断字段、生命截断、失败复制保留旧 observation、身份条件删除、排序、停止拒写与清空；Katana 测试覆盖玩家 API 的认证、就绪、固定 25 字段 camelCase 白名单、可空字段、位置、单位后缀、排序、逐玩家 `observedAtUtc` 和稳定 Problem Details。Admin 测试覆盖完整合同 parser、格式化、主表/移动列表详情入口、详情抽屉四分区及 unavailable 锁存和独立踢出目标。
+- 历史玩家自动化覆盖 31 字段快照与 UTC/null/安全整数 parser、Owner-only Web 合同、cursor、Store 事务与降采样、Channel fail-open、页面局部状态的取消/stale/分页去重、历史只读详情与认证路由。当前环境未运行新的 OWIN `HttpListener` 历史路由用例、真实 7DTD 或浏览器 E2E，因此这些边界不能视为真实进程/浏览器证据。
 - `DependencyRulesTests` 用源码规则保护当前项目依赖、Adapter 方向、唯一 `IModApi` 和 Bootstrap candidate 发布顺序。
 - SQLite 集成测试覆盖 migration 幂等、WAL、引导 Owner 同步、PBKDF2-HMAC-SHA256 1000 次迭代、凭据轮换撤销、Access Token 跨 Store/connection factory 重建、到期、严格 128 容量、API Key 一次性完整值、SHA-256 摘要、到期/撤销/容量与明文不落盘，以及命令原文、ordinal 参数、逐行输出和幂等 gap 的事务往返；SSE 可控时钟测试覆盖失效后停止写出。
 - 健康客户端保留最后成功样本并明确标记 stale/offline，不把失败或过期结果显示为 fresh。

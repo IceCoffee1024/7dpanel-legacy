@@ -14,6 +14,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
         {
             DescribeServerEventStream(context);
             DescribeApiKeyManagement(context);
+            DescribePlayerHistory(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
 
@@ -118,6 +119,62 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             }
         }
 
+        private static void DescribePlayerHistory(OperationProcessorContext context)
+        {
+            var operation = context.OperationDescription.Operation;
+            var path = context.OperationDescription.Path;
+            var method = context.OperationDescription.Method;
+            if (method != OpenApiOperationMethod.Get ||
+                !path.StartsWith("/api/v1/players/history", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/players/history", StringComparison.Ordinal))
+            {
+                operation.Description =
+                    "Returns Owner-only historical player summaries from SQLite. " +
+                    "The endpoint remains readable while the game is not ready.";
+                DescribeQueryParameter(
+                    operation,
+                    "query",
+                    "Optional player name or cross-platform identity search text.");
+                DescribeQueryParameter(
+                    operation,
+                    "pageSize",
+                    "Page size from 1 through 100; defaults to 50.");
+                DescribeQueryParameter(
+                    operation,
+                    "cursor",
+                    "Opaque URL-safe cursor returned by the preceding page.");
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/players/history/{crossplatformId}", StringComparison.Ordinal))
+            {
+                operation.Description =
+                    "Returns an Owner-only historical player summary and recorded gap totals.";
+                return;
+            }
+
+            if (string.Equals(
+                    path,
+                    "/api/v1/players/history/{crossplatformId}/snapshots",
+                    StringComparison.Ordinal))
+            {
+                operation.Description =
+                    "Returns Owner-only retained historical snapshots in descending snapshot ID order.";
+                DescribeQueryParameter(
+                    operation,
+                    "pageSize",
+                    "Page size from 1 through 200; defaults to 100.");
+                DescribeQueryParameter(
+                    operation,
+                    "beforeSnapshotId",
+                    "Exclusive snapshot ID cursor returned by the preceding page.");
+            }
+        }
+
         private static void DescribeProblemResponses(OperationProcessorContext context)
         {
             var statusCodes = GetProblemStatusCodes(
@@ -155,6 +212,22 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 return new[] { "401", "403", "500", "503" };
             }
 
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/players/history", StringComparison.Ordinal))
+            {
+                return new[] { "400", "401", "403", "500" };
+            }
+
+            if (method == OpenApiOperationMethod.Get &&
+                (string.Equals(path, "/api/v1/players/history/{crossplatformId}", StringComparison.Ordinal) ||
+                 string.Equals(
+                     path,
+                     "/api/v1/players/history/{crossplatformId}/snapshots",
+                     StringComparison.Ordinal)))
+            {
+                return new[] { "400", "401", "403", "404", "500" };
+            }
+
             if (method == OpenApiOperationMethod.Post &&
                 string.Equals(path, "/api/v1/players/{entityId}/kick", StringComparison.Ordinal))
             {
@@ -180,6 +253,18 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             }
 
             return Array.Empty<string>();
+        }
+
+        private static void DescribeQueryParameter(
+            OpenApiOperation operation,
+            string name,
+            string description)
+        {
+            var parameter = operation.Parameters.FirstOrDefault(candidate =>
+                candidate.Kind == OpenApiParameterKind.Query &&
+                string.Equals(candidate.Name, name, StringComparison.Ordinal));
+            if (parameter != null)
+                parameter.Description = description;
         }
 
         private static JsonSchema CreateApiKeyMetadataListSchema()

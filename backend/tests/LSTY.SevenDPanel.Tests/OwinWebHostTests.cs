@@ -1081,6 +1081,7 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(players.All(item => ((JObject)item).Properties().Select(property => property.Name).OrderBy(name => name).SequenceEqual(new[]
                 {
+                    "bedroll",
                     "compatibilityVersion",
                     "crossplatformIdentity",
                     "currentLifeMinutes",
@@ -1089,9 +1090,12 @@ namespace LSTY.SevenDPanel.Tests
                     "discordUserId",
                     "distanceWalkedMeters",
                     "entityId",
+                    "expToNextLevel",
+                    "gameStage",
                     "health",
                     "ip",
                     "isDead",
+                    "lastLoginUtc",
                     "level",
                     "longestLifeMinutes",
                     "maxHealth",
@@ -1101,8 +1105,10 @@ namespace LSTY.SevenDPanel.Tests
                     "ping",
                     "platformIdentity",
                     "playerKills",
+                    "playGroup",
                     "position",
                     "score",
+                    "skillPoints",
                     "totalItemsCrafted",
                     "totalTimePlayedMinutes",
                     "zombieKills"
@@ -1182,6 +1188,220 @@ namespace LSTY.SevenDPanel.Tests
                     "game_not_ready",
                     "/api/v1/players/online");
                 Assert.Equal(0, query.CallCount);
+            }
+        }
+
+        [Fact]
+        public async Task Owner_reads_historical_players_when_the_game_is_not_ready()
+        {
+            var store = new TestPlayerHistoryStore();
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(
+                true,
+                hub,
+                gameReadiness: GameReadinessState.Loading,
+                playerHistoryStore: store);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                url + "api/v1/players/history?pageSize=1"))
+            {
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal(new[] { "nextCursor", "players" }, payload.Properties()
+                    .Select(property => property.Name).OrderBy(name => name));
+                Assert.Equal("EOS_0002d12af0fe4add9c7de0fbc238d431", (string?)payload["players"]?[0]?["crossplatformId"]);
+                Assert.Equal(1, store.GetPlayersCallCount);
+            }
+        }
+
+        [Fact]
+        public async Task Owner_reads_historical_player_details_and_snapshots()
+        {
+            var store = new TestPlayerHistoryStore();
+            const string crossplatformId = "EOS_0002d12af0fe4add9c7de0fbc238d431";
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, playerHistoryStore: store);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+                var accessToken = await IssueAccessTokenAsync(client, url);
+
+                using (var detailsRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/history/" + Uri.EscapeDataString(crossplatformId)))
+                {
+                    detailsRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var detailsResponse = await client.SendAsync(
+                        detailsRequest,
+                        TestContext.Current.CancellationToken);
+                    var details = JObject.Parse(await detailsResponse.Content.ReadAsStringAsync());
+
+                    Assert.Equal(HttpStatusCode.OK, detailsResponse.StatusCode);
+                    Assert.Equal(crossplatformId, (string?)details["player"]?["crossplatformId"]);
+                    Assert.Equal(1L, (long?)details["gapSummary"]?["gapCount"]);
+                }
+
+                using (var snapshotsRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/history/" + Uri.EscapeDataString(crossplatformId) + "/snapshots?pageSize=100"))
+                {
+                    snapshotsRequest.Headers.Authorization = CreateBearerAuthorization(accessToken);
+                    using var snapshotsResponse = await client.SendAsync(
+                        snapshotsRequest,
+                        TestContext.Current.CancellationToken);
+                    var snapshots = JObject.Parse(await snapshotsResponse.Content.ReadAsStringAsync());
+
+                    Assert.Equal(HttpStatusCode.OK, snapshotsResponse.StatusCode);
+                    Assert.Equal(41L, (long?)snapshots["snapshots"]?[0]?["snapshotId"]);
+                    Assert.Equal("Alice", (string?)snapshots["snapshots"]?[0]?["name"]);
+                    Assert.Equal("queue_full", (string?)snapshots["gaps"]?[0]?["reason"]);
+                    Assert.Equal(1, store.GetSnapshotsCallCount);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Historical_player_routes_require_an_owner_and_validate_request_values()
+        {
+            var store = new TestPlayerHistoryStore();
+            const string crossplatformId = "EOS_0002d12af0fe4add9c7de0fbc238d431";
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, playerHistoryStore: store);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            {
+                host.Start();
+
+                using (var anonymousResponse = await client.GetAsync(
+                    url + "api/v1/players/history",
+                    TestContext.Current.CancellationToken))
+                {
+                    Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+                }
+
+                var adminToken = await IssueAccessTokenAsync(
+                    client,
+                    url,
+                    "test-admin",
+                    "test-admin-password");
+                using (var adminRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/history"))
+                {
+                    adminRequest.Headers.Authorization = CreateBearerAuthorization(adminToken);
+                    using var adminResponse = await client.SendAsync(
+                        adminRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.Forbidden, adminResponse.StatusCode);
+                }
+
+                var viewerToken = await IssueAccessTokenAsync(
+                    client,
+                    url,
+                    "test-viewer",
+                    "test-viewer-password");
+                using (var viewerRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/history"))
+                {
+                    viewerRequest.Headers.Authorization = CreateBearerAuthorization(viewerToken);
+                    using var viewerResponse = await client.SendAsync(
+                        viewerRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.Forbidden, viewerResponse.StatusCode);
+                }
+
+                using (var apiKeyRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url + "api/v1/players/history"))
+                {
+                    apiKeyRequest.Headers.Authorization = CreateBearerAuthorization(TestApiKey);
+                    using var apiKeyResponse = await client.SendAsync(
+                        apiKeyRequest,
+                        TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, apiKeyResponse.StatusCode);
+                }
+
+                var ownerToken = await IssueAccessTokenAsync(client, url);
+                foreach (var requestUri in new[]
+                {
+                    url + "api/v1/players/history?pageSize=101",
+                    url + "api/v1/players/history?pageSize=not-a-number",
+                    url + "api/v1/players/history?cursor=not-a-cursor",
+                    url + "api/v1/players/history/unknown",
+                    url + "api/v1/players/history/unknown/snapshots?beforeSnapshotId=0",
+                    url + "api/v1/players/history/" + Uri.EscapeDataString(crossplatformId) + "/snapshots?beforeSnapshotId=0",
+                    url + "api/v1/players/history/" + Uri.EscapeDataString(crossplatformId) + "/snapshots?beforeSnapshotId=not-a-number"
+                })
+                {
+                    using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+                    request.Headers.Authorization = CreateBearerAuthorization(ownerToken);
+                    using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+                    var expected = requestUri.EndsWith("/history/unknown", StringComparison.Ordinal)
+                        ? HttpStatusCode.NotFound
+                        : HttpStatusCode.BadRequest;
+                    Assert.Equal(expected, response.StatusCode);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Historical_player_store_failure_returns_a_deidentified_problem()
+        {
+            var store = new TestPlayerHistoryStore(typeof(InvalidOperationException));
+            var port = GetAvailablePort();
+            var url = "http://127.0.0.1:" + port + "/";
+            var hub = new ServerEventHub(new ServerEventLiveWindow(4));
+            using var provider = CreateWebServiceProvider(true, hub, playerHistoryStore: store);
+
+            using (var host = new OwinWebHost(
+                url,
+                app => OwinStartup.Configure(app, provider)))
+            using (var handler = new HttpClientHandler { UseProxy = false })
+            using (var client = new HttpClient(handler))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, url + "api/v1/players/history"))
+            {
+                host.Start();
+                await AuthorizeWithPasswordGrantAsync(client, url, request);
+
+                using var response = await client.SendAsync(
+                    request,
+                    TestContext.Current.CancellationToken);
+                var problem = await AssertProblemDetailsAsync(
+                    response,
+                    "historical_player_query_failed",
+                    "/api/v1/players/history");
+
+                Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+                Assert.DoesNotContain("InvalidOperationException", problem.ToString());
             }
         }
 
@@ -3432,7 +3652,8 @@ namespace LSTY.SevenDPanel.Tests
             GameReadinessState gameReadiness = GameReadinessState.Ready,
             IOnlinePlayerQuery? onlinePlayerQuery = null,
             IPlayerActions? playerActions = null,
-            IPlayerActionAuditTrail? playerActionAuditTrail = null)
+            IPlayerActionAuditTrail? playerActionAuditTrail = null,
+            IPlayerHistoryStore? playerHistoryStore = null)
         {
             var services = new ServiceCollection();
             var authentication = enableConsoleLogStream
@@ -3455,6 +3676,10 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton<ExecuteConsoleCommandUseCase>();
             services.AddSingleton<IOnlinePlayerQuery>(onlinePlayerQuery ?? new TestOnlinePlayerQuery());
             services.AddSingleton<GetOnlinePlayersUseCase>();
+            services.AddSingleton<IPlayerHistoryStore>(playerHistoryStore ?? new TestPlayerHistoryStore());
+            services.AddSingleton<GetHistoricalPlayersUseCase>();
+            services.AddSingleton<GetHistoricalPlayerUseCase>();
+            services.AddSingleton<GetPlayerHistorySnapshotsUseCase>();
             services.AddSingleton<IPlayerActions>(playerActions ?? new TestPlayerActions());
             services.AddSingleton<IPlayerActionAuditTrail>(
                 playerActionAuditTrail ?? new TestPlayerActionAuditTrail());
@@ -3568,6 +3793,93 @@ namespace LSTY.SevenDPanel.Tests
             public int MarkPendingUnknown(DateTimeOffset completedAtUtc) => 0;
         }
 
+        private sealed class TestPlayerHistoryStore : IPlayerHistoryStore
+        {
+            private const string CrossplatformId = "EOS_0002d12af0fe4add9c7de0fbc238d431";
+            private readonly HistoricalPlayerSummary summary = new HistoricalPlayerSummary(
+                CrossplatformId,
+                "Alice",
+                new DateTimeOffset(2026, 7, 24, 8, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 7, 25, 8, 0, 0, TimeSpan.Zero),
+                3,
+                2,
+                1,
+                true);
+            private readonly HistoricalPlayerSnapshot snapshot;
+            private readonly Exception? failure;
+            private readonly PlayerHistoryGap gap = new PlayerHistoryGap(
+                "gap-1",
+                CrossplatformId,
+                new DateTimeOffset(2026, 7, 24, 9, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 7, 24, 9, 5, 0, TimeSpan.Zero),
+                2,
+                PlayerHistoryGapReason.QueueFull,
+                new DateTimeOffset(2026, 7, 24, 9, 6, 0, TimeSpan.Zero));
+
+            public TestPlayerHistoryStore(Type? failureType = null)
+            {
+                failure = failureType == null ? null : (Exception)Activator.CreateInstance(failureType)!;
+                snapshot = new HistoricalPlayerSnapshot(
+                    41,
+                    CreateOnlinePlayer(
+                        7,
+                        "Alice",
+                        new PlayerPlatformIdentity("steam-1", "Steam"),
+                        new PlayerPlatformIdentity(CrossplatformId, "EOS"),
+                        40,
+                        18,
+                        95,
+                        new DateTimeOffset(2026, 7, 25, 8, 0, 0, TimeSpan.Zero)));
+            }
+
+            public int GetPlayersCallCount { get; private set; }
+
+            public int GetSnapshotsCallCount { get; private set; }
+
+            public void Append(PlayerSnapshot player)
+            {
+            }
+
+            public void AppendGap(PlayerHistoryGap historyGap)
+            {
+            }
+
+            public int Compact(DateTimeOffset utcNow, int maximumDeletes) => 0;
+
+            public HistoricalPlayersPage GetPlayers(HistoricalPlayersQuery query)
+            {
+                ThrowIfFaulted();
+                GetPlayersCallCount++;
+                return new HistoricalPlayersPage(new[] { summary }, null);
+            }
+
+            public HistoricalPlayerDetails? GetPlayer(string crossplatformId)
+            {
+                ThrowIfFaulted();
+                return string.Equals(crossplatformId, CrossplatformId, StringComparison.Ordinal)
+                    ? new HistoricalPlayerDetails(summary, new PlayerHistoryGapSummary(1, 2))
+                    : null;
+            }
+
+            public PlayerHistorySnapshotsPage GetSnapshots(PlayerHistorySnapshotsQuery query)
+            {
+                ThrowIfFaulted();
+                GetSnapshotsCallCount++;
+                if (!string.Equals(query.CrossplatformId, CrossplatformId, StringComparison.Ordinal))
+                    return new PlayerHistorySnapshotsPage(
+                        Array.Empty<HistoricalPlayerSnapshot>(),
+                        null,
+                        Array.Empty<PlayerHistoryGap>());
+
+                return new PlayerHistorySnapshotsPage(new[] { snapshot }, null, new[] { gap });
+            }
+
+            private void ThrowIfFaulted()
+            {
+                if (failure != null) throw failure;
+            }
+        }
+
         private sealed class TestConsoleCommandGateway : IConsoleCommandGateway
         {
             private readonly Exception? failure;
@@ -3667,7 +3979,13 @@ namespace LSTY.SevenDPanel.Tests
                             "test-admin-subject",
                             "test-admin",
                             PanelUserIdentity.AdminRole),
-                        "test-admin-password")
+                        "test-admin-password"),
+                    ["test-viewer"] = new TestUser(
+                        new PanelUserIdentity(
+                            "test-viewer-subject",
+                            "test-viewer",
+                            PanelUserIdentity.ViewerRole),
+                        "test-viewer-password")
                 };
             private int nextApiKeySequence;
 

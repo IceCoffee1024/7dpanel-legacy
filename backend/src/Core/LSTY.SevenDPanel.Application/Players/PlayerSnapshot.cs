@@ -30,6 +30,73 @@ namespace LSTY.SevenDPanel.Application
             float longestLifeMinutes,
             float currentLifeMinutes,
             DateTimeOffset observedAtUtc)
+            : this(
+                entityId,
+                name,
+                platformIdentity,
+                crossplatformIdentity,
+                deviceType,
+                ip,
+                ping,
+                compatibilityVersion,
+                discordUserId,
+                permissionLevel,
+                position,
+                isDead,
+                health,
+                maxHealth,
+                level,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                score,
+                zombieKills,
+                playerKills,
+                deaths,
+                totalTimePlayedMinutes,
+                distanceWalkedMeters,
+                totalItemsCrafted,
+                longestLifeMinutes,
+                currentLifeMinutes,
+                observedAtUtc)
+        {
+        }
+
+        public PlayerSnapshot(
+            int entityId,
+            string name,
+            PlayerPlatformIdentity platformIdentity,
+            PlayerPlatformIdentity? crossplatformIdentity,
+            PlayerDeviceType deviceType,
+            string? ip,
+            int ping,
+            string? compatibilityVersion,
+            string? discordUserId,
+            int permissionLevel,
+            PlayerPosition position,
+            bool isDead,
+            int health,
+            int maxHealth,
+            int level,
+            string? playGroup,
+            DateTimeOffset? lastLoginUtc,
+            int? gameStage,
+            int? expToNextLevel,
+            int? skillPoints,
+            PlayerPosition? bedroll,
+            int score,
+            int zombieKills,
+            int playerKills,
+            int deaths,
+            float totalTimePlayedMinutes,
+            float distanceWalkedMeters,
+            uint totalItemsCrafted,
+            float longestLifeMinutes,
+            float currentLifeMinutes,
+            DateTimeOffset observedAtUtc)
         {
             if (entityId < 0)
                 throw new ArgumentOutOfRangeException(nameof(entityId));
@@ -41,6 +108,7 @@ namespace LSTY.SevenDPanel.Application
             ValidateOptionalString(ip, nameof(ip));
             ValidateOptionalString(compatibilityVersion, nameof(compatibilityVersion));
             ValidateOptionalString(discordUserId, nameof(discordUserId));
+            ValidateOptionalString(playGroup, nameof(playGroup));
             ValidateNonNegativeFinite(totalTimePlayedMinutes, nameof(totalTimePlayedMinutes));
             ValidateNonNegativeFinite(distanceWalkedMeters, nameof(distanceWalkedMeters));
             ValidateNonNegativeFinite(longestLifeMinutes, nameof(longestLifeMinutes));
@@ -61,6 +129,12 @@ namespace LSTY.SevenDPanel.Application
             Health = health;
             MaxHealth = maxHealth;
             Level = level;
+            PlayGroup = playGroup;
+            LastLoginUtc = lastLoginUtc;
+            GameStage = gameStage;
+            ExpToNextLevel = expToNextLevel;
+            SkillPoints = skillPoints;
+            Bedroll = bedroll;
             Score = score;
             ZombieKills = zombieKills;
             PlayerKills = playerKills;
@@ -98,6 +172,18 @@ namespace LSTY.SevenDPanel.Application
         public bool IsDead { get; }
 
         public int Level { get; }
+
+        public string? PlayGroup { get; }
+
+        public DateTimeOffset? LastLoginUtc { get; }
+
+        public int? GameStage { get; }
+
+        public int? ExpToNextLevel { get; }
+
+        public int? SkillPoints { get; }
+
+        public PlayerPosition? Bedroll { get; }
 
         public int Health { get; }
 

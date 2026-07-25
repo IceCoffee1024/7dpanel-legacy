@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-24"
+last_updated: "2026-07-25"
 document_role: Target
 ---
 
@@ -353,6 +353,25 @@ GET /api/v1/players/online
 `ip`、`compatibilityVersion`、`discordUserId` 和 `crossplatformIdentity` 使用明确空值；其他字段无效、权限读取失败或转换失败时拒绝整次 observation，保留上一条有效值。投影不保存 `ClientInfo`、`PlayerDataFile`、`EntityPlayer`、Unity 向量或权限对象，也不重复返回可由 `permissionLevel` 推导的 `isAdmin`。
 
 投影不周期扫描 `ConnectionManager` 或 `World`，不在请求时回退到游戏主线程，不监听或 patch `PlayerStats` 网络包，也不引入通用投影框架。保存、断开、查询复制与停止清理使用同一窄并发门禁保持 membership 和 observation 成对变化；关服先停止 OWIN，再逆序注销事件、拒绝新提交并清空投影。扩展字段与 Admin 详情的批准边界见[在线玩家详情设计规格](../superpowers/specs/2026-07-24-online-player-details-design.md)；既有事件生命周期和并发依据见[在线玩家事件投影设计规格](../superpowers/specs/2026-07-22-online-player-event-projection-design.md)。
+
+### 历史玩家快照
+
+历史玩家是在线 observation 的异步只读归档，不建立加入/离开会话、在线时长或第二套游戏状态读取链路。一次成功 `SavePlayerData` 在游戏线程内先完整复制扩充后的 31 字段 `PlayerSnapshot`，再先更新当前在线投影，并仅在 `crossplatformIdentity.combinedId` 非空时调用历史生产者：
+
+```text
+SavePlayerData (game thread)
+  -> CopyObservation: 25 online fields + 6 optional profile/progression fields
+  -> immutable PlayerSnapshot
+  -> online projection upsert
+  -> valid crossplatform identity ? PlayerHistoryWriteService.TryRecord : skipped
+  -> bounded Channel(1024), TryWrite only
+  -> one background consumer
+  -> SQLite transaction: snapshot + player summary or gap
+```
+
+六个附加字段是可空 `playGroup`、`lastLoginUtc`、`gameStage`、`expToNextLevel`、`skillPoints` 和 `bedroll`。`lastLoginUtc` 是游戏持久玩家记录中的最近登录时间，不等于 `observedAtUtc`，不能用于推断连续在线。`playGroup`、`lastLoginUtc` 和 `bedroll` 来自按跨平台身份精确匹配的 `PersistentPlayerData`；床铺 `y == int.MaxValue` 映射为 `null`。`gameStage` 优先来自同一实体；进度优先来自在线 `EntityPlayer.Progression`，实体或 Progression 不可用时才按已验证的目标游戏版本布局解析 `progressionData`。解析必须校验版本与长度并恢复 stream position；任何额外字段不可用时只保存 `null`，不得使用零值占位、磁盘加载 `PlayerDataFile` 或让基础 observation 失败。
+
+生产者绝不等待、访问 SQLite 或为单次 Save 创建 `Task.Run`。消费者按接受顺序单独持久化，并仅在队列空闲或低水位时执行有限批次的确定性 UTC 分桶降采样；每名玩家的第一条和最新一条保留，30 天后的七日桶保留代表快照。队满、Store 失败和关服排空超时按玩家保存缺口及计数。启动必须在在线投影订阅前启动该消费者；关闭时先停止在线生产者、完成 writer、在截止时间内排空并尝试保存 pending gap。历史 SQLite 查询不依赖游戏就绪状态，只允许 `Owner` 经 Application use case 查询摘要、详情和倒序 keyset 快照。完整已批准设计见[历史玩家快照设计规格](../superpowers/specs/2026-07-25-player-history-design.md)。该纵向切片的当前实现与自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)；本蓝图仅保留后续演进约束，不构成额外实现证据。
 
 ### 玩家管理动作
 

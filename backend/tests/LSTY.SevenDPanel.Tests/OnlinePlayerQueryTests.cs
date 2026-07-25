@@ -97,6 +97,14 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(93, player.Health);
             Assert.Equal(100, player.MaxHealth);
             Assert.Equal(18, player.Level);
+            Assert.Equal("Friends", player.PlayGroup);
+            Assert.Equal(new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero), player.LastLoginUtc);
+            Assert.Equal(123, player.GameStage);
+            Assert.Equal(0, player.ExpToNextLevel);
+            Assert.Equal(0, player.SkillPoints);
+            Assert.Equal(12.5f, player.Bedroll?.X);
+            Assert.Equal(64f, player.Bedroll?.Y);
+            Assert.Equal(-8.25f, player.Bedroll?.Z);
             Assert.Equal(827, player.Score);
             Assert.Equal(317, player.ZombieKills);
             Assert.Equal(2, player.PlayerKills);
@@ -124,12 +132,24 @@ namespace LSTY.SevenDPanel.Tests
                 includeCrossplatformIdentity: false,
                 ip: null,
                 compatibilityVersion: null,
-                discordUserId: null);
+                discordUserId: null,
+                playGroup: null,
+                includeLastLoginUtc: false,
+                gameStage: null,
+                expToNextLevel: null,
+                skillPoints: null,
+                includeBedroll: false);
 
             Assert.Null(player.CrossplatformIdentity);
             Assert.Null(player.Ip);
             Assert.Null(player.CompatibilityVersion);
             Assert.Null(player.DiscordUserId);
+            Assert.Null(player.PlayGroup);
+            Assert.Null(player.LastLoginUtc);
+            Assert.Null(player.GameStage);
+            Assert.Null(player.ExpToNextLevel);
+            Assert.Null(player.SkillPoints);
+            Assert.Null(player.Bedroll);
         }
 
         [Fact]
@@ -190,6 +210,14 @@ namespace LSTY.SevenDPanel.Tests
             string? ip = "192.0.2.10",
             string? compatibilityVersion = "V 3.0.1",
             string? discordUserId = "18446744073709551615",
+            string? playGroup = "Friends",
+            DateTimeOffset? lastLoginUtc = null,
+            bool includeLastLoginUtc = true,
+            int? gameStage = 123,
+            int? expToNextLevel = 0,
+            int? skillPoints = 0,
+            PlayerPosition? bedroll = null,
+            bool includeBedroll = true,
             float totalTimePlayedMinutes = 4823.5f,
             float distanceWalkedMeters = 127540.75f,
             float longestLifeMinutes = 920.25f,
@@ -215,6 +243,14 @@ namespace LSTY.SevenDPanel.Tests
                 93,
                 100,
                 18,
+                playGroup,
+                includeLastLoginUtc
+                    ? lastLoginUtc ?? new DateTimeOffset(2026, 7, 23, 8, 0, 0, TimeSpan.Zero)
+                    : null,
+                gameStage,
+                expToNextLevel,
+                skillPoints,
+                includeBedroll ? bedroll ?? new PlayerPosition(12.5f, 64f, -8.25f) : null,
                 827,
                 317,
                 2,

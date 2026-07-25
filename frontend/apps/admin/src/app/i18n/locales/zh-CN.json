@@ -100,6 +100,12 @@
       "totalItemsCrafted": "制作物品数",
       "longestLifeMinutes": "最长生存时长",
       "currentLifeMinutes": "当前生存时长",
+      "playGroup": "玩家组",
+      "lastLoginUtc": "最近登录（持久记录）",
+      "gameStage": "游戏阶段",
+      "expToNextLevel": "距下一等级经验",
+      "skillPoints": "技能点",
+      "bedroll": "床铺",
       "observedAt": "观察时间",
       "actions": "操作",
       "unbound": "未绑定",
@@ -122,6 +128,7 @@
       "identity": "身份",
       "connection": "连接",
       "currentStatus": "当前状态",
+      "progression": "进度",
       "statistics": "累计统计",
       "unavailableTitle": "该玩家观察已不可用",
       "unavailableDescription": "最近的成功刷新未找到同一身份。请关闭详情后重新选择玩家。"
@@ -147,6 +154,40 @@
         "audit_unavailable": "审计服务暂不可用，请稍后重试",
         "player_kick_failed": "踢出玩家失败",
         "unknown": "结果尚无法确认"
+      }
+    },
+    "history": {
+      "title": "历史玩家",
+      "navigation": "历史",
+      "online": "在线",
+      "sectionNavigation": "玩家视图",
+      "description": "保存的玩家观察快照；不表示两个时间点之间持续在线。",
+      "searchPlaceholder": "按名称或跨平台身份搜索",
+      "firstObserved": "首次观察",
+      "lastObserved": "最后观察",
+      "totalObservations": "累计观察",
+      "retainedSnapshots": "保留快照",
+      "loadMore": "加载更多",
+      "timeline": "观察时间线",
+      "snapshotDetails": "历史快照详情",
+      "gapCount": "历史缺口（次数 · 丢失观察）",
+      "unknown": "未知",
+      "unset": "未设置",
+      "quality": { "gaps": "存在历史缺口", "compacted": "已降采样", "complete": "完整" },
+      "state": {
+        "emptyTitle": "尚无历史快照",
+        "forbiddenTitle": "无权查看历史玩家",
+        "forbiddenDescription": "当前身份没有访问历史玩家数据的权限。",
+        "notFoundTitle": "未找到历史玩家",
+        "failedTitle": "无法加载历史玩家",
+        "failedDescription": "保留的数据不会被清除，请稍后重试。",
+        "staleTitle": "刷新失败，显示上次结果"
+      },
+      "gap": {
+        "queue_full": "写入队列已满",
+        "store_failure": "历史存储失败",
+        "shutdown_timeout": "关服排空超时",
+        "description": "丢失 {count} 条观察"
       }
     }
   },

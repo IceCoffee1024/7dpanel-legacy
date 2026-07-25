@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Controllers;
 using System.Web.Http.Description;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
 using LSTY.SevenDPanel.Application;
@@ -15,21 +16,56 @@ using LSTY.SevenDPanel.Hosting;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
-    [Authorize(Roles = "Owner")]
+    internal sealed class OwnerAuthorizeAttribute : AuthorizeAttribute
+    {
+        public OwnerAuthorizeAttribute()
+        {
+            Roles = "Owner";
+        }
+
+        protected override void HandleUnauthorizedRequest(HttpActionContext actionContext)
+        {
+            if (actionContext.RequestContext.Principal?.Identity?.IsAuthenticated == true)
+            {
+                actionContext.Response = ApiProblemDetailsFactory.CreateResponse(
+                    actionContext.Request,
+                    HttpStatusCode.Forbidden,
+                    "owner_required",
+                    "Owner access is required.");
+                return;
+            }
+
+            base.HandleUnauthorizedRequest(actionContext);
+        }
+    }
+
+    [OwnerAuthorize]
     [RoutePrefix("api/v1/players")]
     public sealed class PlayersController : ApiController
     {
         private readonly GetOnlinePlayersUseCase useCase;
         private readonly KickPlayerUseCase kickPlayerUseCase;
+        private readonly GetHistoricalPlayersUseCase historicalPlayersUseCase;
+        private readonly GetHistoricalPlayerUseCase historicalPlayerUseCase;
+        private readonly GetPlayerHistorySnapshotsUseCase historicalPlayerSnapshotsUseCase;
         private readonly IPanelRuntimeStatus runtimeStatus;
 
         public PlayersController(
             GetOnlinePlayersUseCase useCase,
             KickPlayerUseCase kickPlayerUseCase,
+            GetHistoricalPlayersUseCase historicalPlayersUseCase,
+            GetHistoricalPlayerUseCase historicalPlayerUseCase,
+            GetPlayerHistorySnapshotsUseCase historicalPlayerSnapshotsUseCase,
             IPanelRuntimeStatus runtimeStatus)
         {
             this.useCase = useCase ?? throw new ArgumentNullException(nameof(useCase));
             this.kickPlayerUseCase = kickPlayerUseCase ?? throw new ArgumentNullException(nameof(kickPlayerUseCase));
+            this.historicalPlayersUseCase = historicalPlayersUseCase ??
+                throw new ArgumentNullException(nameof(historicalPlayersUseCase));
+            this.historicalPlayerUseCase = historicalPlayerUseCase ??
+                throw new ArgumentNullException(nameof(historicalPlayerUseCase));
+            this.historicalPlayerSnapshotsUseCase = historicalPlayerSnapshotsUseCase ??
+                throw new ArgumentNullException(nameof(historicalPlayerSnapshotsUseCase));
             this.runtimeStatus = runtimeStatus ?? throw new ArgumentNullException(nameof(runtimeStatus));
         }
 
@@ -55,6 +91,164 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             return Request.CreateResponse(
                 HttpStatusCode.OK,
                 new OnlinePlayersResponse(players));
+        }
+
+        [HttpGet]
+        [Route("history")]
+        [ResponseType(typeof(HistoricalPlayersResponse))]
+        public HttpResponseMessage GetHistoricalPlayers(
+            string? query = null,
+            int? pageSize = null,
+            string? cursor = null)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_history_query",
+                    "The historical player query is invalid.");
+            }
+
+            HistoricalPlayersCursor? decodedCursor = null;
+            if (cursor != null && !PlayerHistoryCursorCodec.TryDecode(cursor, out decodedCursor))
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_history_cursor",
+                    "The historical player cursor is invalid.");
+            }
+
+            try
+            {
+                var page = historicalPlayersUseCase.Execute(new HistoricalPlayersQuery(
+                    query,
+                    pageSize ?? HistoricalPlayersQuery.DefaultPageSize,
+                    decodedCursor));
+                var players = page.Players
+                    .Select(player => new HistoricalPlayerSummaryResponse(player))
+                    .ToArray();
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new HistoricalPlayersResponse(
+                        players,
+                        page.NextCursor == null ? null : PlayerHistoryCursorCodec.Encode(page.NextCursor)));
+            }
+            catch (ArgumentException)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_history_query",
+                    "The historical player query is invalid.");
+            }
+            catch (Exception)
+            {
+                return Problem(
+                    HttpStatusCode.InternalServerError,
+                    "historical_player_query_failed",
+                    "Historical player data could not be read.");
+            }
+        }
+
+        [HttpGet]
+        [Route("history/{crossplatformId}")]
+        [ResponseType(typeof(HistoricalPlayerDetailsResponse))]
+        public HttpResponseMessage GetHistoricalPlayer(string crossplatformId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_crossplatform_id",
+                    "A valid cross-platform identity is required.");
+            }
+
+            try
+            {
+                var details = historicalPlayerUseCase.Execute(crossplatformId);
+                if (details == null)
+                {
+                    return Problem(
+                        HttpStatusCode.NotFound,
+                        "historical_player_not_found",
+                        "The historical player was not found.");
+                }
+
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new HistoricalPlayerDetailsResponse(
+                        new HistoricalPlayerSummaryResponse(details.Player),
+                        new HistoricalPlayerGapSummaryResponse(details.GapSummary)));
+            }
+            catch (ArgumentException)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_crossplatform_id",
+                    "A valid cross-platform identity is required.");
+            }
+            catch (Exception)
+            {
+                return Problem(
+                    HttpStatusCode.InternalServerError,
+                    "historical_player_query_failed",
+                    "Historical player data could not be read.");
+            }
+        }
+
+        [HttpGet]
+        [Route("history/{crossplatformId}/snapshots")]
+        [ResponseType(typeof(HistoricalPlayerSnapshotsResponse))]
+        public HttpResponseMessage GetHistoricalPlayerSnapshots(
+            string crossplatformId,
+            int? pageSize = null,
+            long? beforeSnapshotId = null)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_history_snapshot_query",
+                    "The historical player snapshot query is invalid.");
+            }
+
+            try
+            {
+                var query = new PlayerHistorySnapshotsQuery(
+                    crossplatformId,
+                    pageSize ?? PlayerHistorySnapshotsQuery.DefaultPageSize,
+                    beforeSnapshotId);
+                if (historicalPlayerUseCase.Execute(crossplatformId) == null)
+                {
+                    return Problem(
+                        HttpStatusCode.NotFound,
+                        "historical_player_not_found",
+                        "The historical player was not found.");
+                }
+
+                var page = historicalPlayerSnapshotsUseCase.Execute(query);
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new HistoricalPlayerSnapshotsResponse(
+                        page.Snapshots
+                            .Select(snapshot => new HistoricalPlayerSnapshotResponse(snapshot))
+                            .ToArray(),
+                        page.NextBeforeSnapshotId,
+                        page.Gaps.Select(gap => new PlayerHistoryGapResponse(gap)).ToArray()));
+            }
+            catch (ArgumentException)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_history_snapshot_query",
+                    "The historical player snapshot query is invalid.");
+            }
+            catch (Exception)
+            {
+                return Problem(
+                    HttpStatusCode.InternalServerError,
+                    "historical_player_query_failed",
+                    "Historical player data could not be read.");
+            }
         }
 
         [HttpPost]
@@ -222,6 +416,17 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 player.Health,
                 player.MaxHealth,
                 player.Level,
+                player.PlayGroup,
+                player.LastLoginUtc?.ToString("O", CultureInfo.InvariantCulture),
+                player.GameStage,
+                player.ExpToNextLevel,
+                player.SkillPoints,
+                player.Bedroll == null
+                    ? null
+                    : new OnlinePlayerPositionResponse(
+                        player.Bedroll.Value.X,
+                        player.Bedroll.Value.Y,
+                        player.Bedroll.Value.Z),
                 player.Score,
                 player.ZombieKills,
                 player.PlayerKills,
@@ -281,6 +486,12 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             int health,
             int maxHealth,
             int level,
+            string? playGroup,
+            string? lastLoginUtc,
+            int? gameStage,
+            int? expToNextLevel,
+            int? skillPoints,
+            OnlinePlayerPositionResponse? bedroll,
             int score,
             int zombieKills,
             int playerKills,
@@ -307,6 +518,12 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             Health = health;
             MaxHealth = maxHealth;
             Level = level;
+            PlayGroup = playGroup;
+            LastLoginUtc = lastLoginUtc;
+            GameStage = gameStage;
+            ExpToNextLevel = expToNextLevel;
+            SkillPoints = skillPoints;
+            Bedroll = bedroll;
             Score = score;
             ZombieKills = zombieKills;
             PlayerKills = playerKills;
@@ -348,6 +565,18 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public int MaxHealth { get; }
 
         public int Level { get; }
+
+        public string? PlayGroup { get; }
+
+        public string? LastLoginUtc { get; }
+
+        public int? GameStage { get; }
+
+        public int? ExpToNextLevel { get; }
+
+        public int? SkillPoints { get; }
+
+        public OnlinePlayerPositionResponse? Bedroll { get; }
 
         public int Score { get; }
 

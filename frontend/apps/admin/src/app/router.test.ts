@@ -11,6 +11,8 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/login', component: { template: '<div />' }, meta: { public: true } },
     { path: '/players', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
   ],
 }))
@@ -68,6 +70,22 @@ describe('createAdminRouter', () => {
     await router.push('/api-keys')
 
     expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/api-keys')
+  })
+
+  it('protects history list and deep links while preserving the full target', async () => {
+    const { router } = createTestRouter()
+    await router.push('/players/history/EOS_0002d12af0fe4add9c7de0fbc238d431')
+
+    expect(router.currentRoute.value.fullPath)
+      .toBe('/login?redirect=/players/history/EOS_0002d12af0fe4add9c7de0fbc238d431')
+  })
+
+  it('allows authenticated navigation to the history list', async () => {
+    const { pinia, router } = createTestRouter()
+    authenticate(pinia)
+    await router.push('/players/history')
+
+    expect(router.currentRoute.value.fullPath).toBe('/players/history')
   })
 
   it('redirects an authenticated login navigation to players', async () => {

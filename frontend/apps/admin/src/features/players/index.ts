@@ -1,4 +1,24 @@
 export {
+  fetchHistoricalPlayer,
+  fetchHistoricalPlayers,
+  fetchHistoricalSnapshots,
+  parseHistoricalPlayer,
+  parseHistoricalPlayers,
+  parseHistoricalSnapshots,
+} from './api/historyPlayers'
+export type {
+  FetchHistoricalPlayersOptions,
+  FetchHistoricalSnapshotsOptions,
+  HistoricalPlayerDetails,
+  HistoricalPlayerGapSummary,
+  HistoricalPlayerSnapshot,
+  HistoricalPlayerSnapshotsPage,
+  HistoricalPlayersPage,
+  HistoricalPlayerSummary,
+  PlayerHistoryGap,
+  PlayerHistoryGapReason,
+} from './api/historyPlayers'
+export {
   kickPlayer,
   parseKickPlayerResponse,
 } from './api/kickPlayer'
@@ -17,6 +37,11 @@ export type {
   OnlinePlayersSnapshot,
   PlayerIdentity,
 } from './api/onlinePlayers'
+export type {
+  PlayerDeviceType,
+  PlayerPosition,
+  PlayerSnapshot,
+} from './api/playerSnapshot'
 export {
   formatDeviceType,
   formatDurationMinutes,
@@ -24,6 +49,20 @@ export {
   formatPosition,
   formatRoundedNumber,
 } from './model/onlinePlayerFormatting'
+export { useHistoricalPlayer } from './model/useHistoricalPlayer'
+export type {
+  HistoricalPlayerController,
+  HistoricalPlayerErrorCode,
+  HistoricalPlayerState,
+  UseHistoricalPlayerOptions,
+} from './model/useHistoricalPlayer'
+export { useHistoricalPlayers } from './model/useHistoricalPlayers'
+export type {
+  HistoricalPlayersController,
+  HistoricalPlayersErrorCode,
+  HistoricalPlayersState,
+  UseHistoricalPlayersOptions,
+} from './model/useHistoricalPlayers'
 export { useKickPlayer } from './model/useKickPlayer'
 export type {
   KickPlayerController,

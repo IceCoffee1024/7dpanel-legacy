@@ -57,6 +57,21 @@ declare module 'vue-router/auto-routes' {
       '/players',
       Record<never, never>,
       Record<never, never>,
+      | '/players/history/'
+      | '/players/history/[crossplatformId]'
+    >,
+    '/players/history/': RouteRecordInfo<
+      '/players/history/',
+      '/players/history',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/players/history/[crossplatformId]': RouteRecordInfo<
+      '/players/history/[crossplatformId]',
+      '/players/history/:crossplatformId',
+      { crossplatformId: ParamValue<true> },
+      { crossplatformId: ParamValue<false> },
       | never
     >,
   }
@@ -99,10 +114,28 @@ declare module 'vue-router/auto-routes' {
     'src/pages/players.vue': {
       routes:
         | '/players'
+        | '/players/history/'
+        | '/players/history/[crossplatformId]'
+      views:
+        | 'default'
+      pathParamNames:
+        | never
+    }
+    'src/pages/players/history/index.vue': {
+      routes:
+        | '/players/history/'
       views:
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/players/history/[crossplatformId].vue': {
+      routes:
+        | '/players/history/[crossplatformId]'
+      views:
+        | never
+      pathParamNames:
+        | 'crossplatformId'
     }
   }
 

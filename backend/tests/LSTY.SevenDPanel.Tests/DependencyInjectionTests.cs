@@ -215,9 +215,14 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 onlinePlayerQuery,
                 provider.GetRequiredService<IOnlinePlayerQuery>());
-            Assert.IsType<OnlinePlayerProjectionRuntime>(
+            Assert.IsType<PlayerHistoryRuntime>(
                 provider.GetRequiredService<IModRuntime>());
             Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
+            Assert.NotNull(provider.GetRequiredService<IPlayerHistoryStore>());
+            Assert.NotNull(provider.GetRequiredService<PlayerHistoryWriteService>());
+            Assert.NotNull(provider.GetRequiredService<GetHistoricalPlayersUseCase>());
+            Assert.NotNull(provider.GetRequiredService<GetHistoricalPlayerUseCase>());
+            Assert.NotNull(provider.GetRequiredService<GetPlayerHistorySnapshotsUseCase>());
             var playerActionAuditTrail = provider.GetRequiredService<SqlitePlayerActionAuditTrail>();
             Assert.Same(
                 playerActionAuditTrail,

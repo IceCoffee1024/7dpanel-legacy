@@ -59,7 +59,16 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<IConsoleCommandGateway>(serviceProvider =>
                     serviceProvider.GetRequiredService<SevenDaysConsoleCommandService>());
                 services.AddSingleton<ExecuteConsoleCommandUseCase>();
-                services.AddSingleton(serviceProvider => new SevenDaysOnlinePlayerProjection(log));
+                services.AddSingleton<SqlitePlayerHistoryStore>();
+                services.AddSingleton<IPlayerHistoryStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqlitePlayerHistoryStore>());
+                services.AddSingleton<PlayerHistoryWriteService>();
+                services.AddSingleton<GetHistoricalPlayersUseCase>();
+                services.AddSingleton<GetHistoricalPlayerUseCase>();
+                services.AddSingleton<GetPlayerHistorySnapshotsUseCase>();
+                services.AddSingleton(serviceProvider => new SevenDaysOnlinePlayerProjection(
+                    serviceProvider.GetRequiredService<PlayerHistoryWriteService>(),
+                    log));
                 services.AddSingleton<IOnlinePlayerQuery>(serviceProvider =>
                     serviceProvider.GetRequiredService<SevenDaysOnlinePlayerProjection>());
                 services.AddSingleton<GetOnlinePlayersUseCase>();
@@ -108,10 +117,13 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(serviceProvider => new OnlinePlayerProjectionRuntime(
                     serviceProvider.GetRequiredService<SevenDaysOnlinePlayerProjection>(),
                     serviceProvider.GetRequiredService<ConsoleCommandRuntime>()));
+                services.AddSingleton(serviceProvider => new PlayerHistoryRuntime(
+                    serviceProvider.GetRequiredService<PlayerHistoryWriteService>(),
+                    serviceProvider.GetRequiredService<OnlinePlayerProjectionRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<OnlinePlayerProjectionRuntime>());
+                    serviceProvider.GetRequiredService<PlayerHistoryRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
@@ -249,6 +251,61 @@ namespace LSTY.SevenDPanel.Tests
                 SevenDaysOnlinePlayerProjection.TruncateFiniteToInt(float.NaN, "health"));
             Assert.Throws<InvalidOperationException>(() =>
                 SevenDaysOnlinePlayerProjection.TruncateFiniteToInt(float.PositiveInfinity, "health"));
+        }
+
+        [Fact]
+        public void Progression_fallback_reads_the_target_layout_and_restores_stream_position()
+        {
+            using var stream = new MemoryStream();
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                writer.Write((byte)7);
+                writer.Write((byte)9);
+                writer.Write(3);
+                writer.Write((ushort)18);
+                writer.Write(0);
+                writer.Write((ushort)0);
+            }
+
+            stream.Position = 2;
+
+            var parsed = SevenDaysOnlinePlayerProjection.TryReadProgressionData(
+                stream,
+                out var expToNextLevel,
+                out var skillPoints);
+
+            Assert.True(parsed);
+            Assert.Equal(0, expToNextLevel);
+            Assert.Equal(0, skillPoints);
+            Assert.Equal(2, stream.Position);
+        }
+
+        [Fact]
+        public void Progression_fallback_rejects_unknown_or_truncated_layout_and_restores_stream_position()
+        {
+            using var unknownVersion = new MemoryStream();
+            using (var writer = new BinaryWriter(unknownVersion, Encoding.UTF8, true))
+            {
+                writer.Write(4);
+                writer.Write((ushort)18);
+                writer.Write(1500);
+                writer.Write((ushort)2);
+            }
+
+            unknownVersion.Position = 0;
+            Assert.False(SevenDaysOnlinePlayerProjection.TryReadProgressionData(
+                unknownVersion,
+                out _,
+                out _));
+            Assert.Equal(0, unknownVersion.Position);
+
+            using var truncated = new MemoryStream(new byte[] { 3, 0, 0, 0, 18, 0, 1 });
+            truncated.Position = 1;
+            Assert.False(SevenDaysOnlinePlayerProjection.TryReadProgressionData(
+                truncated,
+                out _,
+                out _));
+            Assert.Equal(1, truncated.Position);
         }
 
         [Fact]

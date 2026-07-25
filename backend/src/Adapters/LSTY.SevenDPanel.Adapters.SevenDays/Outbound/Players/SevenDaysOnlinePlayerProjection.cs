@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Application;
@@ -23,6 +25,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
         private readonly Func<global::ClientInfo?, global::PlayerDataFile?, OnlinePlayerObservation>? copyObservation;
         private readonly Func<OnlinePlayerObservation>? copyObservationForTest;
         private readonly Action<string>? log;
+        private readonly PlayerHistoryWriteService? historyWriteService;
         private IDisposable? joinedSubscription;
         private IDisposable? saveSubscription;
         private IDisposable? disconnectedSubscription;
@@ -42,6 +45,20 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 (client, playerData) => CopyObservation(client, playerData, () => DateTimeOffset.UtcNow),
                 log ?? (_ => { }))
         {
+        }
+
+        public SevenDaysOnlinePlayerProjection(
+            PlayerHistoryWriteService historyWriteService,
+            Action<string>? log = null)
+            : this(
+                SubscribeJoined,
+                SubscribeSave,
+                SubscribeDisconnected,
+                (client, playerData) => CopyObservation(client, playerData, () => DateTimeOffset.UtcNow),
+                log ?? (_ => { }))
+        {
+            this.historyWriteService = historyWriteService ??
+                throw new ArgumentNullException(nameof(historyWriteService));
         }
 
         private SevenDaysOnlinePlayerProjection(
@@ -209,6 +226,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             {
                 var observation = readObservation();
                 UpsertForTest(observation);
+                historyWriteService?.TryRecord(observation.Player);
             }
             catch
             {
@@ -319,6 +337,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             var health = TruncateFiniteToInt(playerData.ecd.stats.Health.Value, "health");
             var maxHealth = TruncateFiniteToInt(playerData.ecd.stats.Health.ModifiedMax, "max health");
             var level = playerData.metadata.Level;
+            var historyFields = CopyHistoryFields(client, playerData, entityId);
             var score = playerData.score;
             var zombieKills = playerData.zombieKills;
             var playerKills = playerData.playerKills;
@@ -350,6 +369,12 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 health,
                 maxHealth,
                 level,
+                historyFields.PlayGroup,
+                historyFields.LastLoginUtc,
+                historyFields.GameStage,
+                historyFields.ExpToNextLevel,
+                historyFields.SkillPoints,
+                historyFields.Bedroll,
                 score,
                 zombieKills,
                 playerKills,
@@ -361,6 +386,148 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 currentLifeMinutes,
                 observedAtUtc);
             return new OnlinePlayerObservation(player, observedAtUtc);
+        }
+
+        private static HistoricalPlayerFields CopyHistoryFields(
+            global::ClientInfo client,
+            global::PlayerDataFile playerData,
+            int entityId)
+        {
+            string? playGroup = null;
+            DateTimeOffset? lastLoginUtc = null;
+            PlayerPosition? bedroll = null;
+
+            try
+            {
+                var persistentPlayer = GameManager.Instance?.persistentPlayers?.GetPlayerData(
+                    client.CrossplatformId);
+                if (persistentPlayer != null)
+                {
+                    playGroup = NormalizeOptionalString(persistentPlayer.PlayGroup.ToString());
+                    lastLoginUtc = ToUtcOrNull(persistentPlayer.LastLogin);
+                    if (persistentPlayer.BedrollPos.y != int.MaxValue)
+                    {
+                        bedroll = new PlayerPosition(
+                            persistentPlayer.BedrollPos.x,
+                            persistentPlayer.BedrollPos.y,
+                            persistentPlayer.BedrollPos.z);
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            int? gameStage = null;
+            int? expToNextLevel = null;
+            int? skillPoints = null;
+            try
+            {
+                var player = GameManager.Instance?.World?.GetEntity(entityId) as global::EntityPlayer;
+                if (player != null)
+                {
+                    gameStage = player.gameStage;
+                    if (player.Progression != null)
+                    {
+                        expToNextLevel = player.Progression.ExpToNextLevel;
+                        skillPoints = player.Progression.SkillPoints;
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            if (!expToNextLevel.HasValue || !skillPoints.HasValue)
+            {
+                try
+                {
+                    if (TryReadProgressionData(
+                        playerData.progressionData,
+                        out var fallbackExpToNextLevel,
+                        out var fallbackSkillPoints))
+                    {
+                        expToNextLevel = fallbackExpToNextLevel;
+                        skillPoints = fallbackSkillPoints;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return new HistoricalPlayerFields(
+                playGroup,
+                lastLoginUtc,
+                gameStage,
+                expToNextLevel,
+                skillPoints,
+                bedroll);
+        }
+
+        internal static bool TryReadProgressionData(
+            Stream? progressionData,
+            out int expToNextLevel,
+            out int skillPoints)
+        {
+            expToNextLevel = default;
+            skillPoints = default;
+            if (progressionData == null || !progressionData.CanRead || !progressionData.CanSeek)
+                return false;
+
+            long originalPosition;
+            try
+            {
+                originalPosition = progressionData.Position;
+            }
+            catch
+            {
+                return false;
+            }
+
+            try
+            {
+                const int targetVersion = 3;
+                const int minimumLength = sizeof(int) + sizeof(ushort) + sizeof(int) + sizeof(ushort);
+                if (progressionData.Length - originalPosition < minimumLength)
+                    return false;
+
+                using (var reader = new BinaryReader(progressionData, Encoding.UTF8, true))
+                {
+                    if (reader.ReadInt32() != targetVersion)
+                        return false;
+
+                    reader.ReadUInt16();
+                    expToNextLevel = reader.ReadInt32();
+                    skillPoints = reader.ReadUInt16();
+                    return true;
+                }
+            }
+            catch
+            {
+                expToNextLevel = default;
+                skillPoints = default;
+                return false;
+            }
+            finally
+            {
+                try { progressionData.Position = originalPosition; } catch { }
+            }
+        }
+
+        private static DateTimeOffset? ToUtcOrNull(DateTime value)
+        {
+            if (value == default)
+                return null;
+
+            try
+            {
+                return new DateTimeOffset(value).ToUniversalTime();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         internal static string? CopyNullableIp(Func<string?> readIp)
@@ -446,6 +613,37 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 throw new InvalidOperationException("The player platform identity is unavailable.");
 
             return value!;
+        }
+
+        private sealed class HistoricalPlayerFields
+        {
+            public HistoricalPlayerFields(
+                string? playGroup,
+                DateTimeOffset? lastLoginUtc,
+                int? gameStage,
+                int? expToNextLevel,
+                int? skillPoints,
+                PlayerPosition? bedroll)
+            {
+                PlayGroup = playGroup;
+                LastLoginUtc = lastLoginUtc;
+                GameStage = gameStage;
+                ExpToNextLevel = expToNextLevel;
+                SkillPoints = skillPoints;
+                Bedroll = bedroll;
+            }
+
+            public string? PlayGroup { get; }
+
+            public DateTimeOffset? LastLoginUtc { get; }
+
+            public int? GameStage { get; }
+
+            public int? ExpToNextLevel { get; }
+
+            public int? SkillPoints { get; }
+
+            public PlayerPosition? Bedroll { get; }
         }
 
         private readonly struct PlayerKey : IEquatable<PlayerKey>

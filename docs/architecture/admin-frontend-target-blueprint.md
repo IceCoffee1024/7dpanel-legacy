@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-24"
+last_updated: "2026-07-25"
 document_role: Target
 ---
 
@@ -116,6 +116,29 @@ OnlinePlayersView
 - Players Feature 自己拥有设备、时长、整数坐标/距离和空值格式化。坐标与距离四舍五入后按当前语言显示整数，分钟值转换为天/小时/分钟；所有传输空值统一显示“未知”。纯格式化函数保持无状态，只有出现第二个真实 Feature 消费者后才提升到 `shared`。
 - API 边界严格验证 25 字段、位置对象、设备枚举、有限数值和可空字符串。无效新响应不能覆盖最后成功快照或当前详情；前端不根据本地角色删除响应字段，也不承担敏感字段授权。
 
+### 历史玩家状态
+
+历史玩家与在线玩家共用严格的 31 字段只读快照 parser，但状态不进入 Pinia，也不复用在线详情选择或危险操作目标：
+
+```text
+/players/history?query=&cursor=
+  -> useHistoricalPlayers
+  -> immutable summary pages keyed by crossplatform identity
+
+/players/history/:crossplatformId?beforeSnapshotId=
+  -> useHistoricalPlayer
+  -> summary + immutable descending snapshot pages + gaps
+  -> selected read-only snapshot slideover
+```
+
+- 历史列表和详情的规范键是有效的 `crossplatformIdentity.combinedId`；路径参数必须编码，不能由名称、原生身份或 entity ID 派生。
+- 列表搜索、cursor、详情快照 cursor 和选中只读快照是路由/页面局部状态。新搜索取消旧请求并清空页；刷新或加载更多失败保留已验证结果并进入 `Stale`，按 snapshot ID 和 gap ID 防御性去重。
+- 历史详情并行取得摘要和首个快照页，只继续请求自己的倒序历史游标；不轮询、不查询在线状态，不把 `lastLoginUtc` 当作 observation 或会话时间。
+- 摘要质量优先级为非计划 gap、已压缩、完整。`null` 传输字段显示“未知”，空床铺显示“未设置”；只读 Slideover 没有 kick、ban、teleport、reset 或其他游戏操作。
+- 历史请求只由 `Owner` 使用 Bearer Header 访问。游戏未就绪仍可读取已持久化历史；401/403/404/empty/failed 与在线 `Offline` 分开表达。
+
+上述历史 Admin 切片的当前实现和定向自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)；本节继续作为后续边界演进约束，不单独证明实现存在。
+
 ### 统一结果状态
 
 所有读取和写入界面必须能表达：
@@ -195,6 +218,8 @@ route params and URL filters
 ```
 
 返回上级页面时恢复筛选、排序、分页和滚动上下文。刷新期间保留旧值及原时间戳；只有新响应到达后才更新新鲜度。
+
+历史列表和详情遵循同一原则，但 cursor 是后端版本化的 keyset token；页面不自行重算或编辑它。深链接刷新后恢复跨平台身份和已加载快照之前的 cursor，失败时保留最后成功页与其真实 observation 时间。
 
 ### 管理动作
 

@@ -29,6 +29,12 @@ const validPlayer = {
   health: 96,
   maxHealth: 100,
   level: 17,
+  playGroup: 'Survivalists',
+  lastLoginUtc: '2026-07-22T08:00:00.000Z',
+  gameStage: 143,
+  expToNextLevel: 1200,
+  skillPoints: 4,
+  bedroll: { x: 100, y: 70, z: 200 },
   score: 827,
   zombieKills: 317,
   playerKills: 2,
@@ -48,6 +54,7 @@ function validSnapshot() {
       platformIdentity: { ...validPlayer.platformIdentity },
       crossplatformIdentity: { ...validPlayer.crossplatformIdentity },
       position: { ...validPlayer.position },
+      bedroll: { ...validPlayer.bedroll },
     }],
   }
 }
@@ -69,6 +76,7 @@ describe('parseOnlinePlayers', () => {
     response.players[0]!.platformIdentity.combinedId = 'Changed'
     response.players[0]!.crossplatformIdentity!.platform = 'Changed'
     response.players[0]!.position.x = 999
+    response.players[0]!.bedroll.x = 999
     response.players.push(validPlayer)
 
     expect(result.players).toEqual([validPlayer])
@@ -77,7 +85,16 @@ describe('parseOnlinePlayers', () => {
     expect(Object.isFrozen(result.players[0]!.platformIdentity)).toBe(true)
     expect(Object.isFrozen(result.players[0]!.crossplatformIdentity)).toBe(true)
     expect(Object.isFrozen(result.players[0]!.position)).toBe(true)
+    expect(Object.isFrozen(result.players[0]!.bedroll)).toBe(true)
     expect(result.players[0]!.position.x).toBe(100.5)
+    expect(result.players[0]).toMatchObject({
+      playGroup: 'Survivalists',
+      lastLoginUtc: '2026-07-22T08:00:00.000Z',
+      gameStage: 143,
+      expToNextLevel: 1200,
+      skillPoints: 4,
+      bedroll: { x: 100, y: 70, z: 200 },
+    })
   })
 
   it('accepts null optional values', () => {

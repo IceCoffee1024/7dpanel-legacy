@@ -15,6 +15,7 @@ import OnlinePlayersList from './OnlinePlayersList.vue'
 import OnlinePlayersState from './OnlinePlayersState.vue'
 import OnlinePlayersTable from './OnlinePlayersTable.vue'
 import OnlinePlayersToolbar from './OnlinePlayersToolbar.vue'
+import PlayersSectionNavigation from './PlayersSectionNavigation.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -174,12 +175,14 @@ async function confirmKick(reason: string) {
 <template>
   <UDashboardPanel id="players">
     <template #header>
-      <OnlinePlayersToolbar
-        :count="snapshot?.players.length ?? 0"
-        :is-refreshing="isRefreshing"
-        :state="state"
-        @refresh="refresh"
-      />
+      <div class="space-y-2 p-3">
+        <PlayersSectionNavigation /><OnlinePlayersToolbar
+          :count="snapshot?.players.length ?? 0"
+          :is-refreshing="isRefreshing"
+          :state="state"
+          @refresh="refresh"
+        />
+      </div>
     </template>
 
     <template #body>
