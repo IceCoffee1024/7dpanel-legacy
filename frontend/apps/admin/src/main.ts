@@ -1,5 +1,6 @@
 import ui from '@nuxt/ui/vue-plugin'
 
+import { PiniaColada } from '@pinia/colada'
 import { createHead } from '@unhead/vue/client'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
@@ -7,6 +8,7 @@ import { handleHotUpdate } from 'vue-router/auto-routes'
 import App from './App.vue'
 import { ADMIN_LOCALE_KEY, createAdminI18n } from './app/i18n'
 import { createAdminRouter } from './app/router'
+import { connectServerState } from './app/serverState'
 
 import './assets/css/main.css'
 
@@ -19,6 +21,13 @@ const localeRuntime = createAdminI18n()
 
 app.use(head)
 app.use(pinia)
+app.use(PiniaColada, {
+  queryOptions: {
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  },
+})
+connectServerState(pinia)
 app.use(router)
 app.use(localeRuntime.i18n)
 app.use(ui)

@@ -1,9 +1,12 @@
 import type { RestartServerAccepted } from '../api/serverOperations'
+import { PiniaColada } from '@pinia/colada'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { defineComponent } from 'vue'
 
+import { configureGeneratedClient } from '../../../shared/api/generatedClient'
 import { HttpError } from '../../../shared/api/http'
 import { useRestartServer } from './useRestartServer'
 
@@ -54,6 +57,35 @@ describe('useRestartServer', () => {
     expect(mounted.operation().error.value).toBeNull()
     expect(mounted.submit).toHaveBeenCalledOnce()
     mounted.wrapper.unmount()
+  })
+
+  it('uses the generated Colada mutation for the production request path', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(accepted, { status: 202 })) as typeof fetch
+    const auth = { authorizationHeader: 'Bearer generated-owner' as string | null, expireSession: vi.fn() }
+    configureGeneratedClient({
+      fetch: fetchMock,
+      getAuthorizationHeader: () => auth.authorizationHeader,
+      origin: location.origin,
+    })
+    let operation!: ReturnType<typeof useRestartServer>
+    const Host = defineComponent({
+      setup() {
+        operation = useRestartServer({ auth })
+        return () => null
+      },
+    })
+    const wrapper = mount(Host, {
+      global: { plugins: [createPinia(), PiniaColada] },
+    })
+
+    operation.startConfirmation()
+    await expect(operation.confirm()).resolves.toEqual(accepted)
+
+    const request = vi.mocked(fetchMock).mock.calls[0]?.[0] as Request
+    expect(request.headers.get('Authorization')).toBe('Bearer generated-owner')
+    expect(await request.json()).toEqual({ confirmed: true })
+    expect(operation.state.value).toBe('accepted')
+    wrapper.unmount()
   })
 
   it('cancels only confirmation and never submits', async () => {

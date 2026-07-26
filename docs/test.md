@@ -1,13 +1,13 @@
 ---
 state: Current
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 ---
 
 # 7DPanel 测试策略
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。`online-player-details` 工作树以显式 `SevenDaysReferenceRoot` 完成 Release 还原、构建和全量 xUnit，`334/334` 项通过；覆盖 password grant、8 小时默认 Access Token、Access Token/API Key 严格分流、当前用户/角色重建、API Key REST/OpenAPI、Basic 拒绝、SSE 周期复验、完整在线玩家 25 字段投影、输入验证与依赖边界。Admin 的 Auth 与 locale codec/Repository/runtime、身份响应解析、登录/账号/语言菜单、全部当前页面双语、Valibot 表单边界、路由定向、25 字段 parser/格式化和详情状态机自动化已通过；完整 `pnpm test` 为 `31` 个文件、`335/335` 项通过，lint、typecheck 和 Vite 8 生产构建均通过。消息目录自动化要求中英文叶子键和插值参数完全一致、值非空且不含 HTML；生产源码扫描未发现目录外的中文产品文案。该 Vitest 输出仍包含 happy-dom teardown 的 `AbortError` 与外部连接拒绝日志；Vitest 以成功状态结束，但根因未确认，不能视为干净的测试基础设施。当前 Owner Playwright suite 已有玩家详情合成 25 字段场景及既有会话、语言和 API Key 场景，但缺少受控 OWIN 环境变量，尚未执行。2026-07-24 已将当前工作树的 Mod 与 Admin 产物发布到远程 Windows 服务器；`index.html` 和动态玩家 JS/CSS 的本地/远端 SHA-256 一致，Owner 浏览器人工打开详情抽屉并查看当前响应。该部署与浏览器观察不替代真实 `SavePlayerData` 字段来源、断开状态机、真实踢出、Playwright 或 Linux 进程证据。2026-07-23 的远程 Windows 7DTD `v3.0.1-b4` 闭环 smoke 验证了合并提交 `a98ad6b` 的公开 Swagger UI/OpenAPI Unity Mono 加载与访问、Telnet 原生异步队列、真实 SQLite 写锁期间命令 fail-open、解锁后的 `store_failure` gap 恢复、正常关服排空、进程/监听释放和重复启停；该动态命令与 Swagger 证据发生在移除 Basic 前，不能证明当前认证版本的真实进程行为。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。`online-player-details` 工作树以显式 `SevenDaysReferenceRoot` 完成 Release 还原、构建和全量 xUnit，`334/334` 项通过；覆盖 password grant、8 小时默认 Access Token、Access Token/API Key 严格分流、当前用户/角色重建、API Key REST/OpenAPI、Basic 拒绝、SSE 周期复验、完整在线玩家 25 字段投影、输入验证与依赖边界。Admin 的 Auth 与 locale codec/Repository/runtime、身份响应解析、登录/账号/语言菜单、全部当前页面双语、Valibot 表单边界、路由定向、25 字段 parser/格式化、OpenAPI 生成客户端和 Colada 状态自动化已通过；完整 `pnpm test` 的既有基线为 `45` 个文件、`442/442` 项通过，typecheck、定向变更 lint 和 Vite 8 生产构建通过。2026-07-26 新增的普通请求/SSE 超时分流、单一认证 SSE、命名事件与 heartbeat、replay 游标、会话替换、3 秒可见轮询和事件触发概览刷新由 5 个聚焦文件 `31/31` 项及 Admin typecheck 验证；本轮未重跑全量用例。全量 lint 仍被既有综合概览 Vue 文件的 65 个格式错误和 122 个警告阻断。消息目录自动化要求中英文叶子键和插值参数完全一致、值非空且不含 HTML；生产源码扫描未发现目录外的中文产品文案。该 Vitest 输出仍包含 happy-dom teardown 的 `AbortError` 与外部连接拒绝日志；Vitest 以成功状态结束，但根因未确认，不能视为干净的测试基础设施。当前 Owner Playwright suite 已有玩家详情合成 25 字段场景及既有会话、语言和 API Key 场景，但缺少受控 OWIN 环境变量，尚未执行。2026-07-24 已将当前工作树的 Mod 与 Admin 产物发布到远程 Windows 服务器；`index.html` 和动态玩家 JS/CSS 的本地/远端 SHA-256 一致，Owner 浏览器人工打开详情抽屉并查看当前响应。该部署与浏览器观察不替代真实 `SavePlayerData` 字段来源、断开状态机、真实踢出、Playwright 或 Linux 进程证据。2026-07-23 的远程 Windows 7DTD `v3.0.1-b4` 闭环 smoke 验证了合并提交 `a98ad6b` 的公开 Swagger UI/OpenAPI Unity Mono 加载与访问、Telnet 原生异步队列、真实 SQLite 写锁期间命令 fail-open、解锁后的 `store_failure` gap 恢复、正常关服排空和进程/监听释放；该动态命令与 Swagger 证据发生在移除 Basic 前，不能证明当前认证版本的真实进程行为。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -24,9 +24,9 @@ last_updated: "2026-07-25"
 | `NFR-04` | 当前过渡默认凭据和明文 HTTP 可用；配置只引导固定持久 Owner；受保护资源保持认证；错误/过期/撤销/QueryString Token 被拒绝且不泄漏；用户管理落地后移除过渡默认值 | 单元、SQLite/OWIN/API 集成、真实进程、安全 | 配置与用户同步、Authorization Header、401/403/429、SSE 关闭、日志与发布物扫描 |
 | `NFR-05` | 服务器本地文件读取者属于受信任运维边界；不要求配置、SQLite、备份和服务端日志静态保密；网络、API、前端资产、产品日志和版本库仍不得意外披露凭据或有效 Token | 安全审查、API 集成、发布物与版本库扫描 | 威胁模型审查结论、认证/授权结果、敏感值扫描和发布清单 |
 
-### 综合概览第一阶段（规划测试追踪）
+### 综合概览第一阶段
 
-以下条目是第一阶段进入实现后的计划验证，不代表当前自动化已经存在、已经执行或已经通过。
+以下条目同时记录当前自动化边界与仍需真实环境补齐的证据；单元或进程内集成通过不能替代 Windows/Linux 真实进程和浏览器证据。
 
 | 规划场景 | 覆盖重点 | 主要测试层级 | 需求映射 | 必须保留的证据 |
 |---|---|---|---|---|
@@ -36,6 +36,8 @@ last_updated: "2026-07-25"
 | 近期活动与服务器操作审计 | 固定用途活动保留、敏感值不落库、重启脚本与固定关服分别写入可追溯操作状态 | SQLite 集成、Application 单元 | `CAP-01`、`CAP-05`、`NFR-02` | migration/Store 结果、保留策略断言、敏感值扫描和审计状态 |
 | 可替身的脚本启动与固定关服 | Windows/Linux 使用无副作用替身脚本写临时标记，证明 API 创建脚本进程；仅 `Owner` 可提交精确确认；拒绝命令、路径、参数和环境输入；固定关服走独立确认与结果路径 | Application 单元、Katana/OWIN 集成、Windows/Linux 平台集成 | `CAP-05`、`NFR-02` | 临时标记、权限/请求体断言、`202` 或失败结果、独立审计与关服结果记录 |
 | 前端诚实状态与危险操作文案 | `Loading`、`Fresh`、`Partial`、`Stale`、`Offline`、`RestartScriptStarted`；Owner 敏感字段；重启与关闭的独立确认、提交锁和文案；不得把脚本启动说成重启成功 | Admin 单元/组件、浏览器 E2E | `CAP-01`、`CAP-05`、`NFR-02` | 组件状态断言、双语文案断言、浏览器截图/trace 与无自动重放证据 |
+| OpenAPI 生成与 Colada 边界 | Katana 文档 operationId 非空且唯一；规范化同源地址后的快照无漂移；生成结果可重复；同源、Bearer、取消、普通请求 10 秒超时、SSE 超时豁免、Problem Details 脱敏与 401 清缓存；概览 Query 和重启 Mutation 仍经过严格 parser，Token 不进入查询键且 Mutation 不自动重试 | Katana/OWIN 集成、Admin 单元、生成门禁 | `CAP-01`、`CAP-05`、`NFR-02`、`NFR-04` | OpenAPI 快照、生成目录 diff、客户端适配测试、Query/Mutation 状态断言 |
+| Admin 实时刷新与 SSE 生命周期 | 全局 `staleTime: 0`、禁用窗口聚焦刷新；概览可见时 3 秒轮询、隐藏暂停、恢复立即刷新；单一 Fetch SSE 的 Header Bearer、Welcome、heartbeat、生命周期、gap、`Last-Event-ID` replay、会话替换清游标和可取消重连；事件只触发 REST 权威快照刷新，失败保留原采样时间并标为 Stale/Offline | Admin 单元、浏览器 E2E | `CAP-01`、`CAP-05`、`NFR-02`、`NFR-04` | 调度虚拟时钟、请求 Header、连接/取消次数、事件刷新断言、旧快照与采样时间断言、浏览器网络 trace |
 
 ### 架构风险追踪
 
@@ -119,7 +121,7 @@ last_updated: "2026-07-25"
 - 当前 Katana 主机验证玩家查询匿名 401、Owner 空/多玩家 200、根对象仅含 `players`、每个玩家固定 25 个 camelCase 字段、结构化位置、设备枚举、Discord/跨平台身份/诊断字符串空值、合法 UTC `observedAtUtc`、单位后缀与排序、游戏未就绪时不调用 Query，以及旧 observation 仍以原时间成功返回；在线玩家端点不拥有 busy、主线程启动超时或投影 stale 503。当前持久认证只创建 `Owner`，非 Owner 403 随角色管理切片验证。
 - 历史 API 集成测试验证 Owner-only 的摘要、详情和快照三路由、Bearer/API Key、匿名 401、非 Owner 403、无效 EOS/query/cursor/page size/before ID 的 400、未知 EOS 的 404、SQLite 异常脱敏 500、完整 31 字段和 gap DTO。历史查询不检查游戏就绪状态；在线路由的既有 503 语义保持不变。
 - 同一 Katana 主机验证 Owner 踢出请求的 JSON 类型错误使用 `invalid_request_body`，成功绑定后的字段、确认、原因和身份错误使用端点稳定码，并覆盖认证主体、成功白名单、离线、身份变化、busy、主线程超时、审计不可用和原生失败；无效请求不会创建审计或执行动作，请求取消不会被通用异常边界改写为 500。API Key 创建同样区分 JSON 类型错误的 `invalid_request_body` 与成功绑定后的名称、过期时间稳定错误码，并保留 Access Token 凭据优先级。当前持久认证只创建 `Owner`，真实非 Owner 身份链路仍随角色管理切片验证。
-- 同一 Katana 主机验证匿名 OpenAPI JSON 和 Swagger UI、固定 JSON 路径、Controller 路由与手工 OWIN token operation、公开 operation、受保护 operation 的唯一 Bearer 要求、API Key 创建/列表/撤销契约、SSE `Last-Event-ID`/`text/event-stream`、共享 Problem Details schema、token OAuth JSON 例外，以及仅 token endpoint 的 429 Problem Details。token operation 还必须锁定 `Authentication` tag、password-grant form data、无 refresh token、成功与 OAuth 错误响应的必填字段、未处理异常的 500 Problem Details、大小写等价 path 冲突失败，以及在同 path 已有其他 HTTP method 时保留并追加 `POST`。`/swagger/missing` 必须保持 404 而不进入 Admin SPA，文档请求不得调用控制台 Gateway、在线玩家 Query、玩家 Action 或审计 Trail。
+- 同一 Katana 主机验证匿名 OpenAPI JSON 和 Swagger UI、固定 JSON 路径、Controller 路由与手工 OWIN token operation、公开 operation、受保护 operation 的唯一 Bearer 要求、API Key 创建/列表/撤销契约、服务器操作 202 与错误状态、SSE `Last-Event-ID`/`text/event-stream`、共享 Problem Details schema、token OAuth JSON 例外，以及仅 token endpoint 的 429 Problem Details。所有 operationId 必须非空且唯一；规范化动态 Katana 地址后，文档必须与 Admin 受控快照一致。token operation 还必须锁定 `Authentication` tag、password-grant form data、无 refresh token、成功与 OAuth 错误响应的必填字段、未处理异常的 500 Problem Details、大小写等价 path 冲突失败，以及在同 path 已有其他 HTTP method 时保留并追加 `POST`。`/swagger/missing` 必须保持 404 而不进入 Admin SPA，文档请求不得调用控制台 Gateway、在线玩家 Query、玩家 Action 或审计 Trail。
 - `DependencyRulesTests` 以源码规则验证 Bootstrap 通过唯一 composition root 创建经过验证的 Provider、使用局部 candidate 调用 `RegisterAndStart` 后才发布字段，并保护 DI 包归属、发布清单、Adapter 方向和唯一 `IModApi`；`SevenDaysGameLifecycleAdapterTests` 通过事件 seam 执行 `GameStartDone`、`WorldShuttingDown` 和 `GameShutdown` 回调，验证订阅顺序、逆序回滚、异常保留及 Dispose 只拥有订阅。真实静态 `ModEvents` 注册仍由官方进程 smoke 验证。
 - 使用同一配置凭据重复启动并改变用户名/密码，断言数据库始终只有固定 `Subject=owner` 的一个引导用户；凭据不变时保留 Access Token，变化时旧凭据和旧 Access Token 同时失效。
 - Bearer SSE 使用可控时钟和可变用户状态验证事件持续到达也不能推迟复验；Access Token/API Key 到期、撤销、用户禁用或角色不再被允许后不得继续写出受保护事件。
@@ -200,7 +202,7 @@ last_updated: "2026-07-25"
 当前可运行的后端门禁包括依赖还原、Release 构建和测试；仓库级聚合命令见
 [README 的 Test and Checks](../README.md#test-and-checks)。
 
-Admin 当前快速门禁包括 lint、typecheck、Vitest 和 Vite `8.1.5`/Rolldown 生产构建，开发/CI 基线为 Node.js `24+`；其中
+Admin 当前快速门禁包括 OpenAPI 生成漂移检查、lint、typecheck、Vitest 和 Vite `8.1.5`/Rolldown 生产构建，开发/CI 基线为 Node.js `24+`；其中
 typecheck 同时运行 `vue-tsc -p ./tsconfig.app.json` 和
 `tsc -p ./tsconfig.node.json`，工作目录和精确命令见
 [Admin 应用验证说明](../frontend/apps/admin/README.md#verification)。
@@ -218,7 +220,7 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 
 - 玩家动作审计已具备自动化锁竞争与启动恢复证据；仍需验证迁移失败、真实关服期间动作终态，以及自动化真实游戏事件和控制台日志突发。只读 `version` 的 Windows 主线程往返已经通过。
 - 动态控制台命令、容量 32 HTTP FIFO、最终执行点 Harmony observation 和容量 256 fail-open SQLite 命令审计已有单元、SQLite、Katana、生命周期与发布物自动化证据；`a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 进一步验证内置/第三方命令、HTTP/非 HTTP 来源审计、完整原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 故障告警/gap 恢复、关服排空和重复启停。仍需自动归档该流程、补充真实容量饱和与 Linux 进程门禁，并在当前认证二进制上执行适用 smoke。
-- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，覆盖 8 小时 Token、API Key 创建/一次性显示/复制/使用/撤销与 Basic 401，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；本轮完整 Admin 单元/组件测试、lint、typecheck 和 Vite 8 生产构建已经运行，但先解决 happy-dom teardown 与外部连接噪声，再将该套件视为稳定的发布门禁。
+- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，覆盖 8 小时 Token、API Key 创建/一次性显示/复制/使用/撤销与 Basic 401，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；本轮完整 Admin 单元/组件测试、typecheck、定向变更 lint 和 Vite 8 生产构建已经通过，全量 lint 仍需先修复既有综合概览 Vue 格式问题。还需解决 happy-dom teardown 与外部连接噪声，再将该套件视为稳定的发布门禁。
 - 在 Windows `v3.0.1-b4` 受控玩家上执行真实踢出，保存玩家收到的批准原因、原生 API 返回后约 0.5 秒断开、在线列表更新和 `player_action_audit` 对应终态；在此之前不得把自动化 `Succeeded` 解释为真实玩家已经离线。
 - 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite、NSwag/NJsonSchema/Namotion/System.Text.Json 和双平台 SQLite Native RID；当前 Windows 发布脚本已在隔离临时目录校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、11 个 OpenAPI 运行时程序集、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，并移除 `Newtonsoft.Json.dll`。项目引用、SQLite provider、Harmony 应用顺序、DI/NSwag 包归属和 Adapter 方向已有本地测试门禁。
 - 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
@@ -250,7 +252,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | Windows 动态命令闭环 smoke 尚未自动归档 | `a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；但流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行，当前认证二进制也尚未复验。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；2026-07-24 远程浏览器只验证了详情展示，未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
 | 当前浏览器持久会话、双语、详情与踢出真实门禁未执行 | Playwright 已定义默认标签页会话、显式浏览器会话、身份显示、登出/到期/损坏记录清理、API Key/玩家合同、浏览器语言首选/回退、登录前后切换、刷新与登出保留、技术身份稳定、英文窄屏及合成 25 字段详情抽屉场景，但没有 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 的受控 OWIN 环境，只有测试发现证据。2026-07-24 的远程人工查看仅确认当前详情抽屉可显示，不能证明 `390x844`/320 布局、焦点、遮罩关闭锁定、同身份刷新、unavailable、真实踢出、CSP 控制台或成功刷新。 |
-| Admin Vitest teardown 存在未定位噪声 | `pnpm test` 的 `31` 个文件、`335/335` 项断言通过，但输出仍出现 happy-dom `AbortError` 和外部连接拒绝日志。当前未能确认噪声来源；在根因和稳定修复完成前，它不构成干净的 CI 或发布证据。 |
+| Admin Vitest teardown 存在未定位噪声 | `pnpm test` 的 `45` 个文件、`442/442` 项断言通过，但输出仍出现 happy-dom `AbortError` 和外部连接拒绝日志。当前未能确认噪声来源；在根因和稳定修复完成前，它不构成干净的 CI 或发布证据。 |
 | 历史玩家真实进程与浏览器门禁未执行 | 历史玩家已通过 parser、页面状态、组件、路由、Application/SQLite/Channel 和 Web 合同的定向自动化；本轮未运行真实 7DTD、Playwright，且本机 .NET Framework `HttpListener` 不支持直接执行新增 OWIN 历史路由用例。因此 Save 来源、排空、Owner 浏览器列表/详情与窄屏不构成已验证证据。 |
 | 当前认证版本尚无 Swagger Unity Mono 复验证据 | 公开 JSON/UI、路由、安全、SSE、Problem Details、无业务副作用、依赖所有权和隔离发布布局已通过 Windows Katana/本地门禁；`a98ad6b` 已在 Windows `v3.0.1-b4` Unity Mono 加载 NSwag/NJsonSchema/Namotion 并访问 `/swagger`，但本轮未在当前认证发布物复验。Linux 支持仍需对应 Linux smoke。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |

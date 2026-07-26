@@ -1,0 +1,2483 @@
+{
+  "x-generator": "NSwag v14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))",
+  "openapi": "3.0.0",
+  "info": {
+    "title": "7DPanel API",
+    "description": "Runtime API for 7DPanel 0.1.0.",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/v1/api-keys": {
+      "get": {
+        "tags": [
+          "ApiKeys"
+        ],
+        "operationId": "ApiKeys_Get",
+        "responses": {
+          "200": {
+            "description": "API Key metadata for the authenticated subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "displayPrefix",
+                      "name",
+                      "createdAtUtc",
+                      "lastUsedAtUtc",
+                      "expiresAtUtc",
+                      "status"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Public API Key identifier."
+                      },
+                      "displayPrefix": {
+                        "type": "string",
+                        "description": "Safe API Key prefix for display."
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "User-provided API Key name."
+                      },
+                      "createdAtUtc": {
+                        "type": "string",
+                        "description": "Creation time in UTC."
+                      },
+                      "lastUsedAtUtc": {
+                        "type": "string",
+                        "description": "Most recent accepted use time in UTC, when available.",
+                        "nullable": true
+                      },
+                      "expiresAtUtc": {
+                        "type": "string",
+                        "description": "Expiration time in UTC, when configured.",
+                        "nullable": true
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "Current API Key status.",
+                        "enum": [
+                          "active",
+                          "expired",
+                          "revoked"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "ApiKeys"
+        ],
+        "description": "Creates an API Key for the authenticated subject. Only a website Access Token can create API Keys. The complete API Key is returned only in this response.",
+        "operationId": "ApiKeys_Post",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ApiKeyCreateRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "A newly created API Key, including its one-time complete value.",
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "description": "Prevents storage of the one-time complete API Key.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-store"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "apiKey",
+                    "createdAtUtc",
+                    "expiresAtUtc"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Public API Key identifier."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "User-provided API Key name."
+                    },
+                    "apiKey": {
+                      "type": "string",
+                      "description": "Complete API Key. This value is returned only once."
+                    },
+                    "createdAtUtc": {
+                      "type": "string",
+                      "description": "Creation time in UTC."
+                    },
+                    "expiresAtUtc": {
+                      "type": "string",
+                      "description": "Expiration time in UTC, when configured.",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/api-keys/{keyId}": {
+      "delete": {
+        "tags": [
+          "ApiKeys"
+        ],
+        "description": "Revokes an API Key owned by the authenticated subject. Only a website Access Token can revoke API Keys.",
+        "operationId": "ApiKeys_Delete",
+        "parameters": [
+          {
+            "name": "keyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The API Key is revoked or was already revoked."
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/console/commands": {
+      "post": {
+        "tags": [
+          "ConsoleCommands"
+        ],
+        "operationId": "ConsoleCommands_Post",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ConsoleCommandRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsoleCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "Health_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "Health_Get2",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/overview": {
+      "get": {
+        "tags": [
+          "Overview"
+        ],
+        "operationId": "Overview_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/players/online": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "operationId": "Players_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlinePlayersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/players/history": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "description": "Returns Owner-only historical player summaries from SQLite. The endpoint remains readable while the game is not ready.",
+        "operationId": "Players_GetHistoricalPlayers",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "Optional player name or cross-platform identity search text.",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Page size from 1 through 100; defaults to 50.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque URL-safe cursor returned by the preceding page.",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalPlayersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/players/history/{crossplatformId}": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "description": "Returns an Owner-only historical player summary and recorded gap totals.",
+        "operationId": "Players_GetHistoricalPlayer",
+        "parameters": [
+          {
+            "name": "crossplatformId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalPlayerDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/players/history/{crossplatformId}/snapshots": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "description": "Returns Owner-only retained historical snapshots in descending snapshot ID order.",
+        "operationId": "Players_GetHistoricalPlayerSnapshots",
+        "parameters": [
+          {
+            "name": "crossplatformId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Page size from 1 through 200; defaults to 100.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "beforeSnapshotId",
+            "in": "query",
+            "description": "Exclusive snapshot ID cursor returned by the preceding page.",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            },
+            "x-position": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalPlayerSnapshotsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/players/{entityId}/kick": {
+      "post": {
+        "tags": [
+          "Players"
+        ],
+        "operationId": "Players_Kick",
+        "parameters": [
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "body",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/KickPlayerRequestBody"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KickPlayerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "tags": [
+          "ServerEvents"
+        ],
+        "description": "Opens a long-lived named event stream. Errors before the response starts use Problem Details; after the response starts they cannot be rewritten as JSON.",
+        "operationId": "ServerEvents_Get",
+        "parameters": [
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "description": "Last processed server event sequence.",
+            "x-schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/server-operations/restart": {
+      "post": {
+        "tags": [
+          "ServerOperations"
+        ],
+        "operationId": "ServerOperations_Restart",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ConfirmedServerOperationRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 1
+        },
+        "responses": {
+          "202": {
+            "description": "The server operation request was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestartServerOperationHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/server-operations/shutdown": {
+      "post": {
+        "tags": [
+          "ServerOperations"
+        ],
+        "operationId": "ServerOperations_Shutdown",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ConfirmedServerOperationRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 1
+        },
+        "responses": {
+          "202": {
+            "description": "The server operation request was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShutdownServerOperationHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/token": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Issues an access token.",
+        "description": "Authenticates the owner with the OAuth password grant and returns an opaque Bearer token. Refresh tokens are not supported.",
+        "operationId": "issueAccessToken",
+        "requestBody": {
+          "description": "OAuth password-grant form data containing the owner credentials.",
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "grant_type",
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "description": "OAuth grant type. Must be password.",
+                    "enum": [
+                      "password"
+                    ]
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "Owner username."
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Owner password."
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "An opaque Bearer access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "access_token",
+                    "token_type",
+                    "expires_in",
+                    "username",
+                    "role"
+                  ],
+                  "properties": {
+                    "access_token": {
+                      "type": "string",
+                      "description": "Opaque access token."
+                    },
+                    "token_type": {
+                      "type": "string",
+                      "description": "Bearer token type."
+                    },
+                    "expires_in": {
+                      "type": "integer",
+                      "description": "Lifetime in seconds."
+                    },
+                    "username": {
+                      "type": "string",
+                      "description": "Authenticated user name."
+                    },
+                    "role": {
+                      "type": "string",
+                      "description": "Current panel role.",
+                      "enum": [
+                        "Owner",
+                        "Admin",
+                        "Viewer"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An OAuth protocol error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "OAuth error code."
+                    },
+                    "error_description": {
+                      "type": "string",
+                      "description": "OAuth error description."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details rate-limit response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details internal-server-error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiProblemDetails": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance",
+          "code",
+          "traceId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiKeyCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "ConsoleCommandResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "output": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ConsoleCommandRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "OverviewHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "game": {
+            "$ref": "#/components/schemas/GameOverviewHttpResponse"
+          },
+          "host": {
+            "$ref": "#/components/schemas/HostOverviewHttpResponse"
+          },
+          "restartPolicy": {
+            "$ref": "#/components/schemas/RestartPolicyHttpResponse"
+          },
+          "recentActivity": {
+            "$ref": "#/components/schemas/RecentActivityHttpResponse"
+          },
+          "attention": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewAttentionHttpResponse"
+            }
+          }
+        }
+      },
+      "GameOverviewHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "sampledAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "gameTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "saveGameName": {
+            "type": "string",
+            "nullable": true
+          },
+          "worldName": {
+            "type": "string",
+            "nullable": true
+          },
+          "worldSessionUptimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          },
+          "gameMode": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
+            "nullable": true
+          },
+          "region": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionPort": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "onlinePlayerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "maximumPlayerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "historicalPlayerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "framesPerSecond": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "gameTime": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "HostOverviewHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "identityAvailability": {
+            "type": "string"
+          },
+          "sampledAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "processUptimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "residentSetBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "managedHeapBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "otherMemoryBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "cpuUsagePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "operatingSystem": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingSystemVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "processorCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "memoryTotalBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "memoryAvailableBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "additionalMemory": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HostAdditionalMemoryHttpResponse"
+              }
+            ]
+          },
+          "storageVolumes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostStorageVolumeHttpResponse"
+            }
+          },
+          "publicNetwork": {
+            "$ref": "#/components/schemas/HostPublicNetworkHttpResponse"
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentSystemUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "osFamily": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingSystemArchitecture": {
+            "type": "string",
+            "nullable": true
+          },
+          "runtimeVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "cpuModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "logicalCoreCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cpuFrequencyMhz": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "deviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "processId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "processStartedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "HostAdditionalMemoryHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "totalBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "usedBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        }
+      },
+      "HostStorageVolumeHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "rootPath": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "availableBytes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "isPrimaryDataVolume": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "HostPublicNetworkHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "ipv4": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipv6": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RestartPolicyHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "isConfigured": {
+            "type": "boolean"
+          },
+          "scheduleDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "nextRestartAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "RecentActivityHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "sampledAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "latestOccurredAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecentActivityItemHttpResponse"
+            }
+          }
+        }
+      },
+      "RecentActivityItemHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "occurredAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "messageKey": {
+            "type": "string"
+          },
+          "messageArguments": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OverviewAttentionHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "OnlinePlayersResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnlinePlayerResponse"
+            }
+          }
+        }
+      },
+      "OnlinePlayerResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entityId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platformIdentity": {
+            "$ref": "#/components/schemas/OnlinePlayerPlatformIdentityResponse"
+          },
+          "crossplatformIdentity": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OnlinePlayerPlatformIdentityResponse"
+              }
+            ]
+          },
+          "deviceType": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "ping": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "compatibilityVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "discordUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "position": {
+            "$ref": "#/components/schemas/OnlinePlayerPositionResponse"
+          },
+          "isDead": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxHealth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "playGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastLoginUtc": {
+            "type": "string",
+            "nullable": true
+          },
+          "gameStage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "expToNextLevel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "skillPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "bedroll": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OnlinePlayerPositionResponse"
+              }
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "zombieKills": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "playerKills": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deaths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalTimePlayedMinutes": {
+            "type": "number",
+            "format": "float"
+          },
+          "distanceWalkedMeters": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalItemsCrafted": {
+            "type": "integer"
+          },
+          "longestLifeMinutes": {
+            "type": "number",
+            "format": "float"
+          },
+          "currentLifeMinutes": {
+            "type": "number",
+            "format": "float"
+          },
+          "observedAtUtc": {
+            "type": "string"
+          }
+        }
+      },
+      "OnlinePlayerPlatformIdentityResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "combinedId": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        }
+      },
+      "OnlinePlayerPositionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "type": "number",
+            "format": "float"
+          },
+          "y": {
+            "type": "number",
+            "format": "float"
+          },
+          "z": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "HistoricalPlayersResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoricalPlayerSummaryResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "HistoricalPlayerSummaryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "crossplatformId": {
+            "type": "string"
+          },
+          "latestName": {
+            "type": "string"
+          },
+          "firstObservedAtUtc": {
+            "type": "string"
+          },
+          "lastObservedAtUtc": {
+            "type": "string"
+          },
+          "totalObservationCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "retainedSnapshotCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "compactedSnapshotCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hasGaps": {
+            "type": "boolean"
+          }
+        }
+      },
+      "HistoricalPlayerDetailsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/HistoricalPlayerSummaryResponse"
+          },
+          "gapSummary": {
+            "$ref": "#/components/schemas/HistoricalPlayerGapSummaryResponse"
+          }
+        }
+      },
+      "HistoricalPlayerGapSummaryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "gapCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "droppedObservationCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "HistoricalPlayerSnapshotsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "snapshots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoricalPlayerSnapshotResponse"
+            }
+          },
+          "nextBeforeSnapshotId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerHistoryGapResponse"
+            }
+          }
+        }
+      },
+      "HistoricalPlayerSnapshotResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "snapshotId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "entityId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platformIdentity": {
+            "$ref": "#/components/schemas/PlayerHistoryPlatformIdentityResponse"
+          },
+          "crossplatformIdentity": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PlayerHistoryPlatformIdentityResponse"
+              }
+            ]
+          },
+          "deviceType": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "ping": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "compatibilityVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "discordUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "position": {
+            "$ref": "#/components/schemas/PlayerHistoryPositionResponse"
+          },
+          "isDead": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxHealth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "playGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastLoginUtc": {
+            "type": "string",
+            "nullable": true
+          },
+          "gameStage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "expToNextLevel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "skillPoints": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "bedroll": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PlayerHistoryPositionResponse"
+              }
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "zombieKills": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "playerKills": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deaths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalTimePlayedMinutes": {
+            "type": "number",
+            "format": "float"
+          },
+          "distanceWalkedMeters": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalItemsCrafted": {
+            "type": "integer"
+          },
+          "longestLifeMinutes": {
+            "type": "number",
+            "format": "float"
+          },
+          "currentLifeMinutes": {
+            "type": "number",
+            "format": "float"
+          },
+          "observedAtUtc": {
+            "type": "string"
+          }
+        }
+      },
+      "PlayerHistoryPlatformIdentityResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "combinedId": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        }
+      },
+      "PlayerHistoryPositionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "type": "number",
+            "format": "float"
+          },
+          "y": {
+            "type": "number",
+            "format": "float"
+          },
+          "z": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "PlayerHistoryGapResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "gapId": {
+            "type": "string"
+          },
+          "crossplatformId": {
+            "type": "string"
+          },
+          "startedAtUtc": {
+            "type": "string"
+          },
+          "completedAtUtc": {
+            "type": "string"
+          },
+          "droppedCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "recordedAtUtc": {
+            "type": "string"
+          }
+        }
+      },
+      "KickPlayerResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/components/schemas/KickPlayerTargetResponse"
+          },
+          "requestedAtUtc": {
+            "type": "string"
+          },
+          "completedAtUtc": {
+            "type": "string"
+          }
+        }
+      },
+      "KickPlayerTargetResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entityId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platformIdentity": {
+            "$ref": "#/components/schemas/KickPlayerPlatformIdentityResponse"
+          }
+        }
+      },
+      "KickPlayerPlatformIdentityResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "combinedId": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        }
+      },
+      "KickPlayerRequestBody": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "expectedPlatformIdentity": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/KickPlayerPlatformIdentityBody"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "KickPlayerPlatformIdentityBody": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "combinedId": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RestartServerOperationHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "requestedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scriptStartedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "auditStatus": {
+            "type": "string"
+          }
+        }
+      },
+      "ConfirmedServerOperationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "confirmed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ShutdownServerOperationHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "requestedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "auditStatus": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Opaque Bearer access token.",
+        "scheme": "bearer",
+        "bearerFormat": "opaque"
+      }
+    }
+  }
+}

@@ -7,6 +7,9 @@
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
   },
   "scripts": {
+    "api:schema": "dotnet test ../../../backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --configuration Release --no-restore --environment SEVENDPANEL_UPDATE_ADMIN_OPENAPI_SNAPSHOT=1 --filter FullyQualifiedName~OwinWebHostTests.Openapi_document_matches_admin_codegen_snapshot",
+    "api:gen": "openapi-ts --file openapi-ts.config.ts",
+    "api:check": "pnpm api:gen && git diff --exit-code -- openapi/7dpanel.v1.json src/shared/api/generated",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
@@ -19,6 +22,7 @@
   },
   "dependencies": {
     "@nuxt/ui": "^4.10.0",
+    "@pinia/colada": "1.4.2",
     "@unhead/vue": "^2.1.15",
     "@valibot/i18n": "^1.2.0",
     "@vueuse/core": "^14.3.0",
@@ -31,6 +35,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.1.0",
+    "@hey-api/openapi-ts": "0.94.0",
     "@iconify-json/lucide": "^1.2.118",
     "@intlify/unplugin-vue-i18n": "^11.2.4",
     "@playwright/test": "^1.61.1",

@@ -1,11 +1,19 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
 import type { RestartServerAccepted } from '../api/serverOperations'
 
+import { useMutation, useQueryCache } from '@pinia/colada'
 import { onUnmounted, readonly, shallowRef } from 'vue'
 
+import {
+  overviewGetQueryKey,
+  serverOperationsRestartMutation,
+} from '../../../shared/api/generated/@pinia/colada.gen'
 import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
-import { restartServer } from '../api/serverOperations'
+import { parseRestartAccepted } from '../api/serverOperations'
+
+type GeneratedRestartDefinition = ReturnType<typeof serverOperationsRestartMutation>
+type GeneratedRestartVariables = Parameters<GeneratedRestartDefinition['mutation']>[0]
 
 export type RestartServerState = 'idle' | 'confirming' | 'submitting' | 'accepted' | 'failed'
 export type RestartServerErrorCode
@@ -75,7 +83,29 @@ function isAbortError(cause: unknown): boolean {
 
 export function useRestartServer(options: UseRestartServerOptions = {}): RestartServerController {
   const auth = options.auth ?? useAuthStore()
-  const requestRestart = options.restartServer ?? restartServer
+  const generatedDefinition = options.restartServer === undefined
+    ? serverOperationsRestartMutation()
+    : null
+  const generatedQueryCache = generatedDefinition === null ? null : useQueryCache()
+  const generatedMutation = generatedDefinition === null
+    ? null
+    : useMutation<RestartServerAccepted, GeneratedRestartVariables, HttpError>({
+        mutation: async (variables, context) => parseRestartAccepted(
+          await generatedDefinition.mutation(variables, context),
+        ),
+        onSuccess: async () => {
+          await generatedQueryCache!.invalidateQueries({
+            exact: true,
+            key: overviewGetQueryKey(),
+          })
+        },
+      })
+  const requestRestart = options.restartServer ?? (async (_authorizationHeader, signal) => {
+    return await generatedMutation!.mutateAsync({
+      body: { confirmed: true },
+      signal,
+    })
+  })
   const onSessionExpired = options.onSessionExpired ?? (() => {})
   const state = shallowRef<RestartServerState>('idle')
   const result = shallowRef<RestartServerAccepted | null>(null)
@@ -134,7 +164,8 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
         if (disposed || isAbortError(cause))
           return null
         if (cause instanceof HttpError && cause.status === 401) {
-          auth.expireSession()
+          if (auth.authorizationHeader !== null)
+            auth.expireSession()
           state.value = 'failed'
           error.value = Object.freeze({ code: 'session_expired' })
           if (!sessionExpiryNotified) {

@@ -25,6 +25,28 @@ relative `/api` paths, and production builds do not embed the proxy target.
 hosting is owned by the 7DPanel Mod and does not use the Vite development or
 preview server.
 
+## API Generation
+
+The backend runtime OpenAPI document is the source for the checked-in Admin
+snapshot and generated client. Run these commands from this directory:
+
+```powershell
+pnpm api:schema
+pnpm api:gen
+pnpm api:check
+```
+
+`api:schema` starts the in-process Katana test host and refreshes
+`openapi/7dpanel.v1.json`. It requires the repository's `7dtd-reference`
+submodule to contain the expected runtime assemblies. In a detached worktree,
+initialize that submodule or pass `SevenDaysReferenceRoot` directly to the
+backend test command.
+
+`api:gen` writes `src/shared/api/generated/`. Do not edit that directory by
+hand. `api:check` regenerates it and fails when tracked snapshot or generated
+files drift. Feature code must still validate generated DTOs at runtime before
+placing them into domain state.
+
 ## Verification
 
 Run all current application gates from this directory:
@@ -34,6 +56,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm api:check
 ```
 
 The real OWIN browser suite is a separate environment gate. Playwright loads

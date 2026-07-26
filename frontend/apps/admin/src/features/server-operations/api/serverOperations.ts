@@ -77,7 +77,7 @@ function auditStatus(value: unknown): ServerOperationAuditStatus {
   return invalid()
 }
 
-function parseRestartAccepted(value: unknown): RestartServerAccepted {
+export function parseRestartAccepted(value: unknown): RestartServerAccepted {
   const source = record(value, ['operationId', 'code', 'requestedAtUtc', 'scriptStartedAtUtc', 'auditStatus'])
   if (source.code !== 'restart_script_started')
     return invalid()

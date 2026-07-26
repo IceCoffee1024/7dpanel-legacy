@@ -1,9 +1,13 @@
 import type { OverviewSnapshot } from './overview'
+import type { ServerEventType } from '../../../app/serverEvents'
+import { PiniaColada } from '@pinia/colada'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { defineComponent } from 'vue'
 
+import { configureGeneratedClient } from '../../../shared/api/generatedClient'
 import { HttpError } from '../../../shared/api/http'
 import { useOverview } from './useOverview'
 
@@ -99,7 +103,12 @@ describe('useOverview', () => {
     vi.useRealTimers()
   })
 
-  function mountOverview(fetch = vi.fn().mockResolvedValue(snapshot())) {
+  function mountOverview(
+    fetch = vi.fn().mockResolvedValue(snapshot()),
+    subscribeServerEvents: (
+      listener: (event: { type: ServerEventType }) => void,
+    ) => () => void = vi.fn(() => () => {}),
+  ) {
     const auth = {
       authorizationHeader: 'Bearer owner' as string | null,
       expireSession: vi.fn(),
@@ -108,11 +117,23 @@ describe('useOverview', () => {
     let overview!: ReturnType<typeof useOverview>
     const Host = defineComponent({
       setup() {
-        overview = useOverview({ auth, fetchOverview: fetch, onSessionExpired })
+        overview = useOverview({
+          auth,
+          fetchOverview: fetch,
+          onSessionExpired,
+          subscribeServerEvents,
+        })
         return () => null
       },
     })
-    return { auth, fetch, onSessionExpired, overview: () => overview, wrapper: mount(Host) }
+    return {
+      auth,
+      fetch,
+      onSessionExpired,
+      overview: () => overview,
+      subscribeServerEvents,
+      wrapper: mount(Host),
+    }
   }
 
   it('starts loading, performs the first authenticated load, and becomes fresh', async () => {
@@ -135,11 +156,43 @@ describe('useOverview', () => {
     mounted.wrapper.unmount()
   })
 
-  it('refreshes every 30 seconds without overlapping requests', async () => {
+  it('uses the generated Colada query for the production request path', async () => {
+    const next = snapshot()
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(next)) as typeof fetch
+    const auth = {
+      authorizationHeader: 'Bearer generated-owner' as string | null,
+      expireSession: vi.fn(),
+    }
+    configureGeneratedClient({
+      fetch: fetchMock,
+      getAuthorizationHeader: () => auth.authorizationHeader,
+      origin: location.origin,
+    })
+    let overview!: ReturnType<typeof useOverview>
+    const Host = defineComponent({
+      setup() {
+        overview = useOverview({ auth })
+        return () => null
+      },
+    })
+    const wrapper = mount(Host, {
+      global: { plugins: [createPinia(), PiniaColada] },
+    })
+
+    await flushPromises()
+
+    expect(overview.snapshot.value).toEqual(next)
+    expect(overview.status.value).toBe('fresh')
+    const request = vi.mocked(fetchMock).mock.calls[0]?.[0] as Request
+    expect(request.headers.get('Authorization')).toBe('Bearer generated-owner')
+    wrapper.unmount()
+  })
+
+  it('refreshes every 3 seconds without overlapping requests', async () => {
     const mounted = mountOverview()
     await flushPromises()
 
-    await vi.advanceTimersByTimeAsync(29_999)
+    await vi.advanceTimersByTimeAsync(2_999)
     expect(mounted.fetch).toHaveBeenCalledOnce()
     await vi.advanceTimersByTimeAsync(1)
     await flushPromises()
@@ -158,18 +211,45 @@ describe('useOverview', () => {
     const mounted = mountOverview(fetch)
     const firstSignal = fetch.mock.calls[0]?.[1] as AbortSignal
 
-    await vi.advanceTimersByTimeAsync(29_999)
+    await vi.advanceTimersByTimeAsync(2_999)
     const manual = mounted.overview().refresh()
     expect(firstSignal.aborted).toBe(true)
     second.resolve(snapshot())
     await manual
     await vi.advanceTimersByTimeAsync(1)
     expect(fetch).toHaveBeenCalledTimes(2)
-    await vi.advanceTimersByTimeAsync(29_999)
+    await vi.advanceTimersByTimeAsync(2_999)
     await flushPromises()
     expect(fetch).toHaveBeenCalledTimes(3)
 
     mounted.wrapper.unmount()
+  })
+
+  it('refreshes for lifecycle and gap events but not for welcome or heartbeat', async () => {
+    let listener!: (event: { type: ServerEventType }) => void
+    const unsubscribe = vi.fn()
+    const subscribe = vi.fn((nextListener: typeof listener) => {
+      listener = nextListener
+      return unsubscribe
+    })
+    const mounted = mountOverview(vi.fn().mockResolvedValue(snapshot()), subscribe)
+    await flushPromises()
+
+    listener({ type: 'welcome' })
+    listener({ type: 'heartbeat' })
+    await flushPromises()
+    expect(mounted.fetch).toHaveBeenCalledOnce()
+
+    listener({ type: 'game-ready' })
+    await flushPromises()
+    listener({ type: 'server-stopping' })
+    await flushPromises()
+    listener({ type: 'gap' })
+    await flushPromises()
+    expect(mounted.fetch).toHaveBeenCalledTimes(4)
+
+    mounted.wrapper.unmount()
+    expect(unsubscribe).toHaveBeenCalledOnce()
   })
 
   it('prevents an older response from replacing a newer generation', async () => {

@@ -18,7 +18,7 @@ export function usePageVisibilityRefresh(
   options: UsePageVisibilityRefreshOptions = {},
 ): PageVisibilityRefreshController {
   const visibility = useDocumentVisibility()
-  const intervalMs = options.intervalMs ?? 30_000
+  const intervalMs = options.intervalMs ?? 3_000
   const { pause, resume } = useIntervalFn(
     () => void refresh(),
     intervalMs,

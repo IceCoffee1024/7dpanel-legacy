@@ -31,7 +31,7 @@ namespace LSTY.SevenDPanel.Tests
 {
     [Trait("Category", "Integration")]
     [Trait("Host", "InProcessKatana")]
-    public sealed class OwinWebHostTests
+    public sealed partial class OwinWebHostTests
     {
         [Fact]
         public async Task Anonymous_openapi_document_is_public()
@@ -369,11 +369,15 @@ namespace LSTY.SevenDPanel.Tests
                 AssertProblemResponses(document, "/api/v1/console/commands", "post", "400", "401", "403", "500", "503");
                 AssertProblemResponses(document, "/api/v1/players/online", "get", "401", "403", "500", "503");
                 AssertProblemResponses(document, "/api/v1/players/{entityId}/kick", "post", "400", "401", "403", "409", "500", "503");
+                AssertProblemResponses(document, "/api/v1/server-operations/restart", "post", "400", "401", "403", "409", "500", "503");
+                AssertProblemResponses(document, "/api/v1/server-operations/shutdown", "post", "400", "401", "403", "409", "500", "503");
                 AssertProblemResponses(document, "/api/v1/auth/token", "post", "429", "500");
                 AssertResponseCodes(document, "/api/v1/events/stream", "get", "200", "400", "401", "429", "500", "503");
                 AssertResponseCodes(document, "/api/v1/console/commands", "post", "200", "400", "401", "403", "500", "503");
                 AssertResponseCodes(document, "/api/v1/players/online", "get", "200", "401", "403", "500", "503");
                 AssertResponseCodes(document, "/api/v1/players/{entityId}/kick", "post", "200", "400", "401", "403", "409", "500", "503");
+                AssertResponseCodes(document, "/api/v1/server-operations/restart", "post", "202", "400", "401", "403", "409", "500", "503");
+                AssertResponseCodes(document, "/api/v1/server-operations/shutdown", "post", "202", "400", "401", "403", "409", "500", "503");
                 AssertResponseCodes(document, "/api/v1/auth/token", "post", "200", "400", "429", "500");
 
                 var schema = document["components"]?["schemas"]?["ApiProblemDetails"];

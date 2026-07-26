@@ -1,11 +1,15 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
+import type { ServerEventType } from '../../../app/serverEvents'
 import type { OverviewSnapshot } from './overview'
 
+import { useQuery, useQueryCache } from '@pinia/colada'
 import { onMounted, onUnmounted, readonly, shallowRef } from 'vue'
 
+import { overviewGetQuery, overviewGetQueryKey } from '../../../shared/api/generated/@pinia/colada.gen'
 import { HttpError } from '../../../shared/api/http'
+import { subscribeServerEvents } from '../../../app/serverEvents'
 import { useAuthStore } from '../../auth'
-import { fetchOverview } from '../api/overview'
+import { parseOverview } from './overview'
 import { usePageVisibilityRefresh } from './usePageVisibilityRefresh'
 
 export type OverviewStatus = 'loading' | 'fresh' | 'partial' | 'stale' | 'offline'
@@ -33,6 +37,9 @@ export interface UseOverviewOptions {
     signal?: AbortSignal,
   ) => Promise<OverviewSnapshot>
   onSessionExpired?: () => void
+  subscribeServerEvents?: (
+    listener: (event: { type: ServerEventType }) => void,
+  ) => () => void
 }
 
 const availabilityProblemStates = new Set(['unavailable', 'forbidden'])
@@ -71,7 +78,26 @@ function mapError(error: unknown): OverviewLoadError {
 
 export function useOverview(options: UseOverviewOptions = {}): OverviewController {
   const auth = options.auth ?? useAuthStore()
-  const requestOverview = options.fetchOverview ?? fetchOverview
+  const generatedDefinition = options.fetchOverview === undefined ? overviewGetQuery() : null
+  const generatedQuery = generatedDefinition === null
+    ? null
+    : useQuery<OverviewSnapshot, Error>({
+        key: generatedDefinition.key,
+        enabled: false,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+        query: async context => parseOverview(await generatedDefinition.query(context)),
+      })
+  const generatedQueryCache = generatedQuery === null ? null : useQueryCache()
+  const requestOverview = options.fetchOverview ?? (async () => {
+    const nextState = await generatedQuery!.refetch(true)
+    if (nextState.status === 'success')
+      return nextState.data
+    if (nextState.status === 'error')
+      throw nextState.error
+    throw new HttpError('invalid', 'Overview query returned no data')
+  })
   const onSessionExpired = options.onSessionExpired ?? (() => {})
   const snapshot = shallowRef<OverviewSnapshot | null>(null)
   const status = shallowRef<OverviewStatus>('loading')
@@ -87,6 +113,12 @@ export function useOverview(options: UseOverviewOptions = {}): OverviewControlle
 
     const currentGeneration = ++generation
     controller?.abort()
+    if (generatedQueryCache !== null) {
+      generatedQueryCache.cancelQueries(
+        { exact: true, key: overviewGetQueryKey() },
+        new HttpError('aborted', 'Request was aborted'),
+      )
+    }
     controller = null
 
     if (auth.authorizationHeader === null) {
@@ -119,7 +151,8 @@ export function useOverview(options: UseOverviewOptions = {}): OverviewControlle
       if (disposed || currentGeneration !== generation || isAbortError(cause))
         return
       if (cause instanceof HttpError && cause.status === 401) {
-        auth.expireSession()
+        if (auth.authorizationHeader !== null)
+          auth.expireSession()
         error.value = null
         status.value = snapshot.value === null ? 'offline' : 'stale'
         if (!sessionExpiryNotified) {
@@ -144,14 +177,32 @@ export function useOverview(options: UseOverviewOptions = {}): OverviewControlle
     return runRefresh()
   }
 
+  const unsubscribeServerEvents = (
+    options.subscribeServerEvents
+    ?? (listener => subscribeServerEvents(listener))
+  )((event) => {
+    if (event.type === 'game-ready'
+      || event.type === 'server-stopping'
+      || event.type === 'gap') {
+      void refresh()
+    }
+  })
+
   function dispose() {
     if (disposed)
       return
     disposed = true
     generation++
     controller?.abort()
+    if (generatedQueryCache !== null) {
+      generatedQueryCache.cancelQueries(
+        { exact: true, key: overviewGetQueryKey() },
+        new HttpError('aborted', 'Request was aborted'),
+      )
+    }
     controller = null
     scheduler.dispose()
+    unsubscribeServerEvents()
   }
 
   onMounted(() => {

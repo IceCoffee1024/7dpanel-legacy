@@ -22,6 +22,7 @@ export default antfu({
   ignores: [
     'auto-imports.d.ts',
     'components.d.ts',
+    'src/shared/api/generated/**',
     'src/route-map.d.ts',
   ],
   vue: {

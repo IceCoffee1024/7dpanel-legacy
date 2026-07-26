@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 document_role: Target
 ---
 
@@ -167,7 +167,7 @@ OnlinePlayersView
 
 - 所有 HTTP 调用经过一个薄的同源 API Client，统一处理 base path、`Authorization` Header、取消、超时、关联标识和错误映射。
 - Feature 定义自己的请求、响应和页面模型；Controllers 的内部异常、数据库字段和文件路径不得泄漏到浏览器。
-- 后端提供稳定、可重复获取的 OpenAPI 契约后，优先评估使用 `@hey-api/openapi-ts` 从本地契约生成传输类型和客户端；生成代码必须隔离，不能成为 Feature 组织方式，也不能要求连接 Hey API 云服务。
+- 当前使用 `@hey-api/openapi-ts` 从 Katana 测试锁定的本地 OpenAPI 快照生成传输类型、SDK 和 Pinia Colada definitions；生成代码隔离在 `shared/api/generated/`，不能成为 Feature 组织方式，也不连接 Hey API 云服务。Feature 仍以运行时 parser 建立严格领域边界。
 - 错误结果至少保留稳定错误码、Correlation ID、适用时的 Audit ID 和可否安全重试；前端根据稳定错误码生成当前语言的用户消息，不翻译或直接展示任意服务端异常文本。
 - 查询使用 `AbortController` 或框架等效能力取消已经失去消费者的请求。
 
@@ -183,14 +183,15 @@ OnlinePlayersView
 
 ### SSE 与补取
 
-- 当前后端只接受 `Authorization` Header 中的 Access Token 或 API Key Bearer，拒绝 Basic、URL Token 和 Cookie 凭据。Admin SSE 必须使用能设置 Header、读取 401/403/429/503、主动取消并限制重连的 Fetch 型客户端，不能用原生 `EventSource` 或 QueryString Token 绕过安全边界。
-- Admin 自身使用 Auth Store 当前 Access Token 建立 SSE；API Key 是外部集成凭据，不进入浏览器会话。原生 `EventSource` 不能设置 `Authorization` Header，不进入目标方案。
+- 当前 Admin 使用生成的 `serverEventsGet()` 和内置 Fetch SSE parser 建立单一事件流，不新增 SSE 包。连接发送 `Authorization` Header 和 `Accept: text/event-stream`，普通请求的 10 秒超时不作用于长连接，但仍由 `AbortSignal` 主动取消。
+- Admin 自身使用 Auth Store 当前 Access Token 建立 SSE；API Key 是外部集成凭据，不进入浏览器会话。原生 `EventSource`、Basic、URL Token 和 Cookie 凭据不进入方案。
 - 每次连接先消费不推进游标的 `welcome`，再处理 replay/live；当前命名事件为 `console-log`、`game-ready` 和 `server-stopping`，`gap` 表示窗口或慢客户端缺口。
-- 每条事件包含可排序游标、事件类型和服务器时间；前端按游标去重，不使用到达时间伪造顺序。
-- 断线后保留当前日志和最后接收时间，使用最后游标重连或调用 REST 补取。
+- 当前 `serverEvents` 在内存保存最后事件 ID，正常结束后以 `Last-Event-ID` 重连；登出或会话替换清除游标。generated SSE 网络重试使用最大 30 秒退避，正常结束后等待 3 秒再连接，所有等待服从取消信号。
+- `welcome` 和 heartbeat 只确认连接或存活；`game-ready`、`server-stopping` 和 `gap` 强制刷新综合概览 Query。SSE 不直接覆盖 REST 快照，在线玩家在后端尚无进入/离开事件时继续按 10 秒轮询。
+- 未来日志页面断线后保留当前日志和最后接收时间，使用同一连接的最后游标重连或调用 REST 补取。
 - 服务端无法补齐保留窗口外记录时，页面插入明确缺口，不把两段日志拼成连续事实。
 - SSE 事件只更新对应查询或触发精确失效；不得用广播事件直接任意修改所有 Feature 状态。
-- 重连采用有上限的退避并响应 `Offline`、`Draining` 和会话过期，不产生无界请求循环。
+- 后续日志消费仍需验证事件去重、显式缺口、401/403/429/503 分类、浏览器代理缓冲与页面级断线状态，不能从当前概览刷新链路推导日志体验已实现。
 
 ## 关键运行链路
 
@@ -227,7 +228,7 @@ route params and URL filters
 
 ### 综合概览第一阶段
 
-下列边界是未来目标，不表示现有首页已经拥有这些组件、状态或操作。页面信息层级由[产品设计](../design.md)拥有；本蓝图只锁定路由局部状态、依赖方向和安全交互。
+下列第一阶段边界已经实现并提升到[系统架构](../architecture.md)；本蓝图继续锁定后续演进的路由局部状态、依赖方向和安全交互。页面信息层级由[产品设计](../design.md)拥有。
 
 ```text
 protected /
@@ -241,7 +242,7 @@ protected /
 - `useOverview` 只拥有综合快照、刷新、请求取消、最后成功数据和分区级部分失败；它不创建新的 Pinia Store，也不把服务器数据变成浏览器权威事实。
 - 顶部状态、服务器信息、主机平台、资源容量、注意事项、近期活动、重启策略和快捷操作按设计文档的阅读顺序组合。主机敏感字段只来自服务端已裁剪的 `Owner` 响应，非 Owner 的不可用状态不由本地角色隐藏伪造。
 - 启动重启脚本与关闭服务器使用独立的页面局部确认、提交锁和结果映射。两项请求都不能传递命令、脚本路径、参数或环境值；`RestartScriptStarted` 只反映脚本进程创建，不能复用为“关闭成功”或“重启成功”文案。
-- 第一阶段复用现有 Vue、Pinia、Fetch、`AbortController`、VueUse 和测试工具，不新增 npm 包。若实际实现需要改变这一决定，必须先更新本 Target 蓝图及相应依赖记录。
+- 第一阶段查询与重启动作已采用 `@pinia/colada`，并使用 `@hey-api/openapi-ts` 的官方 Colada 插件生成 definitions；认证 SSE 使用同一生成 SDK。Pinia 仍只拥有客户端会话和偏好，Colada 全局使用 `staleTime: 0`、`refetchOnWindowFocus: false`。关闭操作和其他 REST API 尚未迁移，不能据此宣称全量生成或持久缓存。
 
 ### 管理动作
 
@@ -330,7 +331,7 @@ Feature 内部可按需要创建 `api/`、`model/`、`ui/` 和同目录测试，
 本表记录候选与采用门槛，不是安装命令。精确版本以 `package.json` 和锁文件为权威来源；初始化或引入前必须
 重新检查官方文档、维护状态、许可证、安全公告、浏览器支持、包体积和传递依赖。
 
-Admin 综合概览第一阶段的已批准依赖决定是**不新增 npm 包**：局部查询状态、刷新、取消、显示和确认复用现有应用依赖与浏览器能力。该决定是未来范围约束，不表示综合概览已实现或已通过验证。
+Admin 综合概览已引入 `@hey-api/openapi-ts` 和 `@pinia/colada`。精确版本、生成脚本与当前迁移范围以应用清单、[系统架构](../architecture.md)和 Admin README 为准；本节只维护后续采用边界。
 
 | 能力 | 当前方向或候选 | 状态 | 采用理由或限制 | 决定前必须验证 |
 |---|---|---|---|---|
@@ -346,12 +347,12 @@ Admin 综合概览第一阶段的已批准依赖决定是**不新增 npm 包**�
 | UI 组件 | `@nuxt/ui` standalone Vue 模式、Tailwind CSS | Admin 目标采用 | 当前官方文档支持通过 Vite 插件用于独立 Vue，应用壳已验证 Dashboard 组件 | 高密度运维表格、主题约束、Tailwind 成本、包体积和键盘行为 |
 | 图标与离线资源 | Nuxt UI `UIcon`、本地 `@iconify-json/lucide`（`devDependency`）和 `@nuxt/ui/vite` 的 `icon.clientBundle` | Admin 目标采用；当前基线已验证 | 核心界面图标必须随静态产物离线可用；当前静态 `i-lucide-*` 用法已通过生产构建和 Chrome DevTools MCP 验证，最终 DOM 使用内联 Lucide SVG，页面运行时只请求同源静态资源且不请求 Iconify API。当前使用 `scan: true` 从已安装集合按源码用法打包，动态名称无法可靠扫描时改用显式 `icons` 清单。Nuxt UI Vite 集成已提供组件与自动导入能力，不直接安装 `unplugin-auto-import` 或 `unplugin-vue-components`。`unplugin-icons` 当前不采用；只有出现必须通过 `~icons/*` 将自定义 SVG 或图标作为 Vue 组件直接导入，且 `UIcon` 无法清晰满足的真实需求时才重新评估 | 动态图标名称的显式清单、新增集合的直接依赖、浏览器包体积和可重复的离线回归门禁 |
 | 数据表格 | 基础表格使用 Nuxt UI Table；应用直接导入分页、排序等 TanStack API 时添加 `@tanstack/vue-table` | 条件候选 | `@nuxt/ui` 已提供基础表格能力；传递依赖不构成应用可直接使用的 API 契约，不默认声明 `@tanstack/table-core` | 服务端分页、排序、筛选、列状态、虚拟化和 Nuxt UI 已覆盖能力 |
-| API 契约代码生成 | `@hey-api/openapi-ts`（`devDependency`）；生成代码直接导入的运行时客户端包按实际用途声明 | 优先候选 | 仅在后端提供稳定、可重复获取的本地 OpenAPI 契约后采用；生成类型、SDK 和客户端必须输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务，并由可重复脚本和 CI 检查契约或生成结果漂移 | Web API 2 契约生成与 OpenAPI 版本、稳定错误码和分页模型、Fetch 的 Header Bearer/取消/超时、插件与锁定工具链兼容性、确定性输出、生成代码审查边界及运行时导入 |
-| 服务端状态 | 薄 API Client；出现真实查询缓存复杂度后评估 `@pinia/colada` | 条件候选 | Pinia Colada 只管理服务器权威数据的查询、去重、缓存、失效和 Mutation；采用后必须先注册 `pinia`，普通 Pinia Store 仍只管理客户端自有状态，不复制查询缓存。SSE 只更新对应查询或触发精确失效 | 至少两个真实查询消费者、缓存键和新鲜度、取消与去重、重试上限、会话过期、`Offline`/`Unknown`、乐观更新与回滚、SSE 补取和失效、DevTools、包体积，以及缺少 `networkMode` 和 `structuralSharing` 对目标流程的影响 |
+| API 契约代码生成 | `@hey-api/openapi-ts 0.94.0`（`devDependency`），内置 Fetch Client/SSE parser 与官方 `@pinia/colada` 插件 | 已采用；当前覆盖概览、重启与服务器事件流 | Katana 测试生成受控本地快照；类型、SDK、客户端和 Colada definitions 输出到隔离目录，不成为 Feature 组织方式，不依赖 Hey API 云服务。生成 DTO 不替代运行时 parser | 后续接口的 operationId、错误状态、分页模型、确定性输出、生成代码审查边界与 Node.js 兼容范围 |
+| 服务端状态 | 薄生成客户端 + `@pinia/colada 1.4.2` | 已部分采用 | Pinia Colada 当前管理概览 Query、重启 Mutation、精确失效和会话结束清缓存；必须先注册 `pinia`。全局 Query 立即 stale、禁用窗口聚焦刷新，由 3 秒可见轮询和 SSE 生命周期事件强制 `refetch()`。普通 Pinia Store 仍只管理客户端自有状态，Token 不进入查询键，不启用自动 Mutation 重试、乐观成功或持久缓存 | 后续查询的键和新鲜度、`Offline`/`Unknown`、DevTools、包体积，以及缺少 `networkMode` 和 `structuralSharing` 对目标流程的影响 |
 | 客户端全局状态 | `pinia` Setup Store | 已采用；认证、玩家和应用壳自动化通过 | 跨路由会话由 Auth Store、登录页、显式 Pinia Router guard、App Shell 和受保护 API 共同消费；Store 统一拥有严格浏览器会话恢复、到期、登出、401 和跨标签页删除，不安装通用持久化插件，也不复制玩家或其他服务器权威数据 | 真实 OWIN 下两种 Storage 合同、CSP 和敏感信息边界仍需浏览器 smoke；HMR 和包体积继续随应用演进验证 |
 | 进程内瞬时事件 | 优先使用 props/emits、显式 Feature API、路由状态和查询失效；确有解耦需求时评估 `mitt` | 条件候选 | 只传递无持久状态、无需权威恢复的应用级通知；必须定义集中式 TypeScript 事件映射，不承载服务器事实、业务命令、权限或长任务结果 | 明确生产者与至少两个独立消费者、订阅释放、重复注册、事件顺序、异常隔离、测试可追踪性及 HMR 行为 |
 | Vue composables | `@vueuse/core` | Admin 目标采用 | 当前用于颜色模式等浏览器状态；新增能力仍需逐项证明直接价值 | 每个新增 composable 的真实复用、包体积和清理行为 |
-| SSE | Header Bearer 全阶段使用 Fetch 型客户端；实现时比较无依赖 Fetch parser、`event-source-plus` 与 `@microsoft/fetch-event-source` | Fetch 型边界已批准；具体库为条件候选 | 必须设置 `Authorization` Header、检查 401/403/429/503、主动取消并限制重连，禁止 QueryString Token；产品不采用 Cookie 认证，原生 `EventSource` 不进入目标方案；`event-source-plus` 提供显式 Controller 和内置重试策略，Microsoft 方案生态更成熟 | Content-Type、Welcome/命名事件、Last-Event-ID/游标、Header Bearer 生命周期、取消、页面隐藏、重试上限、错误分类、代理缓冲、额外依赖、包体积、维护状态和浏览器基线 |
+| SSE | 生成的 `serverEventsGet()` + 内置 Fetch SSE parser | 已部分采用；概览生命周期链路已实现 | 设置 Header Bearer 和 `Accept: text/event-stream`，长连接免除普通 10 秒超时但保留取消；单连接处理 Welcome、heartbeat、生命周期、gap 和 replay 游标，事件只触发 REST 权威快照刷新。不安装 `event-source-plus`、`@microsoft/fetch-event-source` 或原生 `EventSource` | 真实 OWIN 浏览器中的 Content-Type、401/403/429/503、代理缓冲和重连；未来日志去重、显式 gap、保留窗口、页面隐藏策略和浏览器基线 |
 | 表单与边界校验 | `valibot` | 已采用；当前表单边界已验证 | 登录、踢出原因和 API Key 名称使用模块化 schema 驱动提交边界，兼容 Nuxt UI Standard Schema；当前分别保留服务端 200/80 Unicode 字符合同 | 后续异步服务端错误、更多传输 DTO 映射和团队使用成本 |
 | 产品文案国际化 | `vue-i18n` | 已采用；当前界面已验证 | 集中管理 `zh-CN`、`en` 产品与业务文案、以 `en` 为默认回退和响应式语言切换；当前全部已实现 Admin 页面完成迁移 | 后续 Feature 的键类型安全、CSP、生产包体积和真实浏览器双语门禁 |
 | Vue I18n 构建期集成 | `@intlify/unplugin-vue-i18n`（`devDependency`） | 已采用；生产构建通过 | 精确预编译 `src/app/i18n/locales/**` 的成对 JSON 目录，不启用 runtime compiler；消息自动化禁止 HTML 并检查缺失键和插值漂移 | 后续语言拆包需求、插件升级兼容性和生产包体积 |
@@ -445,11 +446,11 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 
 ## 尚需验证的证据缺口
 
-- Admin 综合概览第一阶段的局部状态、`Loading`/`Fresh`/`Partial`/`Stale`/`Offline` 与 `RestartScriptStarted` 诚实文案、Owner 字段裁剪、独立危险确认和不新增 npm 包的实际构建影响；目前没有对应实现或浏览器证据；
-- Admin 全工程 lint 基线已在当前工具链下通过；自动修复审查和移除无直接导入的兼容依赖仍应在对应依赖变更中单独评估；
+- Admin 综合概览第一阶段的局部状态、`Loading`/`Fresh`/`Partial`/`Stale`/`Offline`、`RestartScriptStarted` 诚实文案、Owner 字段裁剪、独立危险确认、生成 Query/Mutation 和缓存清理已有实现与单元/组件证据，仍缺真实 OWIN 浏览器证据；
+- Admin 本次变更文件的定向 lint 已通过；全工程 lint 仍被既有综合概览 Vue 文件的 65 个格式错误和 122 个警告阻断，修复时需要单独审查自动格式化差异；
 - Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩和缓存头；当前 Admin 文档 CSP 已有 Katana 自动化，仍需真实 OWIN 浏览器控制台验证；
-- REST 分页与查询游标仍待定义；Problem Details、认证 SSE 路由、Welcome/命名事件、`Last-Event-ID`、gap 和补取窗口已有后端契约，但前端类型映射、Header Bearer 生命周期、有界重连和浏览器验证尚未实现；
+- REST 分页与查询游标仍待定义；认证 SSE 的前端 Header Bearer 生命周期、Welcome/heartbeat/生命周期/gap 映射、`Last-Event-ID` 内存 replay 和可取消重连已有单元证据，仍缺真实 OWIN 浏览器验证、日志事件消费、显式缺口呈现和 REST 日志补取；
 - 登录限速和认证配置异常反馈；8 小时 Access Token 的到期重登、默认标签页/显式浏览器会话、账号身份显示、API Key 一次性显示/清除与撤销已有组件和受控时间自动化，仍缺真实 OWIN 浏览器证据；
 - 日志典型速率、浏览器保留窗口、渲染预算和是否需要虚拟列表；
 - 生产包体积预算、最低浏览器范围和自动化可访问性门槛；

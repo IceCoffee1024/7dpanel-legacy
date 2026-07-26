@@ -15,6 +15,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             DescribeServerEventStream(context);
             DescribeApiKeyManagement(context);
             DescribePlayerHistory(context);
+            DescribeServerOperations(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
 
@@ -175,6 +176,30 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             }
         }
 
+        private static void DescribeServerOperations(OperationProcessorContext context)
+        {
+            var path = context.OperationDescription.Path;
+            if (context.OperationDescription.Method != OpenApiOperationMethod.Post ||
+                (!string.Equals(
+                     path,
+                     "/api/v1/server-operations/restart",
+                     StringComparison.Ordinal) &&
+                 !string.Equals(
+                     path,
+                     "/api/v1/server-operations/shutdown",
+                     StringComparison.Ordinal)))
+            {
+                return;
+            }
+
+            var operation = context.OperationDescription.Operation;
+            if (!operation.Responses.TryGetValue("200", out var response)) return;
+
+            operation.Responses.Remove("200");
+            response.Description = "The server operation request was accepted.";
+            operation.Responses["202"] = response;
+        }
+
         private static void DescribeProblemResponses(OperationProcessorContext context)
         {
             var statusCodes = GetProblemStatusCodes(
@@ -230,6 +255,19 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
 
             if (method == OpenApiOperationMethod.Post &&
                 string.Equals(path, "/api/v1/players/{entityId}/kick", StringComparison.Ordinal))
+            {
+                return new[] { "400", "401", "403", "409", "500", "503" };
+            }
+
+            if (method == OpenApiOperationMethod.Post &&
+                (string.Equals(
+                     path,
+                     "/api/v1/server-operations/restart",
+                     StringComparison.Ordinal) ||
+                 string.Equals(
+                     path,
+                     "/api/v1/server-operations/shutdown",
+                     StringComparison.Ordinal)))
             {
                 return new[] { "400", "401", "403", "409", "500", "503" };
             }

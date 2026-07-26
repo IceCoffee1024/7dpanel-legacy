@@ -29,12 +29,12 @@ describe('usePageVisibilityRefresh', () => {
     return { refresh, scheduler: () => scheduler, wrapper: mount(Host) }
   }
 
-  it('uses one visibility listener and a 30-second interval', async () => {
+  it('uses one visibility listener and a 3-second interval', async () => {
     const add = vi.spyOn(document, 'addEventListener')
     const { refresh, wrapper } = mountScheduler()
 
     expect(add.mock.calls.filter(([type]) => type === 'visibilitychange')).toHaveLength(1)
-    await vi.advanceTimersByTimeAsync(29_999)
+    await vi.advanceTimersByTimeAsync(2_999)
     expect(refresh).not.toHaveBeenCalled()
     await vi.advanceTimersByTimeAsync(1)
     expect(refresh).toHaveBeenCalledOnce()
@@ -47,7 +47,7 @@ describe('usePageVisibilityRefresh', () => {
 
     visibility = 'hidden'
     document.dispatchEvent(new Event('visibilitychange'))
-    await vi.advanceTimersByTimeAsync(60_000)
+    await vi.advanceTimersByTimeAsync(6_000)
     expect(refresh).not.toHaveBeenCalled()
 
     visibility = 'visible'
@@ -55,7 +55,7 @@ describe('usePageVisibilityRefresh', () => {
     await flushPromises()
     expect(refresh).toHaveBeenCalledOnce()
 
-    await vi.advanceTimersByTimeAsync(30_000)
+    await vi.advanceTimersByTimeAsync(3_000)
     expect(refresh).toHaveBeenCalledTimes(2)
 
     wrapper.unmount()
@@ -64,11 +64,11 @@ describe('usePageVisibilityRefresh', () => {
   it('resets the period after manual refresh to avoid an adjacent duplicate', async () => {
     const { refresh, scheduler, wrapper } = mountScheduler()
 
-    await vi.advanceTimersByTimeAsync(29_999)
+    await vi.advanceTimersByTimeAsync(2_999)
     scheduler().resetPeriod()
     await vi.advanceTimersByTimeAsync(1)
     expect(refresh).not.toHaveBeenCalled()
-    await vi.advanceTimersByTimeAsync(29_999)
+    await vi.advanceTimersByTimeAsync(2_999)
     expect(refresh).toHaveBeenCalledOnce()
 
     wrapper.unmount()
