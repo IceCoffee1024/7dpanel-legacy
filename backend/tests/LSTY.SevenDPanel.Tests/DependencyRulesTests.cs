@@ -331,15 +331,24 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public void PolySharp_is_a_private_build_only_web_adapter_dependency()
+        public void PolySharp_is_a_shared_private_build_only_backend_dependency()
         {
-            var webProjectPath = Path.Combine(
-                SourceRoot,
-                "Adapters",
-                "LSTY.SevenDPanel.Adapters.Web",
-                "LSTY.SevenDPanel.Adapters.Web.csproj");
-            var packageOwners = Directory
-                .GetFiles(SourceRoot, "*.csproj", SearchOption.AllDirectories)
+            var sharedPropertiesPath = Path.Combine(
+                RepositoryRoot,
+                "backend",
+                "Directory.Build.props");
+            var sharedProperties = XDocument.Load(sharedPropertiesPath);
+            var package = Assert.Single(
+                sharedProperties.Descendants("PackageReference"),
+                element => string.Equals(
+                    (string?)element.Attribute("Include"),
+                    "PolySharp",
+                    StringComparison.OrdinalIgnoreCase));
+            var projectPackageOwners = Directory
+                .GetFiles(
+                    Path.Combine(RepositoryRoot, "backend"),
+                    "*.csproj",
+                    SearchOption.AllDirectories)
                 .Where(path => XDocument.Load(path)
                     .Descendants("PackageReference")
                     .Any(element => string.Equals(
@@ -347,16 +356,8 @@ namespace LSTY.SevenDPanel.Tests
                         "PolySharp",
                         StringComparison.OrdinalIgnoreCase)))
                 .ToArray();
-            var packageOwner = Assert.Single(packageOwners);
-            var project = XDocument.Load(packageOwner);
-            var package = Assert.Single(
-                project.Descendants("PackageReference"),
-                element => string.Equals(
-                    (string?)element.Attribute("Include"),
-                    "PolySharp",
-                    StringComparison.OrdinalIgnoreCase));
 
-            Assert.Equal(webProjectPath, packageOwner, ignoreCase: true);
+            Assert.Empty(projectPackageOwners);
             Assert.Equal("1.16.0", (string?)package.Attribute("Version"));
             Assert.Equal("all", (string?)package.Element("PrivateAssets"));
             Assert.Equal(

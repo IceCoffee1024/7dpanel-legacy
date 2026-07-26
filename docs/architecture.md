@@ -225,7 +225,7 @@ GET /
 |---|---|---|---|
 | 目标框架 | `.NET Framework 4.8` / `net48` | Release 构建通过 | 仍受游戏 Mono 可用 API 限制 |
 | C# 编译基线 | C# `11.0`，启用 Nullable Reference Types 和 Implicit Usings | Release Rebuild 已完成；2026-07-24 发布 `online-player-details` 时 `SevenDaysOnlinePlayerProjection.cs` 报告一条 `CS8603` nullable warning | 语言分析与全局 using 只影响编译期；生产运行时仍为游戏 Mono；该警告尚待单独修复 |
-| C# 旧框架语言 polyfill | Web Adapter 私有引用 `PolySharp 1.16.0` | 唯一依赖归属结构测试、`required` 元数据反射测试和概览 HTTP 契约测试通过 | source-only build dependency，只由实际使用 `required` 的编译单元拥有并补齐 `net48` 缺失的编译器类型；不进入 Mod 发布目录，`required` 不替代反序列化或领域运行时校验 |
+| C# 旧框架语言 polyfill | `backend/Directory.Build.props` 为全部后端项目统一私有引用 `PolySharp 1.16.0` | 共享依赖归属结构测试、`required` 元数据反射测试和概览 HTTP 契约测试通过 | source-only build dependency，使全部后端项目均可在 `net48` 上直接使用 `required`、`init` 等所需兼容类型；不进入 Mod 发布目录，编译期约束不替代反序列化或领域运行时校验 |
 | 游戏运行时 | 7DTD `v3.0.1-b4` Mono BCL `4.6.57.0` | Windows 真实进程已验证 | 编译参考来自固定 `7dtd-reference` 版本；运行时使用未修改官方服务端 |
 | Mod 内存程序集定位 | 游戏提供的 `0_TFP_Harmony/0Harmony.dll`，程序集 `2.13.0.0` | Release 构建、源码顺序规则、本地发布排除和 Windows `v3.0.1-b4` 真实进程通过；Linux 待验证 | Bootstrap 以 `Private=false` 编译引用且 7DPanel 不发布 Harmony；补丁只修正当前 Mod 内原值为空的 `Assembly.Location`，必须先于 SQLite/OWIN 组合 |
 | Web API 2 | Core/Owin `5.3.0`，Client `6.0.0` | 健康、Problem Details 和认证命名 SSE 通过 Katana 自动化与 Windows 真实进程 | 实现健康、统一错误和生产事件流；Linux Mono 仍待验证 |

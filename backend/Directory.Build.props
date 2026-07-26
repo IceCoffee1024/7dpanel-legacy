@@ -11,4 +11,11 @@
     <SevenDaysManagedDirectory Condition="'$(SevenDaysManagedDirectory)' == ''">$(SevenDaysRuntimeDirectory)\7DaysToDieServer_Data\Managed</SevenDaysManagedDirectory>
     <SevenDaysHarmonyDirectory Condition="'$(SevenDaysHarmonyDirectory)' == ''">$(SevenDaysRuntimeDirectory)\Mods\0_TFP_Harmony</SevenDaysHarmonyDirectory>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PolySharp" Version="1.16.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>
