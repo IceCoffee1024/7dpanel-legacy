@@ -11,6 +11,7 @@ const validSnapshot = {
     group: 'Identity',
     valueType: 'text',
     editable: true,
+    advanced: false,
     sensitive: false,
     isSet: true,
     restartRequired: true,
@@ -25,6 +26,7 @@ describe('server configuration API parser', () => {
     const snapshot = parseServerConfigurationSnapshot(validSnapshot)
 
     expect(snapshot.fields[0]?.key).toBe('ServerName')
+    expect(snapshot.fields[0]?.advanced).toBe(false)
     expect(Object.isFrozen(snapshot)).toBe(true)
     expect(Object.isFrozen(snapshot.fields)).toBe(true)
   })
@@ -33,6 +35,10 @@ describe('server configuration API parser', () => {
     expect(() => parseServerConfigurationSnapshot({
       ...validSnapshot,
       fields: [{ ...validSnapshot.fields[0], editable: 'yes' }],
+    })).toThrow('Invalid server configuration response')
+    expect(() => parseServerConfigurationSnapshot({
+      ...validSnapshot,
+      fields: [{ ...validSnapshot.fields[0], advanced: 'yes' }],
     })).toThrow('Invalid server configuration response')
     expect(() => parseServerConfigurationSnapshot({
       ...validSnapshot,

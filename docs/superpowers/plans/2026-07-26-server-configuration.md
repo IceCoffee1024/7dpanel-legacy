@@ -4,7 +4,7 @@
 
 **Goal:** 为 `Owner` 提供安全、可并发检测、明确重启语义的 `serverconfig.xml` 查看和单字段修改页面。
 
-**Architecture:** Application 定义字段目录、读模型、版本冲突和单字段写入用例；Bootstrap 提供的本地文件 Adapter 负责 XML 读取与同目录替换；Web Adapter 提供 Owner-only HTTP 合同；Admin 使用生成客户端建立独立 Feature。主设计为[服务器治理功能设计规格](../specs/2026-07-26-server-governance-design.md)。
+**Architecture:** Application 定义完整官方字段元数据、未知现有字段高级编辑、读模型、版本冲突和单字段写入用例；Bootstrap 提供的本地文件 Adapter 负责 XML 读取与同目录替换；Web Adapter 提供 Owner-only HTTP 合同；Admin 使用独立 Feature 选择类型化控件。主设计为[服务器治理功能设计规格](../specs/2026-07-26-server-governance-design.md)。
 
 **Tech Stack:** C# 11/net48、System.Xml、Katana Web API、Microsoft DI、xUnit、Vue 3、TypeScript、Pinia Colada、Nuxt UI、Valibot、Vitest、运行时 OpenAPI/Hey API。
 
@@ -81,7 +81,29 @@ public interface IServerConfigurationStore
 }
 ```
 
-字段目录首期只把 `ServerName`、`ServerDescription`、`ServerMaxPlayerCount`、`ServerPort`、`GameWorld`、`WorldGenSeed`、`GameName`、`GameDifficulty`、`DayNightLength` 和 `PlayerKillingMode` 标为可编辑；未收录键只读，所有密码/Token 类键敏感且只读。为现有 `IRecentActivityWriter` 增加 `RecordServerConfigurationChangedAsync(actorSubject, key, restartRequired, outcome, occurredAtUtc, cancellationToken)`，由 `SqliteRecentActivityStore` 记录消息键与安全参数，不记录值或路径。
+字段目录完整收录 `v3.0.1-b4` 官方样例中的 68 个启用字段并为普通字段提供类型化编辑；未收录但已存在的非敏感键按高级文本字段处理，所有密码/Token/Secret 类键敏感且只读，缺失键仍拒绝。为现有 `IRecentActivityWriter` 增加 `RecordServerConfigurationChangedAsync(actorSubject, key, restartRequired, outcome, occurredAtUtc, cancellationToken)`，由 `SqliteRecentActivityStore` 记录消息键与安全参数，不记录值或路径。
+
+### 批准修订：完整官方字段与高级编辑
+
+**Files:**
+- Modify: `backend/src/Core/LSTY.SevenDPanel.Application/ServerConfiguration/ServerConfigurationModels.cs`
+- Modify: `backend/src/Core/LSTY.SevenDPanel.Application/ServerConfiguration/ServerConfigurationUseCases.cs`
+- Modify: `backend/src/Bootstrap/LSTY.SevenDPanel/ServerConfiguration/LocalServerConfigurationStore.cs`
+- Modify: `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/ServerConfigurationHttpModels.cs`
+- Modify: `backend/tests/LSTY.SevenDPanel.Tests/ServerConfigurationTests.cs`
+- Create: `frontend/apps/admin/src/features/server-configuration/ui/ServerConfigurationFieldEditor.vue`
+- Create: `frontend/apps/admin/src/features/server-configuration/ui/ServerConfigurationFieldEditor.test.ts`
+- Modify: `frontend/apps/admin/src/features/server-configuration/api/serverConfiguration.ts`
+- Modify: `frontend/apps/admin/src/features/server-configuration/api/serverConfiguration.test.ts`
+- Modify: `frontend/apps/admin/src/features/server-configuration/ui/ServerConfigurationView.vue`
+
+- [x] **Step 1: 写官方 68 字段、未知现有字段可编辑、敏感字段隐藏和缺失字段拒绝的后端失败测试。**
+- [x] **Step 2: 运行 `ServerConfigurationTests`，确认失败原因是目录不完整和未知字段仍被拒绝。**
+- [x] **Step 3: 扩展字段元数据并让 Store 只对当前 XML 中存在的非敏感未知字段应用高级文本定义。**
+- [x] **Step 4: 跑绿 `ServerConfigurationTests`。**
+- [x] **Step 5: 写 parser 的 `advanced` 元数据测试，以及布尔、枚举、整数、数值和文本控件选择的前端失败测试。**
+- [x] **Step 6: 实现 `ServerConfigurationFieldEditor.vue` 并在页面显示高级编辑提示，敏感字段不渲染编辑入口。**
+- [x] **Step 7: 跑绿服务器配置聚焦 Vitest、Admin typecheck，并刷新 OpenAPI schema/client。**
 
 - [ ] **Step 4: 实现查询和更新用例并跑绿**
 

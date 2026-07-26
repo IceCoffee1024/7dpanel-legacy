@@ -643,6 +643,7 @@ export type ServerConfigurationFieldResponse = {
     group?: string;
     valueType?: string;
     editable?: boolean;
+    advanced?: boolean;
     sensitive?: boolean;
     isSet?: boolean;
     restartRequired?: boolean;

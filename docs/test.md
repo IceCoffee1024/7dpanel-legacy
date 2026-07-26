@@ -7,7 +7,7 @@ last_updated: "2026-07-26"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-26 服务器治理实现稳定后，Release 构建通过，后端聚合 xUnit `598/598` 通过；服务器配置、访问名单、面板用户、游戏权限、模组、Controller、依赖规则和 OpenAPI 均包含聚焦自动化。Admin `pnpm test` 为 `60` 个文件、`499/499` 项通过，typecheck、Vite 8 生产构建、OpenAPI 快照刷新和生成客户端均通过。全量 lint 未重跑；Playwright、发布、真实 7DTD 与 Windows/Linux smoke 按本次精简边界未执行。Vitest 输出仍包含已知 happy-dom teardown `AbortError` 噪声，但以成功状态结束。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、服务器治理原生动作、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-26 服务器治理实现稳定后，Release 构建通过，后端聚合 xUnit `598/598` 通过；服务器配置、访问名单、面板用户、游戏权限、模组、Controller、依赖规则和 OpenAPI 均包含聚焦自动化。Admin `pnpm test` 为 `60` 个文件、`499/499` 项通过，typecheck、Vite 8 生产构建、OpenAPI 快照刷新和生成客户端均通过。随后服务器配置目录扩展到当前官方 68 字段并加入高级编辑时，聚焦后端 `14/14`、聚焦 Admin `7/7`、Admin typecheck、OpenAPI 快照和客户端生成通过；没有为该小改动重复全量测试。全量 lint 未重跑；Playwright、发布、真实 7DTD 与 Windows/Linux smoke 按本次精简边界未执行。Vitest 输出仍包含已知 happy-dom teardown `AbortError` 噪声，但以成功状态结束。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、服务器治理原生动作、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
@@ -18,7 +18,7 @@ last_updated: "2026-07-26"
 | `CAP-03` | 手动与计划备份状态机；保存提交完成后快照；校验失败、损坏归档、磁盘空间不足；重启恢复；中断后回滚 | 单元、SQLite 集成、真实进程、故障注入、恢复演练 | 备份清单与校验和、状态迁移、恢复后存档验证和回滚证据 |
 | `CAP-04` | 即时公告；进服欢迎、周期提醒和血月提醒；同一触发只执行一次；重启后的调度恢复；失败可见 | 单元、SQLite 集成、真实进程、E2E | 游戏内公告、任务执行记录和审计记录 |
 | `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；password grant、Header-only Token/API Key 和 SSE 复验；面板用户管理保留至少一个启用 Owner；面板角色与 7DTD 游戏管理员/命令权限分离；名单只读/可写矩阵与审计 | 单元、SQLite 集成、OWIN/API 集成、聚焦 Admin 测试、安全 | Store 原子结果、Authorization Header、Token/API Key 生命周期、权限矩阵、原生权限快照和审计记录 |
-| `CAP-06` | 配置字段目录、未知/敏感字段、类型约束、文件版本冲突、原子替换和重启提示；模组安全目录、元数据、当前/下次启动状态、受保护模组和路径拒绝 | 单元、临时文件系统集成、OWIN/API 集成、聚焦 Admin 测试、安全 | 配置前后文件、冲突结果、敏感值扫描、模组状态快照、路径拒绝和审计记录 |
+| `CAP-06` | 当前官方配置字段完整性、类型化控件、未知非敏感现有字段高级编辑、敏感字段隐藏、禁止新增属性、文件版本冲突、原子替换和重启提示；模组安全目录、元数据、当前/下次启动状态、受保护模组和路径拒绝 | 单元、临时文件系统集成、OWIN/API 集成、聚焦 Admin 测试、安全 | 官方字段清单对照、配置前后文件、冲突结果、敏感值扫描、模组状态快照、路径拒绝和审计记录 |
 | `CAP-07` | Owner-only 实时/历史聊天、全局与私聊发送、聊天设置、彩色默认规则、玩家 Profile、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、游戏内消息、权限矩阵、审计和纯文本断言 |
 | `NFR-01` | 无产品方云服务、无外网条件下部署 Mod、打开面板并完成全部 P0 核心流程 | Windows/Linux 真实进程、离线验收 | 发布物清单、网络隔离记录和验收报告 |
 | `NFR-02` | 超时、断线、过期状态、重复提交、任务失败、服务关闭和结果未知；高风险操作确认 | 单元、API 集成、E2E、故障注入 | 状态转换、错误码、页面状态和审计关联标识 |
@@ -30,7 +30,7 @@ last_updated: "2026-07-26"
 
 [服务器治理设计规格](superpowers/specs/2026-07-26-server-governance-design.md)的常规实现验证限定为受影响边界：
 
-- 服务器配置只新增字段目录、类型/版本校验、临时文件替换和敏感值聚焦测试。
+- 服务器配置只新增官方字段目录完整性、类型化控件、未知现有字段编辑、禁止新增属性、类型/版本校验、临时文件替换和敏感值聚焦测试。
 - 黑白名单与游戏权限只新增 Application 结果映射、Dispatcher 内原生访问和 Controller 权限测试。
 - 面板用户只新增 SQLite 原子不变量、角色变化、旧 Access Token 撤销和 HTTP 权限测试。
 - 模组只新增临时 Mods 根目录、元数据解析、路径拒绝、受保护模组和下次启动状态测试。

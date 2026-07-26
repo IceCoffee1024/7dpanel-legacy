@@ -44,23 +44,23 @@ namespace LSTY.SevenDPanel.ServerConfiguration
 
             lock (sync)
             {
-                if (!catalog.TryGet(request.Key, out var definition))
-                    return Result(ServerConfigurationUpdateStatus.UnknownField, request.Version, false);
-                if (!definition.Editable)
-                    return Result(ServerConfigurationUpdateStatus.ReadOnly, request.Version, definition.RestartRequired);
-                if (!TryNormalize(request.Value, definition, out var normalized))
-                    return Result(ServerConfigurationUpdateStatus.InvalidValue, request.Version, definition.RestartRequired);
-
                 var original = File.ReadAllBytes(path);
                 var currentVersion = ComputeVersion(original);
                 if (!string.Equals(currentVersion, request.Version, StringComparison.Ordinal))
-                    return Result(ServerConfigurationUpdateStatus.Conflict, currentVersion, definition.RestartRequired);
+                    return Result(ServerConfigurationUpdateStatus.Conflict, currentVersion, false);
 
                 var document = Load(original);
                 var property = document.SelectSingleNode(
                     "/ServerSettings/property[@name=" + QuoteXPath(request.Key) + "]") as XmlElement;
                 if (property == null)
-                    return Result(ServerConfigurationUpdateStatus.UnknownField, currentVersion, definition.RestartRequired);
+                    return Result(ServerConfigurationUpdateStatus.UnknownField, currentVersion, false);
+
+                if (!catalog.TryGet(request.Key, out var definition))
+                    definition = catalog.DescribeUnknown(request.Key);
+                if (!definition.Editable)
+                    return Result(ServerConfigurationUpdateStatus.ReadOnly, currentVersion, definition.RestartRequired);
+                if (!TryNormalize(request.Value, definition, out var normalized))
+                    return Result(ServerConfigurationUpdateStatus.InvalidValue, currentVersion, definition.RestartRequired);
 
                 property.SetAttribute("value", normalized);
                 var directory = Path.GetDirectoryName(path)!;
@@ -113,6 +113,7 @@ namespace LSTY.SevenDPanel.ServerConfiguration
                         definition.Group,
                         definition.ValueType,
                         definition.Editable,
+                        definition.Advanced,
                         definition.Sensitive,
                         !string.IsNullOrEmpty(property.GetAttribute("value")),
                         definition.RestartRequired,
@@ -170,6 +171,13 @@ namespace LSTY.SevenDPanel.ServerConfiguration
         private static bool TryNormalize(string value, ServerConfigurationFieldDefinition definition, out string normalized)
         {
             normalized = value ?? string.Empty;
+            if (string.Equals(definition.Key, "AdminFileName", StringComparison.Ordinal)
+                && (Path.IsPathRooted(normalized)
+                    || !string.Equals(Path.GetFileName(normalized), normalized, StringComparison.Ordinal)
+                    || normalized.IndexOfAny(new[] { '/', '\\' }) >= 0))
+            {
+                return false;
+            }
             if (definition.ValueType == ServerConfigurationValueType.Integer)
             {
                 if (!long.TryParse(normalized, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))

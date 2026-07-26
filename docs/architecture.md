@@ -353,7 +353,7 @@ GET /
 
 2026-07-26 已将[服务器治理设计规格](superpowers/specs/2026-07-26-server-governance-design.md)中的四个纵向切片实现到当前系统，落实 `CAP-02`、`CAP-05`、`CAP-06`、`NFR-02`、`NFR-04` 和 `NFR-05`：
 
-- `ServerConfiguration` 由 Application 字段目录与用例、Bootstrap `LocalServerConfigurationStore` 和 Web Controller 组成。`serverConfigurationPath` 从 Mod 配置目录解析，浏览器不能提交文件路径；XML 读取禁止 DTD，敏感值只返回 `IsSet`，写入使用 SHA-256 版本冲突检查和同目录替换。
+- `ServerConfiguration` 由 Application 字段目录与用例、Bootstrap `LocalServerConfigurationStore` 和 Web Controller 组成。字段目录收录 `v3.0.1-b4` 官方样例的 68 个启用字段，并向 Admin 返回布尔、枚举、整数、数值或文本元数据；普通官方字段均可编辑。当前 XML 中已存在但目录未知的非敏感非路径字段作为 `Advanced` 文本字段编辑，缺失字段不能新增；Password/Token/Secret 类字段裁剪当前值且只返回 `IsSet`，Path/Folder/Directory 类未知字段保持只读，`AdminFileName` 只接受纯文件名。`serverConfigurationPath` 从 Mod 配置目录解析，浏览器不能提交配置文件路径或任意 XML 节点；XML 读取禁止 DTD，写入使用 SHA-256 版本冲突检查和同目录替换。
 - `AccessLists` 与 `GamePermissions` 的 Application 用例依赖 SevenDays Adapter；所有活动游戏对象读写均在 `GameThreadDispatcher` 内复制或执行。面板 `Owner`/`Admin`/`Viewer` 与 7DTD `0..2000` 等级没有转换关系。
 - `SqliteAuthenticationStore` 同时实现面板用户管理合同；创建、更新、禁用、重置密码和删除使用立即写事务，拒绝留下零个启用 `Owner`，角色、状态或密码变化撤销该用户 Access Token。引导 `Subject=owner`、开发默认凭据和明文 HTTP 例外保持不变，不执行存量 Owner 迁移。
 - `Mods` 由 Bootstrap 本地目录目录和 SevenDays 当前加载查询合并；只识别 `Mods` 根直接子目录的 `ModInfo.xml`/`_ModInfo.xml`，拒绝越界及重解析目录，保护当前 7DPanel 目录，并只改变下次启动状态。

@@ -178,8 +178,10 @@
   "serverConfiguration": {
     "title": "Server configuration",
     "state": { "forbidden": "Only Owners can manage server configuration.", "failed": "Server configuration is unavailable.", "stale": "Refresh failed; showing the last successful snapshot." },
-    "groups": { "identity": "Identity", "network": "Network", "gameplay": "Gameplay", "world": "World", "other": "Other (read-only)" },
+    "groups": { "identity": "Identity", "network": "Network", "slots": "Player slots", "administration": "Administration", "security": "Security", "persistence": "Persistence", "world": "World", "gameplay": "Gameplay", "performance": "Performance", "landclaim": "Land claims", "integrations": "Integrations", "advanced": "Advanced", "other": "Other (read-only)" },
     "fields": {},
+    "advanced": "Advanced",
+    "advancedWarning": "This non-sensitive field already exists in the XML but is not registered. Check the 7DTD documentation before changing it; new fields cannot be added here.",
     "restartRequired": "Restart required",
     "readOnly": "Read-only",
     "secretSet": "Configured",

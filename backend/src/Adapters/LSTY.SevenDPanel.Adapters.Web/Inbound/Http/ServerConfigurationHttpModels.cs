@@ -34,6 +34,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             Group = field.Group;
             ValueType = field.ValueType.ToString().ToLowerInvariant();
             Editable = field.Editable;
+            Advanced = field.Advanced;
             Sensitive = field.Sensitive;
             IsSet = field.IsSet;
             RestartRequired = field.RestartRequired;
@@ -47,6 +48,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public string Group { get; }
         public string ValueType { get; }
         public bool Editable { get; }
+        public bool Advanced { get; }
         public bool Sensitive { get; }
         public bool IsSet { get; }
         public bool RestartRequired { get; }

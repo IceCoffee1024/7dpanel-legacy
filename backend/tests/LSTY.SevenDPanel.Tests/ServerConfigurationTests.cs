@@ -22,46 +22,74 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class ServerConfigurationTests
     {
         [Fact]
-        public void Update_use_case_rejects_unknown_read_only_and_stale_fields()
+        public void Catalog_covers_every_enabled_v3_0_1_b4_official_field_with_typed_metadata()
         {
             var catalog = ServerConfigurationFieldCatalog.Create();
-            var store = new StubStore("v2");
-            var useCase = new UpdateServerConfigurationUseCase(store, catalog);
+            var officialKeys = ("ServerName ServerDescription ServerWebsiteURL ServerPassword ServerLoginConfirmationText " +
+                "Region Language ServerPort ServerVisibility ServerDisabledNetworkProtocols ServerMaxWorldTransferSpeedKiBs " +
+                "ServerMaxPlayerCount ServerReservedSlots ServerReservedSlotsPermission ServerAdminSlots ServerAdminSlotsPermission " +
+                "WebDashboardEnabled WebDashboardPort WebDashboardUrl EnableMapRendering TelnetEnabled TelnetPort TelnetPassword " +
+                "TelnetFailedLoginLimit TelnetFailedLoginsBlocktime TerminalWindowEnabled AdminFileName ServerAllowCrossplay " +
+                "EACEnabled IgnoreEOSSanctions HideCommandExecutionLog MaxUncoveredMapChunksPerPlayer PersistentPlayerProfiles " +
+                "MaxChunkAge SaveDataLimit GameWorld WorldGenSeed WorldGenSize GameName GameMode PlayerSafeZoneLevel " +
+                "PlayerSafeZoneHours BuildCreate BedrollDeadZoneSize BedrollExpiryTime AllowSpawnNearFriend CameraRestrictionMode " +
+                "MaxSpawnedZombies MaxSpawnedAnimals ServerMaxAllowedViewDistance MaxQueuedMeshLayers PartySharedKillRange " +
+                "PlayerKillingMode LandClaimCount LandClaimSize LandClaimDeadZone LandClaimExpiryTime LandClaimDecayMode " +
+                "LandClaimOnlineDurabilityModifier LandClaimOfflineDurabilityModifier LandClaimOfflineDelay DynamicMeshEnabled " +
+                "DynamicMeshLandClaimOnly DynamicMeshLandClaimBuffer DynamicMeshMaxItemCache TwitchServerPermission " +
+                "TwitchBloodMoonAllowed SandboxCode").Split(' ');
 
-            Assert.Equal(ServerConfigurationUpdateStatus.UnknownField,
-                useCase.Execute(new UpdateServerConfigurationRequest("Missing", "x", "v2")).Status);
-            Assert.Equal(ServerConfigurationUpdateStatus.ReadOnly,
-                useCase.Execute(new UpdateServerConfigurationRequest("ServerDisabledNetworkProtocols", "x", "v2")).Status);
-            Assert.Equal(ServerConfigurationUpdateStatus.Conflict,
-                useCase.Execute(new UpdateServerConfigurationRequest("ServerName", "x", "v1")).Status);
+            Assert.Equal(68, officialKeys.Length);
+            Assert.All(officialKeys, key => Assert.True(catalog.TryGet(key, out _), key));
+            Assert.True(catalog.TryGet("WebDashboardEnabled", out var booleanField));
+            Assert.Equal(ServerConfigurationValueType.Boolean, booleanField.ValueType);
+            Assert.True(catalog.TryGet("Region", out var enumField));
+            Assert.Equal(ServerConfigurationValueType.Enum, enumField.ValueType);
+            Assert.Contains("Oceania", enumField.AllowedValues);
+            Assert.True(catalog.TryGet("ServerMaxPlayerCount", out var integerField));
+            Assert.Equal(ServerConfigurationValueType.Integer, integerField.ValueType);
+            Assert.True(catalog.TryGet("ServerDescription", out var textField));
+            Assert.Equal(ServerConfigurationValueType.Text, textField.ValueType);
         }
 
         [Fact]
-        public void Store_preserves_unknown_properties_redacts_secrets_and_rejects_stale_versions()
+        public void Store_edits_existing_advanced_fields_redacts_secrets_and_rejects_missing_or_stale_fields()
         {
             using var fixture = new ConfigurationFixture(
                 "<ServerSettings><!--keep--><property name=\"ServerName\" value=\"Old\"/>" +
                 "<property name=\"ServerPassword\" value=\"secret\"/>" +
+                "<property name=\"FutureToken\" value=\"hidden\"/>" +
                 "<property name=\"FutureField\" value=\"keep\"/></ServerSettings>");
             var before = fixture.Store.Read(fixture.Catalog);
 
             Assert.Equal(string.Empty, before.Fields.Single(field => field.Key == "ServerPassword").Value);
             Assert.True(before.Fields.Single(field => field.Key == "ServerPassword").Sensitive);
             Assert.True(before.Fields.Single(field => field.Key == "ServerPassword").IsSet);
-            Assert.False(before.Fields.Single(field => field.Key == "FutureField").Editable);
+            Assert.True(before.Fields.Single(field => field.Key == "FutureField").Editable);
+            Assert.True(before.Fields.Single(field => field.Key == "FutureField").Advanced);
+            Assert.Equal(string.Empty, before.Fields.Single(field => field.Key == "FutureToken").Value);
+            Assert.False(before.Fields.Single(field => field.Key == "FutureToken").Editable);
 
             var result = fixture.Store.Update(
-                new UpdateServerConfigurationRequest("ServerName", "New", before.Version),
+                new UpdateServerConfigurationRequest("FutureField", "changed", before.Version),
                 fixture.Catalog);
             var after = fixture.Store.Read(fixture.Catalog);
 
             Assert.Equal(ServerConfigurationUpdateStatus.Updated, result.Status);
-            Assert.Equal("New", after.Fields.Single(field => field.Key == "ServerName").Value);
+            Assert.Equal("changed", after.Fields.Single(field => field.Key == "FutureField").Value);
             Assert.Contains("FutureField", File.ReadAllText(fixture.Path));
             Assert.Contains("<!--keep-->", File.ReadAllText(fixture.Path));
+            Assert.Equal(ServerConfigurationUpdateStatus.UnknownField,
+                fixture.Store.Update(
+                    new UpdateServerConfigurationRequest("MissingField", "new", after.Version),
+                    fixture.Catalog).Status);
+            Assert.Equal(ServerConfigurationUpdateStatus.ReadOnly,
+                fixture.Store.Update(
+                    new UpdateServerConfigurationRequest("FutureToken", "leaked", after.Version),
+                    fixture.Catalog).Status);
             Assert.Equal(ServerConfigurationUpdateStatus.Conflict,
                 fixture.Store.Update(
-                    new UpdateServerConfigurationRequest("ServerName", "Again", before.Version),
+                    new UpdateServerConfigurationRequest("FutureField", "Again", before.Version),
                     fixture.Catalog).Status);
         }
 
@@ -70,6 +98,8 @@ namespace LSTY.SevenDPanel.Tests
         [InlineData("ServerMaxPlayerCount", "9.5")]
         [InlineData("ServerPort", "70000")]
         [InlineData("GameDifficulty", "6")]
+        [InlineData("WebDashboardEnabled", "enabled")]
+        [InlineData("Region", "Moon")]
         public void Store_rejects_invalid_typed_values(string key, string value)
         {
             using var fixture = new ConfigurationFixture(
@@ -81,6 +111,21 @@ namespace LSTY.SevenDPanel.Tests
                 fixture.Catalog);
 
             Assert.Equal(ServerConfigurationUpdateStatus.InvalidValue, result.Status);
+        }
+
+        [Fact]
+        public void Store_rejects_file_paths_from_official_and_advanced_fields()
+        {
+            using var fixture = new ConfigurationFixture(
+                "<ServerSettings><property name=\"AdminFileName\" value=\"serveradmin.xml\"/>" +
+                "<property name=\"UserDataFolder\" value=\"data\"/></ServerSettings>");
+            var snapshot = fixture.Store.Read(fixture.Catalog);
+
+            Assert.Equal(ServerConfigurationUpdateStatus.InvalidValue,
+                fixture.Store.Update(
+                    new UpdateServerConfigurationRequest("AdminFileName", "../outside.xml", snapshot.Version),
+                    fixture.Catalog).Status);
+            Assert.False(snapshot.Fields.Single(field => field.Key == "UserDataFolder").Editable);
         }
 
         [Theory]

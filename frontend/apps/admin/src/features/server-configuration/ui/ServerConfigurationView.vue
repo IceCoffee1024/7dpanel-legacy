@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useServerConfiguration } from '../model/useServerConfiguration'
+import ServerConfigurationFieldEditor from './ServerConfigurationFieldEditor.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -57,11 +58,12 @@ async function save() {
       <div v-else class="space-y-5">
         <UAlert v-if="controller.state.value === 'stale'" color="warning" :title="t('serverConfiguration.state.stale')" />
         <section v-for="[group, fields] in groupedFields" :key="group" class="space-y-2">
-          <h2 class="font-semibold text-highlighted">{{ t(`serverConfiguration.groups.${group}`, group) }}</h2>
+          <h2 class="font-semibold text-highlighted">{{ t(`serverConfiguration.groups.${group.toLowerCase()}`, group) }}</h2>
           <article v-for="field in fields" :key="field.key" class="grid gap-3 rounded-lg border border-default p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <strong>{{ t(`serverConfiguration.fields.${field.key}`, field.key) }}</strong>
+                <UBadge v-if="field.advanced" color="info" variant="subtle">{{ t('serverConfiguration.advanced') }}</UBadge>
                 <UBadge v-if="field.restartRequired" color="warning" variant="subtle">{{ t('serverConfiguration.restartRequired') }}</UBadge>
                 <UBadge v-if="!field.editable" color="neutral" variant="subtle">{{ t('serverConfiguration.readOnly') }}</UBadge>
               </div>
@@ -79,7 +81,8 @@ async function save() {
   <UModal :open="selected !== null" :title="selected ? t(`serverConfiguration.fields.${selected.key}`, selected.key) : ''" @update:open="open => { if (!open && controller.updatingKey.value === null) selected = null }">
     <template #body>
       <div v-if="selected" class="space-y-4">
-        <UInput v-model="inputValue" class="w-full" :type="selected.sensitive ? 'password' : 'text'" />
+        <UAlert v-if="selected.advanced" color="warning" :title="t('serverConfiguration.advancedWarning')" />
+        <ServerConfigurationFieldEditor v-model="inputValue" :field="selected" />
         <p class="text-sm text-muted">{{ selected.restartRequired ? t('serverConfiguration.confirmRestart') : t('serverConfiguration.confirmImmediate') }}</p>
         <UAlert v-if="controller.feedback.value" color="error" :title="t(`serverConfiguration.feedback.${controller.feedback.value.code}`)" />
         <div class="flex justify-end gap-2">

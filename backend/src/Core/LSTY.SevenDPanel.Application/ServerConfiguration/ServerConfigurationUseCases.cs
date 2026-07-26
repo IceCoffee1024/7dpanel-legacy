@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace LSTY.SevenDPanel.Application.ServerConfiguration
 {
@@ -29,14 +30,18 @@ namespace LSTY.SevenDPanel.Application.ServerConfiguration
 
         public ServerConfigurationUpdateResult Execute(UpdateServerConfigurationRequest request)
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.Key) || !catalog.TryGet(request.Key, out var definition))
+            if (request == null || string.IsNullOrWhiteSpace(request.Key))
                 return Failed(ServerConfigurationUpdateStatus.UnknownField, request?.Version);
-            if (!definition.Editable)
-                return Failed(ServerConfigurationUpdateStatus.ReadOnly, request.Version, definition.RestartRequired);
 
             var current = store.Read(catalog);
             if (!string.Equals(current.Version, request.Version, StringComparison.Ordinal))
-                return Failed(ServerConfigurationUpdateStatus.Conflict, current.Version, definition.RestartRequired);
+                return Failed(ServerConfigurationUpdateStatus.Conflict, current.Version);
+
+            var field = current.Fields.SingleOrDefault(candidate => string.Equals(candidate.Key, request.Key, StringComparison.Ordinal));
+            if (field == null)
+                return Failed(ServerConfigurationUpdateStatus.UnknownField, current.Version);
+            if (!field.Editable)
+                return Failed(ServerConfigurationUpdateStatus.ReadOnly, current.Version, field.RestartRequired);
 
             return store.Update(request, catalog);
         }

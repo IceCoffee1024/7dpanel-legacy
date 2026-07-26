@@ -6629,6 +6629,9 @@
           "editable": {
             "type": "boolean"
           },
+          "advanced": {
+            "type": "boolean"
+          },
           "sensitive": {
             "type": "boolean"
           },

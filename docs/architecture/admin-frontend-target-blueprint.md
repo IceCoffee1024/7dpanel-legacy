@@ -374,7 +374,7 @@ frontend/
 |   |   |   |   |-- players/                    # 玩家查询与类型化动作
 |   |   |   |   |-- console-logs/               # SSE、补取、命令和补全
 |   |   |   |   |-- access-lists/               # 封禁、白名单和单项目标动作
-|   |   |   |   |-- server-configuration/       # 字段目录、版本冲突和重启提示
+|   |   |   |   |-- server-configuration/       # 类型化/高级字段编辑、版本冲突和重启提示
 |   |   |   |   |-- mods/                       # 当前/下次启动状态和安全切换
 |   |   |   |   |-- permissions/                # 面板用户、游戏管理员和命令权限
 |   |   |   |   |-- announcements/              # 即时公告与自动化

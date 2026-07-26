@@ -178,8 +178,10 @@
   "serverConfiguration": {
     "title": "服务器配置",
     "state": { "forbidden": "仅 Owner 可管理服务器配置。", "failed": "服务器配置暂时不可用。", "stale": "刷新失败，正在显示上次成功读取的内容。" },
-    "groups": { "identity": "服务器标识", "network": "网络", "gameplay": "游戏规则", "world": "世界", "other": "其他（只读）" },
+    "groups": { "identity": "服务器标识", "network": "网络", "slots": "玩家槽位", "administration": "管理接口", "security": "安全", "persistence": "存档与持久化", "world": "世界", "gameplay": "游戏规则", "performance": "性能", "landclaim": "领地保护", "integrations": "集成", "advanced": "高级配置", "other": "其他（只读）" },
     "fields": {},
+    "advanced": "高级",
+    "advancedWarning": "这是 XML 中已存在但尚未登记的非敏感字段。请核对 7DTD 文档后再修改；不能通过此页面新增字段。",
     "restartRequired": "重启后生效",
     "readOnly": "只读",
     "secretSet": "已设置",

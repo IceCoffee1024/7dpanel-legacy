@@ -8,6 +8,7 @@ export interface ServerConfigurationField {
   group: string
   valueType: ServerConfigurationValueType
   editable: boolean
+  advanced: boolean
   sensitive: boolean
   isSet: boolean
   restartRequired: boolean
@@ -56,6 +57,7 @@ function parseField(value: unknown): ServerConfigurationField {
     || typeof value.valueType !== 'string'
     || !valueTypes.has(value.valueType as ServerConfigurationValueType)
     || typeof value.editable !== 'boolean'
+    || typeof value.advanced !== 'boolean'
     || typeof value.sensitive !== 'boolean'
     || typeof value.isSet !== 'boolean'
     || typeof value.restartRequired !== 'boolean'
@@ -71,6 +73,7 @@ function parseField(value: unknown): ServerConfigurationField {
     group: value.group,
     valueType: value.valueType as ServerConfigurationValueType,
     editable: value.editable,
+    advanced: value.advanced,
     sensitive: value.sensitive,
     isSet: value.isSet,
     restartRequired: value.restartRequired,
