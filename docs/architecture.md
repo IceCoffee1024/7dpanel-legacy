@@ -7,7 +7,7 @@ last_updated: "2026-07-26"
 
 ## 背景与驱动因素
 
-本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户、password grant、Access Token/API Key 两类 Header Bearer 凭据、认证生产 SSE、Admin 静态资源托管、综合概览聚合、Owner 重启脚本启动与固定关服，以及认证后通过容量 32 的有界 FIFO 在游戏主线程执行动态控制台命令、由 Join/Save/Disconnect 事件维护的固定 25 字段在线玩家 observation 和以类型化原生 API 踢出在线玩家的 Application 纵向切片。最终 `SdtdConsole.executeCommand` 由独立 Harmony Patch 尽力观察，完整原文、参数、输出、来源和结果通过容量 256 的异步队列写入 SQLite；审计失败不会改变命令结果，并以告警和 gap 记录缺失。Admin 已提供综合概览、API Key 的创建/列表/撤销、在线玩家紧凑列表、只读详情抽屉和 Owner 踢出确认流程，并消费认证 SSE 的 Welcome、生命周期、gap 和 heartbeat 以触发综合概览刷新；它尚未展示 `console-log` 或提交控制台命令。`Admin`/`Viewer` 用户管理、封禁、禁言、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
+本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户、password grant、Access Token/API Key 两类 Header Bearer 凭据、认证生产 SSE、Admin 静态资源托管、综合概览聚合、Owner 重启脚本启动与固定关服，以及认证后通过容量 32 的有界 FIFO 在游戏主线程执行动态控制台命令、由 Join/Save/Disconnect 事件维护的固定 31 字段在线玩家 observation 和以类型化原生 API 踢出在线玩家的 Application 纵向切片。最终 `SdtdConsole.executeCommand` 由独立 Harmony Patch 尽力观察，完整原文、参数、输出、来源和结果通过容量 256 的异步队列写入 SQLite；审计失败不会改变命令结果，并以告警和 gap 记录缺失。Admin 已提供综合概览、API Key 的创建/列表/撤销、在线玩家紧凑列表、只读详情抽屉和 Owner 踢出确认流程，并消费认证 SSE 的 Welcome、生命周期、gap 和 heartbeat 以触发综合概览刷新；它尚未展示 `console-log` 或提交控制台命令。`Admin`/`Viewer` 用户管理、封禁、禁言、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
 
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
@@ -91,11 +91,11 @@ flowchart LR
 |---|---|---|
 | `backend/src/Bootstrap/LSTY.SevenDPanel/` | 唯一 `IModApi` 入口、进程期 `Assembly.Location` 兼容补丁、配置文件 I/O、Microsoft DI 组合根与根 Provider 所有权、数据库路径、Admin 资源根目录选择和 Mod 发布入口 | Application、Hosting、Web Adapter、SevenDays Adapter、Persistence Adapter、`Microsoft.Extensions.DependencyInjection`、游戏提供的 `0_TFP_Harmony` 和编译期程序集 |
 | `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` OWIN 生命周期状态机、独立 `GameReadinessState`、`IModRuntime`、`IPanelRuntimeStatus`、`IPanelWebHost`、监听选项、产品元数据、认证 Store 端口，以及 Web/SevenDays Adapter 之间受限的命名服务器事件契约 | .NET Framework BCL |
-| `backend/src/Core/LSTY.SevenDPanel.Application/` | `ExecuteConsoleCommandUseCase` 转发认证主体与未规范化命令原文；定义动态 Gateway、审计 entry/gap 与 Store 端口；`GetOnlinePlayersUseCase` 返回产品自有固定 25 字段不可变玩家快照；`KickPlayerUseCase` 协调踢出审计与终态 | .NET Framework BCL；当前不依赖 Domain |
+| `backend/src/Core/LSTY.SevenDPanel.Application/` | `ExecuteConsoleCommandUseCase` 转发认证主体与未规范化命令原文；定义动态 Gateway、审计 entry/gap 与 Store 端口；`GetOnlinePlayersUseCase` 返回产品自有固定 31 字段不可变玩家快照；`KickPlayerUseCase` 协调踢出审计与终态 | .NET Framework BCL；当前不依赖 Domain |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、动态控制台命令、Owner-only 在线玩家查询与踢出路由；公开运行时 OpenAPI JSON 与 Swagger UI；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、NSwag OWIN、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志和玩家事件；提供有界日志/事件服务、容量 32 的命令 FIFO、最终 `executeCommand` Harmony observation、容量 256 的异步审计服务、在 `SavePlayerData` 回调同步复制的 25 字段在线玩家投影、类型化踢出 Adapter 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志和玩家事件；提供有界日志/事件服务、容量 32 的命令 FIFO、最终 `executeCommand` Harmony observation、容量 256 的异步审计服务、在 `SavePlayerData` 回调同步复制的 31 字段在线玩家投影、类型化踢出 Adapter 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration、持久身份/Token、玩家动作审计、完整命令审计和审计 gap | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
-| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/`、`/players` 与 `/api-keys`、显式 Pinia Router guard、由 Auth Store 统一拥有的版本化浏览器会话、`app/i18n` 统一拥有的中英文语言运行时、共享同源 HTTP 边界、健康、严格解析 25 字段合同的在线玩家与 API Key Feature、页面局部详情选择/unavailable 状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Vue I18n、Valibot、Nuxt UI、Vite |
+| `frontend/apps/admin/` | 响应式应用壳、`/login`、受保护的 `/`、`/players` 与 `/api-keys`、显式 Pinia Router guard、由 Auth Store 统一拥有的版本化浏览器会话、`app/i18n` 统一拥有的中英文语言运行时、共享同源 HTTP 边界、健康、严格解析 31 字段合同的在线玩家与 API Key Feature、页面局部详情选择/unavailable 状态及 Owner 踢出确认流程 | Vue 3、Vue Router、Pinia、Vue I18n、Valibot、Nuxt UI、Vite |
 
 当前已由控制台命令纵向切片创建 Application 项目，但尚无 Domain 项目；SQLite Persistence Adapter 是首个 Local Adapter。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向、六个产品 DLL 的发布门禁和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
@@ -183,10 +183,11 @@ GET /
 - Auth Setup Store 保存 Token、到期时间及服务端确认的用户名和角色，按到期时间清理会话并计算 `Authorization` Header。其 Feature 自有的严格 codec 和 Browser Repository 只接受版本化 `{ version, token, expiresAt, username, role }` 记录：默认会话只写 `sessionStorage`，显式“保持登录”只写 `localStorage`；有效 local 记录优先，损坏、到期、登出、401 和同源 `storage` 删除事件清除相关状态。每次 Storage getter 与操作都可失败并降级为当前页面内存会话，不安装通用持久化插件。密码只存在于登录表单局部 state 和请求调用栈，提交结束后清空。
 - `shared/api/requestJson` 继续服务尚未迁移的手写 API。综合概览、重启与 SSE 使用 `src/shared/api/generated/` 中由受控 OpenAPI 快照生成的类型、SDK 和 Pinia Colada definitions；`generatedClient` 固定同源 `/api/v1/`、`credentials: 'omit'`、Bearer Header 与脱敏 Problem Details。普通请求使用 10 秒超时，显式 `Accept: text/event-stream` 的长连接免除此超时但仍服从调用者 `AbortSignal`。生成目录禁止手工修改，Feature parser 与领域状态仍是浏览器运行时信任边界。
 - `ApiKeysView` 只接受 Auth Store 当前 Access Token 的 Authorization Header，维护 API Key 列表、创建、撤销与会话过期状态；完整 Key 只存于一次性创建结果对话框，关闭后清除，复制反馈不包含该值。`/api-keys` 已加入受保护生成路由、侧栏导航和 `g-k` 快捷键。
-- `useOnlinePlayers` 首次进入立即请求，每 10 秒刷新；页面隐藏时暂停，恢复后立即刷新；请求使用 single-flight 与取消。任何通过完整 25 字段严格 DTO 校验的成功响应进入 Fresh；Admin 以 90 秒作为自己的行级展示策略，只对旧 observation 标记“数据可能已过期”。401 或本地会话到期清除会话并回到登录页；403 映射 Forbidden、暂停自动轮询但保留手动刷新；有旧快照的刷新失败映射 Stale 并提示正在显示上次结果，无旧快照映射 Offline。
+- `useOnlinePlayers` 首次进入立即请求，每 10 秒刷新；页面隐藏时暂停，恢复后立即刷新；请求使用 single-flight 与取消。任何通过完整 31 字段严格 DTO 校验的成功响应进入 Fresh；Admin 以 90 秒作为自己的行级展示策略，只对旧 observation 标记“数据可能已过期”。401 或本地会话到期清除会话并回到登录页；403 映射 Forbidden、暂停自动轮询但保留手动刷新；有旧快照的刷新失败映射 Stale 并提示正在显示上次结果，无旧快照映射 Offline。
 - `PlayerSnapshot` 已扩充为 31 字段。每个有效 `crossplatformIdentity.combinedId` 的 Save observation 经容量 `1024`、单消费者的有界 Channel 尽力写入 SQLite 摘要、快照和 gap 三表；生产者只 `TryWrite`，不会等待 SQLite 或为单次 Save 创建任务。`GET /api/v1/players/history`、`/{crossplatformId}` 和 `/snapshots` 均为 Owner-only、只读且不依赖游戏 ready。历史列表与详情页面使用页面局部 Composition API 状态、严格冻结 DTO、取消过期请求和 keyset 分页；不轮询、不查询在线状态，也没有危险操作。`lastLoginUtc` 仅表示持久玩家记录的最近登录时间，不能推导持续在线。
+- Owner-only 玩家坐标地图已实现为 `/players/map`。Admin 使用 OpenLayers、自有固定背景、在线标记、游戏时间、单玩家分段历史轨迹、Header Bearer 瓦片、按需业务图层和矩形/圆形区域调查；地图、列表和时间控件共享 observation 标识，普通响应与界面不暴露 gap 原因或数量。后端复用在线 `PlayerSnapshot.position` 和 `player_history_snapshots`，没有增加第二位置表、历史写入消费者或 Save 回调工作；历史范围、空间范围、缩放和条数均在 Application/SQLite 边界受限。当前没有可信的生产瓦片根和 `mapResourceVersion`，瓦片端点因此稳定返回 unavailable；商人、领地、载具、无人机、动物和敌对实体也在目标游戏字段复制尚未取得真实进程证据时返回 unavailable，不允许 HTTP 直接读取 `World` 或用反射猜测字段。删除领地、玩家传送和地图渲染仍是独立后续目标。详细设计见[玩家坐标地图设计规格](superpowers/specs/2026-07-26-player-coordinate-map-design.md)、[地图管理操作设计规格](superpowers/specs/2026-07-26-map-management-actions-design.md)和两个 Target 蓝图。
 - 玩家桌面表格和移动列表只呈现高频比较字段并向 `OnlinePlayersView` 上抛完整玩家快照；详情抽屉按身份、连接、当前状态和累计统计分区显示完整 observation。`OnlinePlayersView` 在页面局部持有 `{ entityId, combinedId }` 选择键、最后 observation 和 unavailable 锁存：Fresh 刷新只更新同一实体与主身份；缺失或身份变化时保留最后值并禁用详情踢出直到关闭，不会把重用的 entity ID 偷换为新目标。`useKickPlayer` 在页面局部维护单次 HTTP 提交、`AbortController` 和稳定反馈；确认对话框固定目标，原因 trim 后限制为 1 至 200 字符，提交期间不可关闭。成功关闭并通知后刷新；离线、身份变化和 403 关闭旧目标；busy、未就绪、超时和审计意图不可用保留输入；网络或审计终态不可确认显示未知且不自动重试。
-- 生成的客户端路由表当前包含 `/`、`/login`、`/players` 和 `/api-keys`。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
+- 生成的客户端路由表当前包含 `/`、`/login`、`/players`、`/players/history`、`/players/map` 和 `/api-keys`。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
 
 ## 数据与接口
 
@@ -203,8 +204,13 @@ GET /
 | `GET /api/v1/api-keys` | `ApiKeysController` | 返回当前主体 API Key 的安全元数据，不返回完整 Key 或 secret 摘要 |
 | `POST /api/v1/api-keys` | `ApiKeysController` | 仅网站 Access Token 可创建当前主体的 API Key；完整 Key 仅在本次 201 响应返回 |
 | `DELETE /api/v1/api-keys/{keyId}` | `ApiKeysController` | 仅网站 Access Token 可撤销当前主体自己的 API Key |
-| `GET /api/v1/players/online` | `PlayersController` | Owner-only 当前在线玩家 25 字段事件投影；每个玩家返回同次 Save observation、自己的 `observedAtUtc` 和显式单位字段，空服务器返回 200 空数组 |
+| `GET /api/v1/players/online` | `PlayersController` | Owner-only 当前在线玩家 31 字段事件投影；每个玩家返回同次 Save observation、自己的 `observedAtUtc` 和显式单位字段，空服务器返回 200 空数组 |
 | `POST /api/v1/players/{entityId}/kick` | `PlayersController` | Owner-only 类型化踢出；主线程身份重验、持久审计和同步可信结果 |
+| `GET /api/v1/map/metadata`、`GET /api/v1/map/game-time` | `MapController` | Owner-only 不可变世界元数据与游戏时间投影；分别表达 available、stale 和 unavailable，HTTP 不读取游戏活对象 |
+| `GET /api/v1/map/players/{crossplatformId}/track` | `MapController` | Owner-only 单玩家最长 30 天、最多 5000 条观察的稳定分段轨迹；公开 DTO 不返回 gap 详情 |
+| `GET /api/v1/map/tiles/{worldId}/{z}/{x}/{y}` | `MapController` | Owner-only Header Bearer 瓦片读取；受控路径、ETag/304、private cache、404/503 和错误脱敏 |
+| `GET /api/v1/map/layers/{layerId}` | `MapController` | Owner-only 有界业务图层；支持历史最后位置、商人、领地、载具、无人机、动物和敌对实体，并独立返回 availability、观察时间和缩放状态 |
+| `GET /api/v1/map/players/area` | `MapController` | Owner-only 矩形或圆形历史观察反查；UTC 范围、候选观察和玩家结果有界，命中不表示持续停留 |
 | `GET /` | StaticFiles | 返回 Admin `index.html` |
 | `GET/HEAD` 无扩展名、非 API 且非 `/assets` 路径 | SPA fallback + StaticFiles | 服务端返回 `index.html`；客户端是否存在该路由由 Vue Router 决定 |
 | `/assets/*` | StaticFiles | 返回构建资源；缺失资源保持 404 |
@@ -263,7 +269,7 @@ GET /
 - `SevenDaysGameLifecycleAdapterTests` 通过可替换事件边界执行三个回调，并覆盖订阅顺序、逆序回滚、异常保留与订阅所有权；真实静态 `ModEvents` wrapper 仍由官方进程 smoke 提供兼容证据。
 - 控制台日志测试覆盖六字段 entry、sequence/淘汰/gap、回调线程与 consumer 隔离、队满拒绝、保序消费、单项失败、订阅失败、停止排空和注销后摘要；生产 `Log.LogCallbacksExtended` delegate 与 Channels 加载由官方进程 smoke 验证。
 - 主线程 Dispatcher 与命令 FIFO 的确定性测试覆盖接收顺序、等待容量、独立结果、排队取消/启动超时保证不执行、开始后取消不能替换真实结果、单项异常隔离及停止边界；Application/Katana 测试覆盖原文、actor、并发独立输出、队满/不可用 Problem Details 和无结构化命令事件。Patch/审计测试覆盖 token/output 快照、来源、异常透明、observer/tokenizer fail-open、Store failure、gap 恢复和正常关服卸载自身 Patch。
-- Application 测试覆盖 25 字段不可变玩家快照、产品位置值、逐玩家观察时间和查询转发；SevenDays 投影测试覆盖 Join/Save/Disconnect、同次 Save 全字段替换、设备映射、Discord、可选 IP/诊断字段、生命截断、失败复制保留旧 observation、身份条件删除、排序、停止拒写与清空；Katana 测试覆盖玩家 API 的认证、就绪、固定 25 字段 camelCase 白名单、可空字段、位置、单位后缀、排序、逐玩家 `observedAtUtc` 和稳定 Problem Details。Admin 测试覆盖完整合同 parser、格式化、主表/移动列表详情入口、详情抽屉四分区及 unavailable 锁存和独立踢出目标。
+- Application 测试覆盖 31 字段不可变玩家快照、产品位置值、逐玩家观察时间和查询转发；SevenDays 投影测试覆盖 Join/Save/Disconnect、同次 Save 全字段替换、设备映射、Discord、可选 IP/诊断字段、生命截断、失败复制保留旧 observation、身份条件删除、排序、停止拒写与清空；Katana 测试覆盖玩家 API 的认证、就绪、固定 31 字段 camelCase 白名单、可空字段、位置、单位后缀、排序、逐玩家 `observedAtUtc` 和稳定 Problem Details。Admin 测试覆盖完整合同 parser、格式化、主表/移动列表详情入口、详情抽屉及 unavailable 锁存和独立踢出目标。
 - 历史玩家自动化覆盖 31 字段快照与 UTC/null/安全整数 parser、Owner-only Web 合同、cursor、Store 事务与降采样、Channel fail-open、页面局部状态的取消/stale/分页去重、历史只读详情与认证路由。当前环境未运行新的 OWIN `HttpListener` 历史路由用例、真实 7DTD 或浏览器 E2E，因此这些边界不能视为真实进程/浏览器证据。
 - `DependencyRulesTests` 用源码规则保护当前项目依赖、Adapter 方向、唯一 `IModApi` 和 Bootstrap candidate 发布顺序。
 - SQLite 集成测试覆盖 migration 幂等、WAL、引导 Owner 同步、PBKDF2-HMAC-SHA256 1000 次迭代、凭据轮换撤销、Access Token 跨 Store/connection factory 重建、到期、严格 128 容量、API Key 一次性完整值、SHA-256 摘要、到期/撤销/容量与明文不落盘，以及命令原文、ordinal 参数、逐行输出和幂等 gap 的事务往返；SSE 可控时钟测试覆盖失效后停止写出。
@@ -301,7 +307,7 @@ GET /
 ### 未解决风险
 
 - `GameStartDone` readiness 已进入每连接 Welcome 和一次 `game-ready` 事件，但尚无可重复查询的认证服务器状态端点；就绪前 `503` 和写请求 draining 拒绝仍是目标设计。
-- Owner 踢出链路已有 Application、SQLite、SevenDays、Katana 和 Admin 自动化，但尚未在 Windows `v3.0.1-b4` 真实进程验证拒绝原因、约 0.5 秒延迟断开、在线列表变化与 SQLite 审计一致性。25 字段 observation 已由自动化、发布物和 Owner 浏览器手工查看确认详情页面可读取当前响应；真实进程仍未验证 `SavePlayerData` 字段来源、权限矩阵、断开后的 unavailable 转换或统计单位。关服竞态、帧预算、指标和 Linux 主线程证据仍缺失，不能从自动化、浏览器查看或只读 `version` 证据推导真实状态变更验收已经完成。
+- Owner 踢出链路已有 Application、SQLite、SevenDays、Katana 和 Admin 自动化，但尚未在 Windows `v3.0.1-b4` 真实进程验证拒绝原因、约 0.5 秒延迟断开、在线列表变化与 SQLite 审计一致性。31 字段 observation 已由自动化确认当前响应合同，历史发布物和 Owner 浏览器手工查看只覆盖当时较小字段集；真实进程仍未验证全部 `SavePlayerData` 字段来源、权限矩阵、断开后的 unavailable 转换或统计单位。关服竞态、帧预算、指标和 Linux 主线程证据仍缺失，不能从自动化、浏览器查看或只读 `version` 证据推导真实状态变更验收已经完成。
 - 控制台日志已有认证 SSE，但没有 REST 查询、跨重启游标或持久化；Windows 正常负载没有触发容量饱和，真实容量饱和与 Linux Mono 基线仍缺失。
 - 动态命令、FIFO、Harmony observation 和 SQLite 审计已有自动化、发布物和 Windows `v3.0.1-b4` 真实进程证据；HTTP/非 HTTP 来源、第三方注册命令、原文参数、多行输出、并发输出隔离、原生 `ExecuteAsync` 队列、真实 SQLite 锁故障恢复、正常关服排空、Patch 生命周期和重复启停均已验证。真实容量饱和、自动归档和 Linux Mono 基线仍缺失。
 - 默认全接口明文监听并启用已知引导凭据；任何能够访问 18080 端口的客户端都可以作为持久 `Owner` 认证，这是当前过渡阶段明确接受、但在用户管理进入发布范围后必须移除的暴露风险。

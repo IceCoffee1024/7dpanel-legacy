@@ -457,6 +457,761 @@
         }
       }
     },
+    "/api/v1/map/metadata": {
+      "get": {
+        "tags": [
+          "Map"
+        ],
+        "operationId": "Map_GetMetadata",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapMetadataHttpResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/map/game-time": {
+      "get": {
+        "tags": [
+          "Map"
+        ],
+        "operationId": "Map_GetGameTime",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapGameTimeHttpResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/map/players/{crossplatformId}/track": {
+      "get": {
+        "tags": [
+          "Map"
+        ],
+        "operationId": "Map_GetPlayerTrack",
+        "parameters": [
+          {
+            "name": "crossplatformId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "fromUtc",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": false
+            },
+            "x-position": 2,
+            "nullable": false
+          },
+          {
+            "name": "toUtc",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": false
+            },
+            "x-position": 3,
+            "nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerTrackHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/map/tiles/{worldId}/{z}/{x}/{y}": {
+      "get": {
+        "tags": [
+          "Map"
+        ],
+        "description": "Returns one Owner-only map tile. Authentication is accepted only from the Bearer header; the URL contains typed coordinates and never a server filesystem path.",
+        "operationId": "Map_GetTile",
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "description": "Current safe world identifier from map metadata.",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "z",
+            "in": "path",
+            "required": true,
+            "description": "Signed native map tile coordinate.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "required": true,
+            "description": "Signed native map tile coordinate.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 3
+          },
+          {
+            "name": "y",
+            "in": "path",
+            "required": true,
+            "description": "Signed native map tile coordinate.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 4
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PNG or WebP map tile bytes.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "description": "Strong SHA-256 entity tag for the tile content.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "required": true,
+                "description": "Private revalidation policy for authenticated tile content.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "private, max-age=0, must-revalidate"
+              }
+            },
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The current tile matches If-None-Match.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "description": "Strong SHA-256 entity tag for the tile content.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "required": true,
+                "description": "Private revalidation policy for authenticated tile content.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "private, max-age=0, must-revalidate"
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/map/layers/{layerId}": {
+      "get": {
+        "tags": [
+          "Map"
+        ],
+        "description": "Returns one Owner-only bounded map layer for the current world. Historical and transient items are retained observations or the latest captured snapshot only.",
+        "operationId": "Map_GetLayer",
+        "parameters": [
+          {
+            "name": "layerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": false,
+              "enum": [
+                "historical-player-locations",
+                "traders",
+                "land-claims",
+                "vehicles",
+                "drones",
+                "animals",
+                "hostiles"
+              ]
+            },
+            "x-position": 1,
+            "nullable": false
+          },
+          {
+            "name": "worldId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": false
+            },
+            "x-position": 2,
+            "nullable": false
+          },
+          {
+            "name": "minimumX",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "nullable": false
+            },
+            "x-position": 3,
+            "nullable": false
+          },
+          {
+            "name": "minimumZ",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "nullable": false
+            },
+            "x-position": 4,
+            "nullable": false
+          },
+          {
+            "name": "maximumX",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "nullable": false
+            },
+            "x-position": 5,
+            "nullable": false
+          },
+          {
+            "name": "maximumZ",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "float",
+              "nullable": false
+            },
+            "x-position": 6,
+            "nullable": false
+          },
+          {
+            "name": "zoom",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": false
+            },
+            "x-position": 7,
+            "nullable": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": false
+            },
+            "x-position": 8,
+            "nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapLayerHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/map/players/area": {
+      "get": {
+        "tags": [
+          "Map"
+        ],
+        "description": "Returns players with retained observations inside one rectangle or circle during the UTC range. Results do not assert continuous presence or dwell time.",
+        "operationId": "Map_SearchPlayersInArea",
+        "parameters": [
+          {
+            "name": "shape",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": false,
+              "enum": [
+                "rectangle",
+                "circle"
+              ]
+            },
+            "x-position": 1,
+            "nullable": false
+          },
+          {
+            "name": "minimumX",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "minimumZ",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "maximumX",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 4
+          },
+          {
+            "name": "maximumZ",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 5
+          },
+          {
+            "name": "centerX",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 6
+          },
+          {
+            "name": "centerZ",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 7
+          },
+          {
+            "name": "radius",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "x-position": 8
+          },
+          {
+            "name": "fromUtc",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": false
+            },
+            "x-position": 9,
+            "nullable": false
+          },
+          {
+            "name": "toUtc",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": false
+            },
+            "x-position": 10,
+            "nullable": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": false
+            },
+            "x-position": 11,
+            "nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerAreaSearchHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/overview": {
       "get": {
         "tags": [
@@ -1465,6 +2220,512 @@
           },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "MapMetadataHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "availability",
+          "observedAtUtc",
+          "worldId",
+          "worldName",
+          "extent",
+          "axes",
+          "availableZoomLevels",
+          "tileSize",
+          "mapResourceVersion"
+        ],
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "worldId": {
+            "type": "string",
+            "nullable": true
+          },
+          "worldName": {
+            "type": "string",
+            "nullable": true
+          },
+          "extent": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MapExtentHttpResponse"
+              }
+            ]
+          },
+          "axes": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MapAxesHttpResponse"
+              }
+            ]
+          },
+          "availableZoomLevels": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "tileSize": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "mapResourceVersion": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MapExtentHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "minimumX",
+          "minimumZ",
+          "maximumX",
+          "maximumZ"
+        ],
+        "properties": {
+          "minimumX": {
+            "type": "number",
+            "format": "float"
+          },
+          "minimumZ": {
+            "type": "number",
+            "format": "float"
+          },
+          "maximumX": {
+            "type": "number",
+            "format": "float"
+          },
+          "maximumZ": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "MapAxesHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "xAxisDirection",
+          "zAxisDirection"
+        ],
+        "properties": {
+          "xAxisDirection": {
+            "type": "string"
+          },
+          "zAxisDirection": {
+            "type": "string"
+          }
+        }
+      },
+      "MapGameTimeHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "availability",
+          "day",
+          "hour",
+          "minute",
+          "observedAtUtc"
+        ],
+        "properties": {
+          "availability": {
+            "type": "string"
+          },
+          "day": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hour": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "minute": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "PlayerTrackHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "crossplatformId",
+          "segments"
+        ],
+        "properties": {
+          "crossplatformId": {
+            "type": "string"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerTrackSegmentHttpResponse"
+            }
+          }
+        }
+      },
+      "PlayerTrackSegmentHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "points"
+        ],
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerTrackPointHttpResponse"
+            }
+          }
+        }
+      },
+      "PlayerTrackPointHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "snapshotId",
+          "name",
+          "x",
+          "y",
+          "z",
+          "observedAtUtc"
+        ],
+        "properties": {
+          "snapshotId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "format": "float"
+          },
+          "y": {
+            "type": "number",
+            "format": "float"
+          },
+          "z": {
+            "type": "number",
+            "format": "float"
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MapLayerHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "layerId",
+          "availability",
+          "observedAtUtc",
+          "isZoomSufficient",
+          "items"
+        ],
+        "properties": {
+          "layerId": {
+            "type": "string"
+          },
+          "availability": {
+            "type": "string"
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isZoomSufficient": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapLayerItemHttpResponse"
+            }
+          }
+        }
+      },
+      "MapLayerItemHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "position",
+          "observedAtUtc",
+          "name",
+          "playerCombinedId",
+          "prefab",
+          "prefabBounds",
+          "protectionRadius",
+          "isOpen",
+          "ownerCrossplatformId",
+          "isValid",
+          "ownerLastLoginUtc",
+          "vehicleType",
+          "loadState",
+          "fuelPercentage",
+          "quality",
+          "isLocked",
+          "storageItemCount",
+          "entityType"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/MapLayerPositionHttpResponse"
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "playerCombinedId": {
+            "type": "string",
+            "nullable": true
+          },
+          "prefab": {
+            "type": "string",
+            "nullable": true
+          },
+          "prefabBounds": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MapLayerBoundsHttpResponse"
+              }
+            ]
+          },
+          "protectionRadius": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "isOpen": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "ownerCrossplatformId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isValid": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "ownerLastLoginUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "vehicleType": {
+            "type": "string",
+            "nullable": true
+          },
+          "loadState": {
+            "type": "string",
+            "nullable": true
+          },
+          "fuelPercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quality": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isLocked": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "storageItemCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "entityType": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MapLayerPositionHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "properties": {
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "z": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "MapLayerBoundsHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "minimumX",
+          "minimumZ",
+          "maximumX",
+          "maximumZ"
+        ],
+        "properties": {
+          "minimumX": {
+            "type": "number",
+            "format": "double"
+          },
+          "minimumZ": {
+            "type": "number",
+            "format": "double"
+          },
+          "maximumX": {
+            "type": "number",
+            "format": "double"
+          },
+          "maximumZ": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PlayerAreaSearchHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hits",
+          "candidateObservationCount",
+          "matchingObservationCount",
+          "candidateObservationLimitReached",
+          "playerResultLimitReached"
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerAreaHitHttpResponse"
+            }
+          },
+          "candidateObservationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "matchingObservationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "candidateObservationLimitReached": {
+            "type": "boolean"
+          },
+          "playerResultLimitReached": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PlayerAreaHitHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "crossplatformId",
+          "displayName",
+          "firstHitUtc",
+          "lastHitUtc",
+          "hitObservationCount",
+          "lastPosition"
+        ],
+        "properties": {
+          "crossplatformId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "firstHitUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastHitUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hitObservationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPosition": {
+            "$ref": "#/components/schemas/PlayerMapPositionHttpResponse"
+          }
+        }
+      },
+      "PlayerMapPositionHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "properties": {
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "z": {
+            "type": "number",
+            "format": "double"
           }
         }
       },

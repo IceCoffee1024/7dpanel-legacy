@@ -299,6 +299,62 @@
         "shutdown_timeout": "Shutdown drain timed out",
         "description": "Dropped {count} observations"
       }
+    },
+    "map": {
+      "title": "Player coordinate map",
+      "navigation": "Map",
+      "description": "Read-only online positions and retained player observations in game X/Z coordinates.",
+      "refresh": "Refresh map data",
+      "player": "Historical player",
+      "searchPlayers": "Search historical players",
+      "searchPlayersPlaceholder": "Name or cross-platform ID",
+      "selectPlayer": "Select a player",
+      "fromUtc": "From (UTC)",
+      "toUtc": "To (UTC)",
+      "loadTrack": "Load retained track",
+      "observations": "Track observations",
+      "onlinePlayers": "Online player positions",
+      "noOnlinePlayers": "No online player positions are available.",
+      "observationTimeControl": "Returned observation time",
+      "noObservationSelected": "No returned observation is selected.",
+      "noObservations": "Select a player and time range to load retained observations.",
+      "observationCount": "{count} observations returned",
+      "observedAt": "Observed at {time}",
+      "discreteNotice": "The track consists of retained position observations. It does not represent continuous online time or the actual movement route.",
+      "canvasLabel": "Interactive north-up game coordinate map",
+      "pointerCoordinate": "Pointer",
+      "selectedCoordinate": "Selected",
+      "backgroundNotice": "Reference background only — not the current world terrain",
+      "unavailableTitle": "The game map is unavailable",
+      "unavailableDescription": "No verified world extent is available, so the interface will not guess or fabricate a map.",
+      "onlineStatus": "Online positions: {state}",
+      "historyStatus": "Historical players: {state}",
+      "trackStatus": "Track: {state}",
+      "state": {
+        "loading": "Loading verified map data",
+        "ready": "Map data is ready",
+        "empty": "No map observations are available",
+        "partial": "Some map data is unavailable",
+        "stale": "Refresh failed; showing the last verified data",
+        "forbidden": "You cannot view the player map",
+        "failed": "The player map is unavailable"
+      },
+      "dataState": {
+        "loading": "loading",
+        "ready": "ready",
+        "empty": "no observations",
+        "stale": "stale",
+        "forbidden": "forbidden",
+        "failed": "unavailable"
+      },
+      "gameTime": {
+        "title": "Game time",
+        "value": "Day {day}, {hour}:{minute}",
+        "loading": "Loading game time",
+        "ready": "Game time is ready",
+        "stale": "Stale",
+        "unavailable": "Game time is unavailable"
+      }
     }
   },
   "apiKeys": {

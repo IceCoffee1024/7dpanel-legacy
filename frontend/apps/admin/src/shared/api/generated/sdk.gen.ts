@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
+import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, MapGetGameTimeData, MapGetGameTimeErrors, MapGetGameTimeResponses, MapGetLayerData, MapGetLayerErrors, MapGetLayerResponses, MapGetMetadataData, MapGetMetadataErrors, MapGetMetadataResponses, MapGetPlayerTrackData, MapGetPlayerTrackErrors, MapGetPlayerTrackResponses, MapGetTileData, MapGetTileErrors, MapGetTileResponses, MapSearchPlayersInAreaData, MapSearchPlayersInAreaErrors, MapSearchPlayersInAreaResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -69,6 +69,57 @@ export const healthGet = <ThrowOnError extends boolean = true>(options?: Options
 export const healthGet2 = <ThrowOnError extends boolean = true>(options?: Options<HealthGet2Data, ThrowOnError>) => (options?.client ?? client).get<HealthGet2Responses, unknown, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/api/v1/health',
+    ...options
+});
+
+export const mapGetMetadata = <ThrowOnError extends boolean = true>(options?: Options<MapGetMetadataData, ThrowOnError>) => (options?.client ?? client).get<MapGetMetadataResponses, MapGetMetadataErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map/metadata',
+    ...options
+});
+
+export const mapGetGameTime = <ThrowOnError extends boolean = true>(options?: Options<MapGetGameTimeData, ThrowOnError>) => (options?.client ?? client).get<MapGetGameTimeResponses, MapGetGameTimeErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map/game-time',
+    ...options
+});
+
+export const mapGetPlayerTrack = <ThrowOnError extends boolean = true>(options: Options<MapGetPlayerTrackData, ThrowOnError>) => (options.client ?? client).get<MapGetPlayerTrackResponses, MapGetPlayerTrackErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map/players/{crossplatformId}/track',
+    ...options
+});
+
+/**
+ * Returns one Owner-only map tile. Authentication is accepted only from the Bearer header; the URL contains typed coordinates and never a server filesystem path.
+ */
+export const mapGetTile = <ThrowOnError extends boolean = true>(options: Options<MapGetTileData, ThrowOnError>) => (options.client ?? client).get<MapGetTileResponses, MapGetTileErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map/tiles/{worldId}/{z}/{x}/{y}',
+    ...options
+});
+
+/**
+ * Returns one Owner-only bounded map layer for the current world. Historical and transient items are retained observations or the latest captured snapshot only.
+ */
+export const mapGetLayer = <ThrowOnError extends boolean = true>(options: Options<MapGetLayerData, ThrowOnError>) => (options.client ?? client).get<MapGetLayerResponses, MapGetLayerErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map/layers/{layerId}',
+    ...options
+});
+
+/**
+ * Returns players with retained observations inside one rectangle or circle during the UTC range. Results do not assert continuous presence or dwell time.
+ */
+export const mapSearchPlayersInArea = <ThrowOnError extends boolean = true>(options: Options<MapSearchPlayersInAreaData, ThrowOnError>) => (options.client ?? client).get<MapSearchPlayersInAreaResponses, MapSearchPlayersInAreaErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map/players/area',
     ...options
 });
 

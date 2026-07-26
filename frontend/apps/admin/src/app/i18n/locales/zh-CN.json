@@ -299,6 +299,62 @@
         "shutdown_timeout": "关服排空超时",
         "description": "丢失 {count} 条观察"
       }
+    },
+    "map": {
+      "title": "玩家坐标地图",
+      "navigation": "地图",
+      "description": "在游戏 X/Z 坐标中只读查看在线位置和已保留的玩家观察。",
+      "refresh": "刷新地图数据",
+      "player": "历史玩家",
+      "searchPlayers": "搜索历史玩家",
+      "searchPlayersPlaceholder": "名称或跨平台身份",
+      "selectPlayer": "选择玩家",
+      "fromUtc": "开始时间（UTC）",
+      "toUtc": "结束时间（UTC）",
+      "loadTrack": "加载保留轨迹",
+      "observations": "轨迹观察",
+      "onlinePlayers": "在线玩家位置",
+      "noOnlinePlayers": "暂无可用的在线玩家位置。",
+      "observationTimeControl": "已返回观察时间",
+      "noObservationSelected": "尚未选择已返回的观察。",
+      "noObservations": "选择玩家和时间范围以加载已保留的观察。",
+      "observationCount": "本次返回 {count} 条观察",
+      "observedAt": "观察于 {time}",
+      "discreteNotice": "轨迹由已保留的位置观察组成，不代表持续在线或实际移动路线。",
+      "canvasLabel": "固定朝北的交互式游戏坐标地图",
+      "pointerCoordinate": "指针",
+      "selectedCoordinate": "已选择",
+      "backgroundNotice": "仅为参考背景，不是当前世界地形",
+      "unavailableTitle": "游戏地图不可用",
+      "unavailableDescription": "尚无经过验证的世界范围，因此界面不会猜测或伪造地图。",
+      "onlineStatus": "在线位置：{state}",
+      "historyStatus": "历史玩家：{state}",
+      "trackStatus": "轨迹：{state}",
+      "state": {
+        "loading": "正在加载经过验证的地图数据",
+        "ready": "地图数据已就绪",
+        "empty": "暂无地图观察",
+        "partial": "部分地图数据不可用",
+        "stale": "刷新失败，显示上次验证的数据",
+        "forbidden": "无权查看玩家地图",
+        "failed": "玩家地图不可用"
+      },
+      "dataState": {
+        "loading": "正在加载",
+        "ready": "已就绪",
+        "empty": "暂无观察",
+        "stale": "数据已过期",
+        "forbidden": "无权访问",
+        "failed": "不可用"
+      },
+      "gameTime": {
+        "title": "游戏时间",
+        "value": "第 {day} 天 {hour}:{minute}",
+        "loading": "正在加载游戏时间",
+        "ready": "游戏时间已就绪",
+        "stale": "数据已过期",
+        "unavailable": "游戏时间不可用"
+      }
     }
   },
   "apiKeys": {

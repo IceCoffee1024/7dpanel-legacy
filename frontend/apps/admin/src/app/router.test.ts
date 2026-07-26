@@ -11,6 +11,7 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/login', component: { template: '<div />' }, meta: { public: true } },
     { path: '/players', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/players/map', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
@@ -86,6 +87,16 @@ describe('createAdminRouter', () => {
     await router.push('/players/history')
 
     expect(router.currentRoute.value.fullPath).toBe('/players/history')
+  })
+
+  it('protects the player map while preserving its restored filters', async () => {
+    const { router } = createTestRouter()
+
+    await router.push('/players/map?player=EOS_ada&observation=41')
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect)
+      .toBe('/players/map?player=EOS_ada&observation=41')
   })
 
   it('redirects an authenticated login navigation to players', async () => {

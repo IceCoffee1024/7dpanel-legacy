@@ -146,6 +146,13 @@ namespace LSTY.SevenDPanel.Tests
                 return SnapshotsPage;
             }
 
+            public PlayerTrackHistory? GetPlayerTrack(GetPlayerTrackQuery query) =>
+                throw new NotSupportedException();
+
+            public IReadOnlyList<HistoricalPlayerLastRetainedLocation> GetHistoricalPlayerLastRetainedLocations(
+                HistoricalPlayerLastLocationsStoreQuery query) =>
+                Array.Empty<HistoricalPlayerLastRetainedLocation>();
+
             public int Compact(DateTimeOffset utcNow, int maximumDeletes) => 0;
         }
     }

@@ -34,6 +34,123 @@ export type HealthResponse = {
     version?: string;
 };
 
+export type MapMetadataHttpResponse = {
+    availability: string;
+    observedAtUtc: string | null;
+    worldId: string | null;
+    worldName: string | null;
+    extent: MapExtentHttpResponse | null;
+    axes: MapAxesHttpResponse | null;
+    availableZoomLevels: Array<number> | null;
+    tileSize: number | null;
+    mapResourceVersion: string | null;
+};
+
+export type MapExtentHttpResponse = {
+    minimumX: number;
+    minimumZ: number;
+    maximumX: number;
+    maximumZ: number;
+};
+
+export type MapAxesHttpResponse = {
+    xAxisDirection: string;
+    zAxisDirection: string;
+};
+
+export type MapGameTimeHttpResponse = {
+    availability: string;
+    day: number | null;
+    hour: number | null;
+    minute: number | null;
+    observedAtUtc: string | null;
+};
+
+export type PlayerTrackHttpResponse = {
+    crossplatformId: string;
+    segments: Array<PlayerTrackSegmentHttpResponse>;
+};
+
+export type PlayerTrackSegmentHttpResponse = {
+    points: Array<PlayerTrackPointHttpResponse>;
+};
+
+export type PlayerTrackPointHttpResponse = {
+    snapshotId: number;
+    name: string;
+    x: number;
+    y: number;
+    z: number;
+    observedAtUtc: string;
+};
+
+export type MapLayerHttpResponse = {
+    layerId: string;
+    availability: string;
+    observedAtUtc: string | null;
+    isZoomSufficient: boolean;
+    items: Array<MapLayerItemHttpResponse>;
+};
+
+export type MapLayerItemHttpResponse = {
+    id: string;
+    kind: string;
+    position: MapLayerPositionHttpResponse;
+    observedAtUtc: string;
+    name: string | null;
+    playerCombinedId: string | null;
+    prefab: string | null;
+    prefabBounds: MapLayerBoundsHttpResponse | null;
+    protectionRadius: number | null;
+    isOpen: boolean | null;
+    ownerCrossplatformId: string | null;
+    isValid: boolean | null;
+    ownerLastLoginUtc: string | null;
+    vehicleType: string | null;
+    loadState: string | null;
+    fuelPercentage: number | null;
+    quality: number | null;
+    isLocked: boolean | null;
+    storageItemCount: number | null;
+    entityType: string | null;
+};
+
+export type MapLayerPositionHttpResponse = {
+    x: number;
+    y: number;
+    z: number;
+};
+
+export type MapLayerBoundsHttpResponse = {
+    minimumX: number;
+    minimumZ: number;
+    maximumX: number;
+    maximumZ: number;
+};
+
+export type PlayerAreaSearchHttpResponse = {
+    hits: Array<PlayerAreaHitHttpResponse>;
+    candidateObservationCount: number;
+    matchingObservationCount: number;
+    candidateObservationLimitReached: boolean;
+    playerResultLimitReached: boolean;
+};
+
+export type PlayerAreaHitHttpResponse = {
+    crossplatformId: string;
+    displayName: string;
+    firstHitUtc: string;
+    lastHitUtc: string;
+    hitObservationCount: number;
+    lastPosition: PlayerMapPositionHttpResponse;
+};
+
+export type PlayerMapPositionHttpResponse = {
+    x: number;
+    y: number;
+    z: number;
+};
+
 export type OverviewHttpResponse = {
     availability?: string;
     game?: GameOverviewHttpResponse;
@@ -560,6 +677,261 @@ export type HealthGet2Responses = {
 };
 
 export type HealthGet2Response = HealthGet2Responses[keyof HealthGet2Responses];
+
+export type MapGetMetadataData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/map/metadata';
+};
+
+export type MapGetMetadataErrors = {
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+};
+
+export type MapGetMetadataError = MapGetMetadataErrors[keyof MapGetMetadataErrors];
+
+export type MapGetMetadataResponses = {
+    200: MapMetadataHttpResponse;
+};
+
+export type MapGetMetadataResponse = MapGetMetadataResponses[keyof MapGetMetadataResponses];
+
+export type MapGetGameTimeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/map/game-time';
+};
+
+export type MapGetGameTimeErrors = {
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+};
+
+export type MapGetGameTimeError = MapGetGameTimeErrors[keyof MapGetGameTimeErrors];
+
+export type MapGetGameTimeResponses = {
+    200: MapGameTimeHttpResponse;
+};
+
+export type MapGetGameTimeResponse = MapGetGameTimeResponses[keyof MapGetGameTimeResponses];
+
+export type MapGetPlayerTrackData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query: {
+        fromUtc: string;
+        toUtc: string;
+    };
+    url: '/api/v1/map/players/{crossplatformId}/track';
+};
+
+export type MapGetPlayerTrackErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+};
+
+export type MapGetPlayerTrackError = MapGetPlayerTrackErrors[keyof MapGetPlayerTrackErrors];
+
+export type MapGetPlayerTrackResponses = {
+    200: PlayerTrackHttpResponse;
+};
+
+export type MapGetPlayerTrackResponse = MapGetPlayerTrackResponses[keyof MapGetPlayerTrackResponses];
+
+export type MapGetTileData = {
+    body?: never;
+    path: {
+        /**
+         * Current safe world identifier from map metadata.
+         */
+        worldId: string;
+        /**
+         * Signed native map tile coordinate.
+         */
+        z: number;
+        /**
+         * Signed native map tile coordinate.
+         */
+        x: number;
+        /**
+         * Signed native map tile coordinate.
+         */
+        y: number;
+    };
+    query?: never;
+    url: '/api/v1/map/tiles/{worldId}/{z}/{x}/{y}';
+};
+
+export type MapGetTileErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type MapGetTileError = MapGetTileErrors[keyof MapGetTileErrors];
+
+export type MapGetTileResponses = {
+    /**
+     * PNG or WebP map tile bytes.
+     */
+    200: Blob | File;
+};
+
+export type MapGetTileResponse = MapGetTileResponses[keyof MapGetTileResponses];
+
+export type MapGetLayerData = {
+    body?: never;
+    path: {
+        layerId: 'historical-player-locations' | 'traders' | 'land-claims' | 'vehicles' | 'drones' | 'animals' | 'hostiles';
+    };
+    query: {
+        worldId: string;
+        minimumX: number;
+        minimumZ: number;
+        maximumX: number;
+        maximumZ: number;
+        zoom: number;
+        limit: number;
+    };
+    url: '/api/v1/map/layers/{layerId}';
+};
+
+export type MapGetLayerErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+};
+
+export type MapGetLayerError = MapGetLayerErrors[keyof MapGetLayerErrors];
+
+export type MapGetLayerResponses = {
+    200: MapLayerHttpResponse;
+};
+
+export type MapGetLayerResponse = MapGetLayerResponses[keyof MapGetLayerResponses];
+
+export type MapSearchPlayersInAreaData = {
+    body?: never;
+    path?: never;
+    query: {
+        shape: 'rectangle' | 'circle';
+        minimumX?: number | null;
+        minimumZ?: number | null;
+        maximumX?: number | null;
+        maximumZ?: number | null;
+        centerX?: number | null;
+        centerZ?: number | null;
+        radius?: number | null;
+        fromUtc: string;
+        toUtc: string;
+        limit: number;
+    };
+    url: '/api/v1/map/players/area';
+};
+
+export type MapSearchPlayersInAreaErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+};
+
+export type MapSearchPlayersInAreaError = MapSearchPlayersInAreaErrors[keyof MapSearchPlayersInAreaErrors];
+
+export type MapSearchPlayersInAreaResponses = {
+    200: PlayerAreaSearchHttpResponse;
+};
+
+export type MapSearchPlayersInAreaResponse = MapSearchPlayersInAreaResponses[keyof MapSearchPlayersInAreaResponses];
 
 export type OverviewGetData = {
     body?: never;

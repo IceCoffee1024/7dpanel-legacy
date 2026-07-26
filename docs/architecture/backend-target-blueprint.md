@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 document_role: Target
 ---
 
@@ -332,7 +332,7 @@ GET /api/v1/players/online
 
 玩家状态以最近一次有效上传为准，通常接受约一个 30 秒上传周期的最终一致窗口；新连接在首次上传前可以暂不进入列表，同一响应中的玩家可以具有不同观察时间。每个返回玩家携带最后成功复制的 `observedAtUtc`；服务端不定义过期阈值或列表级新鲜度，也不因 observation 年龄或首次 observation 缺失拒绝可读结果。空 membership 返回 200 空列表。
 
-一次成功 observation 固定复制以下 25 个 HTTP 字段，且共享同一个 `observedAtUtc`：
+一次成功 observation 先固定复制以下 25 个基础字段，随后在同一次复制中加入历史玩家切片批准的 6 个可空档案/进度字段；31 个字段共享同一个 `observedAtUtc`：
 
 | HTTP 字段 | `SavePlayerData` 回调内来源 | 类型与规则 |
 |---|---|---|
@@ -374,6 +374,46 @@ SavePlayerData (game thread)
 六个附加字段是可空 `playGroup`、`lastLoginUtc`、`gameStage`、`expToNextLevel`、`skillPoints` 和 `bedroll`。`lastLoginUtc` 是游戏持久玩家记录中的最近登录时间，不等于 `observedAtUtc`，不能用于推断连续在线。`playGroup`、`lastLoginUtc` 和 `bedroll` 来自按跨平台身份精确匹配的 `PersistentPlayerData`；床铺 `y == int.MaxValue` 映射为 `null`。`gameStage` 优先来自同一实体；进度优先来自在线 `EntityPlayer.Progression`，实体或 Progression 不可用时才按已验证的目标游戏版本布局解析 `progressionData`。解析必须校验版本与长度并恢复 stream position；任何额外字段不可用时只保存 `null`，不得使用零值占位、磁盘加载 `PlayerDataFile` 或让基础 observation 失败。
 
 生产者绝不等待、访问 SQLite 或为单次 Save 创建 `Task.Run`。消费者按接受顺序单独持久化，并仅在队列空闲或低水位时执行有限批次的确定性 UTC 分桶降采样；每名玩家的第一条和最新一条保留，30 天后的七日桶保留代表快照。队满、Store 失败和关服排空超时按玩家保存缺口及计数。启动必须在在线投影订阅前启动该消费者；关闭时先停止在线生产者、完成 writer、在截止时间内排空并尝试保存 pending gap。历史 SQLite 查询不依赖游戏就绪状态，只允许 `Owner` 经 Application use case 查询摘要、详情和倒序 keyset 快照。完整已批准设计见[历史玩家快照设计规格](../superpowers/specs/2026-07-25-player-history-design.md)。该纵向切片的当前实现与自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)；本蓝图仅保留后续演进约束，不构成额外实现证据。
+
+### 玩家坐标地图查询（第 1 至第 3 阶段）
+
+坐标地图不建立第二套位置历史。当前在线标记继续读取 `IOnlinePlayerQuery` 的 31 字段快照；历史轨迹通过新的 Application 查询按一个有效 `crossplatformIdentity.combinedId` 和闭合 UTC 时间范围读取 `player_history_snapshots` 的位置列及内部缺口，使地图点和只读详情引用同一次 observation：
+
+```text
+Owner map request
+  -> map metadata: world + extent + axes + tile version
+  -> immutable game-time snapshot
+  -> existing online player projection (current markers)
+  -> historical position range use case (one cross-platform identity)
+  -> SQLite time-range read from player_history_snapshots + gaps
+  -> Application continuity segmentation
+  -> bounded public segments without gap reason/count
+
+Visible layer request
+  -> extent + zoom + result limit
+  -> SQLite latest retained historical player positions
+     OR immutable trader / claim / vehicle / drone / entity projection
+  -> independent observedAtUtc + availability
+
+Area investigation
+  -> rectangle or circle + UTC range + result limit
+  -> SQLite bounded spatial/time filtering
+  -> grouped player hits
+```
+
+Web Adapter 提供 Owner-only 地图元数据、历史轨迹、瓦片、独立图层和区域查询。历史范围严格限制为最长 30 天和最多 5000 条原始观察；Application 按稳定时间顺序在相交缺口、身份异常或非有限位置处断段，公开地图 DTO 只返回 `segments`，不返回技术缺口原因和丢失数量。游戏未就绪时历史部分仍可读取，在线和游戏投影图层独立表达不可用。该链路不修改历史 Channel、保留策略或 Save 回调，也不从相邻点推导在线会话和真实移动路径。
+
+地图游戏时间复用或扩展现有不可变游戏概览投影，返回日、小时、分钟和 `observedAtUtc`；Web 请求和后台计时器都不直接读取 `World`，客户端失败时不得用浏览器时钟外推。历史玩家最后位置通过 `player_history_players.latest_snapshot_id` 关联现有快照取得，并与当前在线投影按 `crossplatformIdentity.combinedId` 去重；由于在线投影在首次有效 Save 前可能不完整，公开合同将其命名为历史最后位置而不是离线玩家，在线投影不可用时不输出离线判断。
+
+地图元数据来自当前世界的已验证不可变快照，包含世界标识、有限 extent、坐标轴、瓦片规格和地图资源版本。认证瓦片端点只接受经过校验的 world/zoom/x/y，服务端解析实际文件位置；浏览器不能提交路径，Authorization 不进入 URL。瓦片读取与编码在后台 I/O 边界执行，不占用游戏主线程，失败不删除上一资源版本。
+
+商人、领地、载具、无人机、动物和敌对实体只从 SevenDays Adapter 的不可变最新投影查询。商人 DTO 包含营业/关闭状态；领地、载具和无人机所有者优先使用规范跨平台身份。Adapter 必须在游戏线程复制批准字段，已加载和未加载对象映射为同一产品 DTO；不可用字段保留 `null`，不得让 HTTP、Timer 或后台线程直接遍历 `World`、Manager、Entity 或 Unity 容器。高波动实体投影具有短生命周期、extent/zoom/数量限制，不持久化为历史。玩家资料跳转仅消费这些规范身份，不新增后端聚合接口。
+
+region 网格由前端根据元数据生成。区域玩家反查复用 `player_history_snapshots.position_x/position_z/observed_utc`；增加适合包围盒与时间过滤的 SQLite 索引，矩形在数据库中直接过滤，圆形先执行数据库包围盒再应用半径条件并按身份分组。结果有时间、候选行、玩家数和分页/上限边界，不把命中观察解释为持续停留。
+
+完整只读边界见[玩家坐标地图设计规格](../superpowers/specs/2026-07-26-player-coordinate-map-design.md)。浏览器端重新加载 tile source 是纯只读行为，不调用服务端作业。删除领地、玩家传送和服务端瓦片资源刷新/渲染使用独立类型化用例：游戏变更经有界主线程 dispatcher，地图作业经独立有界后台队列和持久 operation 状态；浏览器不能提供命令或路径，排队不等于成功。完整动作边界见[地图管理操作设计规格](../superpowers/specs/2026-07-26-map-management-actions-design.md)。
+
+只读地图的合同、SQLite 查询、Owner-only Web API、不可变投影边界与定向自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)。本节继续拥有尚未实现的真实瓦片发布根、`mapResourceVersion` 生成，以及商人、领地、载具、无人机、动物和敌对实体在目标游戏版本中的真实字段复制约束；当前生产实现对这些缺失来源明确返回 unavailable，不把 Target 描述当作实现证据。
 
 ### 综合概览与服务器操作（第一阶段）
 

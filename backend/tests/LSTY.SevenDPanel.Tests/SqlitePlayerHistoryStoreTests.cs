@@ -155,6 +155,255 @@ namespace LSTY.SevenDPanel.Tests
                 player => Assert.Equal(crossplatformId, player.CrossplatformId));
         }
 
+        [Fact]
+        public void GetPlayerTrack_reads_closed_range_in_stable_order_with_xyz_and_intersecting_gaps()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+            var fromUtc = Utc(2);
+            var toUtc = Utc(4);
+
+            store.Append(Snapshot(observedAtUtc: Utc(1), position: new PlayerPosition(1, 2, 3)));
+            store.Append(Snapshot(name: "From", observedAtUtc: fromUtc, position: new PlayerPosition(10, 11, 12)));
+            store.Append(Snapshot(name: "Middle A", observedAtUtc: Utc(3), position: new PlayerPosition(20, 21, 22)));
+            store.Append(Snapshot(name: "Middle B", observedAtUtc: Utc(3), position: new PlayerPosition(30, 31, 32)));
+            store.Append(Snapshot(name: "To", observedAtUtc: toUtc, position: new PlayerPosition(40, 41, 42)));
+            store.Append(Snapshot(observedAtUtc: Utc(5), position: new PlayerPosition(50, 51, 52)));
+            store.AppendGap(Gap("before", Utc(1), Utc(1).AddMinutes(30)));
+            store.AppendGap(Gap("touch-from", Utc(1), fromUtc));
+            store.AppendGap(Gap("inside", Utc(3), Utc(3).AddMinutes(1)));
+            store.AppendGap(Gap("touch-to", toUtc, Utc(5)));
+            store.AppendGap(Gap("after", Utc(5), Utc(6)));
+
+            var result = store.GetPlayerTrack(new GetPlayerTrackQuery(CrossplatformId, fromUtc, toUtc));
+
+            Assert.NotNull(result);
+            Assert.Equal(new long[] { 2, 3, 4, 5 },
+                result!.Observations.Select(observation => observation.SnapshotId));
+            Assert.Equal(
+                new[] { (10f, 11f, 12f), (20f, 21f, 22f), (30f, 31f, 32f), (40f, 41f, 42f) },
+                result.Observations.Select(observation => (observation.X, observation.Y, observation.Z)));
+            Assert.Equal(new[] { "From", "Middle A", "Middle B", "To" },
+                result.Observations.Select(observation => observation.Name));
+            Assert.Equal(new[] { fromUtc, Utc(3), Utc(3), toUtc },
+                result.Observations.Select(observation => observation.ObservedAtUtc));
+            Assert.Equal(new[] { "touch-from", "inside", "touch-to" },
+                result.Gaps.Select(gap => gap.GapId));
+        }
+
+        [Fact]
+        public void GetPlayerTrack_distinguishes_known_player_with_empty_range_from_unknown_player()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+            store.Append(Snapshot(observedAtUtc: Utc(1)));
+
+            var known = store.GetPlayerTrack(new GetPlayerTrackQuery(CrossplatformId, Utc(5), Utc(6)));
+            var unknown = store.GetPlayerTrack(new GetPlayerTrackQuery("EOS_unknown", Utc(5), Utc(6)));
+
+            Assert.NotNull(known);
+            Assert.Empty(known!.Observations);
+            Assert.Empty(known.Gaps);
+            Assert.Null(unknown);
+        }
+
+        [Fact]
+        public void GetPlayerTrack_rejects_the_five_thousand_and_first_observation()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+            var fromUtc = Utc(1);
+            store.Append(Snapshot(observedAtUtc: fromUtc));
+            InsertSnapshotCopies(database.ConnectionFactory, GetPlayerTrackQuery.MaximumObservations, fromUtc);
+
+            Assert.Throws<PlayerTrackLimitExceededException>(() => store.GetPlayerTrack(
+                new GetPlayerTrackQuery(CrossplatformId, fromUtc, fromUtc.AddDays(1))));
+        }
+
+        [Fact]
+        public void GetPlayerTrack_allows_exactly_five_thousand_observations()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+            var fromUtc = Utc(1);
+            store.Append(Snapshot(observedAtUtc: fromUtc));
+            InsertSnapshotCopies(
+                database.ConnectionFactory,
+                GetPlayerTrackQuery.MaximumObservations - 1,
+                fromUtc);
+
+            var result = store.GetPlayerTrack(
+                new GetPlayerTrackQuery(CrossplatformId, fromUtc, fromUtc.AddDays(1)));
+
+            Assert.NotNull(result);
+            Assert.Equal(GetPlayerTrackQuery.MaximumObservations, result!.Observations.Count);
+        }
+
+        [Fact]
+        public void GetPlayerTrack_allows_five_thousand_gaps_and_rejects_the_next_one()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+            var fromUtc = Utc(1);
+            store.Append(Snapshot(observedAtUtc: fromUtc));
+            InsertGaps(
+                database.ConnectionFactory,
+                GetPlayerTrackQuery.MaximumContinuityGaps,
+                fromUtc);
+
+            var allowed = store.GetPlayerTrack(
+                new GetPlayerTrackQuery(CrossplatformId, fromUtc, fromUtc.AddDays(1)));
+
+            Assert.NotNull(allowed);
+            Assert.Equal(GetPlayerTrackQuery.MaximumContinuityGaps, allowed!.Gaps.Count);
+
+            store.AppendGap(new PlayerHistoryGap(
+                "overflow-gap",
+                CrossplatformId,
+                fromUtc,
+                fromUtc,
+                1,
+                PlayerHistoryGapReason.QueueFull,
+                fromUtc));
+
+            Assert.Throws<PlayerTrackLimitExceededException>(() => store.GetPlayerTrack(
+                new GetPlayerTrackQuery(CrossplatformId, fromUtc, fromUtc.AddDays(1))));
+        }
+
+        [Fact]
+        public void GetHistoricalPlayerLastRetainedLocations_uses_each_players_latest_retained_snapshot_before_extent_filtering()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+
+            store.Append(Snapshot(
+                name: "Old inside",
+                observedAtUtc: Utc(1),
+                position: new PlayerPosition(5, 6, 7),
+                crossplatformId: "EOS_moved"));
+            store.Append(Snapshot(
+                name: "Latest outside",
+                observedAtUtc: Utc(2),
+                position: new PlayerPosition(500, 6, 500),
+                crossplatformId: "EOS_moved"));
+            store.Append(Snapshot(
+                name: "Latest inside",
+                observedAtUtc: Utc(3),
+                position: new PlayerPosition(8, 9, 10),
+                crossplatformId: "EOS_inside"));
+
+            var result = store.GetHistoricalPlayerLastRetainedLocations(
+                new HistoricalPlayerLastLocationsStoreQuery(
+                    new MapExtent(0, 0, 100, 100),
+                    candidateLimit: 10));
+
+            var location = Assert.Single(result);
+            Assert.Equal("EOS_inside", location.CrossplatformId);
+            Assert.Equal("Latest inside", location.DisplayName);
+            Assert.Equal(Utc(3), location.ObservedAtUtc);
+            Assert.Equal((8d, 9d, 10d),
+                (location.Position.X, location.Position.Y, location.Position.Z));
+        }
+
+        [Fact]
+        public void GetHistoricalPlayerLastRetainedLocations_has_closed_extent_stable_order_and_candidate_limit()
+        {
+            using var database = new TemporaryHistoryDatabase();
+            database.Upgrade();
+            var store = new SqlitePlayerHistoryStore(database.ConnectionFactory);
+            store.Append(Snapshot(
+                name: "Minimum",
+                observedAtUtc: Utc(1),
+                position: new PlayerPosition(-10, 1, -20),
+                crossplatformId: "EOS_min"));
+            store.Append(Snapshot(
+                name: "Maximum",
+                observedAtUtc: Utc(1),
+                position: new PlayerPosition(30, 2, 40),
+                crossplatformId: "EOS_max"));
+
+            var result = store.GetHistoricalPlayerLastRetainedLocations(
+                new HistoricalPlayerLastLocationsStoreQuery(
+                    new MapExtent(-10, -20, 30, 40),
+                    candidateLimit: 1));
+
+            var location = Assert.Single(result);
+            Assert.Equal("EOS_max", location.CrossplatformId);
+        }
+
+        private const string CrossplatformId = "EOS_0002d12af0fe4add9c7de0fbc238d431";
+
+        private static DateTimeOffset Utc(int hour) =>
+            new DateTimeOffset(2026, 7, 25, hour, 0, 0, TimeSpan.Zero);
+
+        private static PlayerHistoryGap Gap(string gapId, DateTimeOffset startedAtUtc, DateTimeOffset completedAtUtc) =>
+            new PlayerHistoryGap(
+                gapId,
+                CrossplatformId,
+                startedAtUtc,
+                completedAtUtc,
+                1,
+                PlayerHistoryGapReason.QueueFull,
+                Utc(7));
+
+        private static void InsertSnapshotCopies(
+            SqliteConnectionFactory connectionFactory,
+            int count,
+            DateTimeOffset fromUtc)
+        {
+            using var connection = connectionFactory.Open();
+            var columns = connection.Query<string>(
+                "SELECT name FROM pragma_table_info('player_history_snapshots') WHERE name <> 'snapshot_id' ORDER BY cid;")
+                .ToArray();
+            var projection = columns
+                .Select(column => column == "observed_utc" ? "@FromUtc + sequence.value" : "source." + column)
+                .ToArray();
+            connection.Execute(
+                @"WITH RECURSIVE sequence(value) AS (
+                      SELECT 1
+                      UNION ALL
+                      SELECT value + 1 FROM sequence WHERE value < @Count
+                  )
+                  INSERT INTO player_history_snapshots (" + string.Join(", ", columns) + @")
+                  SELECT " + string.Join(", ", projection) + @"
+                  FROM sequence
+                  CROSS JOIN player_history_snapshots source
+                  WHERE source.snapshot_id = 1;",
+                new { Count = count, FromUtc = fromUtc.ToUnixTimeMilliseconds() });
+        }
+
+        private static void InsertGaps(
+            SqliteConnectionFactory connectionFactory,
+            int count,
+            DateTimeOffset fromUtc)
+        {
+            using var connection = connectionFactory.Open();
+            connection.Execute(
+                @"WITH RECURSIVE sequence(value) AS (
+                      SELECT 1
+                      UNION ALL
+                      SELECT value + 1 FROM sequence WHERE value < @Count
+                  )
+                  INSERT INTO player_history_gaps (
+                      gap_id, crossplatform_id, started_utc, completed_utc,
+                      dropped_count, reason, recorded_utc)
+                  SELECT 'gap-' || value, @CrossplatformId, @FromUtc, @FromUtc,
+                         1, 'queue_full', @FromUtc
+                  FROM sequence;",
+                new
+                {
+                    Count = count,
+                    CrossplatformId,
+                    FromUtc = fromUtc.ToUnixTimeMilliseconds()
+                });
+        }
+
         private static PlayerSnapshot Snapshot(
             string name = "Player",
             int entityId = 7,
@@ -166,6 +415,7 @@ namespace LSTY.SevenDPanel.Tests
             int? expToNextLevel = 0,
             int? skillPoints = 0,
             PlayerPosition? bedroll = null,
+            PlayerPosition? position = null,
             PlayerPlatformIdentity? crossplatformIdentity = null)
         {
             return new PlayerSnapshot(
@@ -179,7 +429,7 @@ namespace LSTY.SevenDPanel.Tests
                 "3.0",
                 "discord-user",
                 0,
-                new PlayerPosition(0, 0, 0),
+                position ?? new PlayerPosition(0, 0, 0),
                 false,
                 0,
                 0,

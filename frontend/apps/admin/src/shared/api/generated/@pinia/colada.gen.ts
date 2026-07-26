@@ -4,8 +4,8 @@ import { type _JSONValue, defineQueryOptions, type UseMutationOptions } from '@p
 
 import { serializeQueryKeyValue } from '../client';
 import { client } from '../client.gen';
-import { apiKeysDelete, apiKeysGet, apiKeysPost, consoleCommandsPost, healthGet, healthGet2, issueAccessToken, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
+import { apiKeysDelete, apiKeysGet, apiKeysPost, consoleCommandsPost, healthGet, healthGet2, issueAccessToken, mapGetGameTime, mapGetLayer, mapGetMetadata, mapGetPlayerTrack, mapGetTile, mapSearchPlayersInArea, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
+import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, MapGetGameTimeData, MapGetGameTimeError, MapGetGameTimeResponse, MapGetLayerData, MapGetLayerError, MapGetLayerResponse, MapGetMetadataData, MapGetMetadataError, MapGetMetadataResponse, MapGetPlayerTrackData, MapGetPlayerTrackError, MapGetPlayerTrackResponse, MapGetTileData, MapGetTileError, MapGetTileResponse, MapSearchPlayersInAreaData, MapSearchPlayersInAreaError, MapSearchPlayersInAreaResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'path'> & {
@@ -99,6 +99,81 @@ export const healthGet2QueryKey = (options?: Options<HealthGet2Data>) => createQ
 export const healthGet2Query = defineQueryOptions<Options<HealthGet2Data>, HealthGet2Response, Error>((options?: Options<HealthGet2Data>) => ({
     key: healthGet2QueryKey(options),
     query: async (context) => await healthGet2({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetMetadataQueryKey = (options?: Options<MapGetMetadataData>) => createQueryKey('mapGetMetadata', options, ['Map']);
+
+export const mapGetMetadataQuery = defineQueryOptions<Options<MapGetMetadataData>, MapGetMetadataResponse, MapGetMetadataError>((options?: Options<MapGetMetadataData>) => ({
+    key: mapGetMetadataQueryKey(options),
+    query: async (context) => await mapGetMetadata({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetGameTimeQueryKey = (options?: Options<MapGetGameTimeData>) => createQueryKey('mapGetGameTime', options, ['Map']);
+
+export const mapGetGameTimeQuery = defineQueryOptions<Options<MapGetGameTimeData>, MapGetGameTimeResponse, MapGetGameTimeError>((options?: Options<MapGetGameTimeData>) => ({
+    key: mapGetGameTimeQueryKey(options),
+    query: async (context) => await mapGetGameTime({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetPlayerTrackQueryKey = (options: Options<MapGetPlayerTrackData>) => createQueryKey('mapGetPlayerTrack', options, ['Map']);
+
+export const mapGetPlayerTrackQuery = defineQueryOptions<Options<MapGetPlayerTrackData>, MapGetPlayerTrackResponse, MapGetPlayerTrackError>((options: Options<MapGetPlayerTrackData>) => ({
+    key: mapGetPlayerTrackQueryKey(options),
+    query: async (context) => await mapGetPlayerTrack({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetTileQueryKey = (options: Options<MapGetTileData>) => createQueryKey('mapGetTile', options, ['Map']);
+
+/**
+ * Returns one Owner-only map tile. Authentication is accepted only from the Bearer header; the URL contains typed coordinates and never a server filesystem path.
+ */
+export const mapGetTileQuery = defineQueryOptions<Options<MapGetTileData>, MapGetTileResponse, MapGetTileError>((options: Options<MapGetTileData>) => ({
+    key: mapGetTileQueryKey(options),
+    query: async (context) => await mapGetTile({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetLayerQueryKey = (options: Options<MapGetLayerData>) => createQueryKey('mapGetLayer', options, ['Map']);
+
+/**
+ * Returns one Owner-only bounded map layer for the current world. Historical and transient items are retained observations or the latest captured snapshot only.
+ */
+export const mapGetLayerQuery = defineQueryOptions<Options<MapGetLayerData>, MapGetLayerResponse, MapGetLayerError>((options: Options<MapGetLayerData>) => ({
+    key: mapGetLayerQueryKey(options),
+    query: async (context) => await mapGetLayer({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapSearchPlayersInAreaQueryKey = (options: Options<MapSearchPlayersInAreaData>) => createQueryKey('mapSearchPlayersInArea', options, ['Map']);
+
+/**
+ * Returns players with retained observations inside one rectangle or circle during the UTC range. Results do not assert continuous presence or dwell time.
+ */
+export const mapSearchPlayersInAreaQuery = defineQueryOptions<Options<MapSearchPlayersInAreaData>, MapSearchPlayersInAreaResponse, MapSearchPlayersInAreaError>((options: Options<MapSearchPlayersInAreaData>) => ({
+    key: mapSearchPlayersInAreaQueryKey(options),
+    query: async (context) => await mapSearchPlayersInArea({
         ...options,
         ...context,
         throwOnError: true

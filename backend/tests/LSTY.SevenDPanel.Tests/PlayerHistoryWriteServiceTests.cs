@@ -216,6 +216,13 @@ namespace LSTY.SevenDPanel.Tests
 
             public PlayerHistorySnapshotsPage GetSnapshots(PlayerHistorySnapshotsQuery query) =>
                 throw new NotSupportedException();
+
+            public PlayerTrackHistory? GetPlayerTrack(GetPlayerTrackQuery query) =>
+                throw new NotSupportedException();
+
+            public IReadOnlyList<HistoricalPlayerLastRetainedLocation> GetHistoricalPlayerLastRetainedLocations(
+                HistoricalPlayerLastLocationsStoreQuery query) =>
+                Array.Empty<HistoricalPlayerLastRetainedLocation>();
         }
 
         private sealed class BlockingStore : RecordingStore

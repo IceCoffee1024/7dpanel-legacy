@@ -116,7 +116,7 @@ OnlinePlayersView
 - 关闭抽屉时清除详情选择和最后 observation。详情选择不复用现有踢出 `selectedPlayer`；只有用户从当前详情发起踢出时，才把当时完整玩家值复制为独立危险操作目标。
 - `OnlinePlayerDetailsSlideover` 使用 Nuxt UI `USlideover` 表达仪表盘次要详情，窄屏占满可用宽度；踢出仍由现有阻断式确认对话框负责。详情踢出能力由现有授权、`state === 'fresh'` 和未锁存 unavailable 共同决定；Stale、Offline、Forbidden、Session expired 或游戏未就绪时不从旧详情发起新动作。抽屉分区使用普通布局和分隔，不创建嵌套卡片。
 - Players Feature 自己拥有设备、时长、整数坐标/距离和空值格式化。坐标与距离四舍五入后按当前语言显示整数，分钟值转换为天/小时/分钟；所有传输空值统一显示“未知”。纯格式化函数保持无状态，只有出现第二个真实 Feature 消费者后才提升到 `shared`。
-- API 边界严格验证 25 字段、位置对象、设备枚举、有限数值和可空字符串。无效新响应不能覆盖最后成功快照或当前详情；前端不根据本地角色删除响应字段，也不承担敏感字段授权。
+- API 边界严格验证 31 字段、位置/床铺对象、设备枚举、有限数值和可空值。无效新响应不能覆盖最后成功快照或当前详情；前端不根据本地角色删除响应字段，也不承担敏感字段授权。
 
 ### 历史玩家状态
 
@@ -140,6 +140,34 @@ OnlinePlayersView
 - 历史请求只由 `Owner` 使用 Bearer Header 访问。游戏未就绪仍可读取已持久化历史；401/403/404/empty/failed 与在线 `Offline` 分开表达。
 
 上述历史 Admin 切片的当前实现和定向自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)；本节继续作为后续边界演进约束，不单独证明实现存在。
+
+### 玩家坐标地图状态（第 1 至第 3 阶段）
+
+本节描述的只读 Admin 地图边界已经实现并由定向组件测试与 typecheck 覆盖；当前事实见[系统架构](../architecture.md)和[测试策略](../test.md)。真实浏览器交互、320 CSS 像素布局和真实业务图层字段仍需人工或真实进程证据，本节保留这些后续约束。
+
+`/players/map` 属于 Players Feature，以 OpenLayers 组合在线、历史、瓦片和独立业务图层查询，不把地图视图状态放入 Pinia：
+
+```text
+/players/map?player=&from=&to=&at=&layers=&shape=
+  -> usePlayerCoordinateMap
+  -> useMapMetadata + authenticated tile loader
+  -> game time + current online markers + one historical player's public segments
+  -> historical players' latest retained positions
+  -> independent lazy layer controllers
+  -> OpenLayers map + synchronized accessible lists/details
+```
+
+- URL 拥有所选跨平台身份、UTC 时间范围、定位时刻、启用图层和区域几何；缩放和平移是页面内可丢弃状态。切换筛选必须取消旧请求，失败时保留最后验证结果并进入 `Stale`。
+- `PlayerMapView.vue` 只负责页面组合；`OpenLayersGameMap.vue` 拥有 Map/View 实例和挂载清理；各图层 composable 拥有自己的 source、请求、可见性、刷新和取消。页面、图层和 popup 通过类型化 props/events 协作，不建立全局 map registry。
+- 地图只消费不可变 DTO。在线标记保留各自 `observedAtUtc`；历史 API 直接返回不带原因的 `segments`。前端不出现 `gap` 文案，也不跨 segment 连线；统一说明离散观察不代表持续在线或真实路线。
+- 游戏时间拥有独立查询、30 秒刷新与 Stale 状态。轨迹首次加载时 fit extent 并显示起终点；用户手动移动后不重复抢回视口，不提供 `minDistance` 二次筛点。
+- 自定义 projection、extent、tile grid 和坐标轴由服务端地图元数据建立。Header Bearer tile loader 取得 Blob 后设置 tile image，并在替换/卸载时释放对象 URL；Token 不进入 URL 或持久缓存。
+- `OpenLayersGameMap.vue` 使用随 Admin 发布的本地背景图作为地图容器背景，瓦片不可用时仍显示网格和状态；背景资源不复制旧项目素材。地图固定朝北，不注册旋转控件；小地图暂不创建。
+- region 网格是元数据驱动的前端矢量层。历史玩家最后位置、商人、领地、载具、无人机、动物和敌对实体分别使用独立 VectorSource；密集点使用 OpenLayers Cluster，矩形/圆形调查使用受控 Draw/Modify 交互。历史最后位置只表示保留观察，不显示为当前离线。
+- 图层默认关闭，仅可见时加载；`visibilitychange`、组件失活和卸载分别暂停、恢复或释放。静态/低频与动态图层使用不同刷新下限，不创建一个全图 10 秒统一轮询。
+- 图层面板仅在成功响应后显示对象数；玩家和所有者的规范跨平台身份链接到现有在线/历史详情。当前不加载玩家背包或载具具体储物。瓦片工具栏提供只刷新客户端 tile source 的按钮并显示经复核署名，不调用服务端地图作业。
+- 同步文本列表和只读详情为 canvas 提供键盘与窄屏替代路径。第 1 至第 3 阶段不承载删除、传送、渲染等操作；其页面状态和 mutation 由独立地图管理 Feature 边界拥有。
+- 在线、历史、瓦片和图层查询状态分别保留，再组合为 loading、ready、empty、partial、stale、forbidden 和 failed；历史查询不因游戏未就绪而被标为离线。
 
 ### 统一结果状态
 
@@ -362,8 +390,8 @@ Admin 综合概览已引入 `@hey-api/openapi-ts` 和 `@pinia/colada`。精确�
 | 日期格式与计算 | `date-fns` | 条件候选 | 仅用于 `Intl` 和已有日期能力不足的纯函数格式化或计算 | 是否与 `@internationalized/date` 重复、locale 体积和时区语义 |
 | Head 管理 | `@unhead/vue` | Admin 目标采用 | 当前用于响应颜色模式更新 `theme-color`，保留模板中已经直接使用的轻量集成 | 后续页面标题、meta 所有权和是否仍有直接 API 需求 |
 | 图表 | `@unovis/vue` + `@unovis/ts` | 预留 | 官方 Vue 用法要求 Vue wrapper 与 core 配套；当前设计没有必须图表化的指标 | 先确认业务指标、无图表替代、可访问性、包体积和窄屏表现 |
-| 游戏地图与空间交互 | `ol`（OpenLayers） | 条件候选 | 仅在产品批准玩家位置、世界地图或区域编辑等地图流程后采用；适合自定义投影、静态/瓦片底图、矢量覆盖和绘制交互，不因展示单个坐标而引入 | 7DTD X/Z 坐标与图像像素映射、原点和轴方向、世界范围与缩放层级、离线地图资产、性能、可访问性、CSS、包体积和许可证 |
-| OpenLayers 扩展 | `ol-ext`；缺少内置声明时评估 `@types/ol-ext` 到 `npm:@siedlerchr/types-ol-ext` 的别名 | 二级条件候选 | 只有 `ol` 已采用且核心 API 无法清晰满足某个已批准控件、交互、覆盖层或渲染需求时，才按具体模块引入；社区声明仅进入 `devDependencies`，精确版本由实际清单和锁文件拥有 | 与锁定 `ol`/`ol-ext` 版本及实际导入模块的类型兼容性、声明包的 `jspdf` peer、额外 CSS、维护状态、tree-shaking、交互可访问性和无扩展替代方案 |
+| 游戏地图与空间交互 | `ol`（OpenLayers）`10.9.0` | 当前采用 | 自定义游戏 projection/extent、认证 TileLayer、多个 VectorLayer、Overlay 和 Draw/Modify 交互按模块导入；Feature 仍拥有产品 DTO、状态和可访问性替代列表，OpenLayers 类型不进入 API 层 | 继续人工验证浏览器支持、X/Z 轴、世界 extent、瓦片像素映射、对象 URL 释放、canvas 可访问性、320 CSS 像素布局和生产 CSP |
+| OpenLayers 扩展 | `ol-ext` | 默认不采用 | 当前批准的缩放、聚合、popup、图层切换和区域绘制均由 OpenLayers 核心 API 与产品组件完成；只有核心 API 无法清晰满足一个已批准且有自动化边界的具体交互时再评估 | 与锁定 `ol` 版本的兼容性、声明质量、额外 CSS、维护状态、tree-shaking、交互可访问性和无扩展替代方案 |
 | 通用工具函数 | 优先使用原生 JavaScript/TypeScript；出现跨 Feature 的复杂纯函数需求后评估 `es-toolkit` | 条件候选 | 简单数组、对象和字符串转换不构成引入工具库的理由；深比较、深拷贝、防抖或复杂集合操作应避免重复手写 | 至少两个真实消费者、原生实现的正确性与可读性、tree-shaking、浏览器基线和具体函数语义 |
 | 日志虚拟化 | 默认不引入；达到实测 DOM 与滚动瓶颈后选型 | 默认不采用 | 首先用有界窗口和分页控制复杂度 | 行高、动态内容、键盘访问、复制、搜索和定位 |
 | 静态检查 | ESLint、`@antfu/eslint-config`、`vue-tsc` | Admin 目标采用 | Antfu flat config 统一 JavaScript、TypeScript 和 Vue SFC 规则，`vue-tsc` 独立负责类型检查；项目覆盖规则按所属集成显式配置 | 全工程 lint 基线、type-aware lint 耗时、忽略范围、编辑器/CI 一致性，以及配置不再直接导入后移除 `eslint-plugin-vue`/`typescript-eslint` 的结果 |

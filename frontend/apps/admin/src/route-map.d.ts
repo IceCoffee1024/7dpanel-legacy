@@ -59,6 +59,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/players/history/'
       | '/players/history/[crossplatformId]'
+      | '/players/map'
     >,
     '/players/history/': RouteRecordInfo<
       '/players/history/',
@@ -72,6 +73,13 @@ declare module 'vue-router/auto-routes' {
       '/players/history/:crossplatformId',
       { crossplatformId: ParamValue<true> },
       { crossplatformId: ParamValue<false> },
+      | never
+    >,
+    '/players/map': RouteRecordInfo<
+      '/players/map',
+      '/players/map',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -116,6 +124,7 @@ declare module 'vue-router/auto-routes' {
         | '/players'
         | '/players/history/'
         | '/players/history/[crossplatformId]'
+        | '/players/map'
       views:
         | 'default'
       pathParamNames:
@@ -136,6 +145,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'crossplatformId'
+    }
+    'src/pages/players/map.vue': {
+      routes:
+        | '/players/map'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 

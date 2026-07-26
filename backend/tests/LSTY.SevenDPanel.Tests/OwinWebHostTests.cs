@@ -3878,6 +3878,13 @@ namespace LSTY.SevenDPanel.Tests
                 return new PlayerHistorySnapshotsPage(new[] { snapshot }, null, new[] { gap });
             }
 
+            public PlayerTrackHistory? GetPlayerTrack(GetPlayerTrackQuery query) =>
+                throw new NotSupportedException();
+
+            public IReadOnlyList<HistoricalPlayerLastRetainedLocation> GetHistoricalPlayerLastRetainedLocations(
+                HistoricalPlayerLastLocationsStoreQuery query) =>
+                Array.Empty<HistoricalPlayerLastRetainedLocation>();
+
             private void ThrowIfFaulted()
             {
                 if (failure != null) throw failure;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace LSTY.SevenDPanel.Application
 {
@@ -13,6 +14,11 @@ namespace LSTY.SevenDPanel.Application
         HistoricalPlayerDetails? GetPlayer(string crossplatformId);
 
         PlayerHistorySnapshotsPage GetSnapshots(PlayerHistorySnapshotsQuery query);
+
+        PlayerTrackHistory? GetPlayerTrack(GetPlayerTrackQuery query);
+
+        IReadOnlyList<HistoricalPlayerLastRetainedLocation> GetHistoricalPlayerLastRetainedLocations(
+            HistoricalPlayerLastLocationsStoreQuery query);
 
         int Compact(DateTimeOffset utcNow, int maximumDeletes);
     }
