@@ -11,6 +11,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const { t } = useI18n()
 const sidebarOpen = shallowRef(false)
+const canUseConsole = computed(() => auth.role === 'Owner' || auth.role === 'Admin')
 
 const navigation = computed<NavigationMenuItem[]>(() => [
   {
@@ -38,6 +39,16 @@ const navigation = computed<NavigationMenuItem[]>(() => [
       sidebarOpen.value = false
     },
   },
+  ...(canUseConsole.value
+    ? [{
+        label: t('console.title'),
+        icon: 'i-lucide-terminal',
+        to: '/console-logs',
+        onSelect: () => {
+          sidebarOpen.value = false
+        },
+      }]
+    : []),
 ])
 
 const searchGroups = computed(() => [{
@@ -59,6 +70,13 @@ const searchGroups = computed(() => [{
       icon: 'i-lucide-key-round',
       to: '/api-keys',
     },
+    ...(canUseConsole.value
+      ? [{
+          label: t('console.title'),
+          icon: 'i-lucide-terminal',
+          to: '/console-logs',
+        }]
+      : []),
   ],
 }])
 
@@ -83,6 +101,7 @@ defineShortcuts({
   'g-o': () => router.push('/'),
   'g-p': () => router.push('/players'),
   'g-k': () => router.push('/api-keys'),
+  'g-c': () => router.push('/console-logs'),
 })
 </script>
 

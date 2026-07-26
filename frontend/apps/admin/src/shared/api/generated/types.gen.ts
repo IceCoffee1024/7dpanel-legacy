@@ -19,6 +19,19 @@ export type ApiKeyCreateRequest = {
     expiresAtUtc?: string | null;
 };
 
+export type ConsoleCommandCatalog = {
+    capturedAtUtc?: string;
+    commands?: Array<ConsoleCommandCatalogEntry>;
+};
+
+export type ConsoleCommandCatalogEntry = {
+    name?: string;
+    aliases?: Array<string>;
+    description?: string | null;
+    help?: string | null;
+    permissionLevel?: number | null;
+};
+
 export type ConsoleCommandResponse = {
     command?: string;
     output?: Array<string>;
@@ -26,6 +39,20 @@ export type ConsoleCommandResponse = {
 
 export type ConsoleCommandRequest = {
     command?: string | null;
+};
+
+export type RecentConsoleLogsResponse = {
+    entries?: Array<ConsoleLogEventData>;
+};
+
+export type ConsoleLogEventData = {
+    sequence?: number;
+    formattedMessage?: string | null;
+    message?: string | null;
+    trace?: string | null;
+    logType?: string;
+    timestamp?: string;
+    uptimeMilliseconds?: number;
 };
 
 export type HealthResponse = {
@@ -614,6 +641,40 @@ export type ApiKeysDeleteResponses = {
 
 export type ApiKeysDeleteResponse = ApiKeysDeleteResponses[keyof ApiKeysDeleteResponses];
 
+export type ConsoleCommandsGetCatalogData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/console/commands/catalog';
+};
+
+export type ConsoleCommandsGetCatalogErrors = {
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ConsoleCommandsGetCatalogError = ConsoleCommandsGetCatalogErrors[keyof ConsoleCommandsGetCatalogErrors];
+
+export type ConsoleCommandsGetCatalogResponses = {
+    200: ConsoleCommandCatalog;
+};
+
+export type ConsoleCommandsGetCatalogResponse = ConsoleCommandsGetCatalogResponses[keyof ConsoleCommandsGetCatalogResponses];
+
 export type ConsoleCommandsPostData = {
     body?: ConsoleCommandRequest | null;
     path?: never;
@@ -651,6 +712,49 @@ export type ConsoleCommandsPostResponses = {
 };
 
 export type ConsoleCommandsPostResponse = ConsoleCommandsPostResponses[keyof ConsoleCommandsPostResponses];
+
+export type ConsoleLogsGetRecentData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Number of recent console logs from 1 through 5000; defaults to 1000.
+         */
+        limit?: number | null;
+    };
+    url: '/api/v1/console/logs/recent';
+};
+
+export type ConsoleLogsGetRecentErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ConsoleLogsGetRecentError = ConsoleLogsGetRecentErrors[keyof ConsoleLogsGetRecentErrors];
+
+export type ConsoleLogsGetRecentResponses = {
+    200: RecentConsoleLogsResponse;
+};
+
+export type ConsoleLogsGetRecentResponse = ConsoleLogsGetRecentResponses[keyof ConsoleLogsGetRecentResponses];
 
 export type HealthGetData = {
     body?: never;

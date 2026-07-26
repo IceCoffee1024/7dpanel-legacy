@@ -106,6 +106,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<RestartServerUseCase>();
                 services.AddSingleton<ShutdownServerUseCase>();
                 services.AddSingleton(_ => new ConsoleLogService(log));
+                services.AddSingleton<IRecentConsoleLogQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<ConsoleLogService>().LiveWindow);
                 services.AddSingleton<IServerEventStream>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);
                 services.AddSingleton<SqliteConsoleCommandAuditStore>();
@@ -115,6 +117,9 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<IConsoleCommandAuditStore>(),
                     log));
                 services.AddSingleton<SevenDaysConsoleCommandService>();
+                services.AddSingleton(_ => new SevenDaysConsoleCommandCatalogQuery(log));
+                services.AddSingleton<IConsoleCommandCatalogQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysConsoleCommandCatalogQuery>());
                 services.AddSingleton<IConsoleCommandGateway>(serviceProvider =>
                     serviceProvider.GetRequiredService<SevenDaysConsoleCommandService>());
                 services.AddSingleton<ExecuteConsoleCommandUseCase>();

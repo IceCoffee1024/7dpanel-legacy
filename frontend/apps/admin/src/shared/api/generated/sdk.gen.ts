@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, MapGetGameTimeData, MapGetGameTimeErrors, MapGetGameTimeResponses, MapGetLayerData, MapGetLayerErrors, MapGetLayerResponses, MapGetMetadataData, MapGetMetadataErrors, MapGetMetadataResponses, MapGetPlayerTrackData, MapGetPlayerTrackErrors, MapGetPlayerTrackResponses, MapGetTileData, MapGetTileErrors, MapGetTileResponses, MapSearchPlayersInAreaData, MapSearchPlayersInAreaErrors, MapSearchPlayersInAreaResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
+import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, MapGetGameTimeData, MapGetGameTimeErrors, MapGetGameTimeResponses, MapGetLayerData, MapGetLayerErrors, MapGetLayerResponses, MapGetMetadataData, MapGetMetadataErrors, MapGetMetadataResponses, MapGetPlayerTrackData, MapGetPlayerTrackErrors, MapGetPlayerTrackResponses, MapGetTileData, MapGetTileErrors, MapGetTileResponses, MapSearchPlayersInAreaData, MapSearchPlayersInAreaErrors, MapSearchPlayersInAreaResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -49,6 +49,13 @@ export const apiKeysDelete = <ThrowOnError extends boolean = true>(options: Opti
     ...options
 });
 
+export const consoleCommandsGetCatalog = <ThrowOnError extends boolean = true>(options?: Options<ConsoleCommandsGetCatalogData, ThrowOnError>) => (options?.client ?? client).get<ConsoleCommandsGetCatalogResponses, ConsoleCommandsGetCatalogErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/console/commands/catalog',
+    ...options
+});
+
 export const consoleCommandsPost = <ThrowOnError extends boolean = true>(options?: Options<ConsoleCommandsPostData, ThrowOnError>) => (options?.client ?? client).post<ConsoleCommandsPostResponses, ConsoleCommandsPostErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -58,6 +65,13 @@ export const consoleCommandsPost = <ThrowOnError extends boolean = true>(options
         'Content-Type': 'application/json',
         ...options?.headers
     }
+});
+
+export const consoleLogsGetRecent = <ThrowOnError extends boolean = true>(options?: Options<ConsoleLogsGetRecentData, ThrowOnError>) => (options?.client ?? client).get<ConsoleLogsGetRecentResponses, ConsoleLogsGetRecentErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/console/logs/recent',
+    ...options
 });
 
 export const healthGet = <ThrowOnError extends boolean = true>(options?: Options<HealthGetData, ThrowOnError>) => (options?.client ?? client).get<HealthGetResponses, unknown, ThrowOnError, 'data'>({

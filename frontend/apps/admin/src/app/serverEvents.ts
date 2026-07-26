@@ -4,6 +4,7 @@ import { serverEventsGet } from '../shared/api/generated/sdk.gen'
 
 export type ServerEventType =
   | 'welcome'
+  | 'console-log'
   | 'game-ready'
   | 'server-stopping'
   | 'gap'
@@ -19,6 +20,12 @@ export interface ServerEventsLifecycle {
   start: (authorizationHeader: string) => void
   stop: (options?: { clearCursor?: boolean }) => void
 }
+
+export type ServerEventsConnectionStatus =
+  | 'connecting'
+  | 'live'
+  | 'reconnecting'
+  | 'stopped'
 
 interface ServerEventStreamOptions {
   headers: HeadersInit
@@ -39,10 +46,12 @@ export interface ServerEventsDependencies {
 
 export interface ServerEventsController extends ServerEventsLifecycle {
   subscribe: (listener: (event: ServerEventNotification) => void) => () => void
+  subscribeStatus: (listener: (status: ServerEventsConnectionStatus) => void) => () => void
 }
 
 const supportedEventTypes = new Set<ServerEventType>([
   'welcome',
+  'console-log',
   'game-ready',
   'server-stopping',
   'gap',
@@ -78,10 +87,20 @@ export function createServerEvents(
   const openStream = dependencies.openStream ?? openGeneratedStream
   const reconnectDelayMs = dependencies.reconnectDelayMs ?? 3_000
   const listeners = new Set<(event: ServerEventNotification) => void>()
+  const statusListeners = new Set<(status: ServerEventsConnectionStatus) => void>()
   let authorizationHeader: string | null = null
   let controller: AbortController | null = null
   let generation = 0
   let lastEventId: string | undefined
+  let status: ServerEventsConnectionStatus = 'stopped'
+
+  function setStatus(nextStatus: ServerEventsConnectionStatus): void {
+    if (status === nextStatus)
+      return
+    status = nextStatus
+    for (const listener of statusListeners)
+      listener(status)
+  }
 
   function publish(rawEvent: StreamEvent<unknown>, currentGeneration: number): void {
     if (currentGeneration !== generation)
@@ -94,6 +113,9 @@ export function createServerEvents(
       type = rawEvent.event as ServerEventType
     if (type === null)
       return
+
+    if (type === 'welcome')
+      setStatus('live')
 
     if (rawEvent.id !== undefined)
       lastEventId = rawEvent.id === '' ? undefined : rawEvent.id
@@ -123,7 +145,10 @@ export function createServerEvents(
       try {
         const result = await openStream({
           headers,
-          onSseError: () => undefined,
+          onSseError: () => {
+            if (!signal.aborted && currentGeneration === generation)
+              setStatus('reconnecting')
+          },
           onSseEvent: event => publish(event, currentGeneration),
           signal,
           sseMaxRetryDelay: 30_000,
@@ -138,6 +163,7 @@ export function createServerEvents(
           return
       }
 
+      setStatus('reconnecting')
       await waitForReconnect(reconnectDelayMs, signal)
     }
   }
@@ -149,6 +175,7 @@ export function createServerEvents(
     controller = null
     if (options.clearCursor ?? true)
       lastEventId = undefined
+    setStatus('stopped')
   }
 
   function start(nextAuthorizationHeader: string): void {
@@ -159,6 +186,7 @@ export function createServerEvents(
       stop({ clearCursor: true })
 
     authorizationHeader = nextAuthorizationHeader
+    setStatus('connecting')
     const currentController = new AbortController()
     controller = currentController
     const currentGeneration = ++generation
@@ -170,7 +198,15 @@ export function createServerEvents(
     return () => listeners.delete(listener)
   }
 
-  return { start, stop, subscribe }
+  function subscribeStatus(
+    listener: (status: ServerEventsConnectionStatus) => void,
+  ): () => void {
+    statusListeners.add(listener)
+    listener(status)
+    return () => statusListeners.delete(listener)
+  }
+
+  return { start, stop, subscribe, subscribeStatus }
 }
 
 export const serverEvents = createServerEvents()
@@ -179,4 +215,10 @@ export function subscribeServerEvents(
   listener: (event: ServerEventNotification) => void,
 ): () => void {
   return serverEvents.subscribe(listener)
+}
+
+export function subscribeServerEventsStatus(
+  listener: (status: ServerEventsConnectionStatus) => void,
+): () => void {
+  return serverEvents.subscribeStatus(listener)
 }

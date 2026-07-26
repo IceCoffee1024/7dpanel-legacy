@@ -89,6 +89,22 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(result.HasGap);
         }
 
+        [Fact]
+        public void Recent_console_logs_returns_latest_logs_in_sequence_order_and_skips_lifecycle_events()
+        {
+            var window = new ServerEventLiveWindow(6);
+            window.AppendConsoleLog(CreateEntry("one"));
+            window.AppendGameReady(new DateTime(2026, 7, 26, 1, 2, 3, DateTimeKind.Utc));
+            window.AppendConsoleLog(CreateEntry("two"));
+            window.AppendServerStopping(new DateTime(2026, 7, 26, 1, 3, 3, DateTimeKind.Utc));
+            window.AppendConsoleLog(CreateEntry("three"));
+
+            var entries = window.ReadRecentConsoleLogs(2);
+
+            Assert.Equal(new[] { 3L, 5L }, entries.Select(entry => entry.Sequence));
+            Assert.Equal(new[] { "two", "three" }, entries.Select(entry => entry.Message));
+        }
+
         [Theory]
         [InlineData(1L, false)]
         [InlineData(0L, true)]

@@ -45,6 +45,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/console-logs': RouteRecordInfo<
+      '/console-logs',
+      '/console-logs',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/login': RouteRecordInfo<
       '/login',
       '/login',
@@ -106,6 +113,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/api-keys.vue': {
       routes:
         | '/api-keys'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/console-logs.vue': {
+      routes:
+        | '/console-logs'
       views:
         | never
       pathParamNames:

@@ -213,13 +213,27 @@ OnlinePlayersView
 
 - 当前 Admin 使用生成的 `serverEventsGet()` 和内置 Fetch SSE parser 建立单一事件流，不新增 SSE 包。连接发送 `Authorization` Header 和 `Accept: text/event-stream`，普通请求的 10 秒超时不作用于长连接，但仍由 `AbortSignal` 主动取消。
 - Admin 自身使用 Auth Store 当前 Access Token 建立 SSE；API Key 是外部集成凭据，不进入浏览器会话。原生 `EventSource`、Basic、URL Token 和 Cookie 凭据不进入方案。
-- 每次连接先消费不推进游标的 `welcome`，再处理 replay/live；当前命名事件为 `console-log`、`game-ready` 和 `server-stopping`，`gap` 表示窗口或慢客户端缺口。
+- 每次连接先消费不推进游标的 `welcome`，再处理 replay/live；当前命名事件为 `console-log`、`game-ready` 和 `server-stopping`，`gap` 表示窗口或慢客户端缺口。服务端按当前角色过滤事件：`Owner`/`Admin` 可接收 `console-log`，`Viewer` 只接收其获准的生命周期事件。
 - 当前 `serverEvents` 在内存保存最后事件 ID，正常结束后以 `Last-Event-ID` 重连；登出或会话替换清除游标。generated SSE 网络重试使用最大 30 秒退避，正常结束后等待 3 秒再连接，所有等待服从取消信号。
 - `welcome` 和 heartbeat 只确认连接或存活；`game-ready`、`server-stopping` 和 `gap` 强制刷新综合概览 Query。SSE 不直接覆盖 REST 快照，在线玩家在后端尚无进入/离开事件时继续按 10 秒轮询。
-- 未来日志页面断线后保留当前日志和最后接收时间，使用同一连接的最后游标重连或调用 REST 补取。
-- 服务端无法补齐保留窗口外记录时，页面插入明确缺口，不把两段日志拼成连续事实。
+- 控制台页面断线后保留当前日志和最后接收时间，继续使用同一应用级连接的最后游标重连；页面不建立第二条 SSE。
+- 服务端无法补齐保留窗口外记录时，页面在状态栏标记明确缺口，不把两段日志拼成连续事实，也不向原始日志区插入面板消息。
 - SSE 事件只更新对应查询或触发精确失效；不得用广播事件直接任意修改所有 Feature 状态。
 - 后续日志消费仍需验证事件去重、显式缺口、401/403/429/503 分类、浏览器代理缓冲与页面级断线状态，不能从当前概览刷新链路推导日志体验已实现。
+
+### 控制台工作台
+
+- 路由页面只允许 `Owner` 和 `Admin`；`Viewer` 不显示导航入口，深链接进入权限拒绝页。REST 和 SSE 的服务端授权独立于前端隐藏，`Viewer` 不能读取最近日志、动态命令目录或 `console-log`。
+- 页面挂载时先向应用级 `serverEvents` 注册 `console-log` 监听器并暂存 live 事件，再请求 `GET /api/v1/console/logs/recent?limit=1000`。快照和暂存事件按统一 `sequence` 合并、排序和去重；该顺序关闭快照请求期间的日志竞态，不引入额外快照游标或冲突状态机。
+- 最近日志响应只包含带 `sequence` 的服务端原始六字段。页面渲染优先使用 `formattedMessage`，缺失时回退 `message`，非空 `trace` 作为原始后续行；所有内容使用普通文本节点，禁止 `v-html`。现有 `logType` 只用于克制的语义色，不改变、隐藏或筛选文本。
+- 日志状态只属于 `useConsoleLogs` 页面生命周期，不进入 Pinia Store 或 Pinia Colada cache。状态保持为 `snapshotLoading`、应用级 `connectionStatus`、`hasGap`、`entries` 和 `unreadCount` 五个正交值，不建立重复的页面状态机。浏览器最多保留 2000 条；顶部淘汰与服务端 `gap` 分开表达。清空页面只清除当前 entries 和未读数，不改变应用级 SSE 游标；重新进入页面时重新获取最近日志。
+- `ConsoleLogViewport` 独立拥有 DOM 滚动判断：位于底部时跟随，离开底部后保持阅读位置并累计未读数量，选择“回到最新”后清零并恢复跟随。连接、缺口、快照失败和缓冲数量由 `ConsoleWorkspace` 顶部紧凑区域表达，不污染日志。
+- `GET /api/v1/console/commands/catalog` 使用生成 Query，按项目统一设置 `staleTime: 0`、`refetchOnWindowFocus: false`；进入页面读取一次，收到 `game-ready` 后重新读取。目录失败时关闭建议但不阻断自由输入。
+- 命令目录项固定为 `name`、`aliases`、`description`、`help` 和 `permissionLevel`。SevenDays Adapter 从当前 `SdtdConsole` 注册表直接读取 `GetCommands()`、`GetDescription()`、`GetHelp()` 和有效权限等级；帮助文本保持原样，不派生额外字段。单个第三方命令的可选元数据失败只降级该项。
+- 命令建议只处理第一个词，对名称和别名做不区分大小写的前缀匹配并保持目录顺序；支持方向键、Tab、Esc 和 Enter。页面内最多保留 50 条成功提交命令，连续重复原文不重复追加，可通过向下导航返回未提交草稿，不进入 Storage。
+- `POST /api/v1/console/commands` 使用生成 Mutation。成功后清空输入但丢弃独立输出的展示用途；失败或结果未知保留输入并使用短暂通知。任何命令均直接提交，不由前端维护命令白名单、风险表或确认框。
+- 页面只拆分 `ConsoleWorkspace`、`ConsoleLogViewport` 和 `ConsoleCommandBar`：工作台负责组合和顶部状态，日志视口负责原始文本、语义色、滚动跟随与未读数，命令栏负责建议、帮助、历史与提交。页面是全高无卡片布局，底部命令输入固定可见，建议从输入框上方展开；窄屏保留连接状态、缺口、清空、未读返回和命令输入，控件不得互相遮挡。
+- 首版不安装虚拟列表、终端模拟器或新的 SSE 包。最近 1000/浏览器 2000 的固定上限复用 Vue、Nuxt UI、现有生成客户端和应用级 SSE；只有实测显示该上限仍造成不可接受的 DOM 成本时，才另立依赖决策。
 
 ## 关键运行链路
 
@@ -329,7 +343,7 @@ frontend/
 |   |   |   |   |-- auth/                       # 初始化、登录、会话和权限
 |   |   |   |   |-- server-status/              # 新鲜度和连接状态
 |   |   |   |   |-- players/                    # 玩家查询与类型化动作
-|   |   |   |   |-- console-logs/               # SSE、补取和筛选
+|   |   |   |   |-- console-logs/               # SSE、补取、命令和补全
 |   |   |   |   |-- announcements/              # 即时公告与自动化
 |   |   |   |   |-- backups/                    # 备份、作业和恢复
 |   |   |   |   |-- audit/                      # 审计查询与关联
@@ -478,9 +492,9 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - Admin 本次变更文件的定向 lint 已通过；全工程 lint 仍被既有综合概览 Vue 文件的 65 个格式错误和 122 个警告阻断，修复时需要单独审查自动格式化差异；
 - Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩和缓存头；当前 Admin 文档 CSP 已有 Katana 自动化，仍需真实 OWIN 浏览器控制台验证；
-- REST 分页与查询游标仍待定义；认证 SSE 的前端 Header Bearer 生命周期、Welcome/heartbeat/生命周期/gap 映射、`Last-Event-ID` 内存 replay 和可取消重连已有单元证据，仍缺真实 OWIN 浏览器验证、日志事件消费、显式缺口呈现和 REST 日志补取；
+- 通用 REST 分页与查询游标仍待其他能力定义；控制台最近日志接口、Viewer 事件过滤、前端日志消费、显式缺口与动态命令目录已经实现并通过聚焦自动化，仍缺真实 OWIN 浏览器、当前 7DTD 注册目录和原生日志回显证据；
 - 登录限速和认证配置异常反馈；8 小时 Access Token 的到期重登、默认标签页/显式浏览器会话、账号身份显示、API Key 一次性显示/清除与撤销已有组件和受控时间自动化，仍缺真实 OWIN 浏览器证据；
-- 日志典型速率、浏览器保留窗口、渲染预算和是否需要虚拟列表；
+- 日志典型速率和浏览器渲染预算仍缺实测；首版已固定浏览器 2000 条上限且不引入虚拟列表，若聚焦性能证据不满足目标，再单独批准依赖变化；
 - 生产包体积预算、最低浏览器范围和自动化可访问性门槛；
 - Nuxt UI standalone Vue 在目标密度、响应式表格和键盘操作上的原型证据；
 - `vue-i18n`、Nuxt UI locale 与 `@valibot/i18n` 的语言标识映射、按需加载、缺失键门禁和同步切换原型；

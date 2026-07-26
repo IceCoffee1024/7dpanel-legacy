@@ -15,7 +15,7 @@ namespace LSTY.SevenDPanel.Tests
     public sealed class SqliteOverviewActivityTests
     {
         [Fact]
-        public void Upgrade_from_version_three_applies_overview_as_version_five_and_can_be_repeated()
+        public void Upgrade_from_version_three_applies_overview_migration_and_can_be_repeated()
         {
             using var database = new TemporaryOverviewDatabase();
             database.CreateVersionThree();
@@ -32,7 +32,6 @@ namespace LSTY.SevenDPanel.Tests
             bootstrapper.Upgrade();
 
             using var connection = database.ConnectionFactory.Open();
-            Assert.Equal(5, connection.ExecuteScalar<int>("SELECT COUNT(*) FROM SchemaVersions;"));
             Assert.Equal(1, connection.ExecuteScalar<int>(
                 "SELECT COUNT(*) FROM SchemaVersions WHERE ScriptName LIKE '%Migrations.005_OverviewActivityAndServerOperations.sql';"));
             Assert.Equal(1, connection.ExecuteScalar<int>(

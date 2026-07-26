@@ -326,6 +326,71 @@
         ]
       }
     },
+    "/api/v1/console/commands/catalog": {
+      "get": {
+        "tags": [
+          "ConsoleCommandCatalog"
+        ],
+        "operationId": "ConsoleCommands_GetCatalog",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsoleCommandCatalog"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/console/commands": {
       "post": {
         "tags": [
@@ -355,6 +420,94 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConsoleCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/console/logs/recent": {
+      "get": {
+        "tags": [
+          "ConsoleLogs"
+        ],
+        "operationId": "ConsoleLogs_GetRecent",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of recent console logs from 1 through 5000; defaults to 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentConsoleLogsResponse"
                 }
               }
             }
@@ -2183,6 +2336,50 @@
           }
         }
       },
+      "ConsoleCommandCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "capturedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsoleCommandCatalogEntry"
+            }
+          }
+        }
+      },
+      "ConsoleCommandCatalogEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "help": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
       "ConsoleCommandResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -2205,6 +2402,51 @@
           "command": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "RecentConsoleLogsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsoleLogEventData"
+            }
+          }
+        }
+      },
+      "ConsoleLogEventData": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "formattedMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "trace": {
+            "type": "string",
+            "nullable": true
+          },
+          "logType": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uptimeMilliseconds": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

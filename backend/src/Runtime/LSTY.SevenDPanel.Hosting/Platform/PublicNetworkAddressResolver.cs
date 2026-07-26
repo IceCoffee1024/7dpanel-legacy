@@ -56,7 +56,8 @@ namespace LSTY.SevenDPanel.Hosting.Platform
                 }
                 else
                 {
-                    completion = new TaskCompletionSource<HostPublicNetwork>();
+                    completion = new TaskCompletionSource<HostPublicNetwork>(
+                        TaskCreationOptions.RunContinuationsAsynchronously);
                     inFlight = completion.Task;
                     request = inFlight;
                 }

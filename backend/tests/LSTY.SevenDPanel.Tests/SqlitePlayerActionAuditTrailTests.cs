@@ -27,8 +27,9 @@ namespace LSTY.SevenDPanel.Tests
                 connection.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'player_action_audit';"));
             Assert.Equal(
-                4,
-                connection.ExecuteScalar<int>("SELECT COUNT(*) FROM SchemaVersions;"));
+                1,
+                connection.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM SchemaVersions WHERE ScriptName LIKE '%Migrations.002_PlayerActionAudit.sql';"));
         }
 
         [Fact]

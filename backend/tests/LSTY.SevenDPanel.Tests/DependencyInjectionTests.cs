@@ -17,6 +17,7 @@ using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Application;
@@ -25,6 +26,7 @@ using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.Platform;
+using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
 using Xunit;
@@ -227,6 +229,14 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 commandService,
                 provider.GetRequiredService<IConsoleCommandGateway>());
+            var commandCatalog = provider.GetRequiredService<SevenDaysConsoleCommandCatalogQuery>();
+            Assert.Same(
+                commandCatalog,
+                provider.GetRequiredService<IConsoleCommandCatalogQuery>());
+            var consoleLogs = provider.GetRequiredService<ConsoleLogService>();
+            Assert.Same(
+                consoleLogs.LiveWindow,
+                provider.GetRequiredService<IRecentConsoleLogQuery>());
             var commandAuditStore = provider.GetRequiredService<SqliteConsoleCommandAuditStore>();
             Assert.Same(
                 commandAuditStore,

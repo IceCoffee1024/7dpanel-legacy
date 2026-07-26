@@ -60,6 +60,84 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Viewer_filters_console_logs_from_replay_and_live_but_keeps_lifecycle_events()
+        {
+            var replayLog = ServerEvent.CreateConsoleLog(
+                1, "formatted", "replay", null, "log", DateTime.UtcNow, 1L);
+            var gameReady = ServerEvent.CreateGameReady(2, DateTime.UtcNow);
+            var liveLog = ServerEvent.CreateConsoleLog(
+                3, "formatted", "live", null, "log", DateTime.UtcNow, 2L);
+            var stopping = ServerEvent.CreateServerStopping(4, DateTime.UtcNow);
+            var stream = new FakeServerEventStream(
+                new[] { replayLog, gameReady },
+                new ServerEvent?[] { liveLog, stopping, null });
+            var authentication = new FakeAuthenticationStore
+            {
+                Role = PanelUserIdentity.ViewerRole
+            };
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication);
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[]
+                {
+                    PanelUserIdentity.OwnerRole,
+                    PanelUserIdentity.AdminRole,
+                    PanelUserIdentity.ViewerRole
+                }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, null, TestContext.Current.CancellationToken);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.DoesNotContain("event: console-log\n", text);
+            Assert.Contains("event: game-ready\n", text);
+            Assert.Contains("event: server-stopping\n", text);
+        }
+
+        [Fact]
+        public async Task Filtered_live_event_advances_the_gap_cursor()
+        {
+            var liveLog = ServerEvent.CreateConsoleLog(
+                7, "formatted", "live", null, "log", DateTime.UtcNow, 2L);
+            var stream = new FakeServerEventStream(
+                Array.Empty<ServerEvent>(),
+                new ServerEvent?[] { liveLog, null },
+                overflowed: true);
+            var authentication = new FakeAuthenticationStore
+            {
+                Role = PanelUserIdentity.ViewerRole
+            };
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication);
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.ViewerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, 6L, TestContext.Current.CancellationToken);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.DoesNotContain("event: console-log\n", text);
+            Assert.Contains("event: gap\n", text);
+            Assert.Contains("\"afterSequence\":7", text);
+        }
+
+        [Fact]
         public async Task Invalidated_bearer_authorization_closes_before_the_next_event()
         {
             var now = new DateTimeOffset(2026, 7, 21, 0, 0, 0, TimeSpan.Zero);
@@ -441,17 +519,20 @@ namespace LSTY.SevenDPanel.Tests
             private readonly IReadOnlyList<ServerEvent?> live;
             private readonly Action? onRead;
             private readonly Action? onCanceledRead;
+            private readonly bool overflowed;
 
             public FakeServerEventStream(
                 IReadOnlyList<ServerEvent> replay,
                 IReadOnlyList<ServerEvent?> live,
                 Action? onRead = null,
-                Action? onCanceledRead = null)
+                Action? onCanceledRead = null,
+                bool overflowed = false)
             {
                 this.replay = replay;
                 this.live = live;
                 this.onRead = onRead;
                 this.onCanceledRead = onCanceledRead;
+                this.overflowed = overflowed;
             }
 
             public IReadOnlyList<ServerEvent> ReadAfter(
@@ -467,7 +548,7 @@ namespace LSTY.SevenDPanel.Tests
                 int capacity,
                 out IServerEventSubscription? subscription)
             {
-                subscription = new FakeSubscription(live, onRead, onCanceledRead);
+                subscription = new FakeSubscription(live, onRead, onCanceledRead, overflowed);
                 return true;
             }
         }
@@ -477,18 +558,21 @@ namespace LSTY.SevenDPanel.Tests
             private readonly Queue<ServerEvent?> events;
             private readonly Action? onRead;
             private readonly Action? onCanceledRead;
+            private readonly bool overflowed;
 
             public FakeSubscription(
                 IEnumerable<ServerEvent?> events,
                 Action? onRead,
-                Action? onCanceledRead)
+                Action? onCanceledRead,
+                bool overflowed)
             {
                 this.events = new Queue<ServerEvent?>(events);
                 this.onRead = onRead;
                 this.onCanceledRead = onCanceledRead;
+                this.overflowed = overflowed;
             }
 
-            public bool IsOverflowed => false;
+            public bool IsOverflowed => overflowed;
 
             public async Task<ServerEvent?> ReadAsync(CancellationToken cancellationToken)
             {

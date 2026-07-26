@@ -28,12 +28,21 @@ namespace LSTY.SevenDPanel.Tests
                 connection.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('users', 'access_tokens', 'api_keys');"));
             Assert.Equal(
-                12,
+                6,
                 connection.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND (name LIKE 'ix_%' OR name = 'ux_users_username');"));
+                    @"SELECT COUNT(*) FROM sqlite_master
+                      WHERE type = 'index'
+                        AND name IN (
+                            'ux_users_username',
+                            'ix_access_tokens_subject',
+                            'ix_access_tokens_expiration',
+                            'ix_access_tokens_oldest',
+                            'ix_api_keys_subject_created',
+                            'ix_api_keys_active_subject');"));
             Assert.Equal(
-                4,
-                connection.ExecuteScalar<int>("SELECT COUNT(*) FROM SchemaVersions;"));
+                1,
+                connection.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM SchemaVersions WHERE ScriptName LIKE '%Migrations.001_Authentication.sql';"));
             Assert.Equal(
                 "wal",
                 connection.ExecuteScalar<string>("PRAGMA journal_mode;")!.ToLowerInvariant());

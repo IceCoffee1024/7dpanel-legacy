@@ -5,7 +5,7 @@ using LSTY.SevenDPanel.Hosting.ServerEvents;
 
 namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs
 {
-    public sealed class ServerEventLiveWindow
+    public sealed class ServerEventLiveWindow : IRecentConsoleLogQuery
     {
         private readonly object sync = new object();
         private readonly int capacity;
@@ -67,6 +67,27 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs
                     oldestSequence,
                     latestSequence,
                     hasGap);
+            }
+        }
+
+        public IReadOnlyList<ConsoleLogEventData> ReadRecentConsoleLogs(int limit)
+        {
+            if (limit <= 0) throw new ArgumentOutOfRangeException(nameof(limit));
+
+            lock (sync)
+            {
+                var consoleLogs = entries
+                    .Where(entry => string.Equals(
+                        entry.EventName,
+                        ServerEventNames.ConsoleLog,
+                        StringComparison.Ordinal))
+                    .Select(entry => entry.Data as ConsoleLogEventData)
+                    .Where(entry => entry != null)
+                    .Cast<ConsoleLogEventData>()
+                    .ToArray();
+                return consoleLogs
+                    .Skip(Math.Max(0, consoleLogs.Length - limit))
+                    .ToArray();
             }
         }
 

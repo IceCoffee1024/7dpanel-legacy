@@ -105,20 +105,30 @@ namespace LSTY.SevenDPanel.Tests
         {
             using var fixture = new TileFixture();
             fixture.WriteTile(4, 0, 0, ".png", Enumerable.Repeat((byte)7, 1024).ToArray());
-            var callerThread = Environment.CurrentManagedThreadId;
-            var providerThread = callerThread;
+            var providerGate = new object();
+            var providerInvoked = false;
             var store = new LocalMapTileStore(() =>
             {
-                providerThread = Environment.CurrentManagedThreadId;
-                return new LocalMapTileRoot("world-guid", fixture.RootPath, "generation-1");
+                lock (providerGate)
+                {
+                    providerInvoked = true;
+                    return new LocalMapTileRoot("world-guid", fixture.RootPath, "generation-1");
+                }
             });
 
-            var result = await store.ReadAsync(
-                new MapTileKey("world-guid", 4, 0, 0),
-                CancellationToken.None);
+            Task<MapTileReadResult> readTask;
+            lock (providerGate)
+            {
+                readTask = store.ReadAsync(
+                    new MapTileKey("world-guid", 4, 0, 0),
+                    CancellationToken.None);
+                Assert.False(providerInvoked);
+                Assert.False(readTask.IsCompleted);
+            }
 
+            var result = await readTask;
             Assert.Equal(MapTileReadStatus.Available, result.Status);
-            Assert.NotEqual(callerThread, providerThread);
+            Assert.True(providerInvoked);
 
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
