@@ -31,10 +31,10 @@ function submit() {
   <UModal v-model:open="open" :title="t('accessLists.banDialog.title')">
     <template #body>
       <form class="space-y-3" @submit.prevent="submit">
-        <UFormField :label="t('accessLists.fields.playerId')"><UInput v-model="form.playerId" :disabled="entry !== null" /></UFormField>
-        <UFormField :label="t('accessLists.fields.displayName')"><UInput v-model="form.displayName" /></UFormField>
-        <UFormField :label="t('accessLists.fields.bannedUntil')"><UInput v-model="form.bannedUntilUtc" type="datetime-local" /></UFormField>
-        <UFormField :label="t('accessLists.fields.reason')"><UTextarea v-model="form.reason" :maxlength="200" /></UFormField>
+        <UFormField :label="t('accessLists.fields.playerId')"><UInput v-model="form.playerId" class="w-full" :disabled="entry !== null" /></UFormField>
+        <UFormField :label="t('accessLists.fields.displayName')"><UInput v-model="form.displayName" class="w-full" /></UFormField>
+        <UFormField :label="t('accessLists.fields.bannedUntil')"><UInput v-model="form.bannedUntilUtc" class="w-full" type="datetime-local" /></UFormField>
+        <UFormField :label="t('accessLists.fields.reason')"><UTextarea v-model="form.reason" class="w-full" :maxlength="200" /></UFormField>
         <p class="text-sm text-muted">{{ t('accessLists.banDialog.consequence') }}</p>
         <div class="flex justify-end gap-2"><UButton :label="t('common.cancel')" color="neutral" variant="outline" @click="open = false" /><UButton type="submit" :label="t('accessLists.action.confirmSave')" /></div>
       </form>
