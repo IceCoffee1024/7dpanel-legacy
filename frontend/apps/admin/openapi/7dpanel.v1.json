@@ -12,6 +12,206 @@
     }
   ],
   "paths": {
+    "/api/v1/access-lists/bans": {
+      "get": {
+        "tags": [
+          "AccessLists"
+        ],
+        "operationId": "AccessLists_GetBans",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BanEntryHttpResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/access-lists/whitelist": {
+      "get": {
+        "tags": [
+          "AccessLists"
+        ],
+        "operationId": "AccessLists_GetWhitelist",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WhitelistEntryHttpResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/access-lists/bans/{playerId}": {
+      "put": {
+        "tags": [
+          "AccessLists"
+        ],
+        "operationId": "AccessLists_PutBan",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/BanUpsertHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "AccessLists"
+        ],
+        "operationId": "AccessLists_DeleteBan",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/access-lists/whitelist/{playerId}": {
+      "put": {
+        "tags": [
+          "AccessLists"
+        ],
+        "operationId": "AccessLists_PutWhitelist",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/WhitelistUpsertHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "AccessLists"
+        ],
+        "operationId": "AccessLists_DeleteWhitelist",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/api-keys": {
       "get": {
         "tags": [
@@ -570,6 +770,206 @@
         ]
       }
     },
+    "/api/v1/game-permissions/admins": {
+      "get": {
+        "tags": [
+          "GamePermissions"
+        ],
+        "operationId": "GamePermissions_GetAdmins",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GameAdminHttpResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/game-permissions/commands": {
+      "get": {
+        "tags": [
+          "GamePermissions"
+        ],
+        "operationId": "GamePermissions_GetCommands",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CommandPermissionHttpResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/game-permissions/admins/{playerId}": {
+      "put": {
+        "tags": [
+          "GamePermissions"
+        ],
+        "operationId": "GamePermissions_PutAdmin",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/GameAdminUpsertHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GamePermissions"
+        ],
+        "operationId": "GamePermissions_DeleteAdmin",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/game-permissions/commands/{command}": {
+      "put": {
+        "tags": [
+          "GamePermissions"
+        ],
+        "operationId": "GamePermissions_PutCommand",
+        "parameters": [
+          {
+            "name": "command",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/CommandPermissionUpsertHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GamePermissions"
+        ],
+        "operationId": "GamePermissions_DeleteCommand",
+        "parameters": [
+          {
+            "name": "command",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -610,6 +1010,86 @@
         }
       }
     },
+    "/api/v1/mods": {
+      "get": {
+        "tags": [
+          "Mods"
+        ],
+        "operationId": "Mods_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModHttpResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mods/{directoryId}/state": {
+      "put": {
+        "tags": [
+          "Mods"
+        ],
+        "operationId": "Mods_Put",
+        "parameters": [
+          {
+            "name": "directoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SetModStateHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModStateHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/overview": {
       "get": {
         "tags": [
@@ -626,6 +1106,197 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/panel-users": {
+      "get": {
+        "tags": [
+          "PanelUsers"
+        ],
+        "operationId": "PanelUsers_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PanelUserRecord"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "PanelUsers"
+        ],
+        "operationId": "PanelUsers_Post",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/PanelUserCreateRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PanelUserRecord"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/panel-users/{subject}": {
+      "put": {
+        "tags": [
+          "PanelUsers"
+        ],
+        "operationId": "PanelUsers_Put",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/PanelUserUpdateRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PanelUserRecord"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "PanelUsers"
+        ],
+        "operationId": "PanelUsers_Delete",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/panel-users/{subject}/password": {
+      "post": {
+        "tags": [
+          "PanelUsers"
+        ],
+        "operationId": "PanelUsers_ResetPassword",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/PanelUserPasswordRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
           }
         },
         "security": [
@@ -1108,6 +1779,83 @@
         ]
       }
     },
+    "/api/v1/server-configuration": {
+      "get": {
+        "tags": [
+          "ServerConfiguration"
+        ],
+        "operationId": "ServerConfiguration_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerConfigurationSnapshotResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/server-configuration/{key}": {
+      "put": {
+        "tags": [
+          "ServerConfiguration"
+        ],
+        "operationId": "ServerConfiguration_Put",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/UpdateServerConfigurationHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerConfigurationUpdateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/events/stream": {
       "get": {
         "tags": [
@@ -1531,6 +2279,68 @@
   },
   "components": {
     "schemas": {
+      "BanEntryHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bannedUntilUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "WhitelistEntryHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        }
+      },
+      "BanUpsertHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "bannedUntilUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "WhitelistUpsertHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "ApiProblemDetails": {
         "type": "object",
         "required": [
@@ -1695,6 +2505,63 @@
           }
         }
       },
+      "GameAdminHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CommandPermissionHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GameAdminUpsertHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CommandPermissionUpsertHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "permissionLevel": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -1707,6 +2574,70 @@
           },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "ModHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "directoryId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "isLoadedNow": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isEnabledNextStart": {
+            "type": "boolean"
+          },
+          "isProtected": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ModStateHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "directoryId": {
+            "type": "string"
+          },
+          "isEnabledNextStart": {
+            "type": "boolean"
+          },
+          "outcome": {
+            "type": "string"
+          }
+        }
+      },
+      "SetModStateHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "nullable": true
           }
         }
       },
@@ -2100,6 +3031,76 @@
         "properties": {
           "code": {
             "type": "string"
+          }
+        }
+      },
+      "PanelUserRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PanelUserCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PanelUserUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PanelUserPasswordRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -2652,6 +3653,102 @@
             "nullable": true
           },
           "platform": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ServerConfigurationSnapshotResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "readAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerConfigurationFieldResponse"
+            }
+          }
+        }
+      },
+      "ServerConfigurationFieldResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "valueType": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "sensitive": {
+            "type": "boolean"
+          },
+          "isSet": {
+            "type": "boolean"
+          },
+          "restartRequired": {
+            "type": "boolean"
+          },
+          "allowedValues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minimum": {
+            "type": "number",
+            "format": "decimal",
+            "nullable": true
+          },
+          "maximum": {
+            "type": "number",
+            "format": "decimal",
+            "nullable": true
+          }
+        }
+      },
+      "ServerConfigurationUpdateResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "savedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "restartRequired": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateServerConfigurationHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
             "type": "string",
             "nullable": true
           }

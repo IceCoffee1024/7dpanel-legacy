@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using Dapper;
 using LSTY.SevenDPanel.Hosting.Authentication;
@@ -8,7 +9,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
     public sealed class SqliteAuthenticationStore :
         IPanelCredentialStore,
         IPanelAccessTokenStore,
-        IPanelApiKeyStore
+        IPanelApiKeyStore,
+        IPanelUserAdministrationStore
     {
         public const string BootstrapOwnerSubject = "owner";
         public const int MaximumAccessTokenCount = 128;
@@ -174,6 +176,185 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
 
             identity = new PanelUserIdentity(row.Subject, row.Username, row.Role);
             return true;
+        }
+
+        public IReadOnlyList<PanelUserRecord> ListUsers()
+        {
+            using var connection = connectionFactory.Open();
+            var rows = connection.Query<UserAdministrationRow>(
+                @"SELECT subject AS Subject,
+                         username AS Username,
+                         role AS Role,
+                         enabled AS Enabled,
+                         updated_utc AS UpdatedUtc
+                  FROM users
+                  ORDER BY username COLLATE NOCASE, subject;");
+            var users = new List<PanelUserRecord>();
+            foreach (var row in rows)
+            {
+                users.Add(ToPanelUserRecord(row));
+            }
+
+            return users;
+        }
+
+        public PanelUserMutationResult CreateUser(
+            string username,
+            string password,
+            string role,
+            bool enabled)
+        {
+            var normalizedUsername = (username ?? string.Empty).Trim();
+            if (!IsValidUsername(normalizedUsername) ||
+                !IsValidPassword(password) ||
+                !PanelUserIdentity.IsSupportedRole(role))
+            {
+                return PanelUserMutationResult.With(PanelUserMutationStatus.Invalid);
+            }
+
+            var subject = Guid.NewGuid().ToString("N");
+            var salt = RandomBytes(PasswordSaltSize);
+            var updatedUtc = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            try
+            {
+                using var connection = connectionFactory.Open();
+                connection.Execute(
+                    @"INSERT INTO users (
+                          subject, username, role, password_salt, password_hash,
+                          password_iterations, enabled, updated_utc)
+                      VALUES (
+                          @Subject, @Username, @Role, @PasswordSalt, @PasswordHash,
+                          @PasswordIterations, @Enabled, @UpdatedUtc);",
+                    new
+                    {
+                        Subject = subject,
+                        Username = normalizedUsername,
+                        Role = role,
+                        PasswordSalt = salt,
+                        PasswordHash = HashPassword(password, salt, PasswordIterationCount),
+                        PasswordIterations = PasswordIterationCount,
+                        Enabled = enabled ? 1 : 0,
+                        UpdatedUtc = updatedUtc
+                    });
+                return PanelUserMutationResult.With(
+                    PanelUserMutationStatus.Created,
+                    new PanelUserRecord(subject, normalizedUsername, role, enabled,
+                        DateTimeOffset.FromUnixTimeMilliseconds(updatedUtc)));
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException exception)
+                when (exception.SqliteErrorCode == 19)
+            {
+                return PanelUserMutationResult.With(PanelUserMutationStatus.Conflict);
+            }
+        }
+
+        public PanelUserMutationResult UpdateUser(
+            string subject,
+            string username,
+            string role,
+            bool enabled)
+        {
+            var normalizedUsername = (username ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(subject) ||
+                !IsValidUsername(normalizedUsername) ||
+                !PanelUserIdentity.IsSupportedRole(role))
+            {
+                return PanelUserMutationResult.With(PanelUserMutationStatus.Invalid);
+            }
+
+            try
+            {
+                using var connection = connectionFactory.Open();
+                using var transaction = connection.BeginTransaction(deferred: false);
+                var current = GetAdministrationRow(connection, transaction, subject);
+                if (current == null)
+                    return PanelUserMutationResult.With(PanelUserMutationStatus.NotFound);
+                if (IsEnabledOwner(current) &&
+                    (!enabled || !string.Equals(role, PanelUserIdentity.OwnerRole, StringComparison.Ordinal)) &&
+                    CountEnabledOwners(connection, transaction) <= 1)
+                {
+                    return PanelUserMutationResult.With(PanelUserMutationStatus.LastOwner);
+                }
+
+                var updatedUtc = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                connection.Execute(
+                    @"UPDATE users
+                      SET username = @Username, role = @Role, enabled = @Enabled, updated_utc = @UpdatedUtc
+                      WHERE subject = @Subject;",
+                    new
+                    {
+                        Subject = subject,
+                        Username = normalizedUsername,
+                        Role = role,
+                        Enabled = enabled ? 1 : 0,
+                        UpdatedUtc = updatedUtc
+                    }, transaction);
+                connection.Execute("DELETE FROM access_tokens WHERE subject = @Subject;",
+                    new { Subject = subject }, transaction);
+                transaction.Commit();
+                return PanelUserMutationResult.With(
+                    PanelUserMutationStatus.Updated,
+                    new PanelUserRecord(subject, normalizedUsername, role, enabled,
+                        DateTimeOffset.FromUnixTimeMilliseconds(updatedUtc)));
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException exception)
+                when (exception.SqliteErrorCode == 19)
+            {
+                return PanelUserMutationResult.With(PanelUserMutationStatus.Conflict);
+            }
+        }
+
+        public PanelUserMutationResult ResetPassword(string subject, string password)
+        {
+            if (string.IsNullOrWhiteSpace(subject) || !IsValidPassword(password))
+                return PanelUserMutationResult.With(PanelUserMutationStatus.Invalid);
+
+            using var connection = connectionFactory.Open();
+            using var transaction = connection.BeginTransaction(deferred: false);
+            var current = GetAdministrationRow(connection, transaction, subject);
+            if (current == null)
+                return PanelUserMutationResult.With(PanelUserMutationStatus.NotFound);
+
+            var salt = RandomBytes(PasswordSaltSize);
+            var updatedUtc = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            connection.Execute(
+                @"UPDATE users
+                  SET password_salt = @PasswordSalt,
+                      password_hash = @PasswordHash,
+                      password_iterations = @PasswordIterations,
+                      updated_utc = @UpdatedUtc
+                  WHERE subject = @Subject;",
+                new
+                {
+                    Subject = subject,
+                    PasswordSalt = salt,
+                    PasswordHash = HashPassword(password, salt, PasswordIterationCount),
+                    PasswordIterations = PasswordIterationCount,
+                    UpdatedUtc = updatedUtc
+                }, transaction);
+            connection.Execute("DELETE FROM access_tokens WHERE subject = @Subject;",
+                new { Subject = subject }, transaction);
+            transaction.Commit();
+            return PanelUserMutationResult.With(PanelUserMutationStatus.Updated);
+        }
+
+        public PanelUserMutationResult DeleteUser(string subject)
+        {
+            if (string.IsNullOrWhiteSpace(subject))
+                return PanelUserMutationResult.With(PanelUserMutationStatus.Invalid);
+
+            using var connection = connectionFactory.Open();
+            using var transaction = connection.BeginTransaction(deferred: false);
+            var current = GetAdministrationRow(connection, transaction, subject);
+            if (current == null)
+                return PanelUserMutationResult.With(PanelUserMutationStatus.NotFound);
+            if (IsEnabledOwner(current) && CountEnabledOwners(connection, transaction) <= 1)
+                return PanelUserMutationResult.With(PanelUserMutationStatus.LastOwner);
+
+            connection.Execute("DELETE FROM users WHERE subject = @Subject;",
+                new { Subject = subject }, transaction);
+            transaction.Commit();
+            return PanelUserMutationResult.With(PanelUserMutationStatus.Deleted);
         }
 
         public string Issue(
@@ -702,6 +883,45 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             return count;
         }
 
+        private static bool IsValidUsername(string username) =>
+            GetUnicodeScalarCount(username) is >= 1 and <= 80;
+
+        private static bool IsValidPassword(string password) =>
+            password != null && password.Length >= 8 && password.Length <= 256;
+
+        private static UserAdministrationRow? GetAdministrationRow(
+            Microsoft.Data.Sqlite.SqliteConnection connection,
+            Microsoft.Data.Sqlite.SqliteTransaction transaction,
+            string subject) =>
+            connection.QuerySingleOrDefault<UserAdministrationRow>(
+                @"SELECT subject AS Subject,
+                         username AS Username,
+                         role AS Role,
+                         enabled AS Enabled,
+                         updated_utc AS UpdatedUtc
+                  FROM users
+                  WHERE subject = @Subject;",
+                new { Subject = subject }, transaction);
+
+        private static int CountEnabledOwners(
+            Microsoft.Data.Sqlite.SqliteConnection connection,
+            Microsoft.Data.Sqlite.SqliteTransaction transaction) =>
+            connection.ExecuteScalar<int>(
+                "SELECT COUNT(*) FROM users WHERE role = 'Owner' AND enabled = 1;",
+                transaction: transaction);
+
+        private static bool IsEnabledOwner(UserAdministrationRow row) =>
+            row.Enabled == 1 &&
+            string.Equals(row.Role, PanelUserIdentity.OwnerRole, StringComparison.Ordinal);
+
+        private static PanelUserRecord ToPanelUserRecord(UserAdministrationRow row) =>
+            new PanelUserRecord(
+                row.Subject,
+                row.Username,
+                row.Role,
+                row.Enabled == 1,
+                DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedUtc));
+
         private class UserIdentityRow
         {
             public string Subject { get; set; } = string.Empty;
@@ -715,6 +935,12 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             public byte[] PasswordHash { get; set; } = Array.Empty<byte>();
             public int PasswordIterations { get; set; }
             public int Enabled { get; set; }
+        }
+
+        private sealed class UserAdministrationRow : UserIdentityRow
+        {
+            public int Enabled { get; set; }
+            public long UpdatedUtc { get; set; }
         }
 
         private sealed class AccessTokenRow : UserIdentityRow

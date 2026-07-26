@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
+import type { AccessListsDeleteBanData, AccessListsDeleteBanResponses, AccessListsDeleteWhitelistData, AccessListsDeleteWhitelistResponses, AccessListsGetBansData, AccessListsGetBansResponses, AccessListsGetWhitelistData, AccessListsGetWhitelistResponses, AccessListsPutBanData, AccessListsPutBanResponses, AccessListsPutWhitelistData, AccessListsPutWhitelistResponses, ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, GamePermissionsDeleteAdminData, GamePermissionsDeleteAdminResponses, GamePermissionsDeleteCommandData, GamePermissionsDeleteCommandResponses, GamePermissionsGetAdminsData, GamePermissionsGetAdminsResponses, GamePermissionsGetCommandsData, GamePermissionsGetCommandsResponses, GamePermissionsPutAdminData, GamePermissionsPutAdminResponses, GamePermissionsPutCommandData, GamePermissionsPutCommandResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, ModsGetData, ModsGetResponses, ModsPutData, ModsPutResponses, OverviewGetData, OverviewGetResponses, PanelUsersDeleteData, PanelUsersDeleteResponses, PanelUsersGetData, PanelUsersGetResponses, PanelUsersPostData, PanelUsersPostResponses, PanelUsersPutData, PanelUsersPutResponses, PanelUsersResetPasswordData, PanelUsersResetPasswordResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerConfigurationGetData, ServerConfigurationGetResponses, ServerConfigurationPutData, ServerConfigurationPutResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -17,6 +17,56 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: Record<string, unknown>;
 };
+
+export const accessListsGetBans = <ThrowOnError extends boolean = true>(options?: Options<AccessListsGetBansData, ThrowOnError>) => (options?.client ?? client).get<AccessListsGetBansResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-lists/bans',
+    ...options
+});
+
+export const accessListsGetWhitelist = <ThrowOnError extends boolean = true>(options?: Options<AccessListsGetWhitelistData, ThrowOnError>) => (options?.client ?? client).get<AccessListsGetWhitelistResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-lists/whitelist',
+    ...options
+});
+
+export const accessListsDeleteBan = <ThrowOnError extends boolean = true>(options: Options<AccessListsDeleteBanData, ThrowOnError>) => (options.client ?? client).delete<AccessListsDeleteBanResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-lists/bans/{playerId}',
+    ...options
+});
+
+export const accessListsPutBan = <ThrowOnError extends boolean = true>(options: Options<AccessListsPutBanData, ThrowOnError>) => (options.client ?? client).put<AccessListsPutBanResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-lists/bans/{playerId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const accessListsDeleteWhitelist = <ThrowOnError extends boolean = true>(options: Options<AccessListsDeleteWhitelistData, ThrowOnError>) => (options.client ?? client).delete<AccessListsDeleteWhitelistResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-lists/whitelist/{playerId}',
+    ...options
+});
+
+export const accessListsPutWhitelist = <ThrowOnError extends boolean = true>(options: Options<AccessListsPutWhitelistData, ThrowOnError>) => (options.client ?? client).put<AccessListsPutWhitelistResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-lists/whitelist/{playerId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 export const apiKeysGet = <ThrowOnError extends boolean = true>(options?: Options<ApiKeysGetData, ThrowOnError>) => (options?.client ?? client).get<ApiKeysGetResponses, ApiKeysGetErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
@@ -74,6 +124,56 @@ export const consoleLogsGetRecent = <ThrowOnError extends boolean = true>(option
     ...options
 });
 
+export const gamePermissionsGetAdmins = <ThrowOnError extends boolean = true>(options?: Options<GamePermissionsGetAdminsData, ThrowOnError>) => (options?.client ?? client).get<GamePermissionsGetAdminsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-permissions/admins',
+    ...options
+});
+
+export const gamePermissionsGetCommands = <ThrowOnError extends boolean = true>(options?: Options<GamePermissionsGetCommandsData, ThrowOnError>) => (options?.client ?? client).get<GamePermissionsGetCommandsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-permissions/commands',
+    ...options
+});
+
+export const gamePermissionsDeleteAdmin = <ThrowOnError extends boolean = true>(options: Options<GamePermissionsDeleteAdminData, ThrowOnError>) => (options.client ?? client).delete<GamePermissionsDeleteAdminResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-permissions/admins/{playerId}',
+    ...options
+});
+
+export const gamePermissionsPutAdmin = <ThrowOnError extends boolean = true>(options: Options<GamePermissionsPutAdminData, ThrowOnError>) => (options.client ?? client).put<GamePermissionsPutAdminResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-permissions/admins/{playerId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const gamePermissionsDeleteCommand = <ThrowOnError extends boolean = true>(options: Options<GamePermissionsDeleteCommandData, ThrowOnError>) => (options.client ?? client).delete<GamePermissionsDeleteCommandResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-permissions/commands/{command}',
+    ...options
+});
+
+export const gamePermissionsPutCommand = <ThrowOnError extends boolean = true>(options: Options<GamePermissionsPutCommandData, ThrowOnError>) => (options.client ?? client).put<GamePermissionsPutCommandResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-permissions/commands/{command}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const healthGet = <ThrowOnError extends boolean = true>(options?: Options<HealthGetData, ThrowOnError>) => (options?.client ?? client).get<HealthGetResponses, unknown, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/health',
@@ -86,11 +186,76 @@ export const healthGet2 = <ThrowOnError extends boolean = true>(options?: Option
     ...options
 });
 
+export const modsGet = <ThrowOnError extends boolean = true>(options?: Options<ModsGetData, ThrowOnError>) => (options?.client ?? client).get<ModsGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mods',
+    ...options
+});
+
+export const modsPut = <ThrowOnError extends boolean = true>(options: Options<ModsPutData, ThrowOnError>) => (options.client ?? client).put<ModsPutResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mods/{directoryId}/state',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const overviewGet = <ThrowOnError extends boolean = true>(options?: Options<OverviewGetData, ThrowOnError>) => (options?.client ?? client).get<OverviewGetResponses, unknown, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/overview',
     ...options
+});
+
+export const panelUsersGet = <ThrowOnError extends boolean = true>(options?: Options<PanelUsersGetData, ThrowOnError>) => (options?.client ?? client).get<PanelUsersGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/panel-users',
+    ...options
+});
+
+export const panelUsersPost = <ThrowOnError extends boolean = true>(options?: Options<PanelUsersPostData, ThrowOnError>) => (options?.client ?? client).post<PanelUsersPostResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/panel-users',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const panelUsersDelete = <ThrowOnError extends boolean = true>(options: Options<PanelUsersDeleteData, ThrowOnError>) => (options.client ?? client).delete<PanelUsersDeleteResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/panel-users/{subject}',
+    ...options
+});
+
+export const panelUsersPut = <ThrowOnError extends boolean = true>(options: Options<PanelUsersPutData, ThrowOnError>) => (options.client ?? client).put<PanelUsersPutResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/panel-users/{subject}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const panelUsersResetPassword = <ThrowOnError extends boolean = true>(options: Options<PanelUsersResetPasswordData, ThrowOnError>) => (options.client ?? client).post<PanelUsersResetPasswordResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/panel-users/{subject}/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 export const playersGet = <ThrowOnError extends boolean = true>(options?: Options<PlayersGetData, ThrowOnError>) => (options?.client ?? client).get<PlayersGetResponses, PlayersGetErrors, ThrowOnError, 'data'>({
@@ -134,6 +299,24 @@ export const playersKick = <ThrowOnError extends boolean = true>(options: Option
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/players/{entityId}/kick',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const serverConfigurationGet = <ThrowOnError extends boolean = true>(options?: Options<ServerConfigurationGetData, ThrowOnError>) => (options?.client ?? client).get<ServerConfigurationGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/server-configuration',
+    ...options
+});
+
+export const serverConfigurationPut = <ThrowOnError extends boolean = true>(options: Options<ServerConfigurationPutData, ThrowOnError>) => (options.client ?? client).put<ServerConfigurationPutResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/server-configuration/{key}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

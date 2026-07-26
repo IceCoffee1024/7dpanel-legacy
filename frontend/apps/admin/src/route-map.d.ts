@@ -38,6 +38,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/access-lists': RouteRecordInfo<
+      '/access-lists',
+      '/access-lists',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/api-keys': RouteRecordInfo<
       '/api-keys',
       '/api-keys',
@@ -55,6 +62,20 @@ declare module 'vue-router/auto-routes' {
     '/login': RouteRecordInfo<
       '/login',
       '/login',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/mods': RouteRecordInfo<
+      '/mods',
+      '/mods',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/permissions': RouteRecordInfo<
+      '/permissions',
+      '/permissions',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -81,6 +102,13 @@ declare module 'vue-router/auto-routes' {
       { crossplatformId: ParamValue<false> },
       | never
     >,
+    '/server-configuration': RouteRecordInfo<
+      '/server-configuration',
+      '/server-configuration',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -97,6 +125,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/index.vue': {
       routes:
         | '/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/access-lists.vue': {
+      routes:
+        | '/access-lists'
       views:
         | never
       pathParamNames:
@@ -121,6 +157,22 @@ declare module 'vue-router/auto-routes' {
     'src/pages/login.vue': {
       routes:
         | '/login'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/mods.vue': {
+      routes:
+        | '/mods'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/permissions.vue': {
+      routes:
+        | '/permissions'
       views:
         | never
       pathParamNames:
@@ -151,6 +203,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'crossplatformId'
+    }
+    'src/pages/server-configuration.vue': {
+      routes:
+        | '/server-configuration'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 

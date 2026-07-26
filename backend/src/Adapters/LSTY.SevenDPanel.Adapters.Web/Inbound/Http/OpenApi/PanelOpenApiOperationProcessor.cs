@@ -17,6 +17,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             DescribePlayerHistory(context);
             DescribeServerOperations(context);
             DescribeConsoleReads(context);
+            NormalizeNoContentResponse(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
 
@@ -28,6 +29,18 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                     { "Bearer", Array.Empty<string>() }
                 });
             return true;
+        }
+
+        private static void NormalizeNoContentResponse(OperationProcessorContext context)
+        {
+            var responses = context.OperationDescription.Operation.Responses;
+            if (!responses.TryGetValue("204", out var response)) return;
+            responses["204"] = new OpenApiResponse
+            {
+                Description = string.IsNullOrWhiteSpace(response.Description)
+                    ? "The operation completed successfully."
+                    : response.Description
+            };
         }
 
         private static void DescribeServerEventStream(OperationProcessorContext context)

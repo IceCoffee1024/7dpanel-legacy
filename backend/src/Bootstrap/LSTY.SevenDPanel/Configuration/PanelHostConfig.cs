@@ -10,6 +10,7 @@ namespace LSTY.SevenDPanel.Configuration
         public PanelAuthenticationConfig? Authentication { get; set; }
         public PanelOverviewConfig? Overview { get; set; }
         public RestartScriptConfig? Restart { get; set; }
+        public string? ServerConfigurationPath { get; set; }
 
         public static PanelHostConfig CreateDefault()
         {
@@ -20,7 +21,8 @@ namespace LSTY.SevenDPanel.Configuration
                 Scheme = PanelHostOptions.DefaultScheme,
                 Authentication = PanelAuthenticationConfig.CreateDefault(),
                 Overview = PanelOverviewConfig.CreateDefault(),
-                Restart = RestartScriptConfig.CreateDefault()
+                Restart = RestartScriptConfig.CreateDefault(),
+                ServerConfigurationPath = "../../serverconfig.xml"
             };
         }
     }

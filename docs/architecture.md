@@ -7,11 +7,11 @@ last_updated: "2026-07-26"
 
 ## 背景与驱动因素
 
-本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成，覆盖 Mod 初始化与关闭、组合运行时生命周期、独立游戏就绪边界、控制台日志采集与当前进程命名事件窗口、监听配置、Katana OWIN、健康 API、统一 Problem Details、配置引导 `Owner`、SQLite 持久用户、password grant、Access Token/API Key 两类 Header Bearer 凭据、认证生产 SSE、Admin 静态资源托管、综合概览聚合、Owner 重启脚本启动与固定关服，以及认证后通过容量 32 的有界 FIFO 在游戏主线程执行动态控制台命令、由 Join/Save/Disconnect 事件维护的固定 25 字段在线玩家 observation 和以类型化原生 API 踢出在线玩家的 Application 纵向切片。最终 `SdtdConsole.executeCommand` 由独立 Harmony Patch 尽力观察，完整原文、参数、输出、来源和结果通过容量 256 的异步队列写入 SQLite；审计失败不会改变命令结果，并以告警和 gap 记录缺失。Admin 已提供综合概览、API Key 的创建/列表/撤销、在线玩家紧凑列表、只读详情抽屉、Owner 踢出确认流程和 `Owner`/`Admin` 控制台工作台；控制台复用单一认证 SSE，按 `sequence` 合并最近日志与实时 `console-log`，并使用当前 7DTD 注册命令目录提供补全和直接执行。`Admin`/`Viewer` 用户管理、封禁、禁言、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
+本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成。除既有生命周期、认证、概览、控制台、玩家观察与踢出能力外，当前还实现服务器配置、黑白名单、面板用户、7DTD 游戏管理员/命令权限和模组下次启动状态四组服务器治理切片。最终 `SdtdConsole.executeCommand` 仍由独立 Harmony Patch 尽力观察并异步写入 SQLite。Admin 已提供综合概览、API Key、在线/历史玩家、控制台，以及四组服务器治理页面；各页面遵守服务端角色矩阵和严格响应 parser。禁言、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
 
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
-当前切片直接支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家快照、Owner 踢出、动态控制台命令与命令审计写入，以及 `CAP-05` 的配置引导 Owner、网站 Access Token、用户 API Key 与认证 SSE 基础，并落实 `NFR-01`、`NFR-02`、`NFR-04` 的自托管、未知结果不得显示为成功和管理凭证失败关闭约束。它不代表 `CAP-01` 的完整游戏状态、`CAP-02` 的其他玩家动作/日志页面、`CAP-05` 的审计查询或完整身份管理，以及其他 P0 能力已经完成。
+当前切片支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家、踢出、动态控制台命令、黑白名单与命令审计写入，`CAP-05` 的引导 Owner、Access Token/API Key、认证 SSE、面板用户和双层权限管理，以及 `CAP-06` 的服务器配置与模组状态基础，并落实 `NFR-01`、`NFR-02`、`NFR-04`、`NFR-05`。它不代表备份、审计查询、禁言、传送或其他 P0 能力已经完成。
 
 ### Admin 综合概览第一阶段
 
@@ -240,7 +240,7 @@ GET /
 | 有界日志与命令通道 | `System.Threading.Channels 10.0.10`、`System.Threading.Tasks.Extensions 4.6.3` | 控制台日志、HTTP 命令 FIFO、异步审计自动化、net48 Release Rebuild 和隔离发布清单通过；Channels 的 net462 资产声明 Bcl AsyncInterfaces `10.0.10` 与 Tasks.Extensions `4.6.3` 最低依赖，当前发布闭包解析为这组已验证版本。升级发布物已在 Windows `v3.0.1-b4` 完成启动，shutdown 后进程与 listener 已释放；本轮未重复真实命令、写锁恢复、容量路径或 acknowledgement 时序 | 三条通道容量和生命周期独立；发布 Channels、Tasks.Extensions 和 Unsafe，仍不复制 Harmony、LogLibrary 或 Unity 程序集；Linux Mono 仍待验证 |
 | Admin | Vue `3.5.40`、Vue Router `5.2.0`、Pinia `3.0.4`、Pinia Colada `1.4.2`、Vue I18n `11.4.7`、Valibot `1.4.2`、`@valibot/i18n` `1.2.0`、Nuxt UI `4.10.0`、`@hey-api/openapi-ts 0.94.0`（开发期）、TypeScript `6.0.3`、Vite `8.1.5`（Rolldown/Oxc）、Vitest `4.1.6`、Vue Test Utils、happy-dom、Playwright `1.61.1`、`@types/node` `24.x`、pnpm `11.13.1`；开发/CI 基线为 Node.js `24+`，package engines 保留 `^20.19.0 || ^22.13.0 || >=24.0.0` | OpenAPI 快照与生成链、生成客户端安全适配、概览 Query、重启 Mutation、认证 SSE 生命周期、Auth 缓存/游标清理、严格 parser 和既有 Admin 行为由自动化覆盖；lint、typecheck、Vitest 和生产构建作为应用门禁 | `@hey-api/openapi-ts` 锁定 `0.94.0` 以兼容 Node.js `20.19` 下限；Fetch Client 与 SSE parser 由生成器内置，不安装独立 `@hey-api/client-fetch` 或其他 SSE 包。当前迁移概览、重启和服务器事件流，其他 API 保持既有边界；Node.js 只用于开发、构建和测试，生产静态托管不需要 Node.js |
 
-未来通用后台工作队列、认证最近日志查询、控制台页面、完整角色/用户管理和其他候选依赖的批准状态只在目标蓝图和对应变更设计中维护，不属于当前依赖矩阵。
+未来通用后台工作队列、认证最近日志查询、审计查询和其他候选依赖的批准状态只在目标蓝图和对应变更设计中维护，不属于当前依赖矩阵。
 
 ## 部署与运维
 
@@ -310,3 +310,14 @@ GET /
 - 公开 Swagger JSON/UI 已通过 Windows Katana 自动化、本地发布清单和 `a98ad6b` 的 Windows `v3.0.1-b4` Unity Mono 真实进程验证；NSwag/NJsonSchema/Namotion 程序集从 Mod 目录加载，真实服务器可访问 UI 与 OpenAPI 3 JSON。当前认证版本尚未复验这些组件，也未在 Linux Unity Mono 验证兼容性。
 - 当前 Access Token/API Key 实现尚未获得数据库重置后的 Windows `v3.0.1-b4` 真实进程或真实 OWIN 浏览器验收；不得从定向自动化、历史 smoke 或移除的 PBKDF2 探针推导高频认证延迟、真实 REST/SSE 兼容性或发布物行为已经通过。
 - 编译使用的 publicized `Assembly-CSharp.dll` 与官方运行时材料职责不同；升级游戏版本时必须重新验证构建和真实进程行为。
+## 服务器治理当前实现
+
+2026-07-26 已将[服务器治理设计规格](superpowers/specs/2026-07-26-server-governance-design.md)中的四个纵向切片实现到当前系统，落实 `CAP-02`、`CAP-05`、`CAP-06`、`NFR-02`、`NFR-04` 和 `NFR-05`：
+
+- `ServerConfiguration` 由 Application 字段目录与用例、Bootstrap `LocalServerConfigurationStore` 和 Web Controller 组成。`serverConfigurationPath` 从 Mod 配置目录解析，浏览器不能提交文件路径；XML 读取禁止 DTD，敏感值只返回 `IsSet`，写入使用 SHA-256 版本冲突检查和同目录替换。
+- `AccessLists` 与 `GamePermissions` 的 Application 用例依赖 SevenDays Adapter；所有活动游戏对象读写均在 `GameThreadDispatcher` 内复制或执行。面板 `Owner`/`Admin`/`Viewer` 与 7DTD `0..2000` 等级没有转换关系。
+- `SqliteAuthenticationStore` 同时实现面板用户管理合同；创建、更新、禁用、重置密码和删除使用立即写事务，拒绝留下零个启用 `Owner`，角色、状态或密码变化撤销该用户 Access Token。引导 `Subject=owner`、开发默认凭据和明文 HTTP 例外保持不变，不执行存量 Owner 迁移。
+- `Mods` 由 Bootstrap 本地目录目录和 SevenDays 当前加载查询合并；只识别 `Mods` 根直接子目录的 `ModInfo.xml`/`_ModInfo.xml`，拒绝越界及重解析目录，保护当前 7DPanel 目录，并只改变下次启动状态。
+- Web Adapter 暴露 `/api/v1/server-configuration`、`/api/v1/access-lists`、`/api/v1/panel-users`、`/api/v1/game-permissions` 和 `/api/v1/mods` 合同；Admin 分别由四个 Feature 和自动路由页面拥有，响应先经过严格 parser。OpenAPI 快照和生成客户端已同步。
+
+上述是本地代码、Release 构建、SQLite/临时文件系统、Katana 和 Admin 自动化支持的当前事实。真实 7DTD 原生名单/权限、真实服务器配置文件、真实 Mods 目录、浏览器 E2E、发布和 Windows/Linux 进程证据仍由[测试策略](test.md)列为后续门禁。

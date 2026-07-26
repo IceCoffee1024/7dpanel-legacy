@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 document_role: Target
 ---
 
@@ -295,9 +295,9 @@ Authorization: Bearer <opaque-token>
   -> rebuild claims from the current user; fail closed on every invalid state
 ```
 
-`config.json` 只在本过渡阶段承担引导数据来源；它不是绕过 SQLite 的第二套认证后端。每次启动的同步以稳定 `Subject=owner` 定位同一个 `Owner`，配置用户名或密码变化只更新该身份。OAuth password grant 随后读取 SQLite 当前记录；用户禁用或数据读取失败必须拒绝认证。目标系统不接受 Basic Authentication。
+`config.json` 在当前初始化开发阶段继续承担引导数据来源；它不是绕过 SQLite 的第二套认证后端。每次启动的同步以稳定 `Subject=owner` 定位同一个 `Owner`，配置用户名或密码变化只更新该身份。OAuth password grant 随后读取 SQLite 当前记录；用户禁用或数据读取失败必须拒绝认证。目标系统不接受 Basic Authentication。
 
-Access Token 与 API Key 对客户端保持不透明，数据库只保存高熵 secret 的摘要，公开 ID 只承担记录定位。两类凭据只允许出现在 `Authorization` Header，不接受 QueryString 或 Cookie；产品不建立 Cookie 会话，因此不引入 CSRF Token，也不签发 refresh token。API Key 绑定创建者并继承其当前角色，完整值只在创建时返回一次，且不能创建另一把 Key。过渡期没有用户管理 API；等后续用户管理能力可以安全维护至少一个 `Owner` 后，再删除配置同步、已知默认凭据和相应引导代码。每个用例仍然必须独立执行权限检查，并保持稳定的 401/403 Problem Details，完整边界见[认证设计规格](../superpowers/specs/2026-07-22-api-key-authentication-design.md)。
+Access Token 与 API Key 对客户端保持不透明，数据库只保存高熵 secret 的摘要，公开 ID 只承担记录定位。两类凭据只允许出现在 `Authorization` Header，不接受 QueryString 或 Cookie；产品不建立 Cookie 会话，因此不引入 CSRF Token，也不签发 refresh token。API Key 绑定创建者并继承其当前角色，完整值只在创建时返回一次，且不能创建另一把 Key。服务器治理切片增加面板用户管理，但继续同步引导 `Owner`，不执行存量 Owner 迁移，也不改变当前明文 HTTP 例外；最后一个启用 Owner 的不变量由 SQLite 原子能力方法维护。每个用例仍然必须独立执行权限检查，并保持稳定的 401/403 Problem Details，完整边界见[认证设计规格](../superpowers/specs/2026-07-22-api-key-authentication-design.md)和[服务器治理设计规格](../superpowers/specs/2026-07-26-server-governance-design.md)。
 
 ### 动态控制台命令
 
@@ -415,6 +415,30 @@ POST /api/v1/players/{id}/kick
 ```
 
 HTTP 超时不能证明游戏动作失败。动作一旦开始，就必须继续到最终的审计状态。
+
+### 服务器配置、访问名单、权限和模组
+
+四个目标切片保持独立 Application 边界，不建立通用 CRUD 或资源注册表：
+
+```text
+Server configuration
+  HTTP -> authorized use case -> field catalog validation
+       -> Local configuration store -> version check -> same-directory replace
+
+Access lists and game permissions
+  HTTP -> authorized use case -> typed SevenDays port
+       -> GameThreadDispatcher -> copy or mutate adminTools -> immutable result
+
+Panel users
+  HTTP -> Owner-only use case -> atomic identity administration store
+       -> preserve one enabled Owner -> revoke affected access tokens -> audit
+
+Mods
+  HTTP -> authorized use case -> Local mod catalog + SevenDays runtime snapshot
+       -> safe direct-child identifier -> next-start marker mutation -> audit
+```
+
+配置字段目录只解释和限制当前 XML 键，不替代文件事实。敏感字段不返回当前值；写入使用版本冲突检测和同目录临时文件替换。名单与游戏权限的所有活动 7DTD 对象访问都位于 Dispatcher 内，Controller 不拼接控制台命令。面板角色与游戏 `0..2000` 权限等级没有转换关系。模组目录只接受直接子目录安全标识，当前加载状态与磁盘下次启动状态分别读取；切换不执行热加载或热卸载，并拒绝 7DPanel 自身及当前进程必需模组。详细行为见[服务器治理设计规格](../superpowers/specs/2026-07-26-server-governance-design.md)。
 
 ### 公告与自动化
 
@@ -544,6 +568,7 @@ backend/
 |   |   |   |-- LoginUseCase.cs                  # 密码和 Bearer Token 流程
 |   |   |   |-- LogoutUseCase.cs                 # 撤销当前 Bearer Token
 |   |   |   |-- ApiKeys/                         # 创建、列出和撤销当前用户 API Key
+|   |   |   |-- UserManagement/                  # 用户、角色、启用状态和密码重置
 |   |   |   |-- AuthorizationService.cs          # 操作者和权限协调
 |   |   |   |-- Models/AuthenticatedActor.cs     # 不可变操作者快照
 |   |   |   `-- Ports/
@@ -552,6 +577,10 @@ backend/
 |   |   |       |-- IApiKeyStore.cs               # API Key 元数据、摘要和撤销
 |   |   |       |-- IPasswordHasher.cs           # 版本化密码摘要
 |   |   |       `-- ISecureTokenGenerator.cs     # Token id 和高熵 secret
+|   |   |-- ServerConfiguration/                 # 字段目录、读取版本和单字段写入
+|   |   |-- AccessLists/                         # 封禁、白名单和类型化动作
+|   |   |-- GamePermissions/                     # 游戏管理员与命令权限等级
+|   |   |-- Mods/                                # 模组清单和下次启动状态
 |   |   |-- ServerStatus/
 |   |   |   |-- GetServerStatusUseCase.cs        # 已授权的当前状态
 |   |   |   |-- Models/ServerStatusView.cs       # 感知新鲜度的读模型
@@ -648,7 +677,12 @@ backend/
 |   |   |   |   `-- ExceptionMappingMiddleware.cs
 |   |   |   |-- Identity/
 |   |   |   |   |-- SessionsController.cs
+|   |   |   |   |-- UsersController.cs
 |   |   |   |   `-- IdentityContracts.cs
+|   |   |   |-- ServerConfiguration/             # Owner-only 配置 HTTP 合同
+|   |   |   |-- AccessLists/                     # 名单查询与单项动作 HTTP 合同
+|   |   |   |-- GamePermissions/                 # 原生权限 HTTP 合同
+|   |   |   |-- Mods/                            # 模组查询与状态 HTTP 合同
 |   |   |   |-- ServerStatus/
 |   |   |   |   |-- ServerStatusController.cs
 |   |   |   |   `-- ServerStatusContracts.cs
@@ -693,6 +727,9 @@ backend/
 |   |       |   |-- SevenDaysOnlinePlayerQuery.cs
 |   |       |   |-- SevenDaysPlayerActions.cs
 |   |       |   `-- SevenDaysSnapshotMapper.cs
+|   |       |-- AccessLists/SevenDaysPlayerAccessControl.cs
+|   |       |-- GamePermissions/SevenDaysGamePermissionControl.cs
+|   |       |-- Mods/SevenDaysLoadedModQuery.cs
 |   |       |-- Announcements/SevenDaysAnnouncementGateway.cs
 |   |       |-- ConsoleCommands/
 |   |       |   |-- SevenDaysConsoleCommandGateway.cs
@@ -709,7 +746,8 @@ backend/
 |   |   |   |-- SqliteIdentityStore.cs
 |   |   |   |-- SqliteAccessTokenStore.cs
 |   |   |   |-- Pbkdf2PasswordHasher.cs
-|   |   |   `-- CryptoTokenGenerator.cs
+|   |   |   |-- CryptoTokenGenerator.cs
+|   |   |   `-- SqliteIdentityAdministrationStore.cs
 |   |   |-- Audit/SqliteAuditTrail.cs
 |   |   |-- Automation/SqliteAutomationStore.cs
 |   |   |-- Backups/SqliteBackupCatalog.cs
@@ -722,6 +760,8 @@ backend/
 |   |
 |   `-- Adapters/LSTY.SevenDPanel.Adapters.Local/
 |       |-- LSTY.SevenDPanel.Adapters.Local.csproj
+|       |-- ServerConfiguration/LocalServerConfigurationStore.cs
+|       |-- Mods/LocalModCatalog.cs
 |       |-- Inbound/
 |       |   |-- BackgroundWork/BackgroundWorkConsumer.cs
 |       |   `-- Scheduling/

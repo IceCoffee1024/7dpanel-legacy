@@ -39,4 +39,38 @@ namespace LSTY.SevenDPanel.Application
             DateTimeOffset occurredAtUtc,
             CancellationToken cancellationToken);
     }
+
+    public static class RecentActivityWriterGovernanceExtensions
+    {
+        public static Task RecordAccessListChangedAsync(
+            this IRecentActivityWriter writer,
+            string actorSubject,
+            string list,
+            string action,
+            string playerId,
+            string outcome,
+            DateTimeOffset occurredAtUtc,
+            CancellationToken cancellationToken)
+        {
+            if (writer is IServerGovernanceActivityWriter governanceWriter)
+            {
+                return governanceWriter.RecordAccessListChangedAsync(
+                    actorSubject, list, action, playerId, outcome, occurredAtUtc, cancellationToken);
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public interface IServerGovernanceActivityWriter
+    {
+        Task RecordAccessListChangedAsync(
+            string actorSubject,
+            string list,
+            string action,
+            string playerId,
+            string outcome,
+            DateTimeOffset occurredAtUtc,
+            CancellationToken cancellationToken);
+    }
 }
