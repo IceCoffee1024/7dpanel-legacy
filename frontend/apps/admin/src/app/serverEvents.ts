@@ -5,6 +5,7 @@ import { serverEventsGet } from '../shared/api/generated/sdk.gen'
 export type ServerEventType =
   | 'welcome'
   | 'console-log'
+  | 'chat-message'
   | 'game-ready'
   | 'server-stopping'
   | 'gap'
@@ -52,6 +53,7 @@ export interface ServerEventsController extends ServerEventsLifecycle {
 const supportedEventTypes = new Set<ServerEventType>([
   'welcome',
   'console-log',
+  'chat-message',
   'game-ready',
   'server-stopping',
   'gap',

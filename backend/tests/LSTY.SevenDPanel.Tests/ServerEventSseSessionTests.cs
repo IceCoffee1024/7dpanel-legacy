@@ -103,6 +103,73 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Owner_receives_chat_messages_from_replay_and_live()
+        {
+            var replayChat = CreateChatMessage(1, "replay");
+            var liveChat = CreateChatMessage(2, "live");
+            var stream = new FakeServerEventStream(
+                new[] { replayChat },
+                new ServerEvent?[] { liveChat, null });
+            var authentication = new FakeAuthenticationStore();
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication);
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.OwnerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, null, TestContext.Current.CancellationToken);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.Equal(2, Count(text, "event: chat-message\n"));
+            Assert.Contains("\"message\":\"replay\"", text);
+            Assert.Contains("\"message\":\"live\"", text);
+        }
+
+        [Theory]
+        [InlineData(PanelUserIdentity.AdminRole)]
+        [InlineData(PanelUserIdentity.ViewerRole)]
+        public async Task Non_owner_filters_chat_from_replay_and_live_and_advances_cursor(string role)
+        {
+            var replayChat = CreateChatMessage(7, "replay");
+            var stopping = ServerEvent.CreateServerStopping(8, DateTime.UtcNow);
+            var liveChat = CreateChatMessage(9, "live");
+            var stream = new FakeServerEventStream(
+                new[] { replayChat },
+                new ServerEvent?[] { stopping, liveChat, null },
+                overflowed: true);
+            var authentication = new FakeAuthenticationStore { Role = role };
+            using var session = new ServerEventSseSession(
+                stream,
+                new FakeRuntimeStatus(),
+                authentication,
+                authentication,
+                authentication);
+            using var output = new MemoryStream();
+
+            Assert.True(session.TryAuthorize(
+                FakeAuthenticationStore.Subject,
+                "bearer-token",
+                PanelCredentialType.AccessToken,
+                new[] { PanelUserIdentity.AdminRole, PanelUserIdentity.ViewerRole }));
+            Assert.True(session.TryReserve());
+            await session.WriteAsync(output, 6L, TestContext.Current.CancellationToken);
+
+            var text = Encoding.UTF8.GetString(output.ToArray());
+            Assert.DoesNotContain("event: chat-message\n", text);
+            Assert.Contains("event: server-stopping\n", text);
+            Assert.Contains("event: gap\n", text);
+            Assert.Contains("\"afterSequence\":9", text);
+        }
+
+        [Fact]
         public async Task Filtered_live_event_advances_the_gap_cursor()
         {
             var liveLog = ServerEvent.CreateConsoleLog(
@@ -506,6 +573,17 @@ namespace LSTY.SevenDPanel.Tests
 
             return count;
         }
+
+        private static ServerEvent CreateChatMessage(long sequence, string message) =>
+            ServerEvent.CreateChatMessage(
+                sequence,
+                new DateTimeOffset(2026, 7, 26, 1, 2, 3, TimeSpan.Zero),
+                42,
+                "EOS_123",
+                "Alice",
+                "Global",
+                "Player",
+                message);
 
         private sealed class FakeRuntimeStatus : IPanelRuntimeStatus
         {

@@ -15,15 +15,33 @@ namespace LSTY.SevenDPanel.Tests
             var occurredAtUtc = new DateTime(2026, 7, 21, 8, 9, 10, DateTimeKind.Utc);
 
             var consoleLog = window.AppendConsoleLog(CreateEntry("one"));
+            var chatMessage = window.AppendChatMessage(
+                new DateTimeOffset(occurredAtUtc),
+                42,
+                "EOS_123",
+                "Alice",
+                "Global",
+                "Player",
+                "hello");
             var gameReady = window.AppendGameReady(occurredAtUtc);
             var serverStopping = window.AppendServerStopping(occurredAtUtc.AddMinutes(1));
 
-            Assert.Equal(new[] { 1L, 2L, 3L },
+            Assert.Equal(new[] { 1L, 2L, 3L, 4L },
                 window.ReadAfter(null, 10).Entries.Select(entry => entry.Sequence));
             Assert.Equal(ServerEventNames.ConsoleLog, consoleLog.EventName);
+            Assert.Equal(ServerEventNames.ChatMessage, chatMessage.EventName);
             Assert.Equal(ServerEventNames.GameReady, gameReady.EventName);
             Assert.Equal(ServerEventNames.ServerStopping, serverStopping.EventName);
             Assert.IsType<ConsoleLogEventData>(consoleLog.Data);
+            var chatData = Assert.IsType<ChatMessageEventData>(chatMessage.Data);
+            Assert.Equal(2L, chatData.Sequence);
+            Assert.Equal(new DateTimeOffset(occurredAtUtc), chatData.OccurredAtUtc);
+            Assert.Equal(42, chatData.EntityId);
+            Assert.Equal("EOS_123", chatData.CrossplatformId);
+            Assert.Equal("Alice", chatData.SenderName);
+            Assert.Equal("Global", chatData.Channel);
+            Assert.Equal("Player", chatData.SourceKind);
+            Assert.Equal("hello", chatData.Message);
             Assert.IsType<GameReadyEventData>(gameReady.Data);
             Assert.IsType<ServerStoppingEventData>(serverStopping.Data);
         }
@@ -100,6 +118,25 @@ namespace LSTY.SevenDPanel.Tests
             window.AppendConsoleLog(CreateEntry("three"));
 
             var entries = window.ReadRecentConsoleLogs(2);
+
+            Assert.Equal(new[] { 3L, 5L }, entries.Select(entry => entry.Sequence));
+            Assert.Equal(new[] { "two", "three" }, entries.Select(entry => entry.Message));
+        }
+
+        [Fact]
+        public void Recent_chat_messages_returns_latest_chat_only_in_sequence_order()
+        {
+            var window = new ServerEventLiveWindow(8);
+            window.AppendChatMessage(
+                DateTimeOffset.UtcNow, 1, null, string.Empty, "Unknown", "System", "one");
+            window.AppendConsoleLog(CreateEntry("console"));
+            window.AppendChatMessage(
+                DateTimeOffset.UtcNow, 2, "EOS_2", "Two", "Party", "Player", "two");
+            window.AppendGameReady(DateTime.UtcNow);
+            window.AppendChatMessage(
+                DateTimeOffset.UtcNow, 3, "EOS_3", "Three", "Whisper", "Administrator", "three");
+
+            var entries = window.ReadRecentChatMessages(2);
 
             Assert.Equal(new[] { 3L, 5L }, entries.Select(entry => entry.Sequence));
             Assert.Equal(new[] { "two", "three" }, entries.Select(entry => entry.Message));

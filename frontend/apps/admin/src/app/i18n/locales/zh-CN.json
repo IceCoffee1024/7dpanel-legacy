@@ -301,6 +301,34 @@
       }
     }
   },
+  "gameChat": {
+    "title": "游戏聊天",
+    "live": {
+      "title": "实时聊天",
+      "sendFeedback": {
+        "session_expired": "会话已失效，请重新登录",
+        "forbidden": "当前身份无权发送聊天消息",
+        "disabled": "聊天功能当前已关闭",
+        "not_ready": "游戏聊天尚未就绪",
+        "queue_full": "发送队列已满，请稍后重试",
+        "target_offline": "私聊目标已离线",
+        "cancelled": "发送已取消",
+        "unknown": "消息发送失败，输入已保留"
+      }
+    },
+    "history": { "title": "历史聊天" },
+    "settings": {
+      "title": "聊天设置",
+      "loading": "正在加载聊天设置",
+      "forbidden": "无权管理聊天设置",
+      "failed": "聊天设置加载失败"
+    },
+    "colored": {
+      "title": "彩色聊天",
+      "forbidden": "无权管理彩色聊天",
+      "settingsFailed": "彩色聊天设置加载失败"
+    }
+  },
   "console": {
     "title": "网页控制台",
     "clear": "清空页面",

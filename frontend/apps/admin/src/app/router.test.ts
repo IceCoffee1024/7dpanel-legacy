@@ -15,6 +15,10 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/console-logs', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner', 'Admin'] } },
+    { path: '/game-chat/live', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
+    { path: '/game-chat/history', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
+    { path: '/game-chat/settings', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
+    { path: '/game-chat/colored', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
   ],
 }))
 
@@ -73,6 +77,32 @@ describe('createAdminRouter', () => {
     await router.push('/console-logs')
 
     expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/console-logs')
+  })
+
+  it.each(['/game-chat/live', '/game-chat/history', '/game-chat/settings', '/game-chat/colored'])('allows Owner to open %s', async (path) => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, 'Owner')
+
+    await router.push(path)
+
+    expect(router.currentRoute.value.fullPath).toBe(path)
+  })
+
+  it.each(['Admin', 'Viewer'] as const)('sends %s game chat deep links to Forbidden', async (role) => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, role)
+
+    await router.push('/game-chat/live')
+
+    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/game-chat/live')
+  })
+
+  it('preserves an anonymous game chat deep link in the login redirect', async () => {
+    const { router } = createTestRouter()
+
+    await router.push('/game-chat/colored')
+
+    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/game-chat/colored')
   })
 
   it('returns to login when an active protected session is cleared', async () => {

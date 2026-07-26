@@ -5,7 +5,7 @@ using LSTY.SevenDPanel.Hosting.ServerEvents;
 
 namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs
 {
-    public sealed class ServerEventLiveWindow : IRecentConsoleLogQuery
+    public sealed class ServerEventLiveWindow : IRecentConsoleLogQuery, IRecentChatMessageQuery
     {
         private readonly object sync = new object();
         private readonly int capacity;
@@ -31,6 +31,24 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs
                 entry.Timestamp,
                 entry.UptimeMilliseconds));
         }
+
+        public ServerEvent AppendChatMessage(
+            DateTimeOffset occurredAtUtc,
+            int entityId,
+            string? crossplatformId,
+            string senderName,
+            string channel,
+            string sourceKind,
+            string message) =>
+            Append(sequence => ServerEvent.CreateChatMessage(
+                sequence,
+                occurredAtUtc,
+                entityId,
+                crossplatformId,
+                senderName,
+                channel,
+                sourceKind,
+                message));
 
         public ServerEvent AppendGameReady(DateTime occurredAtUtc) =>
             Append(sequence => ServerEvent.CreateGameReady(sequence, occurredAtUtc));
@@ -87,6 +105,27 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs
                     .ToArray();
                 return consoleLogs
                     .Skip(Math.Max(0, consoleLogs.Length - limit))
+                    .ToArray();
+            }
+        }
+
+        public IReadOnlyList<ChatMessageEventData> ReadRecentChatMessages(int limit)
+        {
+            if (limit <= 0) throw new ArgumentOutOfRangeException(nameof(limit));
+
+            lock (sync)
+            {
+                var chatMessages = entries
+                    .Where(entry => string.Equals(
+                        entry.EventName,
+                        ServerEventNames.ChatMessage,
+                        StringComparison.Ordinal))
+                    .Select(entry => entry.Data as ChatMessageEventData)
+                    .Where(entry => entry != null)
+                    .Cast<ChatMessageEventData>()
+                    .ToArray();
+                return chatMessages
+                    .Skip(Math.Max(0, chatMessages.Length - limit))
                     .ToArray();
             }
         }

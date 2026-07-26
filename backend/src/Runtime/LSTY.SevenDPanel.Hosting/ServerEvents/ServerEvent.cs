@@ -4,6 +4,7 @@ namespace LSTY.SevenDPanel.Hosting.ServerEvents
 {
     public static class ServerEventNames
     {
+        public const string ChatMessage = "chat-message";
         public const string ConsoleLog = "console-log";
         public const string GameReady = "game-ready";
         public const string ServerStopping = "server-stopping";
@@ -43,6 +44,28 @@ namespace LSTY.SevenDPanel.Hosting.ServerEvents
                     timestamp,
                     uptimeMilliseconds));
 
+        public static ServerEvent CreateChatMessage(
+            long sequence,
+            DateTimeOffset occurredAtUtc,
+            int entityId,
+            string? crossplatformId,
+            string senderName,
+            string channel,
+            string sourceKind,
+            string message) =>
+            new ServerEvent(
+                sequence,
+                ServerEventNames.ChatMessage,
+                new ChatMessageEventData(
+                    sequence,
+                    occurredAtUtc,
+                    entityId,
+                    crossplatformId,
+                    senderName,
+                    channel,
+                    sourceKind,
+                    message));
+
         public static ServerEvent CreateGameReady(long sequence, DateTime occurredAtUtc) =>
             new ServerEvent(
                 sequence,
@@ -54,6 +77,38 @@ namespace LSTY.SevenDPanel.Hosting.ServerEvents
                 sequence,
                 ServerEventNames.ServerStopping,
                 new ServerStoppingEventData(sequence, occurredAtUtc));
+    }
+
+    public sealed class ChatMessageEventData
+    {
+        internal ChatMessageEventData(
+            long sequence,
+            DateTimeOffset occurredAtUtc,
+            int entityId,
+            string? crossplatformId,
+            string senderName,
+            string channel,
+            string sourceKind,
+            string message)
+        {
+            Sequence = sequence;
+            OccurredAtUtc = occurredAtUtc;
+            EntityId = entityId;
+            CrossplatformId = crossplatformId;
+            SenderName = senderName ?? throw new ArgumentNullException(nameof(senderName));
+            Channel = channel ?? throw new ArgumentNullException(nameof(channel));
+            SourceKind = sourceKind ?? throw new ArgumentNullException(nameof(sourceKind));
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+        }
+
+        public long Sequence { get; }
+        public DateTimeOffset OccurredAtUtc { get; }
+        public int EntityId { get; }
+        public string? CrossplatformId { get; }
+        public string SenderName { get; }
+        public string Channel { get; }
+        public string SourceKind { get; }
+        public string Message { get; }
     }
 
     public sealed class ConsoleLogEventData

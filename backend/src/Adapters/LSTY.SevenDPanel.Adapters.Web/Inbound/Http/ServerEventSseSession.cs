@@ -388,15 +388,28 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             return true;
         }
 
-        private bool CanWrite(ServerEvent serverEvent) =>
-            !string.Equals(
+        private bool CanWrite(ServerEvent serverEvent)
+        {
+            if (string.Equals(
                 serverEvent.EventName,
-                ServerEventNames.ConsoleLog,
-                StringComparison.Ordinal) ||
-            !string.Equals(
-                currentRole,
-                PanelUserIdentity.ViewerRole,
-                StringComparison.Ordinal);
+                ServerEventNames.ChatMessage,
+                StringComparison.Ordinal))
+            {
+                return string.Equals(
+                    currentRole,
+                    PanelUserIdentity.OwnerRole,
+                    StringComparison.Ordinal);
+            }
+
+            return !string.Equals(
+                    serverEvent.EventName,
+                    ServerEventNames.ConsoleLog,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    currentRole,
+                    PanelUserIdentity.ViewerRole,
+                    StringComparison.Ordinal);
+        }
 
         private static bool ContainsRole(IReadOnlyCollection<string> roles, string role)
         {

@@ -59,7 +59,21 @@ describe('server events runtime', () => {
       id: '40',
     })
     options.onSseEvent?.({ data: { ready: true }, event: 'game-ready', id: '41' })
-    options.onSseEvent?.({ data: { stopping: true }, event: 'server-stopping', id: '42' })
+    options.onSseEvent?.({
+      data: {
+        sequence: 42,
+        occurredAtUtc: '2026-07-26T08:00:00Z',
+        entityId: 7,
+        crossplatformId: 'EOS_player',
+        senderName: 'Player',
+        channel: 'Global',
+        sourceKind: 'Player',
+        message: 'hello',
+      },
+      event: 'chat-message',
+      id: '42',
+    })
+    options.onSseEvent?.({ data: { stopping: true }, event: 'server-stopping', id: '43' })
     options.onSseEvent?.({ data: { afterSequence: 41 }, event: 'gap' })
     options.onSseEvent?.({ data: undefined })
 
@@ -67,6 +81,7 @@ describe('server events runtime', () => {
       'welcome',
       'console-log',
       'game-ready',
+      'chat-message',
       'server-stopping',
       'gap',
       'heartbeat',

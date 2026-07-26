@@ -17,6 +17,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             DescribePlayerHistory(context);
             DescribeServerOperations(context);
             DescribeConsoleReads(context);
+            DescribeChat(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
 
@@ -236,10 +237,155 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 operation.OperationId = "ConsoleCommands_GetCatalog";
         }
 
+        private static void DescribeChat(OperationProcessorContext context)
+        {
+            var path = context.OperationDescription.Path;
+            if (!path.StartsWith("/api/v1/chat/", StringComparison.Ordinal)) return;
+
+            var method = context.OperationDescription.Method;
+            var operation = context.OperationDescription.Operation;
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/chat/messages/recent", StringComparison.Ordinal))
+            {
+                operation.OperationId = "Chat_GetRecentMessages";
+                operation.Description = "Returns Owner-only recent chat messages from the current process event window.";
+                DescribeQueryParameter(operation, "limit", "Number of recent chat messages from 1 through 500; defaults to 200.");
+                return;
+            }
+
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/chat/messages", StringComparison.Ordinal))
+            {
+                operation.OperationId = "Chat_GetMessages";
+                operation.Description = "Returns Owner-only persisted chat history using a filter-bound opaque cursor.";
+                DescribeQueryParameter(operation, "cursor", "Opaque URL-safe cursor returned by the preceding page and bound to the active filters.");
+                DescribeQueryParameter(operation, "limit", "Page size from 1 through 200; defaults to 100.");
+                DescribeQueryParameter(operation, "crossplatformId", "Exact sender cross-platform identity filter.");
+                DescribeQueryParameter(operation, "senderName", "Sender name search text.");
+                DescribeQueryParameter(operation, "chatType", "Exact chat channel name.");
+                DescribeQueryParameter(operation, "sourceKind", "Exact sender source kind.");
+                DescribeQueryParameter(operation, "startUtc", "Optional inclusive UTC start time in round-trip format.");
+                DescribeQueryParameter(operation, "endUtc", "Optional inclusive UTC end time in round-trip format.");
+                return;
+            }
+
+            if (method == OpenApiOperationMethod.Post &&
+                (string.Equals(path, "/api/v1/chat/messages/global", StringComparison.Ordinal) ||
+                 string.Equals(path, "/api/v1/chat/messages/private", StringComparison.Ordinal)))
+            {
+                operation.OperationId = path.EndsWith("/global", StringComparison.Ordinal)
+                    ? "Chat_SendGlobalMessage"
+                    : "Chat_SendPrivateMessage";
+                operation.Description = path.EndsWith("/global", StringComparison.Ordinal)
+                    ? "Queues an Owner-only global chat message for execution on the game thread."
+                    : "Queues an Owner-only private chat message for an online cross-platform identity.";
+                RemoveParameter(operation, "cancellationToken");
+                MoveSuccessResponse(operation, "200", "202", "The chat message was accepted for execution.");
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/chat/settings", StringComparison.Ordinal))
+            {
+                operation.OperationId = method == OpenApiOperationMethod.Get
+                    ? "Chat_GetSettings"
+                    : method == OpenApiOperationMethod.Put
+                        ? "Chat_UpdateSettings"
+                        : "Chat_ResetSettings";
+                operation.Description = method == OpenApiOperationMethod.Get
+                    ? "Returns Owner-only chat settings."
+                    : method == OpenApiOperationMethod.Put
+                        ? "Validates, persists, and applies Owner-only chat settings."
+                        : "Restores and applies the default Owner-only chat settings.";
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/chat/colored/settings", StringComparison.Ordinal))
+            {
+                operation.OperationId = method == OpenApiOperationMethod.Get
+                    ? "Chat_GetColoredSettings"
+                    : method == OpenApiOperationMethod.Put
+                        ? "Chat_UpdateColoredSettings"
+                        : "Chat_ResetColoredSettings";
+                operation.Description = method == OpenApiOperationMethod.Get
+                    ? "Returns Owner-only colored chat settings."
+                    : method == OpenApiOperationMethod.Put
+                        ? "Validates, persists, and applies Owner-only colored chat settings."
+                        : "Restores and applies the default Owner-only colored chat settings.";
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/chat/colored/profiles", StringComparison.Ordinal))
+            {
+                if (method == OpenApiOperationMethod.Get)
+                {
+                    operation.OperationId = "Chat_GetColoredProfiles";
+                    operation.Description = "Returns Owner-only colored chat profiles using a filter-bound opaque cursor.";
+                    DescribeQueryParameter(operation, "cursor", "Opaque URL-safe cursor returned by the preceding page and bound to the active filters.");
+                    DescribeQueryParameter(operation, "limit", "Page size from 1 through 100; defaults to 50.");
+                    DescribeQueryParameter(operation, "crossplatformId", "Cross-platform identity search text.");
+                    DescribeQueryParameter(operation, "customName", "Custom display name search text.");
+                    DescribeQueryParameter(operation, "nameColor", "Exact normalized name color filter.");
+                    DescribeQueryParameter(operation, "textColor", "Exact normalized text color filter.");
+                    DescribeQueryParameter(operation, "createdAfterUtc", "Optional inclusive UTC creation start time in round-trip format.");
+                    DescribeQueryParameter(operation, "createdBeforeUtc", "Optional inclusive UTC creation end time in round-trip format.");
+                }
+                else
+                {
+                    operation.OperationId = "Chat_CreateColoredProfile";
+                    operation.Description = "Creates an Owner-only colored chat profile for a unique cross-platform identity.";
+                    MoveSuccessResponse(operation, "200", "201", "The colored chat profile was created.");
+                }
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/chat/colored/profiles/{crossplatformId}", StringComparison.Ordinal))
+            {
+                if (method == OpenApiOperationMethod.Put)
+                {
+                    operation.OperationId = "Chat_UpdateColoredProfile";
+                    operation.Description = "Updates and applies an existing Owner-only colored chat profile.";
+                }
+                else
+                {
+                    operation.OperationId = "Chat_DeleteColoredProfile";
+                    operation.Description = "Deletes an existing Owner-only colored chat profile.";
+                    operation.Responses.Remove("200");
+                    operation.Responses["204"] = new OpenApiResponse
+                    {
+                        Description = "The colored chat profile was deleted."
+                    };
+                }
+            }
+        }
+
         private static string[] GetProblemStatusCodes(
             string path,
             string method)
         {
+            if (path.StartsWith("/api/v1/chat/", StringComparison.Ordinal))
+            {
+                if (method == OpenApiOperationMethod.Get)
+                    return new[] { "400", "401", "403", "500", "503" };
+
+                if (method == OpenApiOperationMethod.Post &&
+                    string.Equals(path, "/api/v1/chat/messages/global", StringComparison.Ordinal))
+                    return new[] { "400", "401", "403", "500", "503" };
+
+                if (method == OpenApiOperationMethod.Post &&
+                    string.Equals(path, "/api/v1/chat/messages/private", StringComparison.Ordinal))
+                    return new[] { "400", "401", "403", "409", "500", "503" };
+
+                if (method == OpenApiOperationMethod.Post &&
+                    string.Equals(path, "/api/v1/chat/colored/profiles", StringComparison.Ordinal))
+                    return new[] { "400", "401", "403", "409", "500", "503" };
+
+                if ((method == OpenApiOperationMethod.Put || method == OpenApiOperationMethod.Delete) &&
+                    string.Equals(path, "/api/v1/chat/colored/profiles/{crossplatformId}", StringComparison.Ordinal))
+                    return new[] { "400", "401", "403", "404", "500", "503" };
+
+                return new[] { "400", "401", "403", "500", "503" };
+            }
+
             if (method == OpenApiOperationMethod.Get &&
                 string.Equals(path, "/api/v1/events/stream", StringComparison.Ordinal))
             {
@@ -336,6 +482,26 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 string.Equals(candidate.Name, name, StringComparison.Ordinal));
             if (parameter != null)
                 parameter.Description = description;
+        }
+
+        private static void RemoveParameter(OpenApiOperation operation, string name)
+        {
+            var parameter = operation.Parameters.FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (parameter != null) operation.Parameters.Remove(parameter);
+        }
+
+        private static void MoveSuccessResponse(
+            OpenApiOperation operation,
+            string fromStatusCode,
+            string toStatusCode,
+            string description)
+        {
+            if (!operation.Responses.TryGetValue(fromStatusCode, out var response))
+                response = new OpenApiResponse();
+            operation.Responses.Remove(fromStatusCode);
+            response.Description = description;
+            operation.Responses[toStatusCode] = response;
         }
 
         private static JsonSchema CreateApiKeyMetadataListSchema()

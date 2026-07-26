@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
+import type { ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ChatCreateColoredProfileData, ChatCreateColoredProfileErrors, ChatCreateColoredProfileResponses, ChatDeleteColoredProfileData, ChatDeleteColoredProfileErrors, ChatDeleteColoredProfileResponses, ChatGetColoredProfilesData, ChatGetColoredProfilesErrors, ChatGetColoredProfilesResponses, ChatGetColoredSettingsData, ChatGetColoredSettingsErrors, ChatGetColoredSettingsResponses, ChatGetMessagesData, ChatGetMessagesErrors, ChatGetMessagesResponses, ChatGetRecentMessagesData, ChatGetRecentMessagesErrors, ChatGetRecentMessagesResponses, ChatGetSettingsData, ChatGetSettingsErrors, ChatGetSettingsResponses, ChatResetColoredSettingsData, ChatResetColoredSettingsErrors, ChatResetColoredSettingsResponses, ChatResetSettingsData, ChatResetSettingsErrors, ChatResetSettingsResponses, ChatSendGlobalMessageData, ChatSendGlobalMessageErrors, ChatSendGlobalMessageResponses, ChatSendPrivateMessageData, ChatSendPrivateMessageErrors, ChatSendPrivateMessageResponses, ChatUpdateColoredProfileData, ChatUpdateColoredProfileErrors, ChatUpdateColoredProfileResponses, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsErrors, ChatUpdateColoredSettingsResponses, ChatUpdateSettingsData, ChatUpdateSettingsErrors, ChatUpdateSettingsResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, OverviewGetData, OverviewGetResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -47,6 +47,170 @@ export const apiKeysDelete = <ThrowOnError extends boolean = true>(options: Opti
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/api-keys/{keyId}',
     ...options
+});
+
+/**
+ * Returns Owner-only recent chat messages from the current process event window.
+ */
+export const chatGetRecentMessages = <ThrowOnError extends boolean = true>(options?: Options<ChatGetRecentMessagesData, ThrowOnError>) => (options?.client ?? client).get<ChatGetRecentMessagesResponses, ChatGetRecentMessagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/messages/recent',
+    ...options
+});
+
+/**
+ * Returns Owner-only persisted chat history using a filter-bound opaque cursor.
+ */
+export const chatGetMessages = <ThrowOnError extends boolean = true>(options?: Options<ChatGetMessagesData, ThrowOnError>) => (options?.client ?? client).get<ChatGetMessagesResponses, ChatGetMessagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/messages',
+    ...options
+});
+
+/**
+ * Queues an Owner-only global chat message for execution on the game thread.
+ */
+export const chatSendGlobalMessage = <ThrowOnError extends boolean = true>(options?: Options<ChatSendGlobalMessageData, ThrowOnError>) => (options?.client ?? client).post<ChatSendGlobalMessageResponses, ChatSendGlobalMessageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/messages/global',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Queues an Owner-only private chat message for an online cross-platform identity.
+ */
+export const chatSendPrivateMessage = <ThrowOnError extends boolean = true>(options?: Options<ChatSendPrivateMessageData, ThrowOnError>) => (options?.client ?? client).post<ChatSendPrivateMessageResponses, ChatSendPrivateMessageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/messages/private',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Restores and applies the default Owner-only chat settings.
+ */
+export const chatResetSettings = <ThrowOnError extends boolean = true>(options?: Options<ChatResetSettingsData, ThrowOnError>) => (options?.client ?? client).delete<ChatResetSettingsResponses, ChatResetSettingsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/settings',
+    ...options
+});
+
+/**
+ * Returns Owner-only chat settings.
+ */
+export const chatGetSettings = <ThrowOnError extends boolean = true>(options?: Options<ChatGetSettingsData, ThrowOnError>) => (options?.client ?? client).get<ChatGetSettingsResponses, ChatGetSettingsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/settings',
+    ...options
+});
+
+/**
+ * Validates, persists, and applies Owner-only chat settings.
+ */
+export const chatUpdateSettings = <ThrowOnError extends boolean = true>(options?: Options<ChatUpdateSettingsData, ThrowOnError>) => (options?.client ?? client).put<ChatUpdateSettingsResponses, ChatUpdateSettingsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Restores and applies the default Owner-only colored chat settings.
+ */
+export const chatResetColoredSettings = <ThrowOnError extends boolean = true>(options?: Options<ChatResetColoredSettingsData, ThrowOnError>) => (options?.client ?? client).delete<ChatResetColoredSettingsResponses, ChatResetColoredSettingsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/settings',
+    ...options
+});
+
+/**
+ * Returns Owner-only colored chat settings.
+ */
+export const chatGetColoredSettings = <ThrowOnError extends boolean = true>(options?: Options<ChatGetColoredSettingsData, ThrowOnError>) => (options?.client ?? client).get<ChatGetColoredSettingsResponses, ChatGetColoredSettingsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/settings',
+    ...options
+});
+
+/**
+ * Validates, persists, and applies Owner-only colored chat settings.
+ */
+export const chatUpdateColoredSettings = <ThrowOnError extends boolean = true>(options?: Options<ChatUpdateColoredSettingsData, ThrowOnError>) => (options?.client ?? client).put<ChatUpdateColoredSettingsResponses, ChatUpdateColoredSettingsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Returns Owner-only colored chat profiles using a filter-bound opaque cursor.
+ */
+export const chatGetColoredProfiles = <ThrowOnError extends boolean = true>(options?: Options<ChatGetColoredProfilesData, ThrowOnError>) => (options?.client ?? client).get<ChatGetColoredProfilesResponses, ChatGetColoredProfilesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/profiles',
+    ...options
+});
+
+/**
+ * Creates an Owner-only colored chat profile for a unique cross-platform identity.
+ */
+export const chatCreateColoredProfile = <ThrowOnError extends boolean = true>(options?: Options<ChatCreateColoredProfileData, ThrowOnError>) => (options?.client ?? client).post<ChatCreateColoredProfileResponses, ChatCreateColoredProfileErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/profiles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Deletes an existing Owner-only colored chat profile.
+ */
+export const chatDeleteColoredProfile = <ThrowOnError extends boolean = true>(options: Options<ChatDeleteColoredProfileData, ThrowOnError>) => (options.client ?? client).delete<ChatDeleteColoredProfileResponses, ChatDeleteColoredProfileErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/profiles/{crossplatformId}',
+    ...options
+});
+
+/**
+ * Updates and applies an existing Owner-only colored chat profile.
+ */
+export const chatUpdateColoredProfile = <ThrowOnError extends boolean = true>(options: Options<ChatUpdateColoredProfileData, ThrowOnError>) => (options.client ?? client).put<ChatUpdateColoredProfileResponses, ChatUpdateColoredProfileErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/colored/profiles/{crossplatformId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 export const consoleCommandsGetCatalog = <ThrowOnError extends boolean = true>(options?: Options<ConsoleCommandsGetCatalogData, ThrowOnError>) => (options?.client ?? client).get<ConsoleCommandsGetCatalogResponses, ConsoleCommandsGetCatalogErrors, ThrowOnError, 'data'>({

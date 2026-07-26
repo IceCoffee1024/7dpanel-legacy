@@ -19,6 +19,10 @@ async function mountAppShell() {
       { path: '/players', component: { template: '<div />' } },
       { path: '/api-keys', component: { template: '<div />' } },
       { path: '/console-logs', component: { template: '<div />' } },
+      { path: '/game-chat/live', component: { template: '<div />' } },
+      { path: '/game-chat/history', component: { template: '<div />' } },
+      { path: '/game-chat/settings', component: { template: '<div />' } },
+      { path: '/game-chat/colored', component: { template: '<div />' } },
       { path: '/login', component: { template: '<div />' } },
     ],
   })
@@ -47,7 +51,7 @@ async function mountAppShell() {
         },
         UNavigationMenu: {
           props: ['items'],
-          template: '<nav><span v-for="item in items" :key="item.label">{{ item.label }}</span></nav>',
+          template: '<nav><span v-for="item in items" :key="item.label">{{ item.label }}<span v-for="child in item.children" :key="child.label">{{ child.label }}</span></span></nav>',
         },
       },
     },
@@ -110,5 +114,20 @@ describe('appShell', () => {
     auth.role = 'Viewer'
     await nextTick()
     expect(wrapper.text()).not.toContain('网页控制台')
+  })
+
+  it('shows game chat and all four destinations only to Owner', async () => {
+    const { auth, wrapper } = await mountAppShell()
+
+    expect(wrapper.text()).toContain('游戏聊天')
+
+    auth.role = 'Admin'
+    await nextTick()
+    expect(wrapper.text()).not.toContain('游戏聊天')
+    expect(wrapper.text()).not.toContain('实时聊天')
+
+    auth.role = 'Viewer'
+    await nextTick()
+    expect(wrapper.text()).not.toContain('游戏聊天')
   })
 })

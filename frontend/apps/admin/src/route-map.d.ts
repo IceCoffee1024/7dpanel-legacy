@@ -52,6 +52,34 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/game-chat/colored': RouteRecordInfo<
+      '/game-chat/colored',
+      '/game-chat/colored',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/game-chat/history': RouteRecordInfo<
+      '/game-chat/history',
+      '/game-chat/history',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/game-chat/live': RouteRecordInfo<
+      '/game-chat/live',
+      '/game-chat/live',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/game-chat/settings': RouteRecordInfo<
+      '/game-chat/settings',
+      '/game-chat/settings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/login': RouteRecordInfo<
       '/login',
       '/login',
@@ -113,6 +141,38 @@ declare module 'vue-router/auto-routes' {
     'src/pages/console-logs.vue': {
       routes:
         | '/console-logs'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/game-chat/colored.vue': {
+      routes:
+        | '/game-chat/colored'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/game-chat/history.vue': {
+      routes:
+        | '/game-chat/history'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/game-chat/live.vue': {
+      routes:
+        | '/game-chat/live'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/game-chat/settings.vue': {
+      routes:
+        | '/game-chat/settings'
       views:
         | never
       pathParamNames:

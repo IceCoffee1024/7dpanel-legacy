@@ -34,6 +34,7 @@ namespace LSTY.SevenDPanel.Tests
                 host.Start();
                 var document = await GetOpenApiDocumentAsync(client, url);
                 AssertUniqueOperationIds(document);
+                AssertChatOperations(document);
                 NormalizeForAdminCodegen(document);
 
                 var snapshotPath = GetAdminOpenApiSnapshotPath();
@@ -83,6 +84,43 @@ namespace LSTY.SevenDPanel.Tests
                 new JObject(new JProperty("url", "/")));
         }
 
+        private static void AssertChatOperations(JObject document)
+        {
+            var expectations = new[]
+            {
+                new ChatOpenApiExpectation("/api/v1/chat/messages/recent", "get", "Chat_GetRecentMessages", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/messages", "get", "Chat_GetMessages", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/messages/global", "post", "Chat_SendGlobalMessage", "202", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/messages/private", "post", "Chat_SendPrivateMessage", "202", "400", "401", "403", "409", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/settings", "get", "Chat_GetSettings", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/settings", "put", "Chat_UpdateSettings", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/settings", "delete", "Chat_ResetSettings", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/settings", "get", "Chat_GetColoredSettings", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/settings", "put", "Chat_UpdateColoredSettings", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/settings", "delete", "Chat_ResetColoredSettings", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/profiles", "get", "Chat_GetColoredProfiles", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/profiles", "post", "Chat_CreateColoredProfile", "201", "400", "401", "403", "409", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/profiles/{crossplatformId}", "put", "Chat_UpdateColoredProfile", "200", "400", "401", "403", "404", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/colored/profiles/{crossplatformId}", "delete", "Chat_DeleteColoredProfile", "204", "400", "401", "403", "404", "500", "503")
+            };
+
+            foreach (var expectation in expectations)
+            {
+                var operation = (JObject?)document["paths"]?[expectation.Path]?[expectation.Method];
+                Assert.NotNull(operation);
+                Assert.Equal(expectation.OperationId, (string?)operation!["operationId"]);
+                Assert.NotNull(operation["responses"]?[expectation.SuccessStatusCode]);
+                Assert.Contains(operation["security"]!.Children(), requirement =>
+                    requirement["Bearer"] is JArray);
+                foreach (var statusCode in expectation.ProblemStatusCodes)
+                {
+                    var response = operation["responses"]?[statusCode];
+                    Assert.NotNull(response);
+                    Assert.NotNull(response!["content"]?["application/problem+json"]);
+                }
+            }
+        }
+
         private static string GetAdminOpenApiSnapshotPath()
         {
             var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -102,6 +140,29 @@ namespace LSTY.SevenDPanel.Tests
             }
 
             throw new InvalidOperationException("Could not locate the repository root.");
+        }
+
+        private sealed class ChatOpenApiExpectation
+        {
+            public ChatOpenApiExpectation(
+                string path,
+                string method,
+                string operationId,
+                string successStatusCode,
+                params string[] problemStatusCodes)
+            {
+                Path = path;
+                Method = method;
+                OperationId = operationId;
+                SuccessStatusCode = successStatusCode;
+                ProblemStatusCodes = problemStatusCodes;
+            }
+
+            public string Path { get; }
+            public string Method { get; }
+            public string OperationId { get; }
+            public string SuccessStatusCode { get; }
+            public IReadOnlyList<string> ProblemStatusCodes { get; }
         }
     }
 }

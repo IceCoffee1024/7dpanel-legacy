@@ -301,6 +301,34 @@
       }
     }
   },
+  "gameChat": {
+    "title": "Game chat",
+    "live": {
+      "title": "Live chat",
+      "sendFeedback": {
+        "session_expired": "Your session has expired. Sign in again.",
+        "forbidden": "You do not have permission to send chat messages.",
+        "disabled": "Chat is currently disabled.",
+        "not_ready": "Game chat is not ready.",
+        "queue_full": "The send queue is full. Try again later.",
+        "target_offline": "The private-message target is offline.",
+        "cancelled": "Sending was cancelled.",
+        "unknown": "Failed to send the message. Your input was kept."
+      }
+    },
+    "history": { "title": "Chat history" },
+    "settings": {
+      "title": "Chat settings",
+      "loading": "Loading chat settings",
+      "forbidden": "You cannot manage chat settings",
+      "failed": "Chat settings are unavailable"
+    },
+    "colored": {
+      "title": "Colored chat",
+      "forbidden": "You cannot manage colored chat",
+      "settingsFailed": "Colored chat settings are unavailable"
+    }
+  },
   "console": {
     "title": "Web Console",
     "clear": "Clear page",

@@ -19,6 +19,92 @@ export type ApiKeyCreateRequest = {
     expiresAtUtc?: string | null;
 };
 
+export type RecentChatMessagesResponse = {
+    messages?: Array<ChatMessageHttpResponse>;
+};
+
+export type ChatMessageHttpResponse = {
+    sequence?: number;
+    occurredAtUtc?: string;
+    entityId?: number;
+    crossplatformId?: string | null;
+    senderName?: string;
+    channel?: string;
+    sourceKind?: string;
+    message?: string;
+};
+
+export type ChatHistoryHttpResponse = {
+    messages?: Array<ChatMessageHttpResponse>;
+    gaps?: Array<ChatHistoryGapHttpResponse>;
+    nextCursor?: string | null;
+};
+
+export type ChatHistoryGapHttpResponse = {
+    startedAtUtc?: string;
+    endedAtUtc?: string;
+    droppedMessageCount?: number;
+    reason?: string;
+};
+
+export type ChatSendResponse = {
+    status?: string;
+};
+
+export type SendChatMessageRequest = {
+    message: string;
+};
+
+export type SendPrivateChatMessageRequest = SendChatMessageRequest & {
+    targetCrossplatformId: string;
+};
+
+export type ChatSettingsHttpModel = {
+    isEnabled: boolean;
+    globalServerName?: string | null;
+    whisperServerName?: string | null;
+    commandPrefixes: Array<string>;
+    excludeCommandsFromHistory: boolean;
+    historyRetentionDays: number;
+};
+
+export type ColoredChatSettingsHttpModel = {
+    isEnabled: boolean;
+    globalDefaultColor?: string | null;
+    whisperDefaultColor?: string | null;
+    friendsDefaultColor?: string | null;
+    partyDefaultColor?: string | null;
+    adminDefaultColor?: string | null;
+    systemDefaultColor?: string | null;
+    playerColorTagPermission: string;
+};
+
+export type ColoredChatProfilesHttpResponse = {
+    profiles?: Array<ColoredChatProfileHttpResponse>;
+    nextCursor?: string | null;
+};
+
+export type ColoredChatProfileHttpResponse = {
+    crossplatformId?: string;
+    customName?: string | null;
+    nameColor?: string | null;
+    textColor?: string | null;
+    description?: string | null;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+};
+
+export type CreateColoredChatProfileRequest = ColoredChatProfileWriteRequest & {
+    crossplatformId: string;
+};
+
+export type ColoredChatProfileWriteRequest = {
+    customName?: string | null;
+    nameColor?: string | null;
+    textColor?: string | null;
+    description?: string | null;
+};
+
 export type ConsoleCommandCatalog = {
     capturedAtUtc?: string;
     commands?: Array<ConsoleCommandCatalogEntry>;
@@ -523,6 +609,641 @@ export type ApiKeysDeleteResponses = {
 };
 
 export type ApiKeysDeleteResponse = ApiKeysDeleteResponses[keyof ApiKeysDeleteResponses];
+
+export type ChatGetRecentMessagesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Number of recent chat messages from 1 through 500; defaults to 200.
+         */
+        limit?: number | null;
+    };
+    url: '/api/v1/chat/messages/recent';
+};
+
+export type ChatGetRecentMessagesErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatGetRecentMessagesError = ChatGetRecentMessagesErrors[keyof ChatGetRecentMessagesErrors];
+
+export type ChatGetRecentMessagesResponses = {
+    200: RecentChatMessagesResponse;
+};
+
+export type ChatGetRecentMessagesResponse = ChatGetRecentMessagesResponses[keyof ChatGetRecentMessagesResponses];
+
+export type ChatGetMessagesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Opaque URL-safe cursor returned by the preceding page and bound to the active filters.
+         */
+        cursor?: string | null;
+        /**
+         * Page size from 1 through 200; defaults to 100.
+         */
+        limit?: number | null;
+        /**
+         * Exact sender cross-platform identity filter.
+         */
+        crossplatformId?: string | null;
+        /**
+         * Sender name search text.
+         */
+        senderName?: string | null;
+        /**
+         * Exact chat channel name.
+         */
+        chatType?: string | null;
+        /**
+         * Exact sender source kind.
+         */
+        sourceKind?: string | null;
+        /**
+         * Optional inclusive UTC start time in round-trip format.
+         */
+        startUtc?: string | null;
+        /**
+         * Optional inclusive UTC end time in round-trip format.
+         */
+        endUtc?: string | null;
+    };
+    url: '/api/v1/chat/messages';
+};
+
+export type ChatGetMessagesErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatGetMessagesError = ChatGetMessagesErrors[keyof ChatGetMessagesErrors];
+
+export type ChatGetMessagesResponses = {
+    200: ChatHistoryHttpResponse;
+};
+
+export type ChatGetMessagesResponse = ChatGetMessagesResponses[keyof ChatGetMessagesResponses];
+
+export type ChatSendGlobalMessageData = {
+    body?: SendChatMessageRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/messages/global';
+};
+
+export type ChatSendGlobalMessageErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatSendGlobalMessageError = ChatSendGlobalMessageErrors[keyof ChatSendGlobalMessageErrors];
+
+export type ChatSendGlobalMessageResponses = {
+    /**
+     * The chat message was accepted for execution.
+     */
+    202: ChatSendResponse;
+};
+
+export type ChatSendGlobalMessageResponse = ChatSendGlobalMessageResponses[keyof ChatSendGlobalMessageResponses];
+
+export type ChatSendPrivateMessageData = {
+    body?: SendPrivateChatMessageRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/messages/private';
+};
+
+export type ChatSendPrivateMessageErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatSendPrivateMessageError = ChatSendPrivateMessageErrors[keyof ChatSendPrivateMessageErrors];
+
+export type ChatSendPrivateMessageResponses = {
+    /**
+     * The chat message was accepted for execution.
+     */
+    202: ChatSendResponse;
+};
+
+export type ChatSendPrivateMessageResponse = ChatSendPrivateMessageResponses[keyof ChatSendPrivateMessageResponses];
+
+export type ChatResetSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/settings';
+};
+
+export type ChatResetSettingsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatResetSettingsError = ChatResetSettingsErrors[keyof ChatResetSettingsErrors];
+
+export type ChatResetSettingsResponses = {
+    200: ChatSettingsHttpModel;
+};
+
+export type ChatResetSettingsResponse = ChatResetSettingsResponses[keyof ChatResetSettingsResponses];
+
+export type ChatGetSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/settings';
+};
+
+export type ChatGetSettingsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatGetSettingsError = ChatGetSettingsErrors[keyof ChatGetSettingsErrors];
+
+export type ChatGetSettingsResponses = {
+    200: ChatSettingsHttpModel;
+};
+
+export type ChatGetSettingsResponse = ChatGetSettingsResponses[keyof ChatGetSettingsResponses];
+
+export type ChatUpdateSettingsData = {
+    body?: ChatSettingsHttpModel | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/settings';
+};
+
+export type ChatUpdateSettingsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatUpdateSettingsError = ChatUpdateSettingsErrors[keyof ChatUpdateSettingsErrors];
+
+export type ChatUpdateSettingsResponses = {
+    200: ChatSettingsHttpModel;
+};
+
+export type ChatUpdateSettingsResponse = ChatUpdateSettingsResponses[keyof ChatUpdateSettingsResponses];
+
+export type ChatResetColoredSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/colored/settings';
+};
+
+export type ChatResetColoredSettingsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatResetColoredSettingsError = ChatResetColoredSettingsErrors[keyof ChatResetColoredSettingsErrors];
+
+export type ChatResetColoredSettingsResponses = {
+    200: ColoredChatSettingsHttpModel;
+};
+
+export type ChatResetColoredSettingsResponse = ChatResetColoredSettingsResponses[keyof ChatResetColoredSettingsResponses];
+
+export type ChatGetColoredSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/colored/settings';
+};
+
+export type ChatGetColoredSettingsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatGetColoredSettingsError = ChatGetColoredSettingsErrors[keyof ChatGetColoredSettingsErrors];
+
+export type ChatGetColoredSettingsResponses = {
+    200: ColoredChatSettingsHttpModel;
+};
+
+export type ChatGetColoredSettingsResponse = ChatGetColoredSettingsResponses[keyof ChatGetColoredSettingsResponses];
+
+export type ChatUpdateColoredSettingsData = {
+    body?: ColoredChatSettingsHttpModel | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/colored/settings';
+};
+
+export type ChatUpdateColoredSettingsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatUpdateColoredSettingsError = ChatUpdateColoredSettingsErrors[keyof ChatUpdateColoredSettingsErrors];
+
+export type ChatUpdateColoredSettingsResponses = {
+    200: ColoredChatSettingsHttpModel;
+};
+
+export type ChatUpdateColoredSettingsResponse = ChatUpdateColoredSettingsResponses[keyof ChatUpdateColoredSettingsResponses];
+
+export type ChatGetColoredProfilesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Opaque URL-safe cursor returned by the preceding page and bound to the active filters.
+         */
+        cursor?: string | null;
+        /**
+         * Page size from 1 through 100; defaults to 50.
+         */
+        limit?: number | null;
+        /**
+         * Cross-platform identity search text.
+         */
+        crossplatformId?: string | null;
+        /**
+         * Custom display name search text.
+         */
+        customName?: string | null;
+        /**
+         * Exact normalized name color filter.
+         */
+        nameColor?: string | null;
+        /**
+         * Exact normalized text color filter.
+         */
+        textColor?: string | null;
+        /**
+         * Optional inclusive UTC creation start time in round-trip format.
+         */
+        createdAfterUtc?: string | null;
+        /**
+         * Optional inclusive UTC creation end time in round-trip format.
+         */
+        createdBeforeUtc?: string | null;
+    };
+    url: '/api/v1/chat/colored/profiles';
+};
+
+export type ChatGetColoredProfilesErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatGetColoredProfilesError = ChatGetColoredProfilesErrors[keyof ChatGetColoredProfilesErrors];
+
+export type ChatGetColoredProfilesResponses = {
+    200: ColoredChatProfilesHttpResponse;
+};
+
+export type ChatGetColoredProfilesResponse = ChatGetColoredProfilesResponses[keyof ChatGetColoredProfilesResponses];
+
+export type ChatCreateColoredProfileData = {
+    body?: CreateColoredChatProfileRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/colored/profiles';
+};
+
+export type ChatCreateColoredProfileErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatCreateColoredProfileError = ChatCreateColoredProfileErrors[keyof ChatCreateColoredProfileErrors];
+
+export type ChatCreateColoredProfileResponses = {
+    /**
+     * The colored chat profile was created.
+     */
+    201: ColoredChatProfileHttpResponse;
+};
+
+export type ChatCreateColoredProfileResponse = ChatCreateColoredProfileResponses[keyof ChatCreateColoredProfileResponses];
+
+export type ChatDeleteColoredProfileData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/chat/colored/profiles/{crossplatformId}';
+};
+
+export type ChatDeleteColoredProfileErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatDeleteColoredProfileError = ChatDeleteColoredProfileErrors[keyof ChatDeleteColoredProfileErrors];
+
+export type ChatDeleteColoredProfileResponses = {
+    /**
+     * The colored chat profile was deleted.
+     */
+    204: void;
+};
+
+export type ChatDeleteColoredProfileResponse = ChatDeleteColoredProfileResponses[keyof ChatDeleteColoredProfileResponses];
+
+export type ChatUpdateColoredProfileData = {
+    body?: ColoredChatProfileWriteRequest | null;
+    path: {
+        crossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/chat/colored/profiles/{crossplatformId}';
+};
+
+export type ChatUpdateColoredProfileErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ChatUpdateColoredProfileError = ChatUpdateColoredProfileErrors[keyof ChatUpdateColoredProfileErrors];
+
+export type ChatUpdateColoredProfileResponses = {
+    200: ColoredChatProfileHttpResponse;
+};
+
+export type ChatUpdateColoredProfileResponse = ChatUpdateColoredProfileResponses[keyof ChatUpdateColoredProfileResponses];
 
 export type ConsoleCommandsGetCatalogData = {
     body?: never;

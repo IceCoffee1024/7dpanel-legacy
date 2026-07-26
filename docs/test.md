@@ -18,6 +18,7 @@ last_updated: "2026-07-26"
 | `CAP-03` | 手动与计划备份状态机；保存提交完成后快照；校验失败、损坏归档、磁盘空间不足；重启恢复；中断后回滚 | 单元、SQLite 集成、真实进程、故障注入、恢复演练 | 备份清单与校验和、状态迁移、恢复后存档验证和回滚证据 |
 | `CAP-04` | 即时公告；进服欢迎、周期提醒和血月提醒；同一触发只执行一次；重启后的调度恢复；失败可见 | 单元、SQLite 集成、真实进程、E2E | 游戏内公告、任务执行记录和审计记录 |
 | `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；password grant 验证当前用户并返回 `username`/`role`；默认 8 小时 Header-only Access Token、两种显式浏览器会话、到期和撤销；用户 API Key 一次性显示、当前角色继承、到期和撤销；SSE 周期复验；未来 `Admin`/`Viewer` 管理与审计 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | migration/Store 报告、Authorization Header、会话记录和清理、Token/API Key 生命周期、连接关闭、权限矩阵和审计记录 |
+| `CAP-06` | Owner-only 实时/历史聊天、全局与私聊发送、聊天设置、彩色默认规则、玩家 Profile、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、游戏内消息、权限矩阵、审计和纯文本断言 |
 | `NFR-01` | 无产品方云服务、无外网条件下部署 Mod、打开面板并完成全部 P0 核心流程 | Windows/Linux 真实进程、离线验收 | 发布物清单、网络隔离记录和验收报告 |
 | `NFR-02` | 超时、断线、过期状态、重复提交、任务失败、服务关闭和结果未知；高风险操作确认 | 单元、API 集成、E2E、故障注入 | 状态转换、错误码、页面状态和审计关联标识 |
 | `NFR-03` | `zh-CN`/`en` 浏览器语言匹配与回退；登录前后切换和持久化；多表单 Valibot 内置错误；Nuxt UI 文案；日期数字格式；稳定服务端错误码映射；技术标识保持原样 | 单元、组件、浏览器 E2E | 两种语言页面断言、缺失键报告、格式化结果、切换前后表单状态和错误码映射报告 |
@@ -39,6 +40,23 @@ last_updated: "2026-07-26"
 | OpenAPI 生成与 Colada 边界 | Katana 文档 operationId 非空且唯一；规范化同源地址后的快照无漂移；生成结果可重复；同源、Bearer、取消、普通请求 10 秒超时、SSE 超时豁免、Problem Details 脱敏与 401 清缓存；概览 Query 和重启 Mutation 仍经过严格 parser，Token 不进入查询键且 Mutation 不自动重试 | Katana/OWIN 集成、Admin 单元、生成门禁 | `CAP-01`、`CAP-05`、`NFR-02`、`NFR-04` | OpenAPI 快照、生成目录 diff、客户端适配测试、Query/Mutation 状态断言 |
 | Admin 实时刷新与 SSE 生命周期 | 全局 `staleTime: 0`、禁用窗口聚焦刷新；概览可见时 3 秒轮询、隐藏暂停、恢复立即刷新；单一 Fetch SSE 的 Header Bearer、Welcome、heartbeat、生命周期、gap、`Last-Event-ID` replay、会话替换清游标和可取消重连；事件只触发 REST 权威快照刷新，失败保留原采样时间并标为 Stale/Offline | Admin 单元、浏览器 E2E | `CAP-01`、`CAP-05`、`NFR-02`、`NFR-04` | 调度虚拟时钟、请求 Header、连接/取消次数、事件刷新断言、旧快照与采样时间断言、浏览器网络 trace |
 
+### 游戏聊天完整切片
+
+本节记录[游戏聊天完整功能设计](superpowers/specs/2026-07-26-game-chat-design.md)的当前自动化边界和剩余人工证据。聚焦测试已经覆盖 Application 合同、统一事件窗口、Owner-only SSE、SQLite Store、彩色渲染、7DTD 聊天运行时、类型化发送器、HTTP cursor/路由结构、Admin 实时状态、发送状态、管理状态、纯文本组件、导航和路由。真实 7DTD 与浏览器验收尚未执行，自动化不得替代实际游戏广播、第三方 Mod 冲突或响应式浏览器证据。
+
+| 场景 | 已实现的自动化覆盖 | 仍需保留的证据 |
+|---|---|---|
+| 原始聊天字段与分类 | `ColoredChatRendererTests` 和 `SevenDaysChatRuntimeTests` 覆盖 Profile/管理员优先级、模板变量、标签转义、启动顺序与队满非阻塞；协调器代码直接复制 `SChatMessageData` 字段并实现命令绕过、窄重入抑制和 fail-open | 真实 `v3.0.1-b4` 原始字段、系统/管理员/玩家分类和安全诊断 |
+| 实时事件与历史 writer | `ConsoleLogLiveWindowTests` 覆盖聊天与其他事件共享 sequence 和最近聊天过滤；`ServerEventSseSessionTests` 覆盖 Owner replay/live、Admin/Viewer 过滤和过滤后游标推进；`SqliteChatStoreTests` 覆盖历史 cursor 与 gap 重叠语义；Admin `useLiveChat` 测试覆盖订阅先于快照、数值 sequence 去重、容量、gap 和取消 | 聚焦自动化通过；真实关服排空和高负载队满仍待验收 |
+| 全局和私聊发送 | `ChatApplicationTests` 覆盖 1..500 字符、目标校验、Store/运行时顺序和无正文审计；`SevenDaysChatMessageSenderTests` 覆盖容量 16 FIFO、配置名称、精确在线身份和队满；`ChatHttpTests` 覆盖 14 条路由结构和筛选绑定 cursor；Admin 发送测试覆盖成功清空、失败保留、50 条历史和 401 | 真实游戏内全局/私聊消息、主线程执行和完整 HTTP 权限/Problem Details 矩阵 |
+| 聊天设置与保留 | `ChatApplicationTests`、`SqliteChatStoreTests` 和 Admin 管理状态/组件测试覆盖边界、规范化、保存/重置、脏表单、URL/cursor、Profile CRUD 与非乐观刷新 | 在修复 SQLite gap 断言后重跑 Store 聚焦测试；真实进程设置即时生效和保留清理 |
+| 彩色重写 | 聚焦测试覆盖六位 RGB、Profile 模板、管理员优先级、未知变量和标签转义；协调器实现命令绕过、线程内重入抑制、单次替换和异常 `Continue` | 真实 7DTD 中六类颜色、单次广播、关闭恢复原版、异常放行和已安装聊天 Mod 冲突观察 |
+| Web 安全与权限 | SSE 聚焦测试覆盖 Owner-only 内容过滤；App Shell/router 测试覆盖 Owner 导航和四个深链接；组件测试覆盖注入字符串纯文本、受控颜色和无乐观成功 | 完整 REST 401/403 自动化、聊天组件硬编码文案迁移及双语断言、Owner 浏览器主路径、非 Owner 浏览器拒绝、桌面与 `390x844` 人工验收 |
+
+已记录的聚焦执行中，Application 25 项、事件窗口/SSE 28 项、聊天运行时 5 项、HTTP/发送器 8 项、实时 UI 5 项、管理 UI 12 项、Admin 实时/发送 12 项、管理 composable 4 项以及 App Shell/router 27 项均通过。后端组合检查仍有两项未闭环：受控 Admin OpenAPI 快照在生成前曾漂移，`SqliteChatStoreTests.History_uses_stable_descending_keyset_and_returns_overlapping_gaps` 仍失败；生成文件现已更新，但未执行一次最终 `api:check` 或后端聚合复跑。因此本轮只把实现和聚焦证据提升为当前事实，不宣称聚合门禁通过。
+
+后续只需在实现稳定后运行一次受影响后端聚合检查和 Admin typecheck、lint、unit、build；浏览器保留一条 Owner 主路径和一条非 Owner 拒绝路径，真实 7DTD 只执行一次聊天边界人工验收。聊天以外的发布、备份、玩家动作或控制台真实流程不因本变更重复执行。
+
 ### 架构风险追踪
 
 | 风险 | 验证要求 |
@@ -50,6 +68,7 @@ last_updated: "2026-07-26"
 | 运行时 API 文档漂移或扩散依赖 | 真实 Katana Host 必须验证公开 `/swagger` 与 `/swagger/v1/swagger.json`、全部 Controller/OWIN token 路由、唯一 Bearer scheme、API Key 管理、SSE、Problem Details、SPA fallback 隔离和无业务端口副作用。依赖规则只允许 Web Adapter 直接引用 `NSwag.AspNet.Owin 14.7.1`，禁止 `NSwag.Annotations` 和其他产品层直接引用 NSwag/NJsonSchema/Namotion；发布门禁必须要求实际运行时闭包并继续排除游戏提供的 `Newtonsoft.Json.dll`。 |
 | 产品版本来源漂移 | 健康端点必须返回 `ProductInfo.Version`；测试校验该值与 Bootstrap 的 `ModInfo.xml` 一致，不允许从 Adapter 当前执行程序集推断产品版本。 |
 | OWIN 生命周期泄漏 | 在同一测试主机上重复启动、正常关服和再次启动服务端；确认端口可重新绑定、后台线程和计时器退出、请求在 draining 后被拒绝。 |
+| 聊天重写递归、双重广播或第三方冲突 | 聚焦测试必须证明内部重发只触发一次 canonical 记录，成功替换后阻止原版广播，任何解析/Profile/发送异常放行原消息；真实 `v3.0.1-b4` 进程必须验证处理器顺序、命令绕过、关闭彩色恢复原版及至少一次与已安装聊天 Mod 的兼容观察。 |
 | 主线程调度拖慢游戏 | 动态命令容量 32 FIFO、在线玩家 Query 和踢出 Application gate 必须保持职责独立；排队取消/启动超时不得执行委托，执行开始后不得伪造取消或超时。踢出同一时刻只允许一个请求在审计和动作链路中运行；真实进程仍需建立帧预算和典型负载基线。 |
 | 动态命令队列破坏顺序或无界增长 | 确定性测试必须验证 HTTP 命令有界 FIFO 的容量、严格接收顺序、每请求独立结果、队满拒绝、开始前取消、开始后真实结果、单项异常隔离、停止时排空边界，以及它不会替换或消费 7DTD 原生异步队列。 |
 | 全局命令审计改变游戏行为或静默缺失 | 源码与真实进程测试必须证明 Harmony 只观察最终 `SdtdConsole.executeCommand`，不改变命令注册、同步返回或原生队列；内置、第三方 Mod、HTTP 和至少一个非 HTTP 标准入口产生完整原文审计。SQLite 锁定、队满或消费者失败时原命令继续执行，同时告警并记录可识别的审计缺口。绕过 `SdtdConsole` 的直接游戏 API 调用明确不计入覆盖率。 |
@@ -240,7 +259,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 首版候选发布必须同时满足：
 
-1. 所有 P0 能力 `CAP-01` 至 `CAP-05` 及 `NFR-01` 至 `NFR-04` 均有自动化或可重复人工验收结果，且没有未说明的失败。
+1. 所有 P0 能力 `CAP-01` 至 `CAP-06` 及 `NFR-01` 至 `NFR-04` 均有自动化或可重复人工验收结果，且没有未说明的失败。
 2. 单元、SQLite/文件系统、OWIN/API、浏览器 E2E 测试全部通过；不允许通过重新运行隐藏失败。
 3. Windows x64 和 Linux x64 官方 `v3.0.1-b4` 进程 smoke 全部通过，程序集和发布物清单符合兼容矩阵，且不包含 `7dtd-reference/` 内容。
 4. 正常关服、重复启动、队列饱和、备份损坏、磁盘失败、恢复中断和进程异常终止场景均产生明确、可追踪且可恢复的状态。
@@ -255,6 +274,9 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 | 缺口 | 影响与处理 |
 |---|---|
+| 游戏聊天真实 7DTD 与浏览器验收未执行 | 当前代码和聚焦自动化不能证明 `v3.0.1-b4` 的原始字段、六类颜色、命令绕过、全局/私聊广播、Profile、关闭彩色恢复原版、异常 fail-open、第三方聊天 Mod 顺序，以及 Owner/非 Owner 桌面和 `390x844` 浏览器流程；按设计只执行一次集中人工验收并保留日志、网络 trace 和冲突观察。 |
+| 游戏聊天聚合门禁部分闭环 | 后端聊天、统一事件、SSE 和 OpenAPI 聚焦过滤共 `73/73` 通过；Admin 游戏聊天、SSE、导航和路由聚焦测试共 `66/66` 通过，Admin typecheck 通过；SQLite 历史 gap 单项另有 `6/6` 通过证据。运行时 OpenAPI 快照和 Hey API 生成成功；`api:check` 因其 Git 基线检查会把本轮尚未提交的受控生成变更视为漂移而按预期返回非零。全量 lint/unit/build、Playwright、真实 7DTD 和提交后的 Git 基线漂移门禁仍待执行。 |
+| 游戏聊天组件双语尚未闭环 | 页面壳、导航和 locale 文件已经接线，但 `LiveChatView`、历史、设置和彩色聊天组件仍有直接写入的中文或英文可见文案；在迁移到 `app/i18n` 并补充双语断言前，不得把任务 10 的本地化条目或 `NFR-03` 视为完成。 |
 | Windows 动态命令闭环 smoke 尚未自动归档 | `a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；但流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行，当前认证二进制也尚未复验。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；2026-07-24 远程浏览器只验证了详情展示，未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
 | 当前浏览器持久会话、双语、详情与踢出真实门禁未执行 | Playwright 已定义默认标签页会话、显式浏览器会话、身份显示、登出/到期/损坏记录清理、API Key/玩家合同、浏览器语言首选/回退、登录前后切换、刷新与登出保留、技术身份稳定、英文窄屏及合成 25 字段详情抽屉场景，但没有 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 的受控 OWIN 环境，只有测试发现证据。2026-07-24 的远程人工查看仅确认当前详情抽屉可显示，不能证明 `390x844`/320 布局、焦点、遮罩关闭锁定、同身份刷新、unavailable、真实踢出、CSP 控制台或成功刷新。 |

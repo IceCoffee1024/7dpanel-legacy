@@ -4,8 +4,8 @@ import { type _JSONValue, defineQueryOptions, type UseMutationOptions } from '@p
 
 import { serializeQueryKeyValue } from '../client';
 import { client } from '../client.gen';
-import { apiKeysDelete, apiKeysGet, apiKeysPost, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, healthGet, healthGet2, issueAccessToken, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
+import { apiKeysDelete, apiKeysGet, apiKeysPost, chatCreateColoredProfile, chatDeleteColoredProfile, chatGetColoredProfiles, chatGetColoredSettings, chatGetMessages, chatGetRecentMessages, chatGetSettings, chatResetColoredSettings, chatResetSettings, chatSendGlobalMessage, chatSendPrivateMessage, chatUpdateColoredProfile, chatUpdateColoredSettings, chatUpdateSettings, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, healthGet, healthGet2, issueAccessToken, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
+import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ChatCreateColoredProfileData, ChatCreateColoredProfileError, ChatCreateColoredProfileResponse, ChatDeleteColoredProfileData, ChatDeleteColoredProfileError, ChatDeleteColoredProfileResponse, ChatGetColoredProfilesData, ChatGetColoredProfilesError, ChatGetColoredProfilesResponse, ChatGetColoredSettingsData, ChatGetColoredSettingsError, ChatGetColoredSettingsResponse, ChatGetMessagesData, ChatGetMessagesError, ChatGetMessagesResponse, ChatGetRecentMessagesData, ChatGetRecentMessagesError, ChatGetRecentMessagesResponse, ChatGetSettingsData, ChatGetSettingsError, ChatGetSettingsResponse, ChatResetColoredSettingsData, ChatResetColoredSettingsError, ChatResetColoredSettingsResponse, ChatResetSettingsData, ChatResetSettingsError, ChatResetSettingsResponse, ChatSendGlobalMessageData, ChatSendGlobalMessageError, ChatSendGlobalMessageResponse, ChatSendPrivateMessageData, ChatSendPrivateMessageError, ChatSendPrivateMessageResponse, ChatUpdateColoredProfileData, ChatUpdateColoredProfileError, ChatUpdateColoredProfileResponse, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsError, ChatUpdateColoredSettingsResponse, ChatUpdateSettingsData, ChatUpdateSettingsError, ChatUpdateSettingsResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'path'> & {
@@ -69,6 +69,175 @@ export const apiKeysPostMutation = (options?: Partial<Options<ApiKeysPostData>>)
  */
 export const apiKeysDeleteMutation = (options?: Partial<Options<ApiKeysDeleteData>>): UseMutationOptions<ApiKeysDeleteResponse, Options<ApiKeysDeleteData>, ApiKeysDeleteError> => ({
     mutation: async (vars) => await apiKeysDelete({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const chatGetRecentMessagesQueryKey = (options?: Options<ChatGetRecentMessagesData>) => createQueryKey('chatGetRecentMessages', options, ['Chat']);
+
+/**
+ * Returns Owner-only recent chat messages from the current process event window.
+ */
+export const chatGetRecentMessagesQuery = defineQueryOptions<Options<ChatGetRecentMessagesData>, ChatGetRecentMessagesResponse, ChatGetRecentMessagesError>((options?: Options<ChatGetRecentMessagesData>) => ({
+    key: chatGetRecentMessagesQueryKey(options),
+    query: async (context) => await chatGetRecentMessages({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const chatGetMessagesQueryKey = (options?: Options<ChatGetMessagesData>) => createQueryKey('chatGetMessages', options, ['Chat']);
+
+/**
+ * Returns Owner-only persisted chat history using a filter-bound opaque cursor.
+ */
+export const chatGetMessagesQuery = defineQueryOptions<Options<ChatGetMessagesData>, ChatGetMessagesResponse, ChatGetMessagesError>((options?: Options<ChatGetMessagesData>) => ({
+    key: chatGetMessagesQueryKey(options),
+    query: async (context) => await chatGetMessages({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+/**
+ * Queues an Owner-only global chat message for execution on the game thread.
+ */
+export const chatSendGlobalMessageMutation = (options?: Partial<Options<ChatSendGlobalMessageData>>): UseMutationOptions<ChatSendGlobalMessageResponse, Options<ChatSendGlobalMessageData>, ChatSendGlobalMessageError> => ({
+    mutation: async (vars) => await chatSendGlobalMessage({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Queues an Owner-only private chat message for an online cross-platform identity.
+ */
+export const chatSendPrivateMessageMutation = (options?: Partial<Options<ChatSendPrivateMessageData>>): UseMutationOptions<ChatSendPrivateMessageResponse, Options<ChatSendPrivateMessageData>, ChatSendPrivateMessageError> => ({
+    mutation: async (vars) => await chatSendPrivateMessage({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Restores and applies the default Owner-only chat settings.
+ */
+export const chatResetSettingsMutation = (options?: Partial<Options<ChatResetSettingsData>>): UseMutationOptions<ChatResetSettingsResponse, Options<ChatResetSettingsData>, ChatResetSettingsError> => ({
+    mutation: async (vars) => await chatResetSettings({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const chatGetSettingsQueryKey = (options?: Options<ChatGetSettingsData>) => createQueryKey('chatGetSettings', options, ['Chat']);
+
+/**
+ * Returns Owner-only chat settings.
+ */
+export const chatGetSettingsQuery = defineQueryOptions<Options<ChatGetSettingsData>, ChatGetSettingsResponse, ChatGetSettingsError>((options?: Options<ChatGetSettingsData>) => ({
+    key: chatGetSettingsQueryKey(options),
+    query: async (context) => await chatGetSettings({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+/**
+ * Validates, persists, and applies Owner-only chat settings.
+ */
+export const chatUpdateSettingsMutation = (options?: Partial<Options<ChatUpdateSettingsData>>): UseMutationOptions<ChatUpdateSettingsResponse, Options<ChatUpdateSettingsData>, ChatUpdateSettingsError> => ({
+    mutation: async (vars) => await chatUpdateSettings({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Restores and applies the default Owner-only colored chat settings.
+ */
+export const chatResetColoredSettingsMutation = (options?: Partial<Options<ChatResetColoredSettingsData>>): UseMutationOptions<ChatResetColoredSettingsResponse, Options<ChatResetColoredSettingsData>, ChatResetColoredSettingsError> => ({
+    mutation: async (vars) => await chatResetColoredSettings({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const chatGetColoredSettingsQueryKey = (options?: Options<ChatGetColoredSettingsData>) => createQueryKey('chatGetColoredSettings', options, ['Chat']);
+
+/**
+ * Returns Owner-only colored chat settings.
+ */
+export const chatGetColoredSettingsQuery = defineQueryOptions<Options<ChatGetColoredSettingsData>, ChatGetColoredSettingsResponse, ChatGetColoredSettingsError>((options?: Options<ChatGetColoredSettingsData>) => ({
+    key: chatGetColoredSettingsQueryKey(options),
+    query: async (context) => await chatGetColoredSettings({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+/**
+ * Validates, persists, and applies Owner-only colored chat settings.
+ */
+export const chatUpdateColoredSettingsMutation = (options?: Partial<Options<ChatUpdateColoredSettingsData>>): UseMutationOptions<ChatUpdateColoredSettingsResponse, Options<ChatUpdateColoredSettingsData>, ChatUpdateColoredSettingsError> => ({
+    mutation: async (vars) => await chatUpdateColoredSettings({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const chatGetColoredProfilesQueryKey = (options?: Options<ChatGetColoredProfilesData>) => createQueryKey('chatGetColoredProfiles', options, ['Chat']);
+
+/**
+ * Returns Owner-only colored chat profiles using a filter-bound opaque cursor.
+ */
+export const chatGetColoredProfilesQuery = defineQueryOptions<Options<ChatGetColoredProfilesData>, ChatGetColoredProfilesResponse, ChatGetColoredProfilesError>((options?: Options<ChatGetColoredProfilesData>) => ({
+    key: chatGetColoredProfilesQueryKey(options),
+    query: async (context) => await chatGetColoredProfiles({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+/**
+ * Creates an Owner-only colored chat profile for a unique cross-platform identity.
+ */
+export const chatCreateColoredProfileMutation = (options?: Partial<Options<ChatCreateColoredProfileData>>): UseMutationOptions<ChatCreateColoredProfileResponse, Options<ChatCreateColoredProfileData>, ChatCreateColoredProfileError> => ({
+    mutation: async (vars) => await chatCreateColoredProfile({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Deletes an existing Owner-only colored chat profile.
+ */
+export const chatDeleteColoredProfileMutation = (options?: Partial<Options<ChatDeleteColoredProfileData>>): UseMutationOptions<ChatDeleteColoredProfileResponse, Options<ChatDeleteColoredProfileData>, ChatDeleteColoredProfileError> => ({
+    mutation: async (vars) => await chatDeleteColoredProfile({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Updates and applies an existing Owner-only colored chat profile.
+ */
+export const chatUpdateColoredProfileMutation = (options?: Partial<Options<ChatUpdateColoredProfileData>>): UseMutationOptions<ChatUpdateColoredProfileResponse, Options<ChatUpdateColoredProfileData>, ChatUpdateColoredProfileError> => ({
+    mutation: async (vars) => await chatUpdateColoredProfile({
         ...options,
         ...vars,
         throwOnError: true

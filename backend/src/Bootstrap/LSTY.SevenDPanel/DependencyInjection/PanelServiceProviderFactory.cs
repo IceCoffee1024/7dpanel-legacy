@@ -2,15 +2,19 @@ using System;
 using System.IO;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
+using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Chat;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using LSTY.SevenDPanel.Application;
+using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
@@ -106,8 +110,48 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(_ => new ConsoleLogService(log));
                 services.AddSingleton<IRecentConsoleLogQuery>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().LiveWindow);
+                services.AddSingleton<IRecentChatMessageQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<ConsoleLogService>().LiveWindow);
                 services.AddSingleton<IServerEventStream>(serviceProvider =>
                     serviceProvider.GetRequiredService<ConsoleLogService>().Stream);
+                services.AddSingleton<SqliteChatStore>();
+                services.AddSingleton<IChatHistoryStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteChatStore>());
+                services.AddSingleton<IChatSettingsStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteChatStore>());
+                services.AddSingleton<SqliteColoredChatStore>();
+                services.AddSingleton<IColoredChatStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteColoredChatStore>());
+                services.AddSingleton<SqliteChatOperationAuditTrail>();
+                services.AddSingleton<IChatOperationAuditTrail>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteChatOperationAuditTrail>());
+                services.AddSingleton<ChatRuntimeState>();
+                services.AddSingleton<IChatRuntimeConfiguration>(serviceProvider =>
+                    serviceProvider.GetRequiredService<ChatRuntimeState>());
+                services.AddSingleton<ChatHistoryWriteService>();
+                services.AddSingleton<ColoredChatRenderer>();
+                services.AddSingleton(serviceProvider => new SevenDaysChatMessageCoordinator(
+                    serviceProvider.GetRequiredService<ChatRuntimeState>(),
+                    serviceProvider.GetRequiredService<ColoredChatRenderer>(),
+                    serviceProvider.GetRequiredService<ConsoleLogService>(),
+                    serviceProvider.GetRequiredService<ChatHistoryWriteService>(),
+                    log));
+                services.AddSingleton<SevenDaysChatMessageSender>();
+                services.AddSingleton<IChatMessageSender>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysChatMessageSender>());
+                services.AddSingleton<GetChatHistoryUseCase>();
+                services.AddSingleton<GetChatSettingsUseCase>();
+                services.AddSingleton<GetColoredChatSettingsUseCase>();
+                services.AddSingleton<GetColoredChatProfilesUseCase>();
+                services.AddSingleton<SendGlobalChatMessageUseCase>();
+                services.AddSingleton<SendPrivateChatMessageUseCase>();
+                services.AddSingleton<SaveChatSettingsUseCase>();
+                services.AddSingleton<ResetChatSettingsUseCase>();
+                services.AddSingleton<SaveColoredChatSettingsUseCase>();
+                services.AddSingleton<ResetColoredChatSettingsUseCase>();
+                services.AddSingleton<CreateColoredChatProfileUseCase>();
+                services.AddSingleton<UpdateColoredChatProfileUseCase>();
+                services.AddSingleton<DeleteColoredChatProfileUseCase>();
                 services.AddSingleton<SqliteConsoleCommandAuditStore>();
                 services.AddSingleton<IConsoleCommandAuditStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteConsoleCommandAuditStore>());
@@ -185,10 +229,15 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(serviceProvider => new SevenDaysRecentActivityRuntime(
                     serviceProvider.GetRequiredService<SevenDaysRecentActivityRecorder>(),
                     serviceProvider.GetRequiredService<PlayerHistoryRuntime>()));
+                services.AddSingleton(serviceProvider => new SevenDaysChatRuntime(
+                    serviceProvider.GetRequiredService<ChatRuntimeState>(),
+                    serviceProvider.GetRequiredService<ChatHistoryWriteService>(),
+                    serviceProvider.GetRequiredService<SevenDaysChatMessageCoordinator>(),
+                    serviceProvider.GetRequiredService<SevenDaysRecentActivityRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<SevenDaysRecentActivityRuntime>());
+                    serviceProvider.GetRequiredService<SevenDaysChatRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {

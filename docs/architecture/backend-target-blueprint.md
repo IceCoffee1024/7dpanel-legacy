@@ -1,6 +1,6 @@
 ---
 state: Draft
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 document_role: Target
 ---
 
@@ -415,6 +415,15 @@ POST /api/v1/players/{id}/kick
 ```
 
 HTTP 超时不能证明游戏动作失败。动作一旦开始，就必须继续到最终的审计状态。
+
+### 游戏聊天剩余验证与演进约束
+
+游戏聊天的 Application、SevenDays、Persistence、Web 和 Bootstrap 边界已经实现并提升到[系统架构](../architecture.md#游戏聊天完整切片)，本 Target 蓝图不再重复其运行链路和生产文件。尚未满足的提升条件只有：
+
+- 在官方 `v3.0.1-b4` 真实进程验证 `ModEvents.ChatMessage` 字段、handler 顺序、六类颜色、命令绕过、单次替换广播、异常 fail-open、关服排空和至少一个已安装聊天 Mod 的兼容观察；
+- 修复历史 gap 重叠测试并完成一次后端聚合与 OpenAPI 漂移检查，确认 migration、SQLite cursor/gap 和 14 条 HTTP 合同一致；
+- 在 Windows 真实进程验证后仍需按候选发布策略补充 Linux Mono 加载与 SQLite Native 证据；
+- 未来新增禁言、敏感词、全文搜索、导出、Discord、跨服聊天或通用命令框架时，必须先取得新的产品和设计批准，不得扩大当前聊天切片。
 
 ### 公告与自动化
 
