@@ -82,7 +82,7 @@ namespace LSTY.SevenDPanel.Hosting.Platform
                         var address = (await response.Content.ReadAsStringAsync().ConfigureAwait(false)).Trim();
                         if (!IPAddress.TryParse(address, out var parsed))
                         {
-                            completion.TrySetResult(new HostPublicNetwork(AvailabilityState.Unavailable, null, null));
+                            CompleteRequest(completion, new HostPublicNetwork(AvailabilityState.Unavailable, null, null));
                             return;
                         }
                         var resolved = parsed.AddressFamily == AddressFamily.InterNetwork
@@ -90,33 +90,34 @@ namespace LSTY.SevenDPanel.Hosting.Platform
                             : parsed.AddressFamily == AddressFamily.InterNetworkV6
                                 ? new HostPublicNetwork(AvailabilityState.Available, null, parsed.ToString())
                                 : new HostPublicNetwork(AvailabilityState.Unavailable, null, null);
-                        if (resolved.Availability == AvailabilityState.Available)
-                        {
-                            lock (sync)
-                            {
-                                cached = resolved;
-                                cachedAtUtc = utcNow();
-                            }
-                        }
-                        completion.TrySetResult(resolved);
+                        CompleteRequest(completion, resolved);
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                completion.TrySetResult(new HostPublicNetwork(AvailabilityState.Unavailable, null, null));
+                CompleteRequest(completion, new HostPublicNetwork(AvailabilityState.Unavailable, null, null));
             }
             catch (Exception)
             {
-                completion.TrySetResult(new HostPublicNetwork(AvailabilityState.Unavailable, null, null));
+                CompleteRequest(completion, new HostPublicNetwork(AvailabilityState.Unavailable, null, null));
             }
-            finally
+        }
+
+        private void CompleteRequest(
+            TaskCompletionSource<HostPublicNetwork> completion,
+            HostPublicNetwork result)
+        {
+            lock (sync)
             {
-                lock (sync)
+                if (result.Availability == AvailabilityState.Available)
                 {
-                    if (ReferenceEquals(inFlight, completion.Task)) inFlight = null;
+                    cached = result;
+                    cachedAtUtc = utcNow();
                 }
+                if (ReferenceEquals(inFlight, completion.Task)) inFlight = null;
             }
+            completion.TrySetResult(result);
         }
 
         private static async Task<HostPublicNetwork> AwaitWithCallerCancellationAsync(

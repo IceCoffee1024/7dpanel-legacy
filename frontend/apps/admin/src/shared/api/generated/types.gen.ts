@@ -4,6 +4,28 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type BanEntryHttpResponse = {
+    playerId?: string;
+    displayName?: string;
+    bannedUntilUtc?: string | null;
+    reason?: string | null;
+};
+
+export type WhitelistEntryHttpResponse = {
+    playerId?: string;
+    displayName?: string;
+};
+
+export type BanUpsertHttpRequest = {
+    displayName?: string | null;
+    bannedUntilUtc?: string | null;
+    reason?: string | null;
+};
+
+export type WhitelistUpsertHttpRequest = {
+    displayName?: string | null;
+};
+
 export type ApiProblemDetails = {
     type: string;
     title: string;
@@ -53,6 +75,27 @@ export type ConsoleLogEventData = {
     logType?: string;
     timestamp?: string;
     uptimeMilliseconds?: number;
+};
+
+export type GameAdminHttpResponse = {
+    playerId?: string;
+    displayName?: string;
+    permissionLevel?: number;
+};
+
+export type CommandPermissionHttpResponse = {
+    command?: string;
+    permissionLevel?: number;
+    description?: string | null;
+};
+
+export type GameAdminUpsertHttpRequest = {
+    displayName?: string | null;
+    permissionLevel?: number;
+};
+
+export type CommandPermissionUpsertHttpRequest = {
+    permissionLevel?: number;
 };
 
 export type HealthResponse = {
@@ -178,6 +221,29 @@ export type PlayerMapPositionHttpResponse = {
     z: number;
 };
 
+export type ModHttpResponse = {
+    directoryId?: string;
+    name?: string;
+    displayName?: string;
+    author?: string;
+    version?: string;
+    website?: string | null;
+    description?: string | null;
+    isLoadedNow?: boolean | null;
+    isEnabledNextStart?: boolean;
+    isProtected?: boolean;
+};
+
+export type ModStateHttpResponse = {
+    directoryId?: string;
+    isEnabledNextStart?: boolean;
+    outcome?: string;
+};
+
+export type SetModStateHttpRequest = {
+    enabled?: boolean | null;
+};
+
 export type OverviewHttpResponse = {
     availability?: string;
     game?: GameOverviewHttpResponse;
@@ -285,6 +351,31 @@ export type RecentActivityItemHttpResponse = {
 
 export type OverviewAttentionHttpResponse = {
     code: string;
+};
+
+export type PanelUserRecord = {
+    subject?: string;
+    username?: string;
+    role?: string;
+    enabled?: boolean;
+    updatedAtUtc?: string;
+};
+
+export type PanelUserCreateRequest = {
+    username?: string | null;
+    password?: string | null;
+    role?: string | null;
+    enabled?: boolean;
+};
+
+export type PanelUserUpdateRequest = {
+    username?: string | null;
+    role?: string | null;
+    enabled?: boolean;
+};
+
+export type PanelUserPasswordRequest = {
+    password?: string | null;
 };
 
 export type OnlinePlayersResponse = {
@@ -454,6 +545,37 @@ export type KickPlayerPlatformIdentityBody = {
     platform?: string | null;
 };
 
+export type ServerConfigurationSnapshotResponse = {
+    version?: string;
+    readAtUtc?: string;
+    fields?: Array<ServerConfigurationFieldResponse>;
+};
+
+export type ServerConfigurationFieldResponse = {
+    key?: string;
+    value?: string;
+    group?: string;
+    valueType?: string;
+    editable?: boolean;
+    sensitive?: boolean;
+    isSet?: boolean;
+    restartRequired?: boolean;
+    allowedValues?: Array<string>;
+    minimum?: number | null;
+    maximum?: number | null;
+};
+
+export type ServerConfigurationUpdateResponse = {
+    version?: string;
+    savedAtUtc?: string | null;
+    restartRequired?: boolean;
+};
+
+export type UpdateServerConfigurationHttpRequest = {
+    value?: string | null;
+    version?: string | null;
+};
+
 export type RestartServerOperationHttpResponse = {
     operationId?: string;
     code?: string;
@@ -473,6 +595,104 @@ export type ShutdownServerOperationHttpResponse = {
     acceptedAtUtc?: string;
     auditStatus?: string;
 };
+
+export type AccessListsGetBansData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-lists/bans';
+};
+
+export type AccessListsGetBansResponses = {
+    200: Array<BanEntryHttpResponse>;
+};
+
+export type AccessListsGetBansResponse = AccessListsGetBansResponses[keyof AccessListsGetBansResponses];
+
+export type AccessListsGetWhitelistData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-lists/whitelist';
+};
+
+export type AccessListsGetWhitelistResponses = {
+    200: Array<WhitelistEntryHttpResponse>;
+};
+
+export type AccessListsGetWhitelistResponse = AccessListsGetWhitelistResponses[keyof AccessListsGetWhitelistResponses];
+
+export type AccessListsDeleteBanData = {
+    body?: never;
+    path: {
+        playerId: string;
+    };
+    query?: never;
+    url: '/api/v1/access-lists/bans/{playerId}';
+};
+
+export type AccessListsDeleteBanResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type AccessListsDeleteBanResponse = AccessListsDeleteBanResponses[keyof AccessListsDeleteBanResponses];
+
+export type AccessListsPutBanData = {
+    body?: BanUpsertHttpRequest | null;
+    path: {
+        playerId: string;
+    };
+    query?: never;
+    url: '/api/v1/access-lists/bans/{playerId}';
+};
+
+export type AccessListsPutBanResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type AccessListsPutBanResponse = AccessListsPutBanResponses[keyof AccessListsPutBanResponses];
+
+export type AccessListsDeleteWhitelistData = {
+    body?: never;
+    path: {
+        playerId: string;
+    };
+    query?: never;
+    url: '/api/v1/access-lists/whitelist/{playerId}';
+};
+
+export type AccessListsDeleteWhitelistResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type AccessListsDeleteWhitelistResponse = AccessListsDeleteWhitelistResponses[keyof AccessListsDeleteWhitelistResponses];
+
+export type AccessListsPutWhitelistData = {
+    body?: WhitelistUpsertHttpRequest | null;
+    path: {
+        playerId: string;
+    };
+    query?: never;
+    url: '/api/v1/access-lists/whitelist/{playerId}';
+};
+
+export type AccessListsPutWhitelistResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type AccessListsPutWhitelistResponse = AccessListsPutWhitelistResponses[keyof AccessListsPutWhitelistResponses];
 
 export type ApiKeysGetData = {
     body?: never;
@@ -756,6 +976,104 @@ export type ConsoleLogsGetRecentResponses = {
 
 export type ConsoleLogsGetRecentResponse = ConsoleLogsGetRecentResponses[keyof ConsoleLogsGetRecentResponses];
 
+export type GamePermissionsGetAdminsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/game-permissions/admins';
+};
+
+export type GamePermissionsGetAdminsResponses = {
+    200: Array<GameAdminHttpResponse>;
+};
+
+export type GamePermissionsGetAdminsResponse = GamePermissionsGetAdminsResponses[keyof GamePermissionsGetAdminsResponses];
+
+export type GamePermissionsGetCommandsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/game-permissions/commands';
+};
+
+export type GamePermissionsGetCommandsResponses = {
+    200: Array<CommandPermissionHttpResponse>;
+};
+
+export type GamePermissionsGetCommandsResponse = GamePermissionsGetCommandsResponses[keyof GamePermissionsGetCommandsResponses];
+
+export type GamePermissionsDeleteAdminData = {
+    body?: never;
+    path: {
+        playerId: string;
+    };
+    query?: never;
+    url: '/api/v1/game-permissions/admins/{playerId}';
+};
+
+export type GamePermissionsDeleteAdminResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type GamePermissionsDeleteAdminResponse = GamePermissionsDeleteAdminResponses[keyof GamePermissionsDeleteAdminResponses];
+
+export type GamePermissionsPutAdminData = {
+    body?: GameAdminUpsertHttpRequest | null;
+    path: {
+        playerId: string;
+    };
+    query?: never;
+    url: '/api/v1/game-permissions/admins/{playerId}';
+};
+
+export type GamePermissionsPutAdminResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type GamePermissionsPutAdminResponse = GamePermissionsPutAdminResponses[keyof GamePermissionsPutAdminResponses];
+
+export type GamePermissionsDeleteCommandData = {
+    body?: never;
+    path: {
+        command: string;
+    };
+    query?: never;
+    url: '/api/v1/game-permissions/commands/{command}';
+};
+
+export type GamePermissionsDeleteCommandResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type GamePermissionsDeleteCommandResponse = GamePermissionsDeleteCommandResponses[keyof GamePermissionsDeleteCommandResponses];
+
+export type GamePermissionsPutCommandData = {
+    body?: CommandPermissionUpsertHttpRequest | null;
+    path: {
+        command: string;
+    };
+    query?: never;
+    url: '/api/v1/game-permissions/commands/{command}';
+};
+
+export type GamePermissionsPutCommandResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type GamePermissionsPutCommandResponse = GamePermissionsPutCommandResponses[keyof GamePermissionsPutCommandResponses];
+
 export type HealthGetData = {
     body?: never;
     path?: never;
@@ -1037,6 +1355,34 @@ export type MapSearchPlayersInAreaResponses = {
 
 export type MapSearchPlayersInAreaResponse = MapSearchPlayersInAreaResponses[keyof MapSearchPlayersInAreaResponses];
 
+export type ModsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mods';
+};
+
+export type ModsGetResponses = {
+    200: Array<ModHttpResponse>;
+};
+
+export type ModsGetResponse = ModsGetResponses[keyof ModsGetResponses];
+
+export type ModsPutData = {
+    body?: SetModStateHttpRequest | null;
+    path: {
+        directoryId: string;
+    };
+    query?: never;
+    url: '/api/v1/mods/{directoryId}/state';
+};
+
+export type ModsPutResponses = {
+    200: ModStateHttpResponse;
+};
+
+export type ModsPutResponse = ModsPutResponses[keyof ModsPutResponses];
+
 export type OverviewGetData = {
     body?: never;
     path?: never;
@@ -1049,6 +1395,83 @@ export type OverviewGetResponses = {
 };
 
 export type OverviewGetResponse = OverviewGetResponses[keyof OverviewGetResponses];
+
+export type PanelUsersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/panel-users';
+};
+
+export type PanelUsersGetResponses = {
+    200: Array<PanelUserRecord>;
+};
+
+export type PanelUsersGetResponse = PanelUsersGetResponses[keyof PanelUsersGetResponses];
+
+export type PanelUsersPostData = {
+    body?: PanelUserCreateRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/panel-users';
+};
+
+export type PanelUsersPostResponses = {
+    200: PanelUserRecord;
+};
+
+export type PanelUsersPostResponse = PanelUsersPostResponses[keyof PanelUsersPostResponses];
+
+export type PanelUsersDeleteData = {
+    body?: never;
+    path: {
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/panel-users/{subject}';
+};
+
+export type PanelUsersDeleteResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type PanelUsersDeleteResponse = PanelUsersDeleteResponses[keyof PanelUsersDeleteResponses];
+
+export type PanelUsersPutData = {
+    body?: PanelUserUpdateRequest | null;
+    path: {
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/panel-users/{subject}';
+};
+
+export type PanelUsersPutResponses = {
+    200: PanelUserRecord;
+};
+
+export type PanelUsersPutResponse = PanelUsersPutResponses[keyof PanelUsersPutResponses];
+
+export type PanelUsersResetPasswordData = {
+    body?: PanelUserPasswordRequest | null;
+    path: {
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/panel-users/{subject}/password';
+};
+
+export type PanelUsersResetPasswordResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type PanelUsersResetPasswordResponse = PanelUsersResetPasswordResponses[keyof PanelUsersResetPasswordResponses];
 
 export type PlayersGetData = {
     body?: never;
@@ -1263,6 +1686,34 @@ export type PlayersKickResponses = {
 };
 
 export type PlayersKickResponse = PlayersKickResponses[keyof PlayersKickResponses];
+
+export type ServerConfigurationGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/server-configuration';
+};
+
+export type ServerConfigurationGetResponses = {
+    200: ServerConfigurationSnapshotResponse;
+};
+
+export type ServerConfigurationGetResponse = ServerConfigurationGetResponses[keyof ServerConfigurationGetResponses];
+
+export type ServerConfigurationPutData = {
+    body?: UpdateServerConfigurationHttpRequest | null;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/api/v1/server-configuration/{key}';
+};
+
+export type ServerConfigurationPutResponses = {
+    200: ServerConfigurationUpdateResponse;
+};
+
+export type ServerConfigurationPutResponse = ServerConfigurationPutResponses[keyof ServerConfigurationPutResponses];
 
 export type ServerEventsGetData = {
     body?: never;

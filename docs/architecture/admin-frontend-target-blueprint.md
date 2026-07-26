@@ -73,7 +73,7 @@ shared     -X-> feature business code
 
 - `app/` 只负责启动、路由、全局 provider、错误边界和管理面板外壳。
 - `pages/` 负责路由级组合，不拥有可复用业务规则或直接拼接底层 HTTP。
-- `features/` 按身份、概览、玩家、日志、公告、备份、审计和设置组织；每个 Feature 拥有自己的 API 映射、
+- `features/` 按身份、概览、玩家、日志、访问名单、服务器配置、模组、权限、公告、备份、审计和设置组织；每个 Feature 拥有自己的 API 映射、
   状态转换、组件和测试。
 - Feature 之间只通过公开类型、路由参数或稳定的共享能力协作，不导入彼此内部目录。
 - `shared/` 只容纳无业务所有者的 API 传输、UI 原语、格式化、时间和测试设施。一个类型只有在至少两个真实
@@ -299,6 +299,21 @@ select target and typed action
 确认界面固定显示目标、动作和后果。提交后不靠禁用按钮永久锁死页面；状态由后端结果、作业或审计恢复。
 `Unknown` 状态先查询审计或目标状态，禁止自动重放踢出、封禁、恢复等副作用。
 
+### 服务器治理
+
+```text
+server configuration -> field catalog + file version -> one-field mutation -> refresh exact query
+access lists         -> URL tab/filter -> typed target action -> authoritative list refresh
+permissions          -> panel users | game admins | command levels -> independent mutations
+mods                 -> runtime state + next-start state -> restart-required mutation
+```
+
+- 四个 Feature 只共享生成 API、表格/表单 UI 原语和统一错误映射，不共享通用 CRUD 业务模型。
+- 服务器配置响应先映射为字段页面模型；未知字段只读，敏感字段没有可恢复的表单值，文件版本冲突保留输入并要求刷新。
+- 访问名单使用 URL 保存封禁/白名单页签和搜索条件，不提供批量选择；`Viewer` 获得只读页面而不是伪造禁用的编辑表单。
+- 权限页面把面板角色与 7DTD `0..2000` 等级放在三个明确分区，任何前端映射都不能把一套权限推导成另一套。
+- 模组页面分别展示当前进程加载状态与下次启动状态；成功反馈固定包含“重启后生效”，不能本地推断已经加载或卸载。
+
 ### 日志、任务与跨重启恢复
 
 - 日志 Feature 将实时窗口与历史搜索分开，暂停跟随不会停止连接或丢弃游标。
@@ -334,6 +349,10 @@ frontend/
 |   |   |   |   |-- DashboardPage.*
 |   |   |   |   |-- PlayersPage.*
 |   |   |   |   |-- ConsoleLogsPage.*
+|   |   |   |   |-- AccessListsPage.*
+|   |   |   |   |-- ServerConfigurationPage.*
+|   |   |   |   |-- ModsPage.*
+|   |   |   |   |-- PermissionsPage.*
 |   |   |   |   |-- AnnouncementsPage.*
 |   |   |   |   |-- BackupsPage.*
 |   |   |   |   |-- AuditPage.*
@@ -344,6 +363,10 @@ frontend/
 |   |   |   |   |-- server-status/              # 新鲜度和连接状态
 |   |   |   |   |-- players/                    # 玩家查询与类型化动作
 |   |   |   |   |-- console-logs/               # SSE、补取、命令和补全
+|   |   |   |   |-- access-lists/               # 封禁、白名单和单项目标动作
+|   |   |   |   |-- server-configuration/       # 字段目录、版本冲突和重启提示
+|   |   |   |   |-- mods/                       # 当前/下次启动状态和安全切换
+|   |   |   |   |-- permissions/                # 面板用户、游戏管理员和命令权限
 |   |   |   |   |-- announcements/              # 即时公告与自动化
 |   |   |   |   |-- backups/                    # 备份、作业和恢复
 |   |   |   |   |-- audit/                      # 审计查询与关联
@@ -463,6 +486,8 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - `CAP-03`：备份状态、恢复确认、关服、浏览器重开、重启后最终结果和回滚失败；
 - `CAP-04`：公告预览、固定触发器编辑、启停、最近执行结果和去重显示；
 - `CAP-05`：引导 `Owner` 登录、认证配置异常、8 小时 Access Token 到期、API Key 一次性显示/撤销/当前角色继承、角色导航、服务端 `Forbidden` 和审计关联；
+- `CAP-05` 服务器治理扩展：最后一个启用 Owner、面板与游戏权限分离、角色变更后的会话复验、名单只读/可写矩阵；
+- `CAP-06`：配置未知/敏感字段、字段版本冲突、重启提示、模组当前/下次启动状态和受保护模组；
 - `NFR-01`：断开公网后核心管理能力可用，生产资源不存在第三方运行依赖；
 - `NFR-02`：所有写操作都能区分排队、执行、成功、失败和未知，不以 HTTP 200 替代游戏结果；
 - `NFR-03`：`zh-CN` 与 `en` 的全部 P0 页面和表单通过 E2E，覆盖浏览器语言匹配、默认回退 `en`、登录前后切换、偏好持久化、缺失键、Valibot 内置错误、Nuxt UI 文案、日期数字格式和稳定服务端错误码映射；

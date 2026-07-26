@@ -3,6 +3,9 @@ using System.IO;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite.MapTiles;
 using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.AccessLists;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GamePermissions;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Mods;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
@@ -14,11 +17,15 @@ using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
+using LSTY.SevenDPanel.Application.Mods;
+using LSTY.SevenDPanel.Application.ServerConfiguration;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.Platform;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
+using LSTY.SevenDPanel.Mods;
+using LSTY.SevenDPanel.ServerConfiguration;
 
 namespace LSTY.SevenDPanel.DependencyInjection
 {
@@ -55,6 +62,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton<IPanelApiKeyStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
+                services.AddSingleton<IPanelUserAdministrationStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton<SqliteRecentActivityStore>(serviceProvider =>
                     new SqliteRecentActivityStore(
                         serviceProvider.GetRequiredService<SqliteConnectionFactory>(),
@@ -63,6 +72,30 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteRecentActivityStore>());
                 services.AddSingleton<IRecentActivityWriter>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteRecentActivityStore>());
+                services.AddSingleton(ServerConfigurationFieldCatalog.Create());
+                services.AddSingleton<IServerConfigurationStore>(_ =>
+                    new LocalServerConfigurationStore(options.ServerConfigurationPath));
+                services.AddSingleton<GetServerConfigurationUseCase>();
+                services.AddSingleton<UpdateServerConfigurationUseCase>();
+                services.AddSingleton<SevenDaysPlayerAccessControl>();
+                services.AddSingleton<IPlayerAccessControl>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysPlayerAccessControl>());
+                services.AddSingleton<AccessListUseCases>();
+                services.AddSingleton<SevenDaysGamePermissionControl>();
+                services.AddSingleton<IGamePermissionControl>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysGamePermissionControl>());
+                services.AddSingleton<GamePermissionUseCases>();
+                services.AddSingleton<LocalModCatalog>(_ => new LocalModCatalog(
+                    Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..")),
+                    new[] { Path.GetFileName(AppContext.BaseDirectory.TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) }));
+                services.AddSingleton<IModCatalog>(serviceProvider =>
+                    serviceProvider.GetRequiredService<LocalModCatalog>());
+                services.AddSingleton<SevenDaysLoadedModQuery>();
+                services.AddSingleton<ILoadedModQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysLoadedModQuery>());
+                services.AddSingleton<ListModsUseCase>();
+                services.AddSingleton<SetModStateUseCase>();
                 OwinStartup.RegisterAuthenticationServices(services, log);
                 services.AddSingleton(serviceProvider =>
                     new SevenDaysRecentActivityRecorder(

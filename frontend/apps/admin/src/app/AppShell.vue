@@ -12,6 +12,7 @@ const auth = useAuthStore()
 const { t } = useI18n()
 const sidebarOpen = shallowRef(false)
 const canUseConsole = computed(() => auth.role === 'Owner' || auth.role === 'Admin')
+const isOwner = computed(() => auth.role === 'Owner')
 
 const navigation = computed<NavigationMenuItem[]>(() => [
   {
@@ -38,6 +39,22 @@ const navigation = computed<NavigationMenuItem[]>(() => [
     onSelect: () => {
       sidebarOpen.value = false
     },
+  },
+  ...(isOwner.value ? [{
+    label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration',
+    onSelect: () => { sidebarOpen.value = false },
+  }] : []),
+  {
+    label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists',
+    onSelect: () => { sidebarOpen.value = false },
+  },
+  ...(isOwner.value ? [{
+    label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions',
+    onSelect: () => { sidebarOpen.value = false },
+  }] : []),
+  {
+    label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods',
+    onSelect: () => { sidebarOpen.value = false },
   },
   ...(canUseConsole.value
     ? [{
@@ -70,6 +87,10 @@ const searchGroups = computed(() => [{
       icon: 'i-lucide-key-round',
       to: '/api-keys',
     },
+    ...(isOwner.value ? [{ label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration' }] : []),
+    { label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists' },
+    ...(isOwner.value ? [{ label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions' }] : []),
+    { label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods' },
     ...(canUseConsole.value
       ? [{
           label: t('console.title'),

@@ -17,6 +17,7 @@
       "detectionEndpoint": null
     }
   },
+  "serverConfigurationPath": "../../serverconfig.xml",
   "restart": {
     "windowsScript": "scripts/restart-server.cmd",
     "linuxScript": "scripts/restart-server.sh",
