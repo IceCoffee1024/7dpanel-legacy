@@ -9,7 +9,7 @@ using LSTY.SevenDPanel.Application;
 
 namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
 {
-    public sealed class SqliteRecentActivityStore : IRecentActivityQuery, IRecentActivityWriter
+    public sealed class SqliteRecentActivityStore : IRecentActivityQuery, IRecentActivityWriter, IServerGovernanceActivityWriter, IGamePermissionActivityWriter
     {
         private const int MaximumRecentActivityItems = 8;
         private const string NoMessageArguments = "{}";
@@ -32,6 +32,49 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             CancellationToken cancellationToken)
         {
             return RecordAsync("panel_login_succeeded", actorSubject, actorDisplayName, NoMessageArguments, occurredAtUtc, cancellationToken);
+        }
+
+        public Task RecordAccessListChangedAsync(
+            string actorSubject,
+            string list,
+            string action,
+            string playerId,
+            string outcome,
+            DateTimeOffset occurredAtUtc,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(list) || string.IsNullOrWhiteSpace(action) ||
+                string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(outcome))
+                throw new ArgumentException("Access-list audit fields are required.");
+            return RecordAsync(
+                "access_list_changed",
+                actorSubject,
+                playerId,
+                NoMessageArguments,
+                occurredAtUtc,
+                cancellationToken);
+        }
+
+        public Task RecordGamePermissionChangedAsync(
+            string actorSubject,
+            string targetType,
+            string action,
+            string target,
+            int? permissionLevel,
+            string outcome,
+            DateTimeOffset occurredAtUtc,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(targetType) || string.IsNullOrWhiteSpace(action) ||
+                string.IsNullOrWhiteSpace(target) || string.IsNullOrWhiteSpace(outcome))
+                throw new ArgumentException("Game-permission audit fields are required.");
+            return RecordAsync(
+                "game_permission_changed",
+                actorSubject,
+                target,
+                NoMessageArguments,
+                occurredAtUtc,
+                cancellationToken);
         }
 
         public Task RecordPlayerJoinedAsync(

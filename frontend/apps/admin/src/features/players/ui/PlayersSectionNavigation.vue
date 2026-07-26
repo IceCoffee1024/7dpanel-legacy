@@ -20,5 +20,12 @@ const { t } = useI18n()
       to="/players/history"
       variant="ghost"
     />
+    <UButton
+      color="neutral"
+      icon="i-lucide-map"
+      :label="t('players.map.navigation')"
+      to="/players/map"
+      variant="ghost"
+    />
   </nav>
 </template>

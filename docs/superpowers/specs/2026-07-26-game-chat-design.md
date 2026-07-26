@@ -7,7 +7,7 @@ last_updated: "2026-07-26"
 
 ## 文档角色与依据
 
-本文档是 `CAP-06` 游戏聊天能力的已批准变更设计，不是当前实现证据。产品合同由[产品需求文档](../../PRD.md)定义，页面与交互由[产品设计](../../design.md)定义，当前实现边界由[系统架构](../../architecture.md)定义，目标后端和 Admin 边界分别由[后端目标架构蓝图](../../architecture/backend-target-blueprint.md)与[Admin 前端目标架构蓝图](../../architecture/admin-frontend-target-blueprint.md)定义，验证分级由[测试策略](../../test.md)定义。
+本文档是 `CAP-07` 游戏聊天能力的已批准变更设计，不是当前实现证据。产品合同由[产品需求文档](../../PRD.md)定义，页面与交互由[产品设计](../../design.md)定义，当前实现边界由[系统架构](../../architecture.md)定义，目标后端和 Admin 边界分别由[后端目标架构蓝图](../../architecture/backend-target-blueprint.md)与[Admin 前端目标架构蓝图](../../architecture/admin-frontend-target-blueprint.md)定义，验证分级由[测试策略](../../test.md)定义。
 
 本设计参考旧项目 `GameChat` 的用户能力和经验证的 7DTD 字段语义，但不复制其源码、Controller 直连游戏对象、FeatureManager 框架或 Element Plus 页面结构。
 
@@ -263,7 +263,7 @@ backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Outbound/Chat/
 backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/
   SqliteChatStore.cs
   SqliteColoredChatStore.cs
-  Migrations/006_GameChat.sql
+  Migrations/007_GameChat.sql
 backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/
   ChatController.cs
   ChatHttpModels.cs
@@ -314,9 +314,9 @@ frontend/apps/admin/src/features/game-chat/
 
 ## 文档影响
 
-- `docs/PRD.md`：新增 `CAP-06` 游戏聊天产品合同。
+- `docs/PRD.md`：新增 `CAP-07` 游戏聊天产品合同。
 - `docs/design.md`：新增游戏聊天导航、四页面、状态和响应式规则。
 - `docs/architecture.md`：记录已批准但尚未实现的边界和当前证据缺口。
-- `docs/test.md`：增加 `CAP-06` 追踪和聊天特有风险验证。
+- `docs/test.md`：增加 `CAP-07` 追踪和聊天特有风险验证。
 - `docs/architecture/backend-target-blueprint.md`：增加聊天事件、持久化、发送和彩色重写目标链路。
 - `docs/architecture/admin-frontend-target-blueprint.md`：增加聊天 Feature、单一 SSE、状态所有权和目录目标。

@@ -24,9 +24,20 @@ namespace LSTY.SevenDPanel.Tests
 
                 if (IsIn(projectPath, "Runtime"))
                 {
-                    Assert.Empty(references);
+                    if (IsIn(projectPath, "Runtime", "LSTY.SevenDPanel.Hosting"))
+                    {
+                        Assert.All(references, reference =>
+                            Assert.True(IsIn(reference, "Core", "LSTY.SevenDPanel.Application"),
+                                "Hosting may only reference Application: " + reference));
+                        Assert.All(document.Descendants("Reference"), reference =>
+                            Assert.Equal("System.Net.Http", (string?)reference.Attribute("Include")));
+                    }
+                    else
+                    {
+                        Assert.Empty(references);
+                        Assert.Empty(document.Descendants("Reference"));
+                    }
                     Assert.Empty(document.Descendants("PackageReference"));
-                    Assert.Empty(document.Descendants("Reference"));
                     continue;
                 }
 

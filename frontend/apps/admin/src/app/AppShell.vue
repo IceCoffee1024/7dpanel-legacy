@@ -12,7 +12,7 @@ const auth = useAuthStore()
 const { t } = useI18n()
 const sidebarOpen = shallowRef(false)
 const canUseConsole = computed(() => auth.role === 'Owner' || auth.role === 'Admin')
-const canUseGameChat = computed(() => auth.role === 'Owner')
+const isOwner = computed(() => auth.role === 'Owner')
 
 function closeSidebar() {
   sidebarOpen.value = false
@@ -51,13 +51,29 @@ const navigation = computed<NavigationMenuItem[]>(() => [
       sidebarOpen.value = false
     },
   },
-  ...(canUseGameChat.value
+  ...(isOwner.value
     ? [{
         label: t('gameChat.title'),
         icon: 'i-lucide-messages-square',
         children: gameChatNavigation.value,
       }]
     : []),
+  ...(isOwner.value ? [{
+    label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration',
+    onSelect: () => { sidebarOpen.value = false },
+  }] : []),
+  {
+    label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists',
+    onSelect: () => { sidebarOpen.value = false },
+  },
+  ...(isOwner.value ? [{
+    label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions',
+    onSelect: () => { sidebarOpen.value = false },
+  }] : []),
+  {
+    label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods',
+    onSelect: () => { sidebarOpen.value = false },
+  },
   ...(canUseConsole.value
     ? [{
         label: t('console.title'),
@@ -89,9 +105,13 @@ const searchGroups = computed(() => [{
       icon: 'i-lucide-key-round',
       to: '/api-keys',
     },
-    ...(canUseGameChat.value
+    ...(isOwner.value
       ? gameChatNavigation.value.map(({ label, icon, to }) => ({ label, icon, to }))
       : []),
+    ...(isOwner.value ? [{ label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration' }] : []),
+    { label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists' },
+    ...(isOwner.value ? [{ label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions' }] : []),
+    { label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods' },
     ...(canUseConsole.value
       ? [{
           label: t('console.title'),
@@ -125,7 +145,7 @@ defineShortcuts({
   'g-k': () => router.push('/api-keys'),
   'g-c': () => router.push('/console-logs'),
   'g-g': () => {
-    if (canUseGameChat.value)
+    if (isOwner.value)
       void router.push('/game-chat/live')
   },
 })

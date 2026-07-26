@@ -21,7 +21,7 @@ namespace LSTY.SevenDPanel.Tests
             using var connection = database.ConnectionFactory.Open();
             Assert.Equal("wal", connection.ExecuteScalar<string>("PRAGMA journal_mode;"), ignoreCase: true);
             Assert.Equal(1, connection.ExecuteScalar<int>(
-                "SELECT COUNT(*) FROM SchemaVersions WHERE ScriptName LIKE '%Migrations.006_GameChat.sql';"));
+                "SELECT COUNT(*) FROM SchemaVersions WHERE ScriptName LIKE '%Migrations.007_GameChat.sql';"));
             Assert.Equal(5, connection.ExecuteScalar<int>(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('chat_messages', 'chat_history_gaps', 'chat_settings', 'colored_chat_settings', 'colored_chat_profiles');"));
         }

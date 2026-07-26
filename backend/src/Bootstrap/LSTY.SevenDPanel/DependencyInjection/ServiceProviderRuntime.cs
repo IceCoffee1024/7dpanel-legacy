@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using LSTY.SevenDPanel.Hosting;
 
 namespace LSTY.SevenDPanel.DependencyInjection
@@ -8,6 +7,7 @@ namespace LSTY.SevenDPanel.DependencyInjection
     internal sealed class ServiceProviderRuntime : IModRuntime, IDisposable
     {
         private readonly IModRuntime inner;
+        private readonly object lifecycleSync = new object();
         private IDisposable? serviceProvider;
 
         public ServiceProviderRuntime(IModRuntime inner, IDisposable serviceProvider)
@@ -19,42 +19,64 @@ namespace LSTY.SevenDPanel.DependencyInjection
 
         public void Start()
         {
-            if (Volatile.Read(ref serviceProvider) == null)
-                throw new ObjectDisposedException(nameof(ServiceProviderRuntime));
-            inner.Start();
+            lock (lifecycleSync)
+            {
+                if (serviceProvider == null)
+                    throw new ObjectDisposedException(nameof(ServiceProviderRuntime));
+                inner.Start();
+            }
         }
 
         public void MarkGameReady()
         {
-            if (Volatile.Read(ref serviceProvider) != null) inner.MarkGameReady();
+            lock (lifecycleSync)
+            {
+                if (serviceProvider != null) inner.MarkGameReady();
+            }
         }
 
         public void Stop()
         {
-            var provider = Volatile.Read(ref serviceProvider);
-            if (provider == null) return;
-
-            try
+            lock (lifecycleSync)
             {
-                inner.Stop();
-            }
-            catch (Exception ex)
-            {
-                throw new AggregateException(ex);
-            }
-
-            provider = Interlocked.Exchange(ref serviceProvider, null);
-            if (provider == null) return;
-            try
-            {
-                provider.Dispose();
-            }
-            catch (Exception ex)
-            {
-                throw new AggregateException(ex);
+                if (serviceProvider == null) return;
+                try
+                {
+                    inner.Stop();
+                }
+                catch (Exception ex)
+                {
+                    throw new AggregateException(ex);
+                }
             }
         }
 
-        public void Dispose() => Stop();
+        public void Dispose()
+        {
+            lock (lifecycleSync)
+            {
+                var provider = serviceProvider;
+                if (provider == null) return;
+
+                try
+                {
+                    inner.Stop();
+                }
+                catch (Exception ex)
+                {
+                    throw new AggregateException(ex);
+                }
+
+                serviceProvider = null;
+                try
+                {
+                    provider.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    throw new AggregateException(ex);
+                }
+            }
+        }
     }
 }

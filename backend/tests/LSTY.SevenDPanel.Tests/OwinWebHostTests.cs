@@ -3487,7 +3487,9 @@ namespace LSTY.SevenDPanel.Tests
                 {
                     if (response.Name == "204")
                     {
-                        Assert.Null(response.Value["content"]);
+                        var noContent = response.Value["content"];
+                        Assert.True(noContent == null || !noContent.HasValues,
+                            "A 204 response must not describe a response body.");
                         continue;
                     }
 
@@ -3886,6 +3888,13 @@ namespace LSTY.SevenDPanel.Tests
 
                 return new PlayerHistorySnapshotsPage(new[] { snapshot }, null, new[] { gap });
             }
+
+            public PlayerTrackHistory? GetPlayerTrack(GetPlayerTrackQuery query) =>
+                throw new NotSupportedException();
+
+            public IReadOnlyList<HistoricalPlayerLastRetainedLocation> GetHistoricalPlayerLastRetainedLocations(
+                HistoricalPlayerLastLocationsStoreQuery query) =>
+                Array.Empty<HistoricalPlayerLastRetainedLocation>();
 
             private void ThrowIfFaulted()
             {

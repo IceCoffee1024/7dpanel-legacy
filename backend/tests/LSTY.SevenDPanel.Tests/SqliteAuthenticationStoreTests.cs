@@ -28,12 +28,21 @@ namespace LSTY.SevenDPanel.Tests
                 connection.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('users', 'access_tokens', 'api_keys');"));
             Assert.Equal(
-                12,
+                6,
                 connection.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND (name LIKE 'ix_%' OR name = 'ux_users_username');"));
+                    @"SELECT COUNT(*) FROM sqlite_master
+                      WHERE type = 'index'
+                        AND name IN (
+                            'ux_users_username',
+                            'ix_access_tokens_subject',
+                            'ix_access_tokens_expiration',
+                            'ix_access_tokens_oldest',
+                            'ix_api_keys_subject_created',
+                            'ix_api_keys_active_subject');"));
             Assert.Equal(
-                4,
-                connection.ExecuteScalar<int>("SELECT COUNT(*) FROM SchemaVersions;"));
+                1,
+                connection.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM SchemaVersions WHERE ScriptName LIKE '%Migrations.001_Authentication.sql';"));
             Assert.Equal(
                 "wal",
                 connection.ExecuteScalar<string>("PRAGMA journal_mode;")!.ToLowerInvariant());
@@ -545,6 +554,38 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(Contains(databaseBytes, Encoding.UTF8.GetBytes(password)));
             Assert.False(Contains(databaseBytes, Encoding.UTF8.GetBytes(token)));
             Assert.False(Contains(databaseBytes, Encoding.UTF8.GetBytes(encodedSecret)));
+        }
+
+        [Fact]
+        public void Panel_user_administration_preserves_the_last_enabled_owner()
+        {
+            using var database = new TemporaryDatabase();
+            var store = database.CreateOwnerStore();
+            var owner = Assert.Single(store.ListUsers());
+
+            var result = store.UpdateUser(owner.Subject, owner.Username, "Viewer", false);
+
+            Assert.Equal(PanelUserMutationStatus.LastOwner, result.Status);
+            Assert.Equal("Owner", Assert.Single(store.ListUsers()).Role);
+        }
+
+        [Fact]
+        public void Panel_user_role_and_password_changes_revoke_access_tokens()
+        {
+            using var database = new TemporaryDatabase();
+            var store = database.CreateOwnerStore();
+            Assert.True(store.TryGetActive(SqliteAuthenticationStore.BootstrapOwnerSubject, out var owner));
+            var now = new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.Zero);
+            var roleToken = store.Issue(owner, now, now.AddHours(1));
+
+            Assert.Equal(PanelUserMutationStatus.Updated,
+                store.UpdateUser(owner.Subject, owner.Username, "Owner", true).Status);
+            Assert.False(store.TryValidate(roleToken, now.AddMinutes(1), out _));
+
+            var passwordToken = store.Issue(owner, now.AddMinutes(2), now.AddHours(1));
+            Assert.Equal(PanelUserMutationStatus.Updated,
+                store.ResetPassword(owner.Subject, "new-password").Status);
+            Assert.False(store.TryValidate(passwordToken, now.AddMinutes(3), out _));
         }
 
         private static bool Contains(byte[] value, byte[] candidate)

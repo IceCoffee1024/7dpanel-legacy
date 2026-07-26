@@ -131,7 +131,53 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public void Runtime_stops_inner_before_disposing_root_provider()
+        public void Runtime_dispose_stops_inner_before_disposing_root_provider()
+        {
+            var order = new List<string>();
+            var runtime = new RecordingRuntime(order);
+            var provider = new RecordingDisposable(order);
+            var subject = new ServiceProviderRuntime(runtime, provider);
+
+            subject.Dispose();
+            subject.Dispose();
+
+            Assert.Equal(new[] { "runtime", "provider" }, order);
+        }
+
+        [Fact]
+        public void Runtime_dispose_keeps_provider_when_inner_stop_fails()
+        {
+            var order = new List<string>();
+            var runtime = new RecordingRuntime(order, true);
+            var provider = new RecordingDisposable(order, true);
+            var subject = new ServiceProviderRuntime(runtime, provider);
+
+            var exception = Assert.Throws<AggregateException>(() => subject.Dispose());
+
+            Assert.Equal("runtime failure", Assert.Single(exception.InnerExceptions).Message);
+            Assert.Equal(new[] { "runtime" }, order);
+        }
+
+            [Fact]
+            public void Runtime_dispose_keeps_provider_until_a_timed_out_inner_stop_can_complete()
+            {
+                var order = new List<string>();
+                var runtime = new TimeoutOnceRuntime(order);
+                var provider = new RecordingDisposable(order);
+                var subject = new ServiceProviderRuntime(runtime, provider);
+
+                Assert.Throws<AggregateException>(() => subject.Dispose());
+                Assert.Equal(new[] { "runtime-timeout" }, order);
+
+                subject.Dispose();
+
+                Assert.Equal(
+                new[] { "runtime-timeout", "runtime-complete", "provider" },
+                order);
+            }
+
+        [Fact]
+        public void Runtime_world_stop_preserves_provider_for_a_later_ready_lifecycle()
         {
             var order = new List<string>();
             var runtime = new RecordingRuntime(order);
@@ -139,42 +185,14 @@ namespace LSTY.SevenDPanel.Tests
             var subject = new ServiceProviderRuntime(runtime, provider);
 
             subject.Stop();
-            subject.Stop();
+            subject.MarkGameReady();
 
-            Assert.Equal(new[] { "runtime", "provider" }, order);
-        }
-
-        [Fact]
-        public void Runtime_keeps_provider_when_inner_stop_fails()
-        {
-            var order = new List<string>();
-            var runtime = new RecordingRuntime(order, true);
-            var provider = new RecordingDisposable(order, true);
-            var subject = new ServiceProviderRuntime(runtime, provider);
-
-            var exception = Assert.Throws<AggregateException>(() => subject.Stop());
-
-            Assert.Equal("runtime failure", Assert.Single(exception.InnerExceptions).Message);
             Assert.Equal(new[] { "runtime" }, order);
+            Assert.Equal(1, runtime.MarkGameReadyCount);
+
+            subject.Dispose();
+            Assert.Equal(new[] { "runtime", "runtime", "provider" }, order);
         }
-
-            [Fact]
-            public void Runtime_keeps_provider_until_a_timed_out_inner_stop_can_complete()
-            {
-                var order = new List<string>();
-                var runtime = new TimeoutOnceRuntime(order);
-                var provider = new RecordingDisposable(order);
-                var subject = new ServiceProviderRuntime(runtime, provider);
-
-                Assert.Throws<AggregateException>(() => subject.Stop());
-                Assert.Equal(new[] { "runtime-timeout" }, order);
-
-                subject.Stop();
-
-                Assert.Equal(
-                new[] { "runtime-timeout", "runtime-complete", "provider" },
-                order);
-            }
 
         [Fact]
         public void Composition_root_disposes_the_owned_sqlite_connection_factory()
@@ -642,12 +660,15 @@ namespace LSTY.SevenDPanel.Tests
                 this.failOnStop = failOnStop;
             }
 
+            public int MarkGameReadyCount { get; private set; }
+
             public void Start()
             {
             }
 
             public void MarkGameReady()
             {
+                MarkGameReadyCount++;
             }
 
             public void Stop()

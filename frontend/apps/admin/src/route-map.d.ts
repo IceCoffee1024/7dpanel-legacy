@@ -38,6 +38,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/access-lists': RouteRecordInfo<
+      '/access-lists',
+      '/access-lists',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/api-keys': RouteRecordInfo<
       '/api-keys',
       '/api-keys',
@@ -87,6 +94,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/mods': RouteRecordInfo<
+      '/mods',
+      '/mods',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/permissions': RouteRecordInfo<
+      '/permissions',
+      '/permissions',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/players': RouteRecordInfo<
       '/players',
       '/players',
@@ -94,6 +115,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/players/history/'
       | '/players/history/[crossplatformId]'
+      | '/players/map'
     >,
     '/players/history/': RouteRecordInfo<
       '/players/history/',
@@ -107,6 +129,20 @@ declare module 'vue-router/auto-routes' {
       '/players/history/:crossplatformId',
       { crossplatformId: ParamValue<true> },
       { crossplatformId: ParamValue<false> },
+      | never
+    >,
+    '/players/map': RouteRecordInfo<
+      '/players/map',
+      '/players/map',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/server-configuration': RouteRecordInfo<
+      '/server-configuration',
+      '/server-configuration',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -125,6 +161,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/index.vue': {
       routes:
         | '/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/access-lists.vue': {
+      routes:
+        | '/access-lists'
       views:
         | never
       pathParamNames:
@@ -186,11 +230,28 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/mods.vue': {
+      routes:
+        | '/mods'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/permissions.vue': {
+      routes:
+        | '/permissions'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/players.vue': {
       routes:
         | '/players'
         | '/players/history/'
         | '/players/history/[crossplatformId]'
+        | '/players/map'
       views:
         | 'default'
       pathParamNames:
@@ -211,6 +272,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'crossplatformId'
+    }
+    'src/pages/players/map.vue': {
+      routes:
+        | '/players/map'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/server-configuration.vue': {
+      routes:
+        | '/server-configuration'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 

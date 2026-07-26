@@ -52,13 +52,20 @@ namespace LSTY.SevenDPanel.Configuration
                 var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(configPath))!, "data");
                 var overview = CreateOverviewOptions(config.Overview, log);
                 var restart = CreateRestartScriptOptions(config.Restart, dataDirectory, log);
+                var configDirectory = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+                var serverConfigurationPath = Path.GetFullPath(Path.Combine(
+                    configDirectory,
+                    string.IsNullOrWhiteSpace(config.ServerConfigurationPath)
+                        ? "../../serverconfig.xml"
+                        : config.ServerConfigurationPath));
                 return PanelHostOptions.FromBinding(
                     config.Port,
                     config.BindAddress,
                     config.Scheme,
                     authentication,
                     overview,
-                    restart);
+                    restart,
+                    serverConfigurationPath);
             }
             catch (Exception ex)
             {
@@ -74,7 +81,8 @@ namespace LSTY.SevenDPanel.Configuration
                 PanelHostOptions.DefaultPort,
                 PanelHostOptions.DefaultBindAddress,
                 PanelHostOptions.DefaultScheme,
-                restart: RestartScriptOptions.CreateDefault(dataDirectory));
+                restart: RestartScriptOptions.CreateDefault(dataDirectory),
+                serverConfigurationPath: Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"));
         }
 
         private static PanelOverviewOptions CreateOverviewOptions(PanelOverviewConfig? config, Action<string>? log)

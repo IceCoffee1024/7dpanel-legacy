@@ -5,6 +5,9 @@
     "backToOverview": "返回概览",
     "yes": "是",
     "no": "否"
+    ,"edit": "编辑"
+    ,"save": "保存"
+    ,"confirm": "确认"
   },
   "locale": {
     "label": "语言",
@@ -166,6 +169,57 @@
     "account": "{name} 账号",
     "signOut": "退出登录"
   },
+  "governance": {
+    "serverConfiguration": "服务器配置",
+    "accessLists": "访问名单",
+    "permissions": "权限管理",
+    "mods": "模组管理"
+  },
+  "serverConfiguration": {
+    "title": "服务器配置",
+    "state": { "forbidden": "仅 Owner 可管理服务器配置。", "failed": "服务器配置暂时不可用。", "stale": "刷新失败，正在显示上次成功读取的内容。" },
+    "groups": { "identity": "服务器标识", "network": "网络", "gameplay": "游戏规则", "world": "世界", "other": "其他（只读）" },
+    "fields": {},
+    "restartRequired": "重启后生效",
+    "readOnly": "只读",
+    "secretSet": "已设置",
+    "secretUnset": "未设置",
+    "confirmRestart": "该值保存后将在服务器重启时生效。",
+    "confirmImmediate": "该值保存后立即生效。",
+    "feedback": { "invalid": "输入值无效。", "conflict": "配置已变化，请刷新后重试。", "failed": "无法保存配置。", "session-expired": "会话已过期。", "forbidden": "仅 Owner 可执行此操作。" }
+  },
+  "mods": {
+    "title": "模组管理", "search": "搜索模组", "loading": "正在加载模组", "empty": "没有发现受支持的模组。", "failed": "模组列表暂时不可用。", "website": "网站", "restartHint": "更改将在重启后生效。", "protected": "受保护模组",
+    "current": { "unknown": "当前状态未知", "loaded": "当前已加载", "unloaded": "当前未加载" },
+    "next": { "enabled": "下次启动启用", "disabled": "下次启动禁用" },
+    "action": { "enable": "启用", "disable": "禁用" },
+    "dialog": { "title": "确认模组状态", "description": "确认将 {name} 的下次启动状态设为{state}？" },
+    "feedback": { "forbidden": "仅 Owner 可切换模组状态。", "conflict": "模组状态已变化，请刷新后重试。", "failed": "无法切换模组状态。", "load-failed": "无法加载模组列表。", "change-failed": "无法切换模组状态。", "restart-required": "已保存，请重启服务器使更改生效。", "session-expired": "会话已过期。", "not-found": "未找到该模组。", "protected": "受保护模组不可切换。" }
+  },
+  "accessLists": {
+    "title": "黑白名单",
+    "description": "维护 7DTD 原生封禁和白名单",
+    "tabs": { "bans": "封禁名单", "whitelist": "白名单" },
+    "state": { "gameNotReady": "游戏尚未就绪", "failed": "名单加载失败", "readOnlyTitle": "只读模式", "readOnlyDescription": "Viewer 可以查看名单，但不能修改。" },
+    "action": { "addBan": "新增封禁", "addWhitelist": "新增白名单", "remove": "移除", "confirmSave": "确认保存" },
+    "fields": { "playerId": "玩家 ID", "displayName": "显示名", "bannedUntil": "截止时间（留空为永久）", "reason": "原因" },
+    "empty": { "bans": "暂无封禁记录", "whitelist": "暂无白名单记录" },
+    "permanent": "永久",
+    "confirm": { "removeBan": "确认移除 {name} 的封禁？该玩家将可再次连接。", "removeWhitelist": "确认从白名单移除 {name}？启用白名单模式时该玩家将无法连接。" },
+    "banDialog": { "title": "封禁玩家", "consequence": "确认后将立即修改 7DTD 原生封禁名单。" },
+    "whitelistDialog": { "title": "白名单玩家", "consequence": "确认后将立即修改 7DTD 原生白名单。" }
+  },
+  "permissions": {
+    "title": "权限管理",
+    "refresh": "刷新",
+    "separation": { "title": "两套权限互不映射", "description": "面板角色控制 Web 管理权限；7DTD 的 0..2000 等级只控制游戏原生权限，数值越小权限越高。" },
+    "feedback": { "partial": "部分权限数据暂时不可用，已保留成功加载的分区。", "passwordTooShort": "密码至少需要 8 个字符。", "passwordReset": "已重置 {username} 的密码，并撤销其现有访问令牌。" },
+    "panelUsers": { "title": "面板用户", "username": "用户名", "initialPassword": "初始密码（至少 8 位）", "enabled": "启用", "create": "创建用户", "newPassword": "新密码", "confirmDelete": "再次点击确认删除", "delete": "删除" },
+    "gameAdmins": { "title": "游戏管理员" },
+    "fields": { "playerId": "玩家 ID", "displayName": "显示名" },
+    "action": { "upsert": "新增或更新", "remove": "移除" },
+    "commands": { "title": "命令权限", "command": "命令", "noDescription": "无描述", "restoreDefault": "恢复默认" }
+  },
   "players": {
     "title": "在线玩家",
     "navigation": "玩家",
@@ -298,6 +352,62 @@
         "store_failure": "历史存储失败",
         "shutdown_timeout": "关服排空超时",
         "description": "丢失 {count} 条观察"
+      }
+    },
+    "map": {
+      "title": "玩家坐标地图",
+      "navigation": "地图",
+      "description": "在游戏 X/Z 坐标中只读查看在线位置和已保留的玩家观察。",
+      "refresh": "刷新地图数据",
+      "player": "历史玩家",
+      "searchPlayers": "搜索历史玩家",
+      "searchPlayersPlaceholder": "名称或跨平台身份",
+      "selectPlayer": "选择玩家",
+      "fromUtc": "开始时间（UTC）",
+      "toUtc": "结束时间（UTC）",
+      "loadTrack": "加载保留轨迹",
+      "observations": "轨迹观察",
+      "onlinePlayers": "在线玩家位置",
+      "noOnlinePlayers": "暂无可用的在线玩家位置。",
+      "observationTimeControl": "已返回观察时间",
+      "noObservationSelected": "尚未选择已返回的观察。",
+      "noObservations": "选择玩家和时间范围以加载已保留的观察。",
+      "observationCount": "本次返回 {count} 条观察",
+      "observedAt": "观察于 {time}",
+      "discreteNotice": "轨迹由已保留的位置观察组成，不代表持续在线或实际移动路线。",
+      "canvasLabel": "固定朝北的交互式游戏坐标地图",
+      "pointerCoordinate": "指针",
+      "selectedCoordinate": "已选择",
+      "backgroundNotice": "仅为参考背景，不是当前世界地形",
+      "unavailableTitle": "游戏地图不可用",
+      "unavailableDescription": "尚无经过验证的世界范围，因此界面不会猜测或伪造地图。",
+      "onlineStatus": "在线位置：{state}",
+      "historyStatus": "历史玩家：{state}",
+      "trackStatus": "轨迹：{state}",
+      "state": {
+        "loading": "正在加载经过验证的地图数据",
+        "ready": "地图数据已就绪",
+        "empty": "暂无地图观察",
+        "partial": "部分地图数据不可用",
+        "stale": "刷新失败，显示上次验证的数据",
+        "forbidden": "无权查看玩家地图",
+        "failed": "玩家地图不可用"
+      },
+      "dataState": {
+        "loading": "正在加载",
+        "ready": "已就绪",
+        "empty": "暂无观察",
+        "stale": "数据已过期",
+        "forbidden": "无权访问",
+        "failed": "不可用"
+      },
+      "gameTime": {
+        "title": "游戏时间",
+        "value": "第 {day} 天 {hour}:{minute}",
+        "loading": "正在加载游戏时间",
+        "ready": "游戏时间已就绪",
+        "stale": "数据已过期",
+        "unavailable": "游戏时间不可用"
       }
     }
   },

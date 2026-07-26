@@ -4,8 +4,8 @@ import { type _JSONValue, defineQueryOptions, type UseMutationOptions } from '@p
 
 import { serializeQueryKeyValue } from '../client';
 import { client } from '../client.gen';
-import { apiKeysDelete, apiKeysGet, apiKeysPost, chatCreateColoredProfile, chatDeleteColoredProfile, chatGetColoredProfiles, chatGetColoredSettings, chatGetMessages, chatGetRecentMessages, chatGetSettings, chatResetColoredSettings, chatResetSettings, chatSendGlobalMessage, chatSendPrivateMessage, chatUpdateColoredProfile, chatUpdateColoredSettings, chatUpdateSettings, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, healthGet, healthGet2, issueAccessToken, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ChatCreateColoredProfileData, ChatCreateColoredProfileError, ChatCreateColoredProfileResponse, ChatDeleteColoredProfileData, ChatDeleteColoredProfileError, ChatDeleteColoredProfileResponse, ChatGetColoredProfilesData, ChatGetColoredProfilesError, ChatGetColoredProfilesResponse, ChatGetColoredSettingsData, ChatGetColoredSettingsError, ChatGetColoredSettingsResponse, ChatGetMessagesData, ChatGetMessagesError, ChatGetMessagesResponse, ChatGetRecentMessagesData, ChatGetRecentMessagesError, ChatGetRecentMessagesResponse, ChatGetSettingsData, ChatGetSettingsError, ChatGetSettingsResponse, ChatResetColoredSettingsData, ChatResetColoredSettingsError, ChatResetColoredSettingsResponse, ChatResetSettingsData, ChatResetSettingsError, ChatResetSettingsResponse, ChatSendGlobalMessageData, ChatSendGlobalMessageError, ChatSendGlobalMessageResponse, ChatSendPrivateMessageData, ChatSendPrivateMessageError, ChatSendPrivateMessageResponse, ChatUpdateColoredProfileData, ChatUpdateColoredProfileError, ChatUpdateColoredProfileResponse, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsError, ChatUpdateColoredSettingsResponse, ChatUpdateSettingsData, ChatUpdateSettingsError, ChatUpdateSettingsResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
+import { accessListsDeleteBan, accessListsDeleteWhitelist, accessListsGetBans, accessListsGetWhitelist, accessListsPutBan, accessListsPutWhitelist, apiKeysDelete, apiKeysGet, apiKeysPost, chatCreateColoredProfile, chatDeleteColoredProfile, chatGetColoredProfiles, chatGetColoredSettings, chatGetMessages, chatGetRecentMessages, chatGetSettings, chatResetColoredSettings, chatResetSettings, chatSendGlobalMessage, chatSendPrivateMessage, chatUpdateColoredProfile, chatUpdateColoredSettings, chatUpdateSettings, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, gamePermissionsDeleteAdmin, gamePermissionsDeleteCommand, gamePermissionsGetAdmins, gamePermissionsGetCommands, gamePermissionsPutAdmin, gamePermissionsPutCommand, healthGet, healthGet2, issueAccessToken, mapGetGameTime, mapGetLayer, mapGetMetadata, mapGetPlayerTrack, mapGetTile, mapSearchPlayersInArea, modsGet, modsPut, type Options, overviewGet, panelUsersDelete, panelUsersGet, panelUsersPost, panelUsersPut, panelUsersResetPassword, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverConfigurationGet, serverConfigurationPut, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
+import type { AccessListsDeleteBanData, AccessListsDeleteBanResponse, AccessListsDeleteWhitelistData, AccessListsDeleteWhitelistResponse, AccessListsGetBansData, AccessListsGetBansResponse, AccessListsGetWhitelistData, AccessListsGetWhitelistResponse, AccessListsPutBanData, AccessListsPutBanResponse, AccessListsPutWhitelistData, AccessListsPutWhitelistResponse, ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ChatCreateColoredProfileData, ChatCreateColoredProfileError, ChatCreateColoredProfileResponse, ChatDeleteColoredProfileData, ChatDeleteColoredProfileError, ChatDeleteColoredProfileResponse, ChatGetColoredProfilesData, ChatGetColoredProfilesError, ChatGetColoredProfilesResponse, ChatGetColoredSettingsData, ChatGetColoredSettingsError, ChatGetColoredSettingsResponse, ChatGetMessagesData, ChatGetMessagesError, ChatGetMessagesResponse, ChatGetRecentMessagesData, ChatGetRecentMessagesError, ChatGetRecentMessagesResponse, ChatGetSettingsData, ChatGetSettingsError, ChatGetSettingsResponse, ChatResetColoredSettingsData, ChatResetColoredSettingsError, ChatResetColoredSettingsResponse, ChatResetSettingsData, ChatResetSettingsError, ChatResetSettingsResponse, ChatSendGlobalMessageData, ChatSendGlobalMessageError, ChatSendGlobalMessageResponse, ChatSendPrivateMessageData, ChatSendPrivateMessageError, ChatSendPrivateMessageResponse, ChatUpdateColoredProfileData, ChatUpdateColoredProfileError, ChatUpdateColoredProfileResponse, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsError, ChatUpdateColoredSettingsResponse, ChatUpdateSettingsData, ChatUpdateSettingsError, ChatUpdateSettingsResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, GamePermissionsDeleteAdminData, GamePermissionsDeleteAdminResponse, GamePermissionsDeleteCommandData, GamePermissionsDeleteCommandResponse, GamePermissionsGetAdminsData, GamePermissionsGetAdminsResponse, GamePermissionsGetCommandsData, GamePermissionsGetCommandsResponse, GamePermissionsPutAdminData, GamePermissionsPutAdminResponse, GamePermissionsPutCommandData, GamePermissionsPutCommandResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, MapGetGameTimeData, MapGetGameTimeError, MapGetGameTimeResponse, MapGetLayerData, MapGetLayerError, MapGetLayerResponse, MapGetMetadataData, MapGetMetadataError, MapGetMetadataResponse, MapGetPlayerTrackData, MapGetPlayerTrackError, MapGetPlayerTrackResponse, MapGetTileData, MapGetTileError, MapGetTileResponse, MapSearchPlayersInAreaData, MapSearchPlayersInAreaError, MapSearchPlayersInAreaResponse, ModsGetData, ModsGetResponse, ModsPutData, ModsPutResponse, OverviewGetData, OverviewGetResponse, PanelUsersDeleteData, PanelUsersDeleteResponse, PanelUsersGetData, PanelUsersGetResponse, PanelUsersPostData, PanelUsersPostResponse, PanelUsersPutData, PanelUsersPutResponse, PanelUsersResetPasswordData, PanelUsersResetPasswordResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerConfigurationGetData, ServerConfigurationGetResponse, ServerConfigurationPutData, ServerConfigurationPutResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'path'> & {
@@ -41,6 +41,60 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     }
     return [params];
 };
+
+export const accessListsGetBansQueryKey = (options?: Options<AccessListsGetBansData>) => createQueryKey('accessListsGetBans', options, ['AccessLists']);
+
+export const accessListsGetBansQuery = defineQueryOptions<Options<AccessListsGetBansData>, AccessListsGetBansResponse, Error>((options?: Options<AccessListsGetBansData>) => ({
+    key: accessListsGetBansQueryKey(options),
+    query: async (context) => await accessListsGetBans({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const accessListsGetWhitelistQueryKey = (options?: Options<AccessListsGetWhitelistData>) => createQueryKey('accessListsGetWhitelist', options, ['AccessLists']);
+
+export const accessListsGetWhitelistQuery = defineQueryOptions<Options<AccessListsGetWhitelistData>, AccessListsGetWhitelistResponse, Error>((options?: Options<AccessListsGetWhitelistData>) => ({
+    key: accessListsGetWhitelistQueryKey(options),
+    query: async (context) => await accessListsGetWhitelist({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const accessListsDeleteBanMutation = (options?: Partial<Options<AccessListsDeleteBanData>>): UseMutationOptions<AccessListsDeleteBanResponse, Options<AccessListsDeleteBanData>, Error> => ({
+    mutation: async (vars) => await accessListsDeleteBan({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const accessListsPutBanMutation = (options?: Partial<Options<AccessListsPutBanData>>): UseMutationOptions<AccessListsPutBanResponse, Options<AccessListsPutBanData>, Error> => ({
+    mutation: async (vars) => await accessListsPutBan({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const accessListsDeleteWhitelistMutation = (options?: Partial<Options<AccessListsDeleteWhitelistData>>): UseMutationOptions<AccessListsDeleteWhitelistResponse, Options<AccessListsDeleteWhitelistData>, Error> => ({
+    mutation: async (vars) => await accessListsDeleteWhitelist({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const accessListsPutWhitelistMutation = (options?: Partial<Options<AccessListsPutWhitelistData>>): UseMutationOptions<AccessListsPutWhitelistResponse, Options<AccessListsPutWhitelistData>, Error> => ({
+    mutation: async (vars) => await accessListsPutWhitelist({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
 
 export const apiKeysGetQueryKey = (options?: Options<ApiKeysGetData>) => createQueryKey('apiKeysGet', options, ['ApiKeys']);
 
@@ -274,6 +328,60 @@ export const consoleLogsGetRecentQuery = defineQueryOptions<Options<ConsoleLogsG
     })
 }));
 
+export const gamePermissionsGetAdminsQueryKey = (options?: Options<GamePermissionsGetAdminsData>) => createQueryKey('gamePermissionsGetAdmins', options, ['GamePermissions']);
+
+export const gamePermissionsGetAdminsQuery = defineQueryOptions<Options<GamePermissionsGetAdminsData>, GamePermissionsGetAdminsResponse, Error>((options?: Options<GamePermissionsGetAdminsData>) => ({
+    key: gamePermissionsGetAdminsQueryKey(options),
+    query: async (context) => await gamePermissionsGetAdmins({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const gamePermissionsGetCommandsQueryKey = (options?: Options<GamePermissionsGetCommandsData>) => createQueryKey('gamePermissionsGetCommands', options, ['GamePermissions']);
+
+export const gamePermissionsGetCommandsQuery = defineQueryOptions<Options<GamePermissionsGetCommandsData>, GamePermissionsGetCommandsResponse, Error>((options?: Options<GamePermissionsGetCommandsData>) => ({
+    key: gamePermissionsGetCommandsQueryKey(options),
+    query: async (context) => await gamePermissionsGetCommands({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const gamePermissionsDeleteAdminMutation = (options?: Partial<Options<GamePermissionsDeleteAdminData>>): UseMutationOptions<GamePermissionsDeleteAdminResponse, Options<GamePermissionsDeleteAdminData>, Error> => ({
+    mutation: async (vars) => await gamePermissionsDeleteAdmin({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const gamePermissionsPutAdminMutation = (options?: Partial<Options<GamePermissionsPutAdminData>>): UseMutationOptions<GamePermissionsPutAdminResponse, Options<GamePermissionsPutAdminData>, Error> => ({
+    mutation: async (vars) => await gamePermissionsPutAdmin({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const gamePermissionsDeleteCommandMutation = (options?: Partial<Options<GamePermissionsDeleteCommandData>>): UseMutationOptions<GamePermissionsDeleteCommandResponse, Options<GamePermissionsDeleteCommandData>, Error> => ({
+    mutation: async (vars) => await gamePermissionsDeleteCommand({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const gamePermissionsPutCommandMutation = (options?: Partial<Options<GamePermissionsPutCommandData>>): UseMutationOptions<GamePermissionsPutCommandResponse, Options<GamePermissionsPutCommandData>, Error> => ({
+    mutation: async (vars) => await gamePermissionsPutCommand({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
 export const healthGetQueryKey = (options?: Options<HealthGetData>) => createQueryKey('healthGet', options, ['Health']);
 
 export const healthGetQuery = defineQueryOptions<Options<HealthGetData>, HealthGetResponse, Error>((options?: Options<HealthGetData>) => ({
@@ -296,6 +404,100 @@ export const healthGet2Query = defineQueryOptions<Options<HealthGet2Data>, Healt
     })
 }));
 
+export const mapGetMetadataQueryKey = (options?: Options<MapGetMetadataData>) => createQueryKey('mapGetMetadata', options, ['Map']);
+
+export const mapGetMetadataQuery = defineQueryOptions<Options<MapGetMetadataData>, MapGetMetadataResponse, MapGetMetadataError>((options?: Options<MapGetMetadataData>) => ({
+    key: mapGetMetadataQueryKey(options),
+    query: async (context) => await mapGetMetadata({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetGameTimeQueryKey = (options?: Options<MapGetGameTimeData>) => createQueryKey('mapGetGameTime', options, ['Map']);
+
+export const mapGetGameTimeQuery = defineQueryOptions<Options<MapGetGameTimeData>, MapGetGameTimeResponse, MapGetGameTimeError>((options?: Options<MapGetGameTimeData>) => ({
+    key: mapGetGameTimeQueryKey(options),
+    query: async (context) => await mapGetGameTime({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetPlayerTrackQueryKey = (options: Options<MapGetPlayerTrackData>) => createQueryKey('mapGetPlayerTrack', options, ['Map']);
+
+export const mapGetPlayerTrackQuery = defineQueryOptions<Options<MapGetPlayerTrackData>, MapGetPlayerTrackResponse, MapGetPlayerTrackError>((options: Options<MapGetPlayerTrackData>) => ({
+    key: mapGetPlayerTrackQueryKey(options),
+    query: async (context) => await mapGetPlayerTrack({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetTileQueryKey = (options: Options<MapGetTileData>) => createQueryKey('mapGetTile', options, ['Map']);
+
+/**
+ * Returns one Owner-only map tile. Authentication is accepted only from the Bearer header; the URL contains typed coordinates and never a server filesystem path.
+ */
+export const mapGetTileQuery = defineQueryOptions<Options<MapGetTileData>, MapGetTileResponse, MapGetTileError>((options: Options<MapGetTileData>) => ({
+    key: mapGetTileQueryKey(options),
+    query: async (context) => await mapGetTile({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapGetLayerQueryKey = (options: Options<MapGetLayerData>) => createQueryKey('mapGetLayer', options, ['Map']);
+
+/**
+ * Returns one Owner-only bounded map layer for the current world. Historical and transient items are retained observations or the latest captured snapshot only.
+ */
+export const mapGetLayerQuery = defineQueryOptions<Options<MapGetLayerData>, MapGetLayerResponse, MapGetLayerError>((options: Options<MapGetLayerData>) => ({
+    key: mapGetLayerQueryKey(options),
+    query: async (context) => await mapGetLayer({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const mapSearchPlayersInAreaQueryKey = (options: Options<MapSearchPlayersInAreaData>) => createQueryKey('mapSearchPlayersInArea', options, ['Map']);
+
+/**
+ * Returns players with retained observations inside one rectangle or circle during the UTC range. Results do not assert continuous presence or dwell time.
+ */
+export const mapSearchPlayersInAreaQuery = defineQueryOptions<Options<MapSearchPlayersInAreaData>, MapSearchPlayersInAreaResponse, MapSearchPlayersInAreaError>((options: Options<MapSearchPlayersInAreaData>) => ({
+    key: mapSearchPlayersInAreaQueryKey(options),
+    query: async (context) => await mapSearchPlayersInArea({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const modsGetQueryKey = (options?: Options<ModsGetData>) => createQueryKey('modsGet', options, ['Mods']);
+
+export const modsGetQuery = defineQueryOptions<Options<ModsGetData>, ModsGetResponse, Error>((options?: Options<ModsGetData>) => ({
+    key: modsGetQueryKey(options),
+    query: async (context) => await modsGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const modsPutMutation = (options?: Partial<Options<ModsPutData>>): UseMutationOptions<ModsPutResponse, Options<ModsPutData>, Error> => ({
+    mutation: async (vars) => await modsPut({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
 export const overviewGetQueryKey = (options?: Options<OverviewGetData>) => createQueryKey('overviewGet', options, ['Overview']);
 
 export const overviewGetQuery = defineQueryOptions<Options<OverviewGetData>, OverviewGetResponse, Error>((options?: Options<OverviewGetData>) => ({
@@ -306,6 +508,49 @@ export const overviewGetQuery = defineQueryOptions<Options<OverviewGetData>, Ove
         throwOnError: true
     })
 }));
+
+export const panelUsersGetQueryKey = (options?: Options<PanelUsersGetData>) => createQueryKey('panelUsersGet', options, ['PanelUsers']);
+
+export const panelUsersGetQuery = defineQueryOptions<Options<PanelUsersGetData>, PanelUsersGetResponse, Error>((options?: Options<PanelUsersGetData>) => ({
+    key: panelUsersGetQueryKey(options),
+    query: async (context) => await panelUsersGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const panelUsersPostMutation = (options?: Partial<Options<PanelUsersPostData>>): UseMutationOptions<PanelUsersPostResponse, Options<PanelUsersPostData>, Error> => ({
+    mutation: async (vars) => await panelUsersPost({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const panelUsersDeleteMutation = (options?: Partial<Options<PanelUsersDeleteData>>): UseMutationOptions<PanelUsersDeleteResponse, Options<PanelUsersDeleteData>, Error> => ({
+    mutation: async (vars) => await panelUsersDelete({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const panelUsersPutMutation = (options?: Partial<Options<PanelUsersPutData>>): UseMutationOptions<PanelUsersPutResponse, Options<PanelUsersPutData>, Error> => ({
+    mutation: async (vars) => await panelUsersPut({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const panelUsersResetPasswordMutation = (options?: Partial<Options<PanelUsersResetPasswordData>>): UseMutationOptions<PanelUsersResetPasswordResponse, Options<PanelUsersResetPasswordData>, Error> => ({
+    mutation: async (vars) => await panelUsersResetPassword({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
 
 export const playersGetQueryKey = (options?: Options<PlayersGetData>) => createQueryKey('playersGet', options, ['Players']);
 
@@ -362,6 +607,25 @@ export const playersGetHistoricalPlayerSnapshotsQuery = defineQueryOptions<Optio
 
 export const playersKickMutation = (options?: Partial<Options<PlayersKickData>>): UseMutationOptions<PlayersKickResponse, Options<PlayersKickData>, PlayersKickError> => ({
     mutation: async (vars) => await playersKick({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const serverConfigurationGetQueryKey = (options?: Options<ServerConfigurationGetData>) => createQueryKey('serverConfigurationGet', options, ['ServerConfiguration']);
+
+export const serverConfigurationGetQuery = defineQueryOptions<Options<ServerConfigurationGetData>, ServerConfigurationGetResponse, Error>((options?: Options<ServerConfigurationGetData>) => ({
+    key: serverConfigurationGetQueryKey(options),
+    query: async (context) => await serverConfigurationGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const serverConfigurationPutMutation = (options?: Partial<Options<ServerConfigurationPutData>>): UseMutationOptions<ServerConfigurationPutResponse, Options<ServerConfigurationPutData>, Error> => ({
+    mutation: async (vars) => await serverConfigurationPut({
         ...options,
         ...vars,
         throwOnError: true

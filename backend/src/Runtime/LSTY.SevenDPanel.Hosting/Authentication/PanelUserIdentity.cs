@@ -26,7 +26,7 @@ namespace LSTY.SevenDPanel.Hosting.Authentication
         public string Username { get; }
         public string Role { get; }
 
-        private static bool IsSupportedRole(string role) =>
+        public static bool IsSupportedRole(string role) =>
             string.Equals(role, OwnerRole, StringComparison.Ordinal) ||
             string.Equals(role, AdminRole, StringComparison.Ordinal) ||
             string.Equals(role, ViewerRole, StringComparison.Ordinal);

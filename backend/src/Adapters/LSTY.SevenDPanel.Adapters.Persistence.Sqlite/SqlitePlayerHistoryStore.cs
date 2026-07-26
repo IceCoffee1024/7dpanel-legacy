@@ -7,7 +7,7 @@ using LSTY.SevenDPanel.Application;
 
 namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
 {
-    public sealed class SqlitePlayerHistoryStore : IPlayerHistoryStore
+    public sealed class SqlitePlayerHistoryStore : IPlayerHistoryStore, IPlayerMapSpatialQueryStore
     {
         private readonly SqliteConnectionFactory connectionFactory;
 
@@ -190,6 +190,158 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             return new PlayerHistorySnapshotsPage(snapshots, next, gaps);
         }
 
+        public PlayerTrackHistory? GetPlayerTrack(GetPlayerTrackQuery query)
+        {
+            if (query == null) throw new ArgumentNullException(nameof(query));
+            using var connection = connectionFactory.Open();
+            var exists = connection.ExecuteScalar<long>(
+                @"SELECT EXISTS(
+                      SELECT 1
+                      FROM player_history_players
+                      WHERE crossplatform_id = @CrossplatformId);",
+                new { query.CrossplatformId });
+            if (exists == 0) return null;
+
+            var fromUtc = ToUnixMilliseconds(query.FromUtc);
+            var toUtc = ToUnixMilliseconds(query.ToUtc);
+            var rows = connection.Query<PlayerTrackRow>(
+                @"SELECT snapshot_id AS SnapshotId, crossplatform_id AS CrossplatformId,
+                         observed_utc AS ObservedUtc, name AS Name,
+                         position_x AS PositionX, position_y AS PositionY, position_z AS PositionZ
+                  FROM player_history_snapshots
+                  WHERE crossplatform_id = @CrossplatformId
+                    AND observed_utc >= @FromUtc
+                    AND observed_utc <= @ToUtc
+                  ORDER BY observed_utc ASC, snapshot_id ASC
+                  LIMIT @Take;",
+                new
+                {
+                    query.CrossplatformId,
+                    FromUtc = fromUtc,
+                    ToUtc = toUtc,
+                    Take = GetPlayerTrackQuery.MaximumObservations + 1
+                }).ToArray();
+            if (rows.Length > GetPlayerTrackQuery.MaximumObservations)
+                throw new PlayerTrackLimitExceededException();
+
+            var gaps = connection.Query<GapRow>(
+                @"SELECT gap_id AS GapId, crossplatform_id AS CrossplatformId,
+                         started_utc AS StartedUtc, completed_utc AS CompletedUtc,
+                         dropped_count AS DroppedCount, reason AS Reason, recorded_utc AS RecordedUtc
+                  FROM player_history_gaps
+                  WHERE crossplatform_id = @CrossplatformId
+                    AND completed_utc >= @FromUtc
+                    AND started_utc <= @ToUtc
+                  ORDER BY started_utc ASC, completed_utc ASC, gap_id ASC
+                  LIMIT @Take;",
+                new
+                {
+                    query.CrossplatformId,
+                    FromUtc = fromUtc,
+                    ToUtc = toUtc,
+                    Take = GetPlayerTrackQuery.MaximumContinuityGaps + 1
+                }).ToArray();
+            if (gaps.Length > GetPlayerTrackQuery.MaximumContinuityGaps)
+                throw new PlayerTrackLimitExceededException();
+
+            return new PlayerTrackHistory(
+                rows.Select(row => new PlayerTrackObservation(
+                    row.SnapshotId,
+                    row.CrossplatformId,
+                    row.Name,
+                    row.PositionX,
+                    row.PositionY,
+                    row.PositionZ,
+                    FromUnixMilliseconds(row.ObservedUtc))),
+                gaps.Select(ToGap));
+        }
+
+        public IReadOnlyList<HistoricalPlayerLastRetainedLocation> GetHistoricalPlayerLastRetainedLocations(
+            HistoricalPlayerLastLocationsStoreQuery query)
+        {
+            if (query == null) throw new ArgumentNullException(nameof(query));
+            using var connection = connectionFactory.Open();
+            var rows = connection.Query<HistoricalPlayerLastRetainedLocationRow>(
+                @"WITH ranked_snapshots AS (
+                      SELECT snapshot_id AS SnapshotId,
+                             crossplatform_id AS CrossplatformId,
+                             name AS DisplayName,
+                             position_x AS PositionX,
+                             position_y AS PositionY,
+                             position_z AS PositionZ,
+                             observed_utc AS ObservedUtc,
+                             ROW_NUMBER() OVER (
+                                 PARTITION BY crossplatform_id
+                                 ORDER BY observed_utc DESC, snapshot_id DESC) AS RetainedRank
+                      FROM player_history_snapshots
+                  )
+                  SELECT SnapshotId, CrossplatformId, DisplayName,
+                         PositionX, PositionY, PositionZ, ObservedUtc
+                  FROM ranked_snapshots
+                  WHERE RetainedRank = 1
+                    AND PositionX >= @MinimumX
+                    AND PositionX <= @MaximumX
+                    AND PositionZ >= @MinimumZ
+                    AND PositionZ <= @MaximumZ
+                  ORDER BY ObservedUtc DESC, SnapshotId DESC, CrossplatformId ASC
+                  LIMIT @Take;",
+                new
+                {
+                    query.Extent.MinimumX,
+                    query.Extent.MaximumX,
+                    query.Extent.MinimumZ,
+                    query.Extent.MaximumZ,
+                    Take = query.CandidateLimit
+                }).ToArray();
+
+            return rows.Select(row => new HistoricalPlayerLastRetainedLocation(
+                row.SnapshotId,
+                row.CrossplatformId,
+                row.DisplayName,
+                new MapLayerPosition(row.PositionX, row.PositionY, row.PositionZ),
+                FromUnixMilliseconds(row.ObservedUtc)))
+                .ToArray();
+        }
+
+        public IReadOnlyList<PlayerAreaObservationCandidate> GetPlayerAreaCandidates(PlayerAreaCandidateQuery query)
+        {
+            if (query == null) throw new ArgumentNullException(nameof(query));
+            query.Validate();
+            using var connection = connectionFactory.Open();
+            return connection.Query<PlayerAreaCandidateRow>(
+                @"SELECT snapshot_id AS SnapshotId, crossplatform_id AS CrossplatformId,
+                         observed_utc AS ObservedUtc, name AS DisplayName,
+                         position_x AS PositionX, position_y AS PositionY, position_z AS PositionZ
+                  FROM player_history_snapshots
+                  WHERE observed_utc >= @FromUtc
+                    AND observed_utc <= @ToUtc
+                    AND position_x >= @MinimumX
+                    AND position_x <= @MaximumX
+                    AND position_z >= @MinimumZ
+                    AND position_z <= @MaximumZ
+                  ORDER BY observed_utc DESC, snapshot_id DESC
+                  LIMIT @Take;",
+                new
+                {
+                    FromUtc = ToUnixMilliseconds(query.FromUtc),
+                    ToUtc = ToUnixMilliseconds(query.ToUtc),
+                    query.MinimumX,
+                    query.MaximumX,
+                    query.MinimumZ,
+                    query.MaximumZ,
+                    Take = query.CandidateObservationLimit
+                })
+                .Select(row => new PlayerAreaObservationCandidate(
+                    row.SnapshotId,
+                    row.CrossplatformId,
+                    row.DisplayName,
+                    FromUnixMilliseconds(row.ObservedUtc),
+                    row.PositionX,
+                    row.PositionY,
+                    row.PositionZ))
+                .ToArray();
+        }
+
         public int Compact(DateTimeOffset utcNow, int maximumDeletes)
         {
             if (maximumDeletes <= 0) throw new ArgumentOutOfRangeException(nameof(maximumDeletes));
@@ -337,6 +489,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
         private sealed class DetailRow : SummaryRow { public long GapCount { get; set; } public long DroppedObservationCount { get; set; } }
         private sealed class GapRow { public string GapId { get; set; } = null!; public string CrossplatformId { get; set; } = null!; public long StartedUtc { get; set; } public long CompletedUtc { get; set; } public long DroppedCount { get; set; } public string Reason { get; set; } = null!; public long RecordedUtc { get; set; } }
         private sealed class RetentionRow { public long SnapshotId { get; set; } public string CrossplatformId { get; set; } = null!; public long ObservedUtc { get; set; } public long LatestSnapshotId { get; set; } }
+        private sealed class PlayerTrackRow { public long SnapshotId { get; set; } public string CrossplatformId { get; set; } = null!; public long ObservedUtc { get; set; } public string Name { get; set; } = null!; public float PositionX { get; set; } public float PositionY { get; set; } public float PositionZ { get; set; } }
+        private sealed class HistoricalPlayerLastRetainedLocationRow { public long SnapshotId { get; set; } public string CrossplatformId { get; set; } = null!; public string DisplayName { get; set; } = null!; public double PositionX { get; set; } public double PositionY { get; set; } public double PositionZ { get; set; } public long ObservedUtc { get; set; } }
+        private sealed class PlayerAreaCandidateRow { public long SnapshotId { get; set; } public string CrossplatformId { get; set; } = null!; public long ObservedUtc { get; set; } public string DisplayName { get; set; } = null!; public double PositionX { get; set; } public double PositionY { get; set; } public double PositionZ { get; set; } }
         private sealed class SnapshotRow { public long SnapshotId { get; set; } public string CrossplatformId { get; set; } = null!; public long ObservedUtc { get; set; } public int EntityId { get; set; } public string Name { get; set; } = null!; public string PlatformCombinedId { get; set; } = null!; public string PlatformName { get; set; } = null!; public string CrossplatformCombinedId { get; set; } = null!; public string CrossplatformName { get; set; } = null!; public string DeviceType { get; set; } = null!; public string? Ip { get; set; } public int Ping { get; set; } public string? CompatibilityVersion { get; set; } public string? DiscordUserId { get; set; } public int PermissionLevel { get; set; } public float PositionX { get; set; } public float PositionY { get; set; } public float PositionZ { get; set; } public long IsDead { get; set; } public int Health { get; set; } public int MaxHealth { get; set; } public int Level { get; set; } public string? PlayGroup { get; set; } public long? LastLoginUtc { get; set; } public int? GameStage { get; set; } public int? ExpToNextLevel { get; set; } public int? SkillPoints { get; set; } public float? BedrollX { get; set; } public float? BedrollY { get; set; } public float? BedrollZ { get; set; } public int Score { get; set; } public int ZombieKills { get; set; } public int PlayerKills { get; set; } public int Deaths { get; set; } public float TotalTimePlayedMinutes { get; set; } public float DistanceWalkedMeters { get; set; } public uint TotalItemsCrafted { get; set; } public float LongestLifeMinutes { get; set; } public float CurrentLifeMinutes { get; set; } }
     }
 }

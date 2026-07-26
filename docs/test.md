@@ -7,23 +7,35 @@ last_updated: "2026-07-26"
 
 ## 范围与可追踪性
 
-本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。`online-player-details` 工作树以显式 `SevenDaysReferenceRoot` 完成 Release 还原、构建和全量 xUnit，`334/334` 项通过；覆盖 password grant、8 小时默认 Access Token、Access Token/API Key 严格分流、当前用户/角色重建、API Key REST/OpenAPI、Basic 拒绝、SSE 周期复验、完整在线玩家 25 字段投影、输入验证与依赖边界。Admin 的 Auth 与 locale codec/Repository/runtime、身份响应解析、登录/账号/语言菜单、全部当前页面双语、Valibot 表单边界、路由定向、25 字段 parser/格式化、OpenAPI 生成客户端和 Colada 状态自动化已通过；完整 `pnpm test` 的既有基线为 `45` 个文件、`442/442` 项通过，typecheck、定向变更 lint 和 Vite 8 生产构建通过。2026-07-26 新增的普通请求/SSE 超时分流、单一认证 SSE、命名事件与 heartbeat、replay 游标、会话替换、3 秒可见轮询和事件触发概览刷新由 5 个聚焦文件 `31/31` 项及 Admin typecheck 验证；本轮未重跑全量用例。全量 lint 仍被既有综合概览 Vue 文件的 65 个格式错误和 122 个警告阻断。消息目录自动化要求中英文叶子键和插值参数完全一致、值非空且不含 HTML；生产源码扫描未发现目录外的中文产品文案。该 Vitest 输出仍包含 happy-dom teardown 的 `AbortError` 与外部连接拒绝日志；Vitest 以成功状态结束，但根因未确认，不能视为干净的测试基础设施。当前 Owner Playwright suite 已有玩家详情合成 25 字段场景及既有会话、语言和 API Key 场景，但缺少受控 OWIN 环境变量，尚未执行。2026-07-24 已将当前工作树的 Mod 与 Admin 产物发布到远程 Windows 服务器；`index.html` 和动态玩家 JS/CSS 的本地/远端 SHA-256 一致，Owner 浏览器人工打开详情抽屉并查看当前响应。该部署与浏览器观察不替代真实 `SavePlayerData` 字段来源、断开状态机、真实踢出、Playwright 或 Linux 进程证据。2026-07-23 的远程 Windows 7DTD `v3.0.1-b4` 闭环 smoke 验证了合并提交 `a98ad6b` 的公开 Swagger UI/OpenAPI Unity Mono 加载与访问、Telnet 原生异步队列、真实 SQLite 写锁期间命令 fail-open、解锁后的 `store_failure` gap 恢复、正常关服排空和进程/监听释放；该动态命令与 Swagger 证据发生在移除 Basic 前，不能证明当前认证版本的真实进程行为。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。完整用户管理、其他状态变更游戏动作和其他产品能力仍未实现。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义首版产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-26 服务器治理实现稳定后，Release 构建通过，后端聚合 xUnit `598/598` 通过；服务器配置、访问名单、面板用户、游戏权限、模组、Controller、依赖规则和 OpenAPI 均包含聚焦自动化。Admin `pnpm test` 为 `60` 个文件、`499/499` 项通过，typecheck、Vite 8 生产构建、OpenAPI 快照刷新和生成客户端均通过。全量 lint 未重跑；Playwright、发布、真实 7DTD 与 Windows/Linux smoke 按本次精简边界未执行。Vitest 输出仍包含已知 happy-dom teardown `AbortError` 噪声，但以成功状态结束。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、服务器治理原生动作、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 ### 产品需求追踪
 
 | 需求 | 关键场景 | 主要测试层级 | 必须保留的证据 |
 |---|---|---|---|
 | `CAP-01` | Mod 内嵌宿主启动；自动识别当前服务端；状态采样时间与新鲜度；离线、不可用和过期状态不得显示为正常 | 单元、OWIN/API 集成、真实进程 smoke、浏览器 E2E | API 响应、页面断言、服务端日志和测试报告 |
-| `CAP-02` | 在线玩家 31 字段同次观察、逐玩家时间、主表与详情抽屉；按 EOS 跨平台身份归档的历史摘要、只读快照、分级降采样和缺口；踢出、禁言、封禁和传送；动态内置/第三方控制台命令；HTTP 有界 FIFO 与主线程串行；日志过滤；成功、失败、拒绝和审计缺口 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | 游戏内结果、API 结果、详情状态、队列顺序、历史保留/gap 证据、Harmony 覆盖和对应审计记录 |
+| `CAP-02` | 在线玩家 31 字段同次观察、逐玩家时间、主表与详情抽屉；按 EOS 跨平台身份归档的历史摘要、只读快照、分级降采样和缺口；Owner-only OpenLayers 坐标地图、游戏时间、本地背景、认证瓦片、在线/历史最后位置、单玩家分段轨迹、独立业务图层与区域反查；地图领地删除、传送和渲染操作；动态内置/第三方控制台命令；有界队列、状态诚实与审计 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | 游戏内结果、API 结果、详情状态、投影/瓦片/坐标顺序、内部断段且普通界面不暴露缺口、空间查询边界、队列顺序和对应审计记录 |
 | `CAP-03` | 手动与计划备份状态机；保存提交完成后快照；校验失败、损坏归档、磁盘空间不足；重启恢复；中断后回滚 | 单元、SQLite 集成、真实进程、故障注入、恢复演练 | 备份清单与校验和、状态迁移、恢复后存档验证和回滚证据 |
 | `CAP-04` | 即时公告；进服欢迎、周期提醒和血月提醒；同一触发只执行一次；重启后的调度恢复；失败可见 | 单元、SQLite 集成、真实进程、E2E | 游戏内公告、任务执行记录和审计记录 |
-| `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；password grant 验证当前用户并返回 `username`/`role`；默认 8 小时 Header-only Access Token、两种显式浏览器会话、到期和撤销；用户 API Key 一次性显示、当前角色继承、到期和撤销；SSE 周期复验；未来 `Admin`/`Viewer` 管理与审计 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | migration/Store 报告、Authorization Header、会话记录和清理、Token/API Key 生命周期、连接关闭、权限矩阵和审计记录 |
-| `CAP-06` | Owner-only 实时/历史聊天、全局与私聊发送、聊天设置、彩色默认规则、玩家 Profile、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、游戏内消息、权限矩阵、审计和纯文本断言 |
+| `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；password grant、Header-only Token/API Key 和 SSE 复验；面板用户管理保留至少一个启用 Owner；面板角色与 7DTD 游戏管理员/命令权限分离；名单只读/可写矩阵与审计 | 单元、SQLite 集成、OWIN/API 集成、聚焦 Admin 测试、安全 | Store 原子结果、Authorization Header、Token/API Key 生命周期、权限矩阵、原生权限快照和审计记录 |
+| `CAP-06` | 配置字段目录、未知/敏感字段、类型约束、文件版本冲突、原子替换和重启提示；模组安全目录、元数据、当前/下次启动状态、受保护模组和路径拒绝 | 单元、临时文件系统集成、OWIN/API 集成、聚焦 Admin 测试、安全 | 配置前后文件、冲突结果、敏感值扫描、模组状态快照、路径拒绝和审计记录 |
+| `CAP-07` | Owner-only 实时/历史聊天、全局与私聊发送、聊天设置、彩色默认规则、玩家 Profile、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、游戏内消息、权限矩阵、审计和纯文本断言 |
 | `NFR-01` | 无产品方云服务、无外网条件下部署 Mod、打开面板并完成全部 P0 核心流程 | Windows/Linux 真实进程、离线验收 | 发布物清单、网络隔离记录和验收报告 |
 | `NFR-02` | 超时、断线、过期状态、重复提交、任务失败、服务关闭和结果未知；高风险操作确认 | 单元、API 集成、E2E、故障注入 | 状态转换、错误码、页面状态和审计关联标识 |
 | `NFR-03` | `zh-CN`/`en` 浏览器语言匹配与回退；登录前后切换和持久化；多表单 Valibot 内置错误；Nuxt UI 文案；日期数字格式；稳定服务端错误码映射；技术标识保持原样 | 单元、组件、浏览器 E2E | 两种语言页面断言、缺失键报告、格式化结果、切换前后表单状态和错误码映射报告 |
-| `NFR-04` | 当前过渡默认凭据和明文 HTTP 可用；配置只引导固定持久 Owner；受保护资源保持认证；错误/过期/撤销/QueryString Token 被拒绝且不泄漏；用户管理落地后移除过渡默认值 | 单元、SQLite/OWIN/API 集成、真实进程、安全 | 配置与用户同步、Authorization Header、401/403/429、SSE 关闭、日志与发布物扫描 |
+| `NFR-04` | 当前初始化开发阶段默认凭据和明文 HTTP 可用；配置继续引导固定持久 Owner；用户管理不触发迁移；受保护资源保持认证；错误/过期/撤销/QueryString Token 被拒绝且不泄漏 | 单元、SQLite/OWIN/API 集成、安全 | 配置与用户同步、最后 Owner 不变量、Authorization Header、401/403/429、SSE 关闭和敏感值扫描 |
 | `NFR-05` | 服务器本地文件读取者属于受信任运维边界；不要求配置、SQLite、备份和服务端日志静态保密；网络、API、前端资产、产品日志和版本库仍不得意外披露凭据或有效 Token | 安全审查、API 集成、发布物与版本库扫描 | 威胁模型审查结论、认证/授权结果、敏感值扫描和发布清单 |
+
+### 服务器治理变更的精简验证
+
+[服务器治理设计规格](superpowers/specs/2026-07-26-server-governance-design.md)的常规实现验证限定为受影响边界：
+
+- 服务器配置只新增字段目录、类型/版本校验、临时文件替换和敏感值聚焦测试。
+- 黑白名单与游戏权限只新增 Application 结果映射、Dispatcher 内原生访问和 Controller 权限测试。
+- 面板用户只新增 SQLite 原子不变量、角色变化、旧 Access Token 撤销和 HTTP 权限测试。
+- 模组只新增临时 Mods 根目录、元数据解析、路径拒绝、受保护模组和下次启动状态测试。
+- Admin 只新增 parser、角色路由、关键表单和诚实状态的聚焦 Vitest；稳定后运行一次 typecheck 与生产构建。
+- 后端稳定后只运行一次聚合测试。默认不运行 Playwright、发布、真实 7DTD 或 Windows/Linux smoke；只有实现实际改变游戏版本兼容、静态事件、Mod 加载布局或候选发布时才扩大验证。
 
 ### 综合概览第一阶段
 
@@ -78,7 +90,7 @@ last_updated: "2026-07-26"
 | 游戏日志回调拖慢或递归 | 单元测试证明回调只创建 entry 并一次非阻塞投递，窗口 append 不在回调线程执行；源码复核禁止等待、I/O、逐条 `Task.Run` 和回调内 `Log.*`，官方进程验证真实 delegate 订阅/注销。 |
 | 日志突发导致无界内存或静默丢失 | 强制阻塞 consumer 的确定性测试验证容量、即时 `TryWrite` 拒绝、丢弃计数和 high-water；真实进程命令突发验证 Mono 兼容、全部已接受项排空与停止摘要。 |
 | 控制台工作台遗漏、重复或泄漏日志 | 最近窗口测试必须覆盖最新 N 条、空窗口、容量上限和生命周期事件夹杂；Admin 状态测试必须覆盖“先订阅再取快照”的并发合并、按 sequence 去重、2000 条顶部淘汰、当前页面清空、快照失败仍接收实时日志和 gap 只更新日志外状态。授权测试必须证明 `Owner`/`Admin` 可以读取最近日志、动态命令目录和实时 `console-log`，`Viewer`/匿名不能通过页面、REST 或共享 SSE 绕过。 |
-| 配置引导身份或生产 SSE 被误当作完整 `CAP-05` | 默认和缺失配置必须产生批准的 `admin` / `password` 与明文 HTTP 过渡边界，并只同步固定 `owner`；password grant 必须读取 SQLite 并只在成功响应返回服务端 `username`/`role`，Access Token/API Key 只能来自 Header，Basic/Cookie/QueryString 凭据不得建立身份。严格版本化的浏览器会话只允许默认标签页或显式保持登录两种位置，损坏、到期、登出、401 和跨标签页删除必须清理；CSP 与敏感信息检查必须补偿同源 Storage 的 XSS 风险。限流、统一 401/403/429/503、8 小时默认 Token、API Key 一次性值/当前角色继承/撤销/到期、SSE 周期复验、订阅上限、Welcome、replay/gap 和断开释放必须有自动化。完整角色/用户管理仍按未实现处理，产品不采用 Cookie、CSRF Token 或 refresh token。 |
+| 配置引导身份或生产 SSE 被误当作完整 `CAP-05` | 默认和缺失配置必须产生批准的 `admin` / `password` 与明文 HTTP 过渡边界，并只同步固定 `owner`；password grant 必须读取 SQLite 并只在成功响应返回服务端 `username`/`role`，Access Token/API Key 只能来自 Header，Basic/Cookie/QueryString 凭据不得建立身份。面板用户管理已自动化验证最后启用 Owner、Token 撤销和 Owner-only HTTP，但仍需真实进程与浏览器门禁。产品不采用 Cookie、CSRF Token 或 refresh token。 |
 | Channels/SQLite 与宿主程序集冲突 | 发布物必须包含 Channels、Tasks.Extensions `4.6.3`、Bcl AsyncInterfaces `10.0.10`、Unsafe `6.1.2`、Microsoft.Data.Sqlite、SQLitePCLRaw Batteries/core/dynamic provider、`SQLitePCLRaw.batteries_v2.dll.config`，以及 Mod 根目录中的五个 Framework64 宿主兼容程序集和 Windows/Linux x64 RID native SQLite。根目录不得保留 native `e_sqlite3.dll`，旧 System.Data.SQLite/SQLite.Interop 与游戏提供的 Newtonsoft.Json、LogLibrary 或 Unity 程序集不得发布；源码规则必须禁止自定义 loader、ResourceManager shim 和显式 provider 绑定。Release 必须零冲突警告，官方进程日志必须证明标准 Batteries 组合加载且无托管或 native 类型加载错误。 |
 | 持久化端口泄漏 provider | 依赖测试禁止 Hosting/Web 引用 Dapper、DbUp、`SqliteConnection` 或数据库事务类型；只有 Persistence Adapter 实现 credential/token Store 并拥有连接与事务。 |
 | SQLite 写竞争或审计静默丢失 | 当前身份与玩家动作集成测试验证 WAL、5 秒 default timeout、立即写事务、迁移幂等、Token 严格容量、短连接、Pending 插入、并发一次完成、数据库锁失败后恢复、遗留 Pending 启动恢复和连接池清理。高风险动作在审计意图持久化失败时不得进入游戏主线程，终态写入不可确认时不得伪造失败。 |
@@ -199,6 +211,10 @@ last_updated: "2026-07-26"
 - 对全部 P0 流程和表单分别以 `zh-CN` 与 `en` 运行关键 E2E；覆盖受支持浏览器语言首访、不支持语言回退 `en`、未认证与已认证入口切换、刷新后偏好持久化，以及切换时当前路由、筛选和安全表单输入保持。
 - 验证产品文案、Nuxt UI 内置文案、Valibot 内置错误、日期与数字格式和稳定服务端错误码映射始终使用同一当前语言；缺失键、空白文案、翻译键泄漏和原始服务端异常文本均使测试失败。
 - 验证 Steam ID、玩家名、服务器名、IP、坐标、路径、日志原文、审计标识和协议标识在语言切换前后保持原值，并在 320 CSS 像素宽度下检查英文文本扩展不会遮挡关键操作。
+- 玩家坐标地图纯函数和组件测试覆盖固定朝北的自定义 X/Z projection/extent、瓦片坐标、单玩家轨迹稳定排序、内部缺失边界断段、起终点、首次自动 fit 且手动移动后不抢回、公开 DTO 与普通界面不出现缺口原因/数量、统一离散观察提示、时间控件与列表同步、旧请求取消及只读边界。游戏时间覆盖 30 秒刷新、独立观察时间和 Stale；图层测试覆盖默认关闭、可见时加载、成功后对象数、隐藏/失活暂停、独立失败、缩放门槛、资料链接和结果上限。2026-07-26 当前工作树的 `player-map` 定向 Vitest 为 14 个文件、80 项通过，Admin typecheck 通过。
+- 认证瓦片组件测试覆盖 Header Bearer、对象 URL 释放、客户端重新加载不调用服务端作业、署名、本地背景在关闭/加载/失败时可见，以及 URL/日志无 Token 和路径；资源检查确认背景图属于当前项目且不复制旧项目素材。
+- 地图 OWIN/API 与 SQLite 集成覆盖 Owner/非 Owner、元数据、游戏时间、最长 UTC 范围、5000 条观察边界、历史最后位置与在线身份去重/在线不可用不推断离线、商人营业状态、瓦片坐标/路径穿越、各图层 extent/zoom/limit 和矩形/圆形数据库级过滤。2026-07-26 当前工作树按 `FullyQualifiedName~Map` 运行 115 项后端测试全部通过，受控 OpenAPI 快照和生成客户端已同步。浏览器 E2E 仍需人工覆盖桌面缩放/选择、背景与瓦片切换、图层计数和资料跳转、区域 Draw/Modify、URL 恢复、键盘同步列表、320 CSS 像素窄屏和 loading/empty/Stale/部分可用状态。合成轨迹不能替代真实 `SavePlayerData` 坐标来源证据，合成图层也不能替代目标游戏版本字段来源和游戏线程复制证据；在这些证据具备前，生产业务对象投影保持 unavailable。
+- 地图管理操作落地时，Application/Adapter 测试分别覆盖固定领地目标、在线玩家身份复验、选点/坐标传送、有界游戏线程执行、渲染作业互斥、临时资源校验与原子发布、旧地图保留、审计和 queued/running/succeeded/failed/cancelled/interrupted/result-unknown。安全与 E2E 验证非 Owner 无入口且 API 403、浏览器不能提供命令或服务器路径、HTTP 接受不显示为成功，以及刷新后按 operation ID 恢复状态。
 
 ### 安全、性能与恢复测试
 
@@ -259,7 +275,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 首版候选发布必须同时满足：
 
-1. 所有 P0 能力 `CAP-01` 至 `CAP-06` 及 `NFR-01` 至 `NFR-04` 均有自动化或可重复人工验收结果，且没有未说明的失败。
+1. 所有 P0 能力 `CAP-01` 至 `CAP-07` 及 `NFR-01` 至 `NFR-04` 均有自动化或可重复人工验收结果，且没有未说明的失败。
 2. 单元、SQLite/文件系统、OWIN/API、浏览器 E2E 测试全部通过；不允许通过重新运行隐藏失败。
 3. Windows x64 和 Linux x64 官方 `v3.0.1-b4` 进程 smoke 全部通过，程序集和发布物清单符合兼容矩阵，且不包含 `7dtd-reference/` 内容。
 4. 正常关服、重复启动、队列饱和、备份损坏、磁盘失败、恢复中断和进程异常终止场景均产生明确、可追踪且可恢复的状态。

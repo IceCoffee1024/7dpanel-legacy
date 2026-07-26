@@ -34,6 +34,7 @@ namespace LSTY.SevenDPanel.Tests
                 host.Start();
                 var document = await GetOpenApiDocumentAsync(client, url);
                 AssertUniqueOperationIds(document);
+                AssertMapContractSemantics(document);
                 AssertChatOperations(document);
                 NormalizeForAdminCodegen(document);
 
@@ -82,6 +83,204 @@ namespace LSTY.SevenDPanel.Tests
         {
             document["servers"] = new JArray(
                 new JObject(new JProperty("url", "/")));
+        }
+
+        private static void AssertMapContractSemantics(JObject document)
+        {
+            var metadata = GetOperation(document, "/api/v1/map/metadata");
+            AssertOperationResponseCodes(metadata, "200", "401", "403", "500");
+            AssertRequiredProperties(
+                GetSchema(document, "MapMetadataHttpResponse"),
+                "availability",
+                "observedAtUtc",
+                "worldId",
+                "worldName",
+                "extent",
+                "axes",
+                "availableZoomLevels",
+                "tileSize",
+                "mapResourceVersion");
+            AssertNullableProperties(
+                GetSchema(document, "MapMetadataHttpResponse"),
+                "observedAtUtc",
+                "worldId",
+                "worldName",
+                "extent",
+                "axes",
+                "availableZoomLevels",
+                "tileSize",
+                "mapResourceVersion");
+            AssertRequiredProperties(
+                GetSchema(document, "MapExtentHttpResponse"),
+                "minimumX",
+                "minimumZ",
+                "maximumX",
+                "maximumZ");
+            AssertRequiredProperties(
+                GetSchema(document, "MapAxesHttpResponse"),
+                "xAxisDirection",
+                "zAxisDirection");
+
+            var gameTime = GetOperation(document, "/api/v1/map/game-time");
+            AssertOperationResponseCodes(gameTime, "200", "401", "403", "500");
+            AssertRequiredProperties(
+                GetSchema(document, "MapGameTimeHttpResponse"),
+                "availability",
+                "day",
+                "hour",
+                "minute",
+                "observedAtUtc");
+            AssertNullableProperties(
+                GetSchema(document, "MapGameTimeHttpResponse"),
+                "day",
+                "hour",
+                "minute",
+                "observedAtUtc");
+
+            var track = GetOperation(document, "/api/v1/map/players/{crossplatformId}/track");
+            AssertOperationResponseCodes(track, "200", "400", "401", "403", "404", "500");
+            foreach (var name in new[] { "fromUtc", "toUtc" })
+            {
+                var parameter = Assert.Single(
+                    track["parameters"]!.Children<JObject>(),
+                    candidate => string.Equals((string?)candidate["name"], name, StringComparison.Ordinal));
+                Assert.True((bool?)parameter["required"]);
+                Assert.NotEqual(true, (bool?)parameter["schema"]?["nullable"]);
+            }
+
+            AssertRequiredProperties(
+                GetSchema(document, "PlayerTrackHttpResponse"),
+                "crossplatformId",
+                "segments");
+            AssertRequiredProperties(
+                GetSchema(document, "PlayerTrackSegmentHttpResponse"),
+                "points");
+            AssertRequiredProperties(
+                GetSchema(document, "PlayerTrackPointHttpResponse"),
+                "snapshotId",
+                "name",
+                "x",
+                "y",
+                "z",
+                "observedAtUtc");
+
+            var tile = GetOperation(
+                document,
+                "/api/v1/map/tiles/{worldId}/{z}/{x}/{y}");
+            AssertOperationResponseCodes(
+                tile,
+                "200",
+                "304",
+                "400",
+                "401",
+                "403",
+                "404",
+                "500",
+                "503");
+            Assert.Equal(
+                new[] { "worldId", "z", "x", "y" }.OrderBy(name => name),
+                tile["parameters"]!
+                    .Children<JObject>()
+                    .Where(parameter => string.Equals((string?)parameter["in"], "path", StringComparison.Ordinal))
+                    .Select(parameter => (string)parameter["name"]!)
+                    .OrderBy(name => name));
+            Assert.DoesNotContain(
+                tile["parameters"]!.Children<JObject>(),
+                parameter => string.Equals((string?)parameter["in"], "query", StringComparison.Ordinal));
+            var tileContent = tile["responses"]!["200"]!["content"]!;
+            Assert.Equal(
+                new[] { "image/png", "image/webp" },
+                tileContent.Children<JProperty>().Select(property => property.Name).OrderBy(name => name));
+            foreach (var mediaType in new[] { "image/png", "image/webp" })
+            {
+                Assert.Equal("string", (string?)tileContent[mediaType]?["schema"]?["type"]);
+                Assert.Equal("binary", (string?)tileContent[mediaType]?["schema"]?["format"]);
+            }
+            foreach (var status in new[] { "200", "304" })
+            {
+                Assert.NotNull(tile["responses"]![status]?["headers"]?["ETag"]);
+                Assert.NotNull(tile["responses"]![status]?["headers"]?["Cache-Control"]);
+            }
+
+            var layers = GetOperation(document, "/api/v1/map/layers/{layerId}");
+            AssertOperationResponseCodes(layers, "200", "400", "401", "403", "500");
+            foreach (var name in new[]
+            {
+                "layerId", "worldId", "minimumX", "minimumZ", "maximumX", "maximumZ", "zoom", "limit"
+            })
+            {
+                var parameter = Assert.Single(
+                    layers["parameters"]!.Children<JObject>(),
+                    candidate => string.Equals((string?)candidate["name"], name, StringComparison.Ordinal));
+                Assert.True((bool?)parameter["required"]);
+            }
+            AssertRequiredProperties(
+                GetSchema(document, "MapLayerHttpResponse"),
+                "layerId",
+                "availability",
+                "observedAtUtc",
+                "isZoomSufficient",
+                "items");
+            AssertRequiredProperties(
+                GetSchema(document, "MapLayerPositionHttpResponse"),
+                "x",
+                "y",
+                "z");
+
+            var area = GetOperation(document, "/api/v1/map/players/area");
+            AssertOperationResponseCodes(area, "200", "400", "401", "403", "500");
+            foreach (var name in new[] { "shape", "fromUtc", "toUtc", "limit" })
+            {
+                var parameter = Assert.Single(
+                    area["parameters"]!.Children<JObject>(),
+                    candidate => string.Equals((string?)candidate["name"], name, StringComparison.Ordinal));
+                Assert.True((bool?)parameter["required"]);
+            }
+            AssertRequiredProperties(
+                GetSchema(document, "PlayerAreaSearchHttpResponse"),
+                "hits",
+                "candidateObservationCount",
+                "matchingObservationCount",
+                "candidateObservationLimitReached",
+                "playerResultLimitReached");
+            AssertRequiredProperties(
+                GetSchema(document, "PlayerAreaHitHttpResponse"),
+                "crossplatformId",
+                "displayName",
+                "firstHitUtc",
+                "lastHitUtc",
+                "hitObservationCount",
+                "lastPosition");
+        }
+
+        private static JObject GetOperation(JObject document, string path) =>
+            (JObject)document["paths"]![path]!["get"]!;
+
+        private static JObject GetSchema(JObject document, string name) =>
+            (JObject)document["components"]!["schemas"]![name]!;
+
+        private static void AssertOperationResponseCodes(JObject operation, params string[] expected)
+        {
+            var actual = operation["responses"]!
+                .Children<JProperty>()
+                .Select(response => response.Name)
+                .OrderBy(code => code, StringComparer.Ordinal)
+                .ToArray();
+            Assert.Equal(expected.OrderBy(code => code, StringComparer.Ordinal), actual);
+        }
+
+        private static void AssertRequiredProperties(JObject schema, params string[] expected)
+        {
+            var actual = schema["required"]?.Values<string>()
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray() ?? Array.Empty<string>();
+            Assert.Equal(expected.OrderBy(name => name, StringComparer.Ordinal), actual);
+        }
+
+        private static void AssertNullableProperties(JObject schema, params string[] names)
+        {
+            foreach (var name in names)
+                Assert.True((bool?)schema["properties"]![name]!["nullable"], name + " must be nullable.");
         }
 
         private static void AssertChatOperations(JObject document)

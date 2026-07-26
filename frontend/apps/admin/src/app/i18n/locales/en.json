@@ -5,6 +5,9 @@
     "backToOverview": "Back to overview",
     "yes": "Yes",
     "no": "No"
+    ,"edit": "Edit"
+    ,"save": "Save"
+    ,"confirm": "Confirm"
   },
   "locale": {
     "label": "Language",
@@ -166,6 +169,57 @@
     "account": "{name} account",
     "signOut": "Sign out"
   },
+  "governance": {
+    "serverConfiguration": "Server configuration",
+    "accessLists": "Access lists",
+    "permissions": "Permissions",
+    "mods": "Mods"
+  },
+  "serverConfiguration": {
+    "title": "Server configuration",
+    "state": { "forbidden": "Only Owners can manage server configuration.", "failed": "Server configuration is unavailable.", "stale": "Refresh failed; showing the last successful snapshot." },
+    "groups": { "identity": "Identity", "network": "Network", "gameplay": "Gameplay", "world": "World", "other": "Other (read-only)" },
+    "fields": {},
+    "restartRequired": "Restart required",
+    "readOnly": "Read-only",
+    "secretSet": "Configured",
+    "secretUnset": "Not configured",
+    "confirmRestart": "This value takes effect after the server restarts.",
+    "confirmImmediate": "This value takes effect when saved.",
+    "feedback": { "invalid": "The value is invalid.", "conflict": "Configuration changed; refresh and try again.", "failed": "The change could not be saved.", "session-expired": "Your session expired.", "forbidden": "Only Owners can make this change." }
+  },
+  "mods": {
+    "title": "Mod management", "search": "Search mods", "loading": "Loading mods", "empty": "No supported mods were found.", "failed": "Mods are unavailable.", "website": "Website", "restartHint": "Changes take effect after restart.", "protected": "Protected mod",
+    "current": { "unknown": "Current state unknown", "loaded": "Currently loaded", "unloaded": "Not currently loaded" },
+    "next": { "enabled": "Enabled next start", "disabled": "Disabled next start" },
+    "action": { "enable": "Enable", "disable": "Disable" },
+    "dialog": { "title": "Confirm mod state", "description": "Set {name} to {state} for the next start?" },
+    "feedback": { "forbidden": "Only Owners can change mod state.", "conflict": "Mod state changed; refresh and try again.", "failed": "The mod state could not be changed.", "load-failed": "The mod list could not be loaded.", "change-failed": "The mod state could not be changed.", "restart-required": "Saved. Restart the server to apply this change.", "session-expired": "Your session expired.", "not-found": "The mod was not found.", "protected": "This protected mod cannot be changed." }
+  },
+  "accessLists": {
+    "title": "Access lists",
+    "description": "Maintain the native 7DTD ban list and whitelist",
+    "tabs": { "bans": "Bans", "whitelist": "Whitelist" },
+    "state": { "gameNotReady": "The game is not ready", "failed": "Access lists could not be loaded", "readOnlyTitle": "Read-only mode", "readOnlyDescription": "Viewers can inspect access lists but cannot change them." },
+    "action": { "addBan": "Add ban", "addWhitelist": "Add whitelist entry", "remove": "Remove", "confirmSave": "Save changes" },
+    "fields": { "playerId": "Player ID", "displayName": "Display name", "bannedUntil": "Expiration (leave empty for permanent)", "reason": "Reason" },
+    "empty": { "bans": "No bans", "whitelist": "No whitelist entries" },
+    "permanent": "Permanent",
+    "confirm": { "removeBan": "Remove the ban for {name}? The player will be able to connect again.", "removeWhitelist": "Remove {name} from the whitelist? The player cannot connect while whitelist mode is enabled." },
+    "banDialog": { "title": "Ban player", "consequence": "Confirming immediately changes the native 7DTD ban list." },
+    "whitelistDialog": { "title": "Whitelist player", "consequence": "Confirming immediately changes the native 7DTD whitelist." }
+  },
+  "permissions": {
+    "title": "Permissions",
+    "refresh": "Refresh",
+    "separation": { "title": "The two permission systems are independent", "description": "Panel roles control Web administration. Native 7DTD levels from 0 to 2000 control only game permissions; lower numbers grant more access." },
+    "feedback": { "partial": "Some permission data is unavailable. Successfully loaded sections were kept.", "passwordTooShort": "The password must contain at least 8 characters.", "passwordReset": "Reset the password for {username} and revoked existing access tokens." },
+    "panelUsers": { "title": "Panel users", "username": "Username", "initialPassword": "Initial password (at least 8 characters)", "enabled": "Enabled", "create": "Create user", "newPassword": "New password", "confirmDelete": "Click again to confirm deletion", "delete": "Delete" },
+    "gameAdmins": { "title": "Game administrators" },
+    "fields": { "playerId": "Player ID", "displayName": "Display name" },
+    "action": { "upsert": "Add or update", "remove": "Remove" },
+    "commands": { "title": "Command permissions", "command": "Command", "noDescription": "No description", "restoreDefault": "Restore default" }
+  },
   "players": {
     "title": "Online players",
     "navigation": "Players",
@@ -298,6 +352,62 @@
         "store_failure": "History store failed",
         "shutdown_timeout": "Shutdown drain timed out",
         "description": "Dropped {count} observations"
+      }
+    },
+    "map": {
+      "title": "Player coordinate map",
+      "navigation": "Map",
+      "description": "Read-only online positions and retained player observations in game X/Z coordinates.",
+      "refresh": "Refresh map data",
+      "player": "Historical player",
+      "searchPlayers": "Search historical players",
+      "searchPlayersPlaceholder": "Name or cross-platform ID",
+      "selectPlayer": "Select a player",
+      "fromUtc": "From (UTC)",
+      "toUtc": "To (UTC)",
+      "loadTrack": "Load retained track",
+      "observations": "Track observations",
+      "onlinePlayers": "Online player positions",
+      "noOnlinePlayers": "No online player positions are available.",
+      "observationTimeControl": "Returned observation time",
+      "noObservationSelected": "No returned observation is selected.",
+      "noObservations": "Select a player and time range to load retained observations.",
+      "observationCount": "{count} observations returned",
+      "observedAt": "Observed at {time}",
+      "discreteNotice": "The track consists of retained position observations. It does not represent continuous online time or the actual movement route.",
+      "canvasLabel": "Interactive north-up game coordinate map",
+      "pointerCoordinate": "Pointer",
+      "selectedCoordinate": "Selected",
+      "backgroundNotice": "Reference background only — not the current world terrain",
+      "unavailableTitle": "The game map is unavailable",
+      "unavailableDescription": "No verified world extent is available, so the interface will not guess or fabricate a map.",
+      "onlineStatus": "Online positions: {state}",
+      "historyStatus": "Historical players: {state}",
+      "trackStatus": "Track: {state}",
+      "state": {
+        "loading": "Loading verified map data",
+        "ready": "Map data is ready",
+        "empty": "No map observations are available",
+        "partial": "Some map data is unavailable",
+        "stale": "Refresh failed; showing the last verified data",
+        "forbidden": "You cannot view the player map",
+        "failed": "The player map is unavailable"
+      },
+      "dataState": {
+        "loading": "loading",
+        "ready": "ready",
+        "empty": "no observations",
+        "stale": "stale",
+        "forbidden": "forbidden",
+        "failed": "unavailable"
+      },
+      "gameTime": {
+        "title": "Game time",
+        "value": "Day {day}, {hour}:{minute}",
+        "loading": "Loading game time",
+        "ready": "Game time is ready",
+        "stale": "Stale",
+        "unavailable": "Game time is unavailable"
       }
     }
   },

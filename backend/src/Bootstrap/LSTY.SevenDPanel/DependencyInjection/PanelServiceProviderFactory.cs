@@ -1,10 +1,15 @@
 using System;
 using System.IO;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
+using LSTY.SevenDPanel.Adapters.Persistence.Sqlite.MapTiles;
 using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
 using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Chat;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.AccessLists;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GamePermissions;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Mods;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
@@ -16,11 +21,15 @@ using LSTY.SevenDPanel.Adapters.Web.Outbound.Hosting;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
+using LSTY.SevenDPanel.Application.Mods;
+using LSTY.SevenDPanel.Application.ServerConfiguration;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Hosting.Platform;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
+using LSTY.SevenDPanel.Mods;
+using LSTY.SevenDPanel.ServerConfiguration;
 
 namespace LSTY.SevenDPanel.DependencyInjection
 {
@@ -57,6 +66,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton<IPanelApiKeyStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
+                services.AddSingleton<IPanelUserAdministrationStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteAuthenticationStore>());
                 services.AddSingleton<SqliteRecentActivityStore>(serviceProvider =>
                     new SqliteRecentActivityStore(
                         serviceProvider.GetRequiredService<SqliteConnectionFactory>(),
@@ -65,6 +76,30 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteRecentActivityStore>());
                 services.AddSingleton<IRecentActivityWriter>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteRecentActivityStore>());
+                services.AddSingleton(ServerConfigurationFieldCatalog.Create());
+                services.AddSingleton<IServerConfigurationStore>(_ =>
+                    new LocalServerConfigurationStore(options.ServerConfigurationPath));
+                services.AddSingleton<GetServerConfigurationUseCase>();
+                services.AddSingleton<UpdateServerConfigurationUseCase>();
+                services.AddSingleton<SevenDaysPlayerAccessControl>();
+                services.AddSingleton<IPlayerAccessControl>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysPlayerAccessControl>());
+                services.AddSingleton<AccessListUseCases>();
+                services.AddSingleton<SevenDaysGamePermissionControl>();
+                services.AddSingleton<IGamePermissionControl>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysGamePermissionControl>());
+                services.AddSingleton<GamePermissionUseCases>();
+                services.AddSingleton<LocalModCatalog>(_ => new LocalModCatalog(
+                    Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..")),
+                    new[] { Path.GetFileName(AppContext.BaseDirectory.TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) }));
+                services.AddSingleton<IModCatalog>(serviceProvider =>
+                    serviceProvider.GetRequiredService<LocalModCatalog>());
+                services.AddSingleton<SevenDaysLoadedModQuery>();
+                services.AddSingleton<ILoadedModQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysLoadedModQuery>());
+                services.AddSingleton<ListModsUseCase>();
+                services.AddSingleton<SetModStateUseCase>();
                 OwinStartup.RegisterAuthenticationServices(services, log);
                 services.AddSingleton(serviceProvider =>
                     new SevenDaysRecentActivityRecorder(
@@ -168,16 +203,39 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<SqlitePlayerHistoryStore>();
                 services.AddSingleton<IPlayerHistoryStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqlitePlayerHistoryStore>());
+                services.AddSingleton<IPlayerMapSpatialQueryStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqlitePlayerHistoryStore>());
                 services.AddSingleton<PlayerHistoryWriteService>();
                 services.AddSingleton<GetHistoricalPlayersUseCase>();
                 services.AddSingleton<GetHistoricalPlayerUseCase>();
                 services.AddSingleton<GetPlayerHistorySnapshotsUseCase>();
+                services.AddSingleton<GetPlayerTrackUseCase>();
+                services.AddSingleton<SevenDaysMapMetadataProjection>();
+                services.AddSingleton<SevenDaysMapGameTimeProjection>();
+                services.AddSingleton<SevenDaysMapLayerProjection>();
+                services.AddSingleton<SevenDaysTransientEntityProjection>();
+                services.AddSingleton<IMapMetadataQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysMapMetadataProjection>());
+                services.AddSingleton<IMapGameTimeQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysMapGameTimeProjection>());
+                services.AddSingleton<IMapLayerProjection>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysMapLayerProjection>());
+                services.AddSingleton<ITransientEntityMapProjection>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysTransientEntityProjection>());
+                services.AddSingleton<GetMapMetadataUseCase>();
+                services.AddSingleton<GetMapGameTimeUseCase>();
+                services.AddSingleton<GetMapLayerUseCase>();
+                services.AddSingleton<SearchPlayersInAreaUseCase>();
+                services.AddSingleton<GetTransientEntityMapLayerUseCase>();
+                services.AddSingleton<IMapTileStore>(_ => new LocalMapTileStore(() => null));
+                services.AddSingleton<GetMapTileUseCase>();
                 services.AddSingleton(serviceProvider => new SevenDaysOnlinePlayerProjection(
                     serviceProvider.GetRequiredService<PlayerHistoryWriteService>(),
                     log));
                 services.AddSingleton<IOnlinePlayerQuery>(serviceProvider =>
                     serviceProvider.GetRequiredService<SevenDaysOnlinePlayerProjection>());
                 services.AddSingleton<GetOnlinePlayersUseCase>();
+                services.AddSingleton<GetHistoricalPlayerLastLocationsUseCase>();
                 services.AddSingleton<SqlitePlayerActionAuditTrail>();
                 services.AddSingleton<IPlayerActionAuditTrail>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqlitePlayerActionAuditTrail>());
@@ -229,11 +287,17 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton(serviceProvider => new SevenDaysRecentActivityRuntime(
                     serviceProvider.GetRequiredService<SevenDaysRecentActivityRecorder>(),
                     serviceProvider.GetRequiredService<PlayerHistoryRuntime>()));
+                services.AddSingleton(serviceProvider => new SevenDaysMapProjectionRuntime(
+                    serviceProvider.GetRequiredService<SevenDaysMapMetadataProjection>(),
+                    serviceProvider.GetRequiredService<SevenDaysMapGameTimeProjection>(),
+                    serviceProvider.GetRequiredService<SevenDaysMapLayerProjection>(),
+                    serviceProvider.GetRequiredService<SevenDaysTransientEntityProjection>(),
+                    serviceProvider.GetRequiredService<SevenDaysRecentActivityRuntime>()));
                 services.AddSingleton(serviceProvider => new SevenDaysChatRuntime(
                     serviceProvider.GetRequiredService<ChatRuntimeState>(),
                     serviceProvider.GetRequiredService<ChatHistoryWriteService>(),
                     serviceProvider.GetRequiredService<SevenDaysChatMessageCoordinator>(),
-                    serviceProvider.GetRequiredService<SevenDaysRecentActivityRuntime>()));
+                    serviceProvider.GetRequiredService<SevenDaysMapProjectionRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>

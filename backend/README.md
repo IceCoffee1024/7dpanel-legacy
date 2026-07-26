@@ -23,12 +23,13 @@ serialized on the game thread. A separate Harmony patch observes the final
 `SdtdConsole.executeCommand` call for built-in, third-party Mod, and other
 standard console callers, then a capacity-256 worker persists best-effort raw
 audits and visible gap records to SQLite without changing command behavior.
-No structured command SSE is emitted. `GET /api/v1/players/online`
-adds an Owner-only snapshot with entity id, name, opaque platform identities,
-ping, level, health, and capture time; it excludes IP, location, ban state,
-combat statistics, and offline history. User/role management,
-additional player actions, audit-query APIs, and other product capabilities
-are not implemented yet.
+No structured command SSE is emitted. `GET /api/v1/players/online` provides the
+current typed player snapshot. The backend also implements the server-governance
+vertical slices: Owner-only `serverconfig.xml` field management with redaction
+and optimistic version checks; role-aware native ban/whitelist management;
+Owner-only panel-user, 7DTD administrator, and command-permission management;
+and read-only-for-Admin/Viewer mod discovery with Owner-only next-start state
+changes. Panel roles and native `0..2000` permission levels remain separate.
 
 The embedded host also exposes public runtime API documentation at `/swagger`
 and `/swagger/v1/swagger.json`. NSwag reflects the Web API controllers at
@@ -66,6 +67,11 @@ the server-owned configuration. The Mod creates a default `config.json` when it
 is missing. DbUp creates or upgrades `<ModDirectory>/data/7dpanel.db` before
 OWIN starts. The publish project never includes the server-owned file or the
 `data/` directory.
+
+`serverConfigurationPath` resolves from the Mod configuration directory and
+defaults to `../../serverconfig.xml`. Browser requests cannot supply a file
+path. Mod discovery is limited to direct children of the surrounding `Mods`
+directory; the current 7DPanel directory is protected from state changes.
 
 Runtime defaults are defined by `PanelHostConfig.CreateDefault()`; an automated
 test compares those values with `config.example.json` so the operator template
