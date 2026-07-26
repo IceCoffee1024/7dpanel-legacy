@@ -87,6 +87,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/game-resources': RouteRecordInfo<
+      '/game-resources',
+      '/game-resources',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/login': RouteRecordInfo<
       '/login',
       '/login',
@@ -217,6 +224,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/game-chat/settings.vue': {
       routes:
         | '/game-chat/settings'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/game-resources.vue': {
+      routes:
+        | '/game-resources'
       views:
         | never
       pathParamNames:

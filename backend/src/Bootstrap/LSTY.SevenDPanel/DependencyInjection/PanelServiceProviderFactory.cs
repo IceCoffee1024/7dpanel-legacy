@@ -9,6 +9,7 @@ using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.AccessLists;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GamePermissions;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Mods;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GameResources;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
@@ -298,10 +299,18 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<ChatHistoryWriteService>(),
                     serviceProvider.GetRequiredService<SevenDaysChatMessageCoordinator>(),
                     serviceProvider.GetRequiredService<SevenDaysMapProjectionRuntime>()));
+                services.AddSingleton<SevenDaysGameResourceCatalog>();
+                services.AddSingleton<IGameResourceCatalog>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysGameResourceCatalog>());
+                services.AddSingleton<QueryGameResourcesUseCase>();
+                services.AddSingleton<GetGameResourceIconUseCase>();
+                services.AddSingleton(serviceProvider => new GameResourceCatalogRuntime(
+                    serviceProvider.GetRequiredService<SevenDaysGameResourceCatalog>(),
+                    serviceProvider.GetRequiredService<SevenDaysChatRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<SevenDaysChatRuntime>());
+                    serviceProvider.GetRequiredService<GameResourceCatalogRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {

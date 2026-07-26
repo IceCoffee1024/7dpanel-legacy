@@ -164,10 +164,76 @@
   },
   "shell": {
     "navigation": "Navigation",
+    "playersAndWorld": "Players and world",
     "search": "Search",
     "searchPages": "Search pages",
     "account": "{name} account",
     "signOut": "Sign out"
+  },
+  "gameResources": {
+    "title": "Game resources",
+    "results": "{count} results",
+    "refresh": "Refresh game resources",
+    "retry": "Retry",
+    "clearFilters": "Clear filters",
+    "tintHelp": "The tint is a color the game may apply to the original icon; this page does not modify PNG pixels.",
+    "filters": {
+      "searchPlaceholder": "Search internal or localized names",
+      "includeHidden": "Include hidden resources",
+      "all": "All"
+    },
+    "kind": {
+      "item": "Item",
+      "block": "Block"
+    },
+    "visibility": {
+      "public": "Public",
+      "hidden": "Hidden"
+    },
+    "metadata": {
+      "catalogVersion": "Catalog version",
+      "gameVersion": "Game version",
+      "observedAt": "Observed at",
+      "page": "Page",
+      "pageValue": "Page {page} · {pageSize} per page"
+    },
+    "table": {
+      "icon": "Icon",
+      "localizedName": "Localized name",
+      "internalName": "Internal name",
+      "kind": "Kind",
+      "maxStack": "Max stack",
+      "hasQuality": "Quality",
+      "visibility": "Visibility",
+      "tint": "Tint",
+      "actions": "Actions"
+    },
+    "values": {
+      "unavailable": "Unavailable",
+      "yes": "Yes",
+      "no": "No",
+      "none": "None"
+    },
+    "copy": {
+      "action": "Copy internal name",
+      "success": "Internal name copied",
+      "failure": "Copy failed. Copy the internal name manually."
+    },
+    "state": {
+      "loading": "Loading game resources",
+      "buildingTitle": "The game resource catalog is building",
+      "buildingDescription": "Current resources are being collected after game startup. This page retries within the server-provided bound.",
+      "unavailableTitle": "The game resource catalog is unavailable",
+      "unavailableDescription": "No catalog snapshot is available. Try again manually later.",
+      "forbiddenTitle": "You cannot view these game resources",
+      "forbiddenDescription": "Your current identity cannot include or probe hidden resources.",
+      "emptyTitle": "No game resources match",
+      "emptyDescription": "Your filters were kept. Adjust them or clear the filters.",
+      "staleTitle": "Game resources may be stale",
+      "staleDescription": "Refresh failed; the last successful catalog remains visible.",
+      "partialTitle": "Some resource information is unavailable",
+      "partialDescription": "The catalog remains usable. Affected localized names or icons use explicit placeholders."
+    }
   },
   "governance": {
     "serverConfiguration": "Server configuration",

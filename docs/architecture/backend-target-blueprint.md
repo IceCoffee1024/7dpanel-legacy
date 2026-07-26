@@ -11,9 +11,11 @@ document_role: Target
 > [测试策略](../test.md) 为准。任何本蓝图中的未来目录、端口或运行链路，都必须先有代码和验证证据，
 > 才能提升为当前事实。
 
+旧版功能能力、固定证据提交和底层优先迁移顺序由[旧版本功能对齐目标蓝图](legacy-feature-parity-target-blueprint.md)统一记录。本文只负责后端项目边界和运行链路，不复制旧版能力矩阵。
+
 ## 用途与生命周期
 
-本蓝图把首版后端能力映射到目标运行链路、项目边界和生产文件职责。它回答两个问题：
+本蓝图把目标版本后端能力映射到目标运行链路、项目边界和生产文件职责。它回答两个问题：
 
 1. 请求或事件应如何经过端口、线程、状态和副作用；
 2. 每项后端目标职责应该放在哪里，以及原因是什么。
@@ -356,6 +358,21 @@ GET /api/v1/players/online
 
 投影不周期扫描 `ConnectionManager` 或 `World`，不在请求时回退到游戏主线程，不监听或 patch `PlayerStats` 网络包，也不引入通用投影框架。保存、断开、查询复制与停止清理使用同一窄并发门禁保持 membership 和 observation 成对变化；关服先停止 OWIN，再逆序注销事件、拒绝新提交并清空投影。扩展字段与 Admin 详情的批准边界见[在线玩家详情设计规格](../superpowers/specs/2026-07-24-online-player-details-design.md)；既有事件生命周期和并发依据见[在线玩家事件投影设计规格](../superpowers/specs/2026-07-22-online-player-event-projection-design.md)。
 
+### 游戏资源目录（阶段 1 已采用）
+
+游戏资源目录的 Application/SevenDays/Web/Bootstrap 纵向链已经实施，当前事实和边界由[系统架构](../architecture.md#游戏资源目录切片)拥有，本蓝图不重复把它作为未来能力。已采用链路为：
+
+```text
+first GameStartDone on the existing IModRuntime chain
+  -> copy item/block/localization/icon-root scalars on the game dispatcher
+  -> build one immutable versioned catalog in background
+  -> atomically publish Available or typed Unavailable
+  -> authorized query/icon use cases
+  -> JSON catalog or controlled PNG + ETag
+```
+
+后续玩家背包、物品来源、补偿、奖励包、商店和自动化只能按稳定 `resourceId`/目录版本消费该合同；它们不能重新读取游戏活对象、接收磁盘路径、绕过 Owner-only 隐藏资源授权，或把目录改造成通用 registry/file service/cache。若未来需要进程内重载、多游戏版本并存或第二种资源实现，必须由真实消费者和新的批准设计证明抽象必要性。
+
 ### 历史玩家快照
 
 历史玩家是在线 observation 的异步只读归档，不建立加入/离开会话、在线时长或第二套游戏状态读取链路。一次成功 `SavePlayerData` 在游戏线程内先完整复制扩充后的 31 字段 `PlayerSnapshot`，再先更新当前在线投影，并仅在 `crossplatformIdentity.combinedId` 非空时调用历史生产者：
@@ -463,7 +480,7 @@ HTTP 超时不能证明游戏动作失败。动作一旦开始，就必须继续
 - 在官方 `v3.0.1-b4` 真实进程验证 `ModEvents.ChatMessage` 字段、handler 顺序、六类颜色、命令绕过、单次替换广播、异常 fail-open、关服排空和至少一个已安装聊天 Mod 的兼容观察；
 - 已完成历史 gap 聚焦测试、后端聊天聚焦测试和运行时 OpenAPI 快照；提交后仍需完成 Git 基线式 OpenAPI 漂移门禁和候选发布聚合检查；
 - 在 Windows 真实进程验证后仍需按候选发布策略补充 Linux Mono 加载与 SQLite Native 证据；
-- 未来新增禁言、敏感词、全文搜索、导出、Discord、跨服聊天或通用命令框架时，必须先取得新的产品和设计批准，不得扩大当前聊天切片。
+- `CAP-07` 已把禁言和登记式游戏命令纳入目标，`CAP-11` 已把 Discord 纳入目标；它们仍需各自获批 Change Record 才能实施，不得直接扩大当前聊天切片。敏感词、全文搜索、导出、跨服聊天或通用命令框架不在当前批准范围。
 
 ### 服务器配置、访问名单、权限和模组
 

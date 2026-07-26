@@ -4,23 +4,26 @@
 
 7DPanel is a self-hosted server administration panel for 7 Days to Die server
 owners. Its backend runs as a Mod DLL inside the 7DTD Dedicated Server Mono
-process and provides status, player management, logs, backup and restore,
-announcement automation, and auditing through a web interface.
+process and exposes its implemented management capabilities through a web
+interface.
 
-The repository defines the product, design, and architecture. The backend has
-a buildable and testable `net48` solution with the Mod lifecycle, in-process
-OWIN hosting, SQLite-backed bootstrap Owner authentication, persistent opaque
-Bearer tokens, authenticated named SSE, and dynamic console commands that run
-through the game main thread. The backend also exposes an Owner-only
-event-projected 25-field online-player snapshot and typed online-player kick action with
-audit records. The Admin application currently provides an Owner login, explicit
-tab/browser Bearer session persistence, protected Overview, a compact online-player
-list with a read-only details slideover, and API Key routes, with complete
-English/Simplified Chinese support for those surfaces. It does not yet consume SSE or the console command API. Full user management, other
-state-changing game actions, backups, announcements, and audit-query
-experiences are not implemented. The
-Marketing application has not been initialized.
-Target documents describe approved direction, not completed features.
+The repository defines the product, design, and architecture. The current
+`net48` backend and Admin SPA cover the Mod lifecycle, in-process OWIN hosting,
+persistent Header Bearer authentication and API Keys, named SSE, game-thread
+console commands, server and host overview, online and historical players,
+player maps, game chat, access lists, dual permission management, server
+configuration, mod governance, and typed audited player/server actions. The
+canonical current implementation boundary remains [the system architecture](docs/architecture.md);
+target documents never count as implementation evidence.
+
+The target product now uses the legacy `7dtd-serveradmin` backend at `277996d`
+and frontend at `60fc816` as an executable behavioral specification. The goal
+is to reimplement its operator-visible capabilities through the current 7DPanel
+architecture and UI, without copying source code or preserving legacy routes,
+schemas, authentication, or page layouts. Backups and scheduling, complete
+player inventory/profile tracking, economics and rewards, teleport/voting,
+Discord/GeoIP, event automation, and the remaining world tools are target work,
+not completed features. The Marketing application has not been initialized.
 
 ## Repository Layout
 
@@ -109,5 +112,8 @@ skills, adoption status, and setup references.
 - [System architecture](docs/architecture.md) - boundaries, components, data, dependency matrix, and decisions
 - [Backend target architecture blueprint](docs/architecture/backend-target-blueprint.md) - approved future backend flows and production layout, not current implementation evidence
 - [Admin frontend target architecture blueprint](docs/architecture/admin-frontend-target-blueprint.md) - approved future Admin SPA boundaries, runtime flows, and release responsibilities
+- [Legacy feature parity target blueprint](docs/architecture/legacy-feature-parity-target-blueprint.md) - pinned legacy evidence, capability disposition, and bottom-up delivery order
+- [Game resource catalog design](docs/superpowers/specs/2026-07-26-legacy-parity-game-resource-catalog-design.md) - implemented first vertical slice for legacy feature parity
+- [Game resource catalog implementation plan](docs/superpowers/plans/2026-07-26-legacy-parity-game-resource-catalog.md) - execution record, focused verification, and deferred high-cost gates
 - [Test strategy](docs/test.md) - requirement traceability, test levels, environments, and release gates
 - [Backend script guide](backend/scripts/README.md) - publish, server control, and health-check helpers

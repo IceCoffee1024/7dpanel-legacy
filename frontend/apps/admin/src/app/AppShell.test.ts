@@ -1,12 +1,26 @@
 import ui from '@nuxt/ui/vue-plugin'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { useAuthStore } from '../features/auth'
 import AppShell from './AppShell.vue'
+
+const shortcuts = vi.hoisted(() => ({
+  value: {} as Record<string, () => unknown>,
+}))
+
+vi.mock('@nuxt/ui/composables', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@nuxt/ui/composables')>()
+  return {
+    ...original,
+    defineShortcuts(definitions: Record<string, () => unknown>) {
+      shortcuts.value = definitions
+    },
+  }
+})
 
 async function mountAppShell() {
   localStorage.clear()
@@ -17,12 +31,17 @@ async function mountAppShell() {
     routes: [
       { path: '/', component: { template: '<div />' } },
       { path: '/players', component: { template: '<div />' } },
+      { path: '/game-resources', component: { template: '<div />' } },
       { path: '/api-keys', component: { template: '<div />' } },
       { path: '/console-logs', component: { template: '<div />' } },
       { path: '/game-chat/live', component: { template: '<div />' } },
       { path: '/game-chat/history', component: { template: '<div />' } },
       { path: '/game-chat/settings', component: { template: '<div />' } },
       { path: '/game-chat/colored', component: { template: '<div />' } },
+      { path: '/server-configuration', component: { template: '<div />' } },
+      { path: '/access-lists', component: { template: '<div />' } },
+      { path: '/permissions', component: { template: '<div />' } },
+      { path: '/mods', component: { template: '<div />' } },
       { path: '/login', component: { template: '<div />' } },
     ],
   })
@@ -43,7 +62,10 @@ async function mountAppShell() {
         RouterView: true,
         UDashboardGroup: { template: '<div><slot /></div>' },
         UDashboardSidebar: { template: '<aside><slot name="header" :collapsed="false" /><slot :collapsed="false" /><slot name="footer" :collapsed="false" /></aside>' },
-        UDashboardSearch: true,
+        UDashboardSearch: {
+          props: ['groups'],
+          template: '<div data-testid="dashboard-search"><span v-for="group in groups" :key="group.id"><span v-for="item in group.items" :key="item.label">{{ item.label }}</span></span></div>',
+        },
         UDashboardSearchButton: true,
         UDropdownMenu: {
           props: ['items'],
@@ -51,7 +73,7 @@ async function mountAppShell() {
         },
         UNavigationMenu: {
           props: ['items'],
-          template: '<nav><span v-for="item in items" :key="item.label">{{ item.label }}<span v-for="child in item.children" :key="child.label">{{ child.label }}</span></span></nav>',
+          template: '<nav><section v-for="item in items" :key="item.label" :data-nav-label="item.label">{{ item.label }}<span v-for="child in item.children" :key="child.label">{{ child.label }}</span></section></nav>',
         },
       },
     },
@@ -129,5 +151,31 @@ describe('appShell', () => {
     auth.role = 'Viewer'
     await nextTick()
     expect(wrapper.text()).not.toContain('游戏聊天')
+  })
+
+  it.each(['Owner', 'Admin', 'Viewer'] as const)('groups Players and Game resources for %s and flattens both into search', async (role) => {
+    const { auth, wrapper } = await mountAppShell()
+    auth.role = role
+    await nextTick()
+
+    const navigation = wrapper.findComponent({ name: 'NavigationMenu' })
+    const items = navigation.props('items') as Array<{ label: string, children?: Array<{ label: string }> }>
+    const group = items.find(item => item.label === '玩家与世界')
+    expect(group?.children?.map(item => item.label)).toEqual(['玩家', '游戏资源'])
+    const search = wrapper.findComponent({ name: 'DashboardSearch' })
+    const groups = search.props('groups') as Array<{ items: Array<{ label: string }> }>
+    expect(groups[0]?.items.map(item => item.label)).toEqual(expect.arrayContaining(['玩家', '游戏资源']))
+  })
+
+  it('keeps g-p and adds g-r navigation shortcuts', async () => {
+    const { router } = await mountAppShell()
+
+    await shortcuts.value['g-r']?.()
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/game-resources')
+
+    await shortcuts.value['g-p']?.()
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/players')
   })
 })

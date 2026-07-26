@@ -184,6 +184,30 @@ export type CommandPermissionUpsertHttpRequest = {
     permissionLevel?: number;
 };
 
+export type GameResourcePageHttpResponse = {
+    catalogVersion: string;
+    gameVersion: string | null;
+    observedAtUtc: string;
+    total: number;
+    page: number;
+    pageSize: number;
+    warnings: Array<string>;
+    items: Array<GameResourceItemHttpResponse>;
+};
+
+export type GameResourceItemHttpResponse = {
+    resourceId: string;
+    numericId: number;
+    internalName: string;
+    localizedName: string | null;
+    kind: string;
+    visibility: string;
+    maxStack: number | null;
+    hasQuality: boolean | null;
+    iconStatus: string;
+    iconTintHex: string | null;
+};
+
 export type HealthResponse = {
     status?: string;
     product?: string;
@@ -1795,6 +1819,111 @@ export type GamePermissionsPutCommandResponses = {
 };
 
 export type GamePermissionsPutCommandResponse = GamePermissionsPutCommandResponses[keyof GamePermissionsPutCommandResponses];
+
+export type GameResourcesGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Case-insensitive internal or localized name search.
+         */
+        search?: string | null;
+        /**
+         * Resource kind: all, item, or block.
+         */
+        kind?: string;
+        /**
+         * Includes hidden resources for Owner callers only.
+         */
+        includeHidden?: boolean;
+        /**
+         * Localization language used for display names.
+         */
+        language?: string;
+        /**
+         * One-based page number.
+         */
+        page?: number;
+        /**
+         * Requested page size.
+         */
+        pageSize?: number;
+    };
+    url: '/api/v1/game-resources';
+};
+
+export type GameResourcesGetErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type GameResourcesGetError = GameResourcesGetErrors[keyof GameResourcesGetErrors];
+
+export type GameResourcesGetResponses = {
+    200: GameResourcePageHttpResponse;
+};
+
+export type GameResourcesGetResponse = GameResourcesGetResponses[keyof GameResourcesGetResponses];
+
+export type GameResourcesGetIconData = {
+    body?: never;
+    path: {
+        /**
+         * Opaque resource identifier returned by the catalog query.
+         */
+        resourceId: string;
+    };
+    query?: never;
+    url: '/api/v1/game-resources/{resourceId}/icon';
+};
+
+export type GameResourcesGetIconErrors = {
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type GameResourcesGetIconError = GameResourcesGetIconErrors[keyof GameResourcesGetIconErrors];
+
+export type GameResourcesGetIconResponses = {
+    /**
+     * PNG icon bytes.
+     */
+    200: Blob | File;
+};
+
+export type GameResourcesGetIconResponse = GameResourcesGetIconResponses[keyof GameResourcesGetIconResponses];
 
 export type HealthGetData = {
     body?: never;

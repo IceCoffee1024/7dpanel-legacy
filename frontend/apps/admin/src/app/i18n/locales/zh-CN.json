@@ -164,10 +164,76 @@
   },
   "shell": {
     "navigation": "导航",
+    "playersAndWorld": "玩家与世界",
     "search": "搜索",
     "searchPages": "搜索页面",
     "account": "{name} 账号",
     "signOut": "退出登录"
+  },
+  "gameResources": {
+    "title": "游戏资源",
+    "results": "{count} 项",
+    "refresh": "刷新游戏资源",
+    "retry": "重试",
+    "clearFilters": "清除筛选",
+    "tintHelp": "色值表示游戏可能应用于原始图标的 tint；此页面不修改 PNG 像素。",
+    "filters": {
+      "searchPlaceholder": "搜索内部名称或本地化名称",
+      "includeHidden": "包含隐藏资源",
+      "all": "全部"
+    },
+    "kind": {
+      "item": "物品",
+      "block": "方块"
+    },
+    "visibility": {
+      "public": "公开",
+      "hidden": "隐藏"
+    },
+    "metadata": {
+      "catalogVersion": "目录版本",
+      "gameVersion": "游戏版本",
+      "observedAt": "采样时间",
+      "page": "分页",
+      "pageValue": "第 {page} 页 · 每页 {pageSize} 项"
+    },
+    "table": {
+      "icon": "图标",
+      "localizedName": "本地化名称",
+      "internalName": "内部名称",
+      "kind": "类型",
+      "maxStack": "最大堆叠",
+      "hasQuality": "支持品质",
+      "visibility": "可见性",
+      "tint": "Tint",
+      "actions": "操作"
+    },
+    "values": {
+      "unavailable": "不可用",
+      "yes": "是",
+      "no": "否",
+      "none": "无"
+    },
+    "copy": {
+      "action": "复制内部名称",
+      "success": "内部名称已复制",
+      "failure": "复制失败，请手动复制内部名称"
+    },
+    "state": {
+      "loading": "正在加载游戏资源",
+      "buildingTitle": "游戏资源目录正在构建",
+      "buildingDescription": "游戏启动后正在采集当前资源；页面会按服务端建议有界重试。",
+      "unavailableTitle": "游戏资源目录暂不可用",
+      "unavailableDescription": "当前没有可显示的目录快照，请稍后手动重试。",
+      "forbiddenTitle": "无权查看这些游戏资源",
+      "forbiddenDescription": "当前身份不能包含或探测隐藏资源。",
+      "emptyTitle": "没有匹配的游戏资源",
+      "emptyDescription": "保留了当前筛选；可以调整条件或清除筛选。",
+      "staleTitle": "游戏资源可能已过期",
+      "staleDescription": "刷新失败，正在保留最后一次成功读取的目录。",
+      "partialTitle": "部分资源信息不可用",
+      "partialDescription": "目录仍可使用；受影响的本地化名称或图标显示明确占位。"
+    }
   },
   "governance": {
     "serverConfiguration": "服务器配置",

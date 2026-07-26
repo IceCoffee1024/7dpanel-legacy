@@ -7,13 +7,11 @@ last_updated: "2026-07-26"
 
 ## 背景与驱动因素
 
-本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成。除既有生命周期、认证、概览、控制台、在线玩家 observation、历史玩家快照、玩家坐标地图与踢出能力外，当前还实现服务器配置、黑白名单、面板用户、7DTD 游戏管理员/命令权限、模组下次启动状态，以及完整游戏聊天切片。聊天包含原始 `ModEvents.ChatMessage` 协调、统一 Owner-only `chat-message` SSE、SQLite 历史/设置/Profile/操作审计、类型化全局与私聊发送和同步彩色重写。Admin 已提供综合概览、API Key、在线/历史玩家、玩家坐标地图、`Owner`/`Admin` 控制台工作台、四组服务器治理页面，以及仅 `Owner` 可访问的实时聊天、历史、设置和彩色聊天四页。禁言、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
+本文档只描述当前已经存在并有代码、配置或验证证据支持的系统架构。当前后端是可构建、可测试的 `net48` 最小运行切片，由 Bootstrap、Hosting、Application、Web Adapter、SevenDays Adapter 和 SQLite Persistence Adapter 六个产品项目组成。除既有生命周期、认证、概览、控制台、在线玩家 observation、历史玩家快照、玩家坐标地图与踢出能力外，当前还实现服务器配置、黑白名单、面板用户、7DTD 游戏管理员/命令权限、模组下次启动状态，以及完整游戏聊天和只读游戏资源目录切片。聊天包含原始 `ModEvents.ChatMessage` 协调、统一 Owner-only `chat-message` SSE、SQLite 历史/设置/Profile/操作审计、类型化全局与私聊发送和同步彩色重写。Admin 已提供综合概览、API Key、在线/历史玩家、玩家坐标地图、`Owner`/`Admin` 控制台工作台、四组服务器治理页面、三角色可达的 `/game-resources`，以及仅 `Owner` 可访问的实时聊天、历史、设置和彩色聊天四页。禁言、玩家背包/技能/物品来源、传送、审计查询页面、备份、公告、其他游戏状态/动作链路和后台作业仍未实现；产品不采用 Basic、Cookie、CSRF Token 或 refresh token。
 
 产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
 
-产品目标和验收合同见[产品需求文档](PRD.md)，当前验证策略和证据见[测试策略](test.md)。尚未实现的批准后端链路和生产文件职责见[后端目标架构蓝图](architecture/backend-target-blueprint.md)；尚未实现的 Admin 应用边界和依赖方向见[Admin 前端目标架构蓝图](architecture/admin-frontend-target-blueprint.md)。两个 Target 蓝图都不是当前实现证据。
-
-当前切片支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家、地图、踢出、动态控制台命令、黑白名单与命令审计写入，`CAP-05` 的引导 Owner、Access Token/API Key、认证 SSE、面板用户和双层权限管理，`CAP-06` 的服务器配置与模组状态基础，以及 `CAP-07` 的游戏聊天代码切片，并落实 `NFR-01`、`NFR-02`、`NFR-04`、`NFR-05`。游戏聊天仍缺真实 7DTD 与第三方聊天 Mod 的运行证据；当前实现也不代表备份、审计查询、禁言、传送或其他 P0 能力已经完成。
+当前切片支持 `CAP-01` 的面板存活与状态诚实基础、`CAP-02` 的在线玩家、地图、踢出、动态控制台命令、黑白名单与命令审计写入，`CAP-05` 的引导 Owner、Access Token/API Key、认证 SSE、面板用户和双层权限管理，`CAP-06` 的服务器配置与模组状态基础，`CAP-07` 的游戏聊天代码切片，以及 `CAP-08` 的版本化游戏资源目录基础，并落实 `NFR-01`、`NFR-02`、`NFR-04`、`NFR-05`。游戏聊天仍缺真实 7DTD 与第三方聊天 Mod 的运行证据；游戏资源目录也未证明玩家背包、物品发放、奖励或商店已经实现。
 
 ### Admin 综合概览第一阶段
 
@@ -47,6 +45,20 @@ last_updated: "2026-07-26"
 - 前端未新增包或第二条 SSE。Pinia Colada 继续使用全局 `staleTime: 0`、`refetchOnWindowFocus: false`；实时消息不进入 Colada/Pinia/Storage，设置、历史和 Profile 通过查询层管理，Mutation 不做乐观成功。
 
 上述代码边界已有聚焦自动化证据，但真实 `v3.0.1-b4` 中的字段分类、广播顺序、第三方聊天 Mod 冲突、关服排空，以及桌面/窄屏浏览器主路径仍待人工验收，详见[测试策略](test.md#游戏聊天完整切片)。
+
+### 游戏资源目录切片
+
+`CAP-08` 的第一项底层切片遵循[游戏资源目录设计规格](superpowers/specs/2026-07-26-legacy-parity-game-resource-catalog-design.md)：
+
+- Application 定义不可变目录条目、目录读取状态、图标读取结果，以及分页搜索和图标查询用例；普通认证角色只能读取公开条目，只有 `Owner` 可以请求隐藏条目。
+- `SevenDaysGameResourceDraftReader` 只在游戏 dispatcher 内复制物品、方块、可见性、堆叠、品质、图标名/tint 和中英文本地化标量；后台目录构建不保留 `ItemClass`、`Localization`、`ModManager`、Unity 颜色或其他游戏活对象。
+- `SevenDaysGameResourceCatalog` 在第一次 `GameStartDone` 后执行一次后台构建，完成图标索引后原子发布不可变 snapshot。`GameResourceCatalogRuntime` 是当前 `IModRuntime` 最外层装饰器，只复用现有 ready 转发链，不增加第二条游戏生命周期订阅。
+- 图标索引只接受采集阶段复制的批准根描述和安全 PNG 叶文件名，按确定性根顺序解析覆盖。公开目录和响应不包含磁盘路径或图标字节；读取时重新核对目录版本、资源 ID、文件身份和受控根，替换或删除后的文件返回 Missing。
+- `GET /api/v1/game-resources` 提供搜索、类型、语言、分页和 Owner-only 隐藏筛选；`GET /api/v1/game-resources/{resourceId}/icon` 只返回 `image/png`，支持 Header Bearer、ETag/304、private cache 和 `nosniff`。Building、Unavailable、Forbidden、Missing 和内部失败使用稳定 Problem Details。
+- Admin `features/game-resources` 拥有严格 parser、URL 筛选、取消/单飞、Building 有界重试、最后成功页 Stale 保留和 Header Bearer Blob 图标生命周期。`/game-resources` 对 `Owner`、`Admin`、`Viewer` 均可达，隐藏开关只对 `Owner` 显示；页面不提供发放、删除、商店、奖励或自动化动作。
+- 本切片没有新增 SQLite 表、审计、通用 registry/file service/cache abstraction，也不复用聊天 `gap`。背包、物品来源、补偿、奖励和商店仍是后续独立纵向切片。
+
+字段、路径、HTTP/OpenAPI、页面状态和构建已有聚焦自动化证据；真实 `v3.0.1-b4` 采集与桌面/窄屏浏览器主路径未执行，详见[测试策略](test.md#游戏资源目录当前实现证据)。
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据来自根目录只读私有子模块 `7dtd-reference/`；该子模块不是产品源码或发布内容。
 
@@ -103,6 +115,12 @@ flowchart LR
     Api --> ChatUseCases[Chat query and command use cases]
     ChatUseCases --> ChatSender[Typed chat sender FIFO 16]
     ChatSender --> Dispatcher
+    Api --> ResourceUseCases[Game resource query use cases]
+    ResourceUseCases --> ResourceCatalog[Immutable resource catalog]
+    Lifecycle --> ResourceRuntime[GameResourceCatalogRuntime]
+    ResourceRuntime --> ResourceCatalog
+    ResourceCatalog --> GameMetadata[Copied item/block/localization scalars]
+    ResourceCatalog --> IconRoots[Approved PNG roots]
 ```
 
 - 后端 DLL 和 Admin 构建资源随同一个 Mod 目录部署，并在 7DTD 进程内提供 HTTP 服务。
@@ -117,11 +135,11 @@ flowchart LR
 |---|---|---|
 | `backend/src/Bootstrap/LSTY.SevenDPanel/` | 唯一 `IModApi` 入口、进程期 `Assembly.Location` 兼容补丁、配置文件 I/O、Microsoft DI 组合根与根 Provider 所有权、数据库路径、Admin 资源根目录选择和 Mod 发布入口 | Application、Hosting、Web Adapter、SevenDays Adapter、Persistence Adapter、`Microsoft.Extensions.DependencyInjection`、游戏提供的 `0_TFP_Harmony` 和编译期程序集 |
 | `backend/src/Runtime/LSTY.SevenDPanel.Hosting/` | `ModHost` OWIN 生命周期状态机、独立 `GameReadinessState`、`IModRuntime`、`IPanelRuntimeStatus`、`IPanelWebHost`、监听选项、产品元数据、认证 Store 端口，以及 Web/SevenDays Adapter 之间受限的命名服务器事件契约 | .NET Framework BCL |
-| `backend/src/Core/LSTY.SevenDPanel.Application/` | 控制台、31 字段在线玩家、地图、治理与踢出用例；游戏聊天 canonical 类型、设置/Profile、历史条件、发送/审计端口，以及查询、发送和配置变更用例 | .NET Framework BCL；当前不依赖 Domain |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、控制台、玩家、地图、治理与 14 条 Owner-only 聊天路由；公开运行时 OpenAPI JSON 与 Swagger UI；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、NSwag OWIN、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志、玩家、地图、治理和原始聊天事件；提供统一事件窗口、有界日志/命令/聊天队列、在线玩家投影、类型化动作与聊天发送、彩色渲染和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
+| `backend/src/Core/LSTY.SevenDPanel.Application/` | 控制台、31 字段在线玩家、地图、治理与踢出用例；游戏聊天 canonical 类型、设置/Profile、历史条件、发送/审计端口；游戏资源不可变目录合同、分页搜索和图标查询用例 | .NET Framework BCL；当前不依赖 Domain |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、token、生产事件、控制台、玩家、地图、治理、游戏资源目录/PNG 图标与 14 条 Owner-only 聊天路由；公开运行时 OpenAPI JSON 与 Swagger UI；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、NSwag OWIN、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志、玩家、地图、治理、原始聊天事件和游戏资源标量采集；提供统一事件窗口、有界日志/命令/聊天队列、在线玩家投影、类型化动作与聊天发送、彩色渲染、不可变资源目录/批准根图标索引和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration、持久身份/Token、玩家与命令审计、地图/治理状态，以及聊天历史/gap、聊天设置、彩色设置/Profile 和聊天操作审计 | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
-| `frontend/apps/admin/` | 响应式应用壳、认证和双语运行时、综合概览、在线/历史玩家、地图、治理、API Key、控制台，以及 Owner-only 游戏聊天四页；聊天包含严格 parser、单一 SSE 实时窗口、发送、URL 历史筛选、设置/Profile 管理和纯文本视图 | Vue 3、Vue Router、Pinia、Pinia Colada、Vue I18n、Valibot、Nuxt UI、Hey API 生成客户端、OpenLayers、Vite |
+| `frontend/apps/admin/` | 响应式应用壳、认证和双语运行时、综合概览、在线/历史玩家、地图、治理、API Key、控制台、三角色游戏资源目录，以及 Owner-only 游戏聊天四页；游戏资源包含严格 parser、URL 筛选、响应式表格/列表和认证 Blob 图标 | Vue 3、Vue Router、Pinia、Pinia Colada、Vue I18n、Valibot、Nuxt UI、Hey API 生成客户端、OpenLayers、Vite |
 
 当前已由控制台命令纵向切片创建 Application 项目，但尚无 Domain 项目；SQLite Persistence Adapter 是首个 Local Adapter。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向、六个产品 DLL 的发布门禁和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
@@ -129,11 +147,11 @@ flowchart LR
 
 1. `ModMain.InitMod` 先保存非空 `ModInstance`，使用游戏提供的 `0_TFP_Harmony` 只应用 `AssemblyLocationPatch`，并在读取配置或创建运行时前验证 Bootstrap 程序集的 `Assembly.Location` 非空。补丁只在原结果为空且 `Mod.ContainsAssembly` 确认程序集属于当前 Mod 时返回 `<ModDirectory>/<AssemblyName>.dll`；候选启动失败会撤销本 Harmony id 的补丁。
 2. `ModMain.InitMod` 读取或创建监听配置，并从 `modInstance.Path` 派生 `<ModDirectory>/data` 与 `<ModDirectory>/wwwroot`。
-3. Bootstrap 通过 `PanelServiceProviderFactory` 显式注册 SQLite connection factory、DbUp bootstrapper、身份与审计 Store、控制台/玩家/聊天 Application 用例、`ConsoleCommandAuditService`、`SevenDaysConsoleCommandService`、`ConsoleLogService`、同一实例的在线玩家投影、聊天 Store、`ChatRuntimeState`、`ChatHistoryWriteService`、`SevenDaysChatMessageSender`、`ModHost` 和 scoped `ServerEventSseSession`，以 `ValidateOnBuild=true`、`ValidateScopes=true` 构建唯一根 Provider。具体 `SevenDaysChatRuntime` 位于现有组合运行时最外层。DbUp upgrade 在任何事件观察或 HTTP 接收前完成；随后 Bootstrap 安装独立命令 Harmony runtime，并让 `SevenDaysGameLifecycleAdapter` 驱动该代理。完成注册与启动后才发布字段，异常路径按 adapter、DI runtime、命令 Harmony、位置 Harmony 的逆序 best-effort 清理。
+3. Bootstrap 通过 `PanelServiceProviderFactory` 显式注册 SQLite connection factory、DbUp bootstrapper、身份与审计 Store、控制台/玩家/聊天/游戏资源 Application 用例、`ConsoleCommandAuditService`、`SevenDaysConsoleCommandService`、`ConsoleLogService`、同一实例的在线玩家投影、聊天 Store、`ChatRuntimeState`、`ChatHistoryWriteService`、`SevenDaysChatMessageSender`、`SevenDaysGameResourceCatalog`、`ModHost` 和 scoped `ServerEventSseSession`，以 `ValidateOnBuild=true`、`ValidateScopes=true` 构建唯一根 Provider。`GameResourceCatalogRuntime` 位于现有组合运行时最外层，内部仍复用 `SevenDaysChatRuntime` 和既有运行链。DbUp upgrade 在任何事件观察或 HTTP 接收前完成；随后 Bootstrap 安装独立命令 Harmony runtime，并让 `SevenDaysGameLifecycleAdapter` 驱动该代理。完成注册与启动后才发布字段，异常路径按 adapter、DI runtime、命令 Harmony、位置 Harmony 的逆序 best-effort 清理。
 4. `RegisterAndStart` 依次通过 `ISevenDaysLifecycleEvents` 注册 `WorldShuttingDown`、`GameShutdown` 和 `GameStartDone`，全部成功后再调用 `runtime.Start()`。注册失败按逆序注销；`runtime.Start()` 抛出时还会 best-effort 调用 `runtime.Stop()`，清理失败不遮蔽原始启动异常。
 5. `SevenDaysModEvents` 在 SevenDays Adapter 程序集内保存精确游戏 delegate，返回幂等订阅 token 负责注销，保持 `ModEvents.RegisterHandler` 对调用程序集的识别语义。
-6. `SevenDaysChatRuntime` 先启动聊天历史 consumer、加载设置/Profile 快照并注册聊天 handler，再启动内层玩家历史、玩家投影、命令和日志运行时；任一阶段失败会逆序清理已启动资源。SQLite 标准 Batteries、WAL、DbUp migration 和引导 `Owner` 已在 Patch 安装前完成；当前代码不包含自定义 native loader、ResourceManager shim、`SQLite3Provider_dynamic_cdecl.Setup`、`raw.SetProvider`、程序集扫描、业务 service locator 或通用组件注册表。
-7. `GameStartDone` 依次转发到命令审计、HTTP 命令、日志和 `ModHost`，只有日志窗口写入一次 `game-ready`。任一关闭事件按 `ModHost`/console-log、HTTP 命令、命令审计的逆序停止并聚合失败；随后命令 Harmony 代理调用 `UnpatchSelf()`，根 Provider 最后释放。未开始命令完成为 unavailable，已开始命令和已接受审计限时排空；并发或晚到就绪事件不能覆盖 `Stopping`。
+6. `GameResourceCatalogRuntime` 先启动现有聊天/地图/玩家/命令/日志内链；第一次 `MarkGameReady()` 先向内转发既有 ready，再启动唯一目录构建。关闭会取消并有界等待目录构建，然后停止内链；失败按聚合异常保留。`SevenDaysChatRuntime` 仍负责聊天 consumer、设置/Profile 快照和单一聊天 handler。SQLite 标准 Batteries、WAL、DbUp migration 和引导 `Owner` 已在 Patch 安装前完成；当前代码不包含自定义 native loader、ResourceManager shim、`SQLite3Provider_dynamic_cdecl.Setup`、`raw.SetProvider`、程序集扫描、业务 service locator 或通用组件注册表。
+7. `GameStartDone` 通过同一 `IModRuntime` 链依次触发游戏资源目录、命令审计、HTTP 命令、日志和 `ModHost`，只有日志窗口写入一次 `game-ready`。任一关闭事件先收束目录构建，再按 `ModHost`/console-log、HTTP 命令、命令审计的逆序停止并聚合失败；随后命令 Harmony 代理调用 `UnpatchSelf()`，根 Provider 最后释放。未开始命令完成为 unavailable，已开始命令和已接受审计限时排空；并发或晚到就绪事件不能覆盖 `Stopping`。
 
 2026-07-18 的 Windows 7DTD `v3.0.1-b4` 人工 smoke 是旧启动时序的历史基线。2026-07-19 的同版本真实进程 smoke 验证 OWIN 在 `GameStartDone` 前启动。2026-07-20 在引入事件隔离与就绪状态后再次验证：OWIN 在启动后 `8.576` 秒启动，`StartGame done` 在 `119.732` 秒出现，日志没有 ModEvent 注册或回调错误；正常关服记录 OWIN stopped，进程退出且 18080 端口释放。测试层级和证据限制见[测试策略](test.md)。
 
@@ -232,6 +250,8 @@ GET /
 | `DELETE /api/v1/api-keys/{keyId}` | `ApiKeysController` | 仅网站 Access Token 可撤销当前主体自己的 API Key |
 | `GET /api/v1/players/online` | `PlayersController` | Owner-only 当前在线玩家 31 字段事件投影；每个玩家返回同次 Save observation、自己的 `observedAtUtc` 和显式单位字段，空服务器返回 200 空数组 |
 | `POST /api/v1/players/{entityId}/kick` | `PlayersController` | Owner-only 类型化踢出；主线程身份重验、持久审计和同步可信结果 |
+| `GET /api/v1/game-resources` | `GameResourcesController` | 三个认证角色可读取版本化公开目录；支持搜索、item/block、语言和分页，只有 `Owner` 可请求隐藏条目；Building/Unavailable 分别返回稳定 503 |
+| `GET /api/v1/game-resources/{resourceId}/icon` | `GameResourcesController` | 目录绑定的安全 PNG 读取；Header Bearer、ETag/304、private cache、`nosniff`、404/503 和错误脱敏 |
 | `GET /api/v1/chat/messages/recent`、`GET /api/v1/chat/messages` | `ChatController` | Owner-only 当前进程最近聊天与 SQLite 历史；历史筛选使用绑定条件的 Base64Url keyset cursor |
 | `POST /api/v1/chat/messages/global`、`POST /api/v1/chat/messages/private` | `ChatController` | Owner-only 类型化全局/私聊发送；私聊目标按当前跨平台身份精确确认，稳定失败使用 Problem Details |
 | `GET/PUT/DELETE /api/v1/chat/settings` | `ChatController` | Owner-only 读取、保存和重置聊天设置；Store 成功后更新运行时快照 |

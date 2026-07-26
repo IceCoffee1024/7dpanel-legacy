@@ -13,6 +13,7 @@ using System.Web.Http.Hosting;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GameResources;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
@@ -248,7 +249,13 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(
                 onlinePlayerQuery,
                 provider.GetRequiredService<IOnlinePlayerQuery>());
-            Assert.IsType<SevenDaysRecentActivityRuntime>(
+            var gameResourceCatalog = provider.GetRequiredService<SevenDaysGameResourceCatalog>();
+            Assert.Same(
+                gameResourceCatalog,
+                provider.GetRequiredService<IGameResourceCatalog>());
+            Assert.NotNull(provider.GetRequiredService<QueryGameResourcesUseCase>());
+            Assert.NotNull(provider.GetRequiredService<GetGameResourceIconUseCase>());
+            Assert.IsType<GameResourceCatalogRuntime>(
                 provider.GetRequiredService<IModRuntime>());
             Assert.NotNull(provider.GetRequiredService<PlayerHistoryRuntime>());
             Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
@@ -344,8 +351,7 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Same(activityStore, writer);
             var oauth = provider.GetRequiredService<PanelOAuthAuthorizationServerProvider>();
             var recorder = provider.GetRequiredService<SevenDaysRecentActivityRecorder>();
-            var activityRuntime = Assert.IsType<SevenDaysRecentActivityRuntime>(
-                provider.GetRequiredService<IModRuntime>());
+            var activityRuntime = provider.GetRequiredService<SevenDaysRecentActivityRuntime>();
             Assert.Same(
                 writer,
                 GetPrivateField<IRecentActivityWriter>(oauth, "recentActivityWriter"));

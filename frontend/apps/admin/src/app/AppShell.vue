@@ -25,6 +25,21 @@ const gameChatNavigation = computed<NavigationMenuItem[]>(() => [
   { label: t('gameChat.colored.title'), icon: 'i-lucide-palette', to: '/game-chat/colored', onSelect: closeSidebar },
 ])
 
+const playerAndWorldNavigation = computed<NavigationMenuItem[]>(() => [
+  {
+    label: t('players.navigation'),
+    icon: 'i-lucide-users',
+    to: '/players',
+    onSelect: closeSidebar,
+  },
+  {
+    label: t('gameResources.title'),
+    icon: 'i-lucide-package-search',
+    to: '/game-resources',
+    onSelect: closeSidebar,
+  },
+])
+
 const navigation = computed<NavigationMenuItem[]>(() => [
   {
     label: t('overview.title'),
@@ -36,12 +51,9 @@ const navigation = computed<NavigationMenuItem[]>(() => [
     },
   },
   {
-    label: t('players.navigation'),
-    icon: 'i-lucide-users',
-    to: '/players',
-    onSelect: () => {
-      sidebarOpen.value = false
-    },
+    label: t('shell.playersAndWorld'),
+    icon: 'i-lucide-earth',
+    children: playerAndWorldNavigation.value,
   },
   {
     label: 'API Keys',
@@ -58,20 +70,32 @@ const navigation = computed<NavigationMenuItem[]>(() => [
         children: gameChatNavigation.value,
       }]
     : []),
-  ...(isOwner.value ? [{
-    label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration',
-    onSelect: () => { sidebarOpen.value = false },
-  }] : []),
+  ...(isOwner.value
+    ? [{
+        label: t('governance.serverConfiguration'),
+        icon: 'i-lucide-settings-2',
+        to: '/server-configuration',
+        onSelect: () => { sidebarOpen.value = false },
+      }]
+    : []),
   {
-    label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists',
+    label: t('governance.accessLists'),
+    icon: 'i-lucide-list-checks',
+    to: '/access-lists',
     onSelect: () => { sidebarOpen.value = false },
   },
-  ...(isOwner.value ? [{
-    label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions',
-    onSelect: () => { sidebarOpen.value = false },
-  }] : []),
+  ...(isOwner.value
+    ? [{
+        label: t('governance.permissions'),
+        icon: 'i-lucide-shield-check',
+        to: '/permissions',
+        onSelect: () => { sidebarOpen.value = false },
+      }]
+    : []),
   {
-    label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods',
+    label: t('governance.mods'),
+    icon: 'i-lucide-blocks',
+    to: '/mods',
     onSelect: () => { sidebarOpen.value = false },
   },
   ...(canUseConsole.value
@@ -95,11 +119,7 @@ const searchGroups = computed(() => [{
       icon: 'i-lucide-layout-dashboard',
       to: '/',
     },
-    {
-      label: t('players.navigation'),
-      icon: 'i-lucide-users',
-      to: '/players',
-    },
+    ...playerAndWorldNavigation.value.map(({ label, icon, to }) => ({ label, icon, to })),
     {
       label: 'API Keys',
       icon: 'i-lucide-key-round',
@@ -142,6 +162,7 @@ const accountItems = computed<DropdownMenuItem[][]>(() => [[
 defineShortcuts({
   'g-o': () => router.push('/'),
   'g-p': () => router.push('/players'),
+  'g-r': () => router.push('/game-resources'),
   'g-k': () => router.push('/api-keys'),
   'g-c': () => router.push('/console-logs'),
   'g-g': () => {

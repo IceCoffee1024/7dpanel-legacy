@@ -35,6 +35,7 @@ namespace LSTY.SevenDPanel.Tests
                 var document = await GetOpenApiDocumentAsync(client, url);
                 AssertUniqueOperationIds(document);
                 AssertMapContractSemantics(document);
+                AssertGameResourceContractSemantics(document);
                 AssertChatOperations(document);
                 NormalizeForAdminCodegen(document);
 
@@ -251,6 +252,91 @@ namespace LSTY.SevenDPanel.Tests
                 "lastHitUtc",
                 "hitObservationCount",
                 "lastPosition");
+        }
+
+        private static void AssertGameResourceContractSemantics(JObject document)
+        {
+            var list = document["paths"]?["/api/v1/game-resources"]?["get"] as JObject;
+            Assert.NotNull(list);
+            Assert.Equal("GameResources_Get", (string?)list!["operationId"]);
+            AssertOperationResponseCodes(list, "200", "400", "401", "403", "500", "503");
+            Assert.Contains(list["security"]!.Children(), requirement =>
+                requirement["Bearer"] is JArray);
+            Assert.Equal(
+                new[] { "includeHidden", "kind", "language", "page", "pageSize", "search" },
+                list["parameters"]!
+                    .Children<JObject>()
+                    .Where(parameter => string.Equals(
+                        (string?)parameter["in"],
+                        "query",
+                        StringComparison.Ordinal))
+                    .Select(parameter => (string)parameter["name"]!)
+                    .OrderBy(name => name, StringComparer.Ordinal));
+            AssertRequiredProperties(
+                GetSchema(document, "GameResourcePageHttpResponse"),
+                "catalogVersion",
+                "gameVersion",
+                "observedAtUtc",
+                "total",
+                "page",
+                "pageSize",
+                "warnings",
+                "items");
+            AssertNullableProperties(
+                GetSchema(document, "GameResourcePageHttpResponse"),
+                "gameVersion");
+            AssertRequiredProperties(
+                GetSchema(document, "GameResourceItemHttpResponse"),
+                "resourceId",
+                "numericId",
+                "internalName",
+                "localizedName",
+                "kind",
+                "visibility",
+                "maxStack",
+                "hasQuality",
+                "iconStatus",
+                "iconTintHex");
+            AssertNullableProperties(
+                GetSchema(document, "GameResourceItemHttpResponse"),
+                "localizedName",
+                "maxStack",
+                "hasQuality",
+                "iconTintHex");
+
+            var icon = document["paths"]?["/api/v1/game-resources/{resourceId}/icon"]?["get"]
+                as JObject;
+            Assert.NotNull(icon);
+            Assert.Equal("GameResources_GetIcon", (string?)icon!["operationId"]);
+            AssertOperationResponseCodes(icon, "200", "304", "401", "404", "500", "503");
+            Assert.Contains(icon["security"]!.Children(), requirement =>
+                requirement["Bearer"] is JArray);
+            Assert.DoesNotContain(
+                icon["parameters"]!.Children<JObject>(),
+                parameter => string.Equals(
+                    (string?)parameter["in"],
+                    "query",
+                    StringComparison.Ordinal));
+            var resourceId = Assert.Single(
+                icon["parameters"]!.Children<JObject>(),
+                parameter => string.Equals(
+                    (string?)parameter["name"],
+                    "resourceId",
+                    StringComparison.Ordinal));
+            Assert.Equal("path", (string?)resourceId["in"]);
+            Assert.True((bool?)resourceId["required"]);
+            var content = icon["responses"]!["200"]!["content"]!;
+            var png = Assert.Single(content.Children<JProperty>());
+            Assert.Equal("image/png", png.Name);
+            Assert.Equal("string", (string?)png.Value["schema"]?["type"]);
+            Assert.Equal("binary", (string?)png.Value["schema"]?["format"]);
+            foreach (var status in new[] { "200", "304" })
+            {
+                var headers = icon["responses"]![status]!["headers"]!;
+                Assert.NotNull(headers["ETag"]);
+                Assert.NotNull(headers["Cache-Control"]);
+                Assert.NotNull(headers["X-Content-Type-Options"]);
+            }
         }
 
         private static JObject GetOperation(JObject document, string path) =>

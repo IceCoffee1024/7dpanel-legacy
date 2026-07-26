@@ -2352,6 +2352,278 @@
         ]
       }
     },
+    "/api/v1/game-resources": {
+      "get": {
+        "tags": [
+          "GameResources"
+        ],
+        "description": "Returns one authorization-aware page from the in-memory game-resource catalog.",
+        "operationId": "GameResources_Get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Case-insensitive internal or localized name search.",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "Resource kind: all, item, or block.",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "includeHidden",
+            "in": "query",
+            "description": "Includes hidden resources for Owner callers only.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "x-position": 3
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "description": "Localization language used for display names.",
+            "schema": {
+              "type": "string",
+              "default": "en"
+            },
+            "x-position": 4
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "One-based page number.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            },
+            "x-position": 5
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Requested page size.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            },
+            "x-position": 6
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameResourcePageHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/game-resources/{resourceId}/icon": {
+      "get": {
+        "tags": [
+          "GameResources"
+        ],
+        "description": "Returns one catalog-version-bound PNG icon using Bearer authentication.",
+        "operationId": "GameResources_GetIcon",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "description": "Opaque resource identifier returned by the catalog query.",
+            "schema": {
+              "type": "string",
+              "nullable": false
+            },
+            "x-position": 1,
+            "nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PNG icon bytes.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "description": "Strong entity tag for the icon content.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "required": true,
+                "description": "Private cache policy for authenticated icon content.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "required": true,
+                "description": "Prevents MIME type sniffing.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "nosniff"
+              }
+            },
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The current icon matches If-None-Match.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "description": "Strong entity tag for the icon content.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "required": true,
+                "description": "Private cache policy for authenticated icon content.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "required": true,
+                "description": "Prevents MIME type sniffing.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "nosniff"
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -4986,6 +5258,111 @@
           "permissionLevel": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "GameResourcePageHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "catalogVersion",
+          "gameVersion",
+          "observedAtUtc",
+          "total",
+          "page",
+          "pageSize",
+          "warnings",
+          "items"
+        ],
+        "properties": {
+          "catalogVersion": {
+            "type": "string"
+          },
+          "gameVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameResourceItemHttpResponse"
+            }
+          }
+        }
+      },
+      "GameResourceItemHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resourceId",
+          "numericId",
+          "internalName",
+          "localizedName",
+          "kind",
+          "visibility",
+          "maxStack",
+          "hasQuality",
+          "iconStatus",
+          "iconTintHex"
+        ],
+        "properties": {
+          "resourceId": {
+            "type": "string"
+          },
+          "numericId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "internalName": {
+            "type": "string"
+          },
+          "localizedName": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "maxStack": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hasQuality": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "iconStatus": {
+            "type": "string"
+          },
+          "iconTintHex": {
+            "type": "string",
+            "nullable": true
           }
         }
       },

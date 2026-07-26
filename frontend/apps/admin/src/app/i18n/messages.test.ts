@@ -84,6 +84,12 @@ describe('locale messages', () => {
       'console.command.feedback.unknown',
       'console.viewport.backToLatest',
       'forbidden.title',
+      'shell.playersAndWorld',
+      'gameResources.title',
+      'gameResources.filters.searchPlaceholder',
+      'gameResources.state.partialTitle',
+      'gameResources.table.internalName',
+      'gameResources.copy.success',
     ]
     for (const key of requiredKeys) {
       expect(enMessages.has(key), key).toBe(true)

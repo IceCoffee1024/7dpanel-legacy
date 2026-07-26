@@ -11,6 +11,7 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/login', component: { template: '<div />' }, meta: { public: true } },
     { path: '/players', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/game-resources', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/map', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true } },
@@ -60,6 +61,23 @@ describe('createAdminRouter', () => {
     await router.push('/players')
 
     expect(router.currentRoute.value.fullPath).toBe('/players')
+  })
+
+  it.each(['Owner', 'Admin', 'Viewer'] as const)('allows %s to open the game resources route', async (role) => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, role)
+
+    await router.push('/game-resources?kind=block&page=2')
+
+    expect(router.currentRoute.value.fullPath).toBe('/game-resources?kind=block&page=2')
+  })
+
+  it('preserves an anonymous game resources deep link in the login redirect', async () => {
+    const { router } = createTestRouter()
+
+    await router.push('/game-resources?search=steel')
+
+    expect(router.currentRoute.value.query.redirect).toBe('/game-resources?search=steel')
   })
 
   it.each(['Owner', 'Admin'] as const)('allows %s to open the console deep link', async (role) => {
