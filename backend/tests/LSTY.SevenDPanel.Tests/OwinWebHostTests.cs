@@ -3657,7 +3657,9 @@ namespace LSTY.SevenDPanel.Tests
             IOnlinePlayerQuery? onlinePlayerQuery = null,
             IPlayerActions? playerActions = null,
             IPlayerActionAuditTrail? playerActionAuditTrail = null,
-            IPlayerHistoryStore? playerHistoryStore = null)
+            IPlayerHistoryStore? playerHistoryStore = null,
+            IRecentConsoleLogQuery? recentConsoleLogs = null,
+            IConsoleCommandCatalogQuery? consoleCommandCatalog = null)
         {
             var services = new ServiceCollection();
             var authentication = enableConsoleLogStream
@@ -3672,12 +3674,17 @@ namespace LSTY.SevenDPanel.Tests
                 "127.0.0.1",
                 "http",
                 authentication));
+            services.AddSingleton(authentication);
             services.AddSingleton<IServerEventStream>(hub);
+            services.AddSingleton<IRecentConsoleLogQuery>(
+                recentConsoleLogs ?? new ServerEventLiveWindow(1));
             services.AddSingleton<IPanelRuntimeStatus>(
                 new TestPanelRuntimeStatus(ModHostState.Running, gameReadiness));
             services.AddSingleton(
                 consoleGateway ?? new TestConsoleCommandGateway());
             services.AddSingleton<ExecuteConsoleCommandUseCase>();
+            services.AddSingleton<IConsoleCommandCatalogQuery>(
+                consoleCommandCatalog ?? new TestConsoleCommandCatalogQuery());
             services.AddSingleton<IOnlinePlayerQuery>(onlinePlayerQuery ?? new TestOnlinePlayerQuery());
             services.AddSingleton<GetOnlinePlayersUseCase>();
             services.AddSingleton<IPlayerHistoryStore>(playerHistoryStore ?? new TestPlayerHistoryStore());
@@ -3692,6 +3699,8 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton<IPanelCredentialStore>(authenticationStore);
             services.AddSingleton<IPanelAccessTokenStore>(authenticationStore);
             services.AddSingleton<IPanelApiKeyStore>(authenticationStore);
+            services.AddSingleton<IRecentActivityWriter>(new NullRecentActivityWriter());
+            OwinStartup.RegisterAuthenticationServices(services, _ => { });
             services.AddScoped<ServerEventSseSession>();
             return services.BuildServiceProvider(new ServiceProviderOptions
             {

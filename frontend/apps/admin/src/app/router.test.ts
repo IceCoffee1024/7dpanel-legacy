@@ -14,6 +14,7 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/console-logs', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner', 'Admin'] } },
   ],
 }))
 
@@ -29,6 +30,12 @@ function authenticate(pinia: ReturnType<typeof createPinia>, expiresAt = Date.no
   auth.expiresAt = expiresAt
   auth.username = 'server-owner'
   auth.role = 'Owner'
+  return auth
+}
+
+function authenticateAs(pinia: ReturnType<typeof createPinia>, role: 'Owner' | 'Admin' | 'Viewer') {
+  const auth = authenticate(pinia)
+  auth.role = role
   return auth
 }
 
@@ -48,6 +55,24 @@ describe('createAdminRouter', () => {
     await router.push('/players')
 
     expect(router.currentRoute.value.fullPath).toBe('/players')
+  })
+
+  it.each(['Owner', 'Admin'] as const)('allows %s to open the console deep link', async (role) => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, role)
+
+    await router.push('/console-logs')
+
+    expect(router.currentRoute.value.fullPath).toBe('/console-logs')
+  })
+
+  it('sends a Viewer console deep link to Forbidden', async () => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, 'Viewer')
+
+    await router.push('/console-logs')
+
+    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/console-logs')
   })
 
   it('returns to login when an active protected session is cleared', async () => {

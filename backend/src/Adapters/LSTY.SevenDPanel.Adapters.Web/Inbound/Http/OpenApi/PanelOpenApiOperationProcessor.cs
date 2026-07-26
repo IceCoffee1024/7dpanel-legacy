@@ -16,6 +16,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             DescribeApiKeyManagement(context);
             DescribePlayerHistory(context);
             DescribeServerOperations(context);
+            DescribeConsoleReads(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
 
@@ -215,6 +216,26 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             }
         }
 
+        private static void DescribeConsoleReads(OperationProcessorContext context)
+        {
+            if (context.OperationDescription.Method != OpenApiOperationMethod.Get) return;
+
+            var path = context.OperationDescription.Path;
+            var operation = context.OperationDescription.Operation;
+            if (string.Equals(path, "/api/v1/console/logs/recent", StringComparison.Ordinal))
+            {
+                operation.OperationId = "ConsoleLogs_GetRecent";
+                DescribeQueryParameter(
+                    operation,
+                    "limit",
+                    "Number of recent console logs from 1 through 5000; defaults to 1000.");
+                return;
+            }
+
+            if (string.Equals(path, "/api/v1/console/commands/catalog", StringComparison.Ordinal))
+                operation.OperationId = "ConsoleCommands_GetCatalog";
+        }
+
         private static string[] GetProblemStatusCodes(
             string path,
             string method)
@@ -257,6 +278,18 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 string.Equals(path, "/api/v1/players/{entityId}/kick", StringComparison.Ordinal))
             {
                 return new[] { "400", "401", "403", "409", "500", "503" };
+            }
+
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/console/logs/recent", StringComparison.Ordinal))
+            {
+                return new[] { "400", "401", "403", "500", "503" };
+            }
+
+            if (method == OpenApiOperationMethod.Get &&
+                string.Equals(path, "/api/v1/console/commands/catalog", StringComparison.Ordinal))
+            {
+                return new[] { "401", "403", "500", "503" };
             }
 
             if (method == OpenApiOperationMethod.Post &&

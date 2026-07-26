@@ -18,6 +18,7 @@ async function mountAppShell() {
       { path: '/', component: { template: '<div />' } },
       { path: '/players', component: { template: '<div />' } },
       { path: '/api-keys', component: { template: '<div />' } },
+      { path: '/console-logs', component: { template: '<div />' } },
       { path: '/login', component: { template: '<div />' } },
     ],
   })
@@ -44,7 +45,10 @@ async function mountAppShell() {
           props: ['items'],
           template: '<div><slot /><span v-for="group in items" :key="group[0]?.label"><span v-for="item in group" :key="item.label">{{ item.label }}</span></span></div>',
         },
-        UNavigationMenu: true,
+        UNavigationMenu: {
+          props: ['items'],
+          template: '<nav><span v-for="item in items" :key="item.label">{{ item.label }}</span></nav>',
+        },
       },
     },
   })
@@ -94,5 +98,17 @@ describe('appShell', () => {
 
     expect(document.body.textContent).toContain('Sign out')
     expect(document.body.textContent).toContain('Owner')
+  })
+
+  it('shows the console navigation only to Owner and Admin roles', async () => {
+    const { auth, wrapper } = await mountAppShell()
+
+    expect(wrapper.text()).toContain('网页控制台')
+    auth.role = 'Admin'
+    await nextTick()
+    expect(wrapper.text()).toContain('网页控制台')
+    auth.role = 'Viewer'
+    await nextTick()
+    expect(wrapper.text()).not.toContain('网页控制台')
   })
 })

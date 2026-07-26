@@ -45,6 +45,19 @@ describe('server events runtime', () => {
     const options = openStream.mock.calls[0]![0]
     expect(new Headers(options.headers).get('Accept')).toBe('text/event-stream')
     options.onSseEvent?.({ data: { product: '7DPanel' }, event: 'welcome' })
+    options.onSseEvent?.({
+      data: {
+        sequence: 40,
+        formattedMessage: 'formatted',
+        message: 'message',
+        trace: null,
+        logType: 'log',
+        timestamp: '2026-07-26T08:00:00Z',
+        uptimeMilliseconds: 1_000,
+      },
+      event: 'console-log',
+      id: '40',
+    })
     options.onSseEvent?.({ data: { ready: true }, event: 'game-ready', id: '41' })
     options.onSseEvent?.({ data: { stopping: true }, event: 'server-stopping', id: '42' })
     options.onSseEvent?.({ data: { afterSequence: 41 }, event: 'gap' })
@@ -52,6 +65,7 @@ describe('server events runtime', () => {
 
     expect(listener.mock.calls.map(([event]) => event.type)).toEqual([
       'welcome',
+      'console-log',
       'game-ready',
       'server-stopping',
       'gap',
@@ -60,6 +74,32 @@ describe('server events runtime', () => {
 
     runtime.stop({ clearCursor: true })
     expect(options.signal?.aborted).toBe(true)
+  })
+
+  it('publishes connection status from initial stop through live and reconnecting', async () => {
+    let finishStream!: () => void
+    const openStream = vi.fn(async (_options: StreamOptions) => ({
+      stream: (async function* () {
+        await new Promise<void>((resolve) => {
+          finishStream = resolve
+        })
+      })(),
+    }))
+    const runtime = createServerEvents({ openStream, reconnectDelayMs: 3_000 })
+    const statuses: string[] = []
+    const unsubscribe = runtime.subscribeStatus(status => statuses.push(status))
+
+    runtime.start('Bearer owner-token')
+    await flushTasks()
+    openStream.mock.calls[0]![0].onSseEvent?.({ data: {}, event: 'welcome' })
+    finishStream()
+    await flushTasks()
+
+    expect(statuses).toEqual(['stopped', 'connecting', 'live', 'reconnecting'])
+
+    runtime.stop({ clearCursor: true })
+    expect(statuses[statuses.length - 1]).toBe('stopped')
+    unsubscribe()
   })
 
   it('reconnects a normally ended stream with the last processed event id', async () => {

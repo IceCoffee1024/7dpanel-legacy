@@ -4,8 +4,8 @@ import { type _JSONValue, defineQueryOptions, type UseMutationOptions } from '@p
 
 import { serializeQueryKeyValue } from '../client';
 import { client } from '../client.gen';
-import { apiKeysDelete, apiKeysGet, apiKeysPost, consoleCommandsPost, healthGet, healthGet2, issueAccessToken, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
-import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
+import { apiKeysDelete, apiKeysGet, apiKeysPost, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, healthGet, healthGet2, issueAccessToken, type Options, overviewGet, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
+import type { ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, OverviewGetData, OverviewGetResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'path'> & {
@@ -75,6 +75,17 @@ export const apiKeysDeleteMutation = (options?: Partial<Options<ApiKeysDeleteDat
     })
 });
 
+export const consoleCommandsGetCatalogQueryKey = (options?: Options<ConsoleCommandsGetCatalogData>) => createQueryKey('consoleCommandsGetCatalog', options, ['ConsoleCommandCatalog']);
+
+export const consoleCommandsGetCatalogQuery = defineQueryOptions<Options<ConsoleCommandsGetCatalogData>, ConsoleCommandsGetCatalogResponse, ConsoleCommandsGetCatalogError>((options?: Options<ConsoleCommandsGetCatalogData>) => ({
+    key: consoleCommandsGetCatalogQueryKey(options),
+    query: async (context) => await consoleCommandsGetCatalog({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
 export const consoleCommandsPostMutation = (options?: Partial<Options<ConsoleCommandsPostData>>): UseMutationOptions<ConsoleCommandsPostResponse, Options<ConsoleCommandsPostData>, ConsoleCommandsPostError> => ({
     mutation: async (vars) => await consoleCommandsPost({
         ...options,
@@ -82,6 +93,17 @@ export const consoleCommandsPostMutation = (options?: Partial<Options<ConsoleCom
         throwOnError: true
     })
 });
+
+export const consoleLogsGetRecentQueryKey = (options?: Options<ConsoleLogsGetRecentData>) => createQueryKey('consoleLogsGetRecent', options, ['ConsoleLogs']);
+
+export const consoleLogsGetRecentQuery = defineQueryOptions<Options<ConsoleLogsGetRecentData>, ConsoleLogsGetRecentResponse, ConsoleLogsGetRecentError>((options?: Options<ConsoleLogsGetRecentData>) => ({
+    key: consoleLogsGetRecentQueryKey(options),
+    query: async (context) => await consoleLogsGetRecent({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
 
 export const healthGetQueryKey = (options?: Options<HealthGetData>) => createQueryKey('healthGet', options, ['Health']);
 

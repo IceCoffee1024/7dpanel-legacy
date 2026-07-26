@@ -79,6 +79,11 @@ describe('locale messages', () => {
       'overview.quickActions.restart',
       'overview.restartDialog.accepted',
       'overview.shutdownDialog.accepted',
+      'console.title',
+      'console.command.placeholder',
+      'console.command.feedback.unknown',
+      'console.viewport.backToLatest',
+      'forbidden.title',
     ]
     for (const key of requiredKeys) {
       expect(enMessages.has(key), key).toBe(true)

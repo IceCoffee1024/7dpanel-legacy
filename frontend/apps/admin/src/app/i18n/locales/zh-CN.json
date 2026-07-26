@@ -301,6 +301,42 @@
       }
     }
   },
+  "console": {
+    "title": "网页控制台",
+    "clear": "清空页面",
+    "snapshotLoading": "正在读取最近日志",
+    "buffered": "已缓冲 {count} 条",
+    "gap": "日志可能不连续",
+    "connection": {
+      "connecting": "连接中",
+      "live": "实时",
+      "reconnecting": "正在重连",
+      "stopped": "已离线"
+    },
+    "viewport": {
+      "backToLatest": "回到最新（{count}）"
+    },
+    "command": {
+      "placeholder": "输入任意控制台命令",
+      "submit": "发送",
+      "keyboardHelp": "↑/↓ 选择建议或历史 · Tab 补全 · Esc 关闭建议 · Enter 发送",
+      "permission": "权限 {level}",
+      "permissionUnknown": "权限未知",
+      "catalogUnavailable": "命令目录暂不可用，仍可直接输入并发送命令。",
+      "feedback": {
+        "invalid": "命令请求无效",
+        "session-expired": "会话已失效，请重新登录",
+        "forbidden": "当前身份无权执行控制台命令",
+        "unavailable": "游戏控制台暂不可用",
+        "result-unknown": "未能确认命令结果，输入已保留",
+        "unknown": "命令发送失败，输入已保留"
+      }
+    }
+  },
+  "forbidden": {
+    "title": "无权访问此页面",
+    "description": "当前身份没有访问该功能的权限。"
+  },
   "apiKeys": {
     "title": "API Keys",
     "refresh": "刷新 API Key 列表",

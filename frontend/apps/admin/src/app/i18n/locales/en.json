@@ -301,6 +301,42 @@
       }
     }
   },
+  "console": {
+    "title": "Web Console",
+    "clear": "Clear page",
+    "snapshotLoading": "Loading recent logs",
+    "buffered": "{count} buffered",
+    "gap": "Logs may be incomplete",
+    "connection": {
+      "connecting": "Connecting",
+      "live": "Live",
+      "reconnecting": "Reconnecting",
+      "stopped": "Offline"
+    },
+    "viewport": {
+      "backToLatest": "Back to latest ({count})"
+    },
+    "command": {
+      "placeholder": "Enter any console command",
+      "submit": "Send",
+      "keyboardHelp": "↑/↓ suggestions or history · Tab complete · Esc close · Enter send",
+      "permission": "Permission {level}",
+      "permissionUnknown": "Permission unknown",
+      "catalogUnavailable": "The command catalog is unavailable. You can still type and send commands.",
+      "feedback": {
+        "invalid": "The command request is invalid.",
+        "session-expired": "Your session has expired. Sign in again.",
+        "forbidden": "You do not have permission to run console commands.",
+        "unavailable": "The game console is unavailable.",
+        "result-unknown": "The command result is unknown. Your input was kept.",
+        "unknown": "Failed to send the command. Your input was kept."
+      }
+    }
+  },
+  "forbidden": {
+    "title": "You cannot access this page",
+    "description": "Your current identity does not have permission to access this feature."
+  },
   "apiKeys": {
     "title": "API Keys",
     "refresh": "Refresh API Key list",

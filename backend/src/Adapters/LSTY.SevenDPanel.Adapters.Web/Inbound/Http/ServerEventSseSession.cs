@@ -39,6 +39,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         private string? bearerToken;
         private PanelCredentialType credentialType;
         private IReadOnlyCollection<string>? allowedRoles;
+        private string? currentRole;
         private DateTimeOffset nextAuthorizationValidationUtc;
         private int authorizationAttempted;
         private int reservationAttempted;
@@ -216,10 +217,13 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 {
                     if (serverEvent.Sequence <= lastSentSequence) continue;
                     if (AuthorizationValidationIsDue() && !RefreshAuthorization()) return;
-                    await WriteServerEventAsync(
-                        output,
-                        serverEvent,
-                        cancellationToken).ConfigureAwait(false);
+                    if (CanWrite(serverEvent))
+                    {
+                        await WriteServerEventAsync(
+                            output,
+                            serverEvent,
+                            cancellationToken).ConfigureAwait(false);
+                    }
                     lastSentSequence = serverEvent.Sequence;
                 }
 
@@ -269,10 +273,13 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
                     if (serverEvent.Sequence <= lastSentSequence) continue;
                     if (AuthorizationValidationIsDue() && !RefreshAuthorization()) return;
-                    await WriteServerEventAsync(
-                        output,
-                        serverEvent,
-                        cancellationToken).ConfigureAwait(false);
+                    if (CanWrite(serverEvent))
+                    {
+                        await WriteServerEventAsync(
+                            output,
+                            serverEvent,
+                            cancellationToken).ConfigureAwait(false);
+                    }
                     lastSentSequence = serverEvent.Sequence;
                     heartbeatDeadlineUtc = utcNow().Add(heartbeatInterval);
                 }
@@ -302,6 +309,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             bearerToken = null;
             authorizationSubject = null;
             allowedRoles = null;
+            currentRole = null;
             Interlocked.Exchange(ref subscription, null)?.Dispose();
         }
 
@@ -371,6 +379,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 return false;
             }
             if (!ContainsRole(roles, currentIdentity.Role)) return false;
+            currentRole = currentIdentity.Role;
 
             var scheduled = now.Add(authorizationValidationInterval);
             nextAuthorizationValidationUtc = expiresUtc.HasValue && expiresUtc.Value < scheduled
@@ -378,6 +387,16 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 : scheduled;
             return true;
         }
+
+        private bool CanWrite(ServerEvent serverEvent) =>
+            !string.Equals(
+                serverEvent.EventName,
+                ServerEventNames.ConsoleLog,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                currentRole,
+                PanelUserIdentity.ViewerRole,
+                StringComparison.Ordinal);
 
         private static bool ContainsRole(IReadOnlyCollection<string> roles, string role)
         {
