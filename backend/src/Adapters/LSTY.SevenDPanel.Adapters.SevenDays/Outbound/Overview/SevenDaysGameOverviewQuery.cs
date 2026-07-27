@@ -228,7 +228,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
                 Read(() => (long?)global::UnityEngine.Time.timeSinceLevelLoad),
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.GameVersion)),
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.GameMode)),
-                Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.GameDifficulty)),
+                Read(() => global::GamePrefs.GetInt(global::EnumGamePrefs.GameDifficulty).ToString()),
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.Region)),
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.Language)),
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.ConnectToServerIP)),

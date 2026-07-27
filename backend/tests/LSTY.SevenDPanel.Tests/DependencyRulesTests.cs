@@ -476,6 +476,25 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Game_overview_reads_integer_difficulty_without_string_cast()
+        {
+            var overviewSource = File.ReadAllText(Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.SevenDays",
+                "Outbound",
+                "Overview",
+                "SevenDaysGameOverviewQuery.cs"));
+
+            Assert.Contains(
+                "GamePrefs.GetInt(global::EnumGamePrefs.GameDifficulty)",
+                overviewSource);
+            Assert.DoesNotContain(
+                "GamePrefs.GetString(global::EnumGamePrefs.GameDifficulty)",
+                overviewSource);
+        }
+
+        [Fact]
         public void Publish_script_enforces_runtime_dependency_boundary()
         {
             var publishScript = File.ReadAllText(Path.Combine(
