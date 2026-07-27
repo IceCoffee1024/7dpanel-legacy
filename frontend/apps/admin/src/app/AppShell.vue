@@ -31,6 +31,7 @@ const playerAndWorldNavigation = computed<NavigationMenuItem[]>(() => [
     label: t('players.navigation'),
     icon: 'i-lucide-users',
     to: '/players',
+    exact: true,
     onSelect: closeSidebar,
   },
   ...(isOwner.value

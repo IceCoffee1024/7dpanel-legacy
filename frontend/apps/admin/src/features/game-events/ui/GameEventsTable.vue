@@ -11,11 +11,18 @@ const props = defineProps<{
   controller: GameEventsController
 }>()
 
+const allEventTypesValue = '__all_event_types__'
 const draft = reactive<GameEventFilters>({ ...props.controller.filters.value })
 const eventTypeItems = [
-  { label: '全部事件', value: '' },
+  { label: '全部事件', value: allEventTypesValue },
   ...gameEventTypes.map(value => ({ label: value, value })),
 ]
+const selectedEventType = computed({
+  get: () => draft.eventType || allEventTypesValue,
+  set: (value: string) => {
+    Object.assign(draft, { eventType: value === allEventTypesValue ? '' : value })
+  },
+})
 const columns: TableColumn<GameEventRecord>[] = [
   { accessorKey: 'occurredAtUtc', header: '发生时间（UTC）' },
   { accessorKey: 'eventType', header: '事件类型' },
@@ -59,7 +66,7 @@ function clearFilters() {
         <UInput v-model="draft.toUtc" class="w-full" placeholder="2026-07-26T23:59:59Z" />
       </UFormField>
       <UFormField label="事件类型" name="eventType">
-        <USelect v-model="draft.eventType" :items="eventTypeItems" class="w-full" />
+        <USelect v-model="selectedEventType" :items="eventTypeItems" class="w-full" />
       </UFormField>
       <UFormField label="跨平台身份" name="crossplatformId">
         <UInput v-model="draft.crossplatformId" class="w-full" />

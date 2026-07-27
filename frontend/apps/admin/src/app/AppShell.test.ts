@@ -233,6 +233,21 @@ describe('appShell', () => {
     expect(groups[0]?.items.map(item => item.label)).toEqual(expect.arrayContaining(expected))
   })
 
+  it('matches the players navigation item exactly so history only highlights its own item', async () => {
+    const { wrapper } = await mountAppShell()
+    const navigation = wrapper.findComponent({ name: 'NavigationMenu' })
+    const items = navigation.props('items') as Array<{
+      label: string
+      children?: Array<{ label: string, to?: string, exact?: boolean }>
+    }>
+    const playersItem = items
+      .find(item => item.label === '玩家与世界')
+      ?.children
+      ?.find(item => item.to === '/players')
+
+    expect(playersItem?.exact).toBe(true)
+  })
+
   it('keeps g-p and adds g-r navigation shortcuts', async () => {
     const { router } = await mountAppShell()
 

@@ -11,11 +11,18 @@ const props = defineProps<{
   controller: AuditWorkspaceController
 }>()
 
+const allSourceKindsValue = '__all_source_kinds__'
 const draft = reactive<AuditFilters>({ ...props.controller.filters.value })
 const sourceKindItems = [
-  { label: '全部来源', value: '' },
+  { label: '全部来源', value: allSourceKindsValue },
   ...auditSourceKinds.map(value => ({ label: value, value })),
 ]
+const selectedSourceKind = computed({
+  get: () => draft.sourceKind || allSourceKindsValue,
+  set: (value: string) => {
+    Object.assign(draft, { sourceKind: value === allSourceKindsValue ? '' : value })
+  },
+})
 const columns: TableColumn<AuditEntry>[] = [
   { accessorKey: 'occurredAtUtc', header: '发生时间（UTC）' },
   { accessorKey: 'sourceKind', header: '来源' },
@@ -69,7 +76,7 @@ function clearFilters() {
         <UInput v-model="draft.action" class="w-full" />
       </UFormField>
       <UFormField label="来源" name="sourceKind">
-        <USelect v-model="draft.sourceKind" :items="sourceKindItems" class="w-full" />
+        <USelect v-model="selectedSourceKind" :items="sourceKindItems" class="w-full" />
       </UFormField>
       <UFormField label="状态" name="status">
         <UInput v-model="draft.status" class="w-full" />

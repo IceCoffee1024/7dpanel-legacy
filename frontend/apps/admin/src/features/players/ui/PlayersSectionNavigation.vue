@@ -8,6 +8,7 @@ const { t } = useI18n()
   <nav :aria-label="t('players.history.sectionNavigation')" class="flex gap-2">
     <UButton
       color="neutral"
+      exact
       icon="i-lucide-users"
       :label="t('players.history.online')"
       to="/players"
