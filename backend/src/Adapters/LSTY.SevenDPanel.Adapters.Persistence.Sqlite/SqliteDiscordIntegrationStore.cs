@@ -870,11 +870,30 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             {
                 var recoveredUtc = Milliseconds(recoveredAtUtc);
                 ExpireInteractions(connection, recoveredUtc);
-                return connection.Execute(
-                    @"UPDATE discord_interactions
-                      SET status = 'Pending', completed_utc = NULL
+                var recoveredInteractionIds = connection.Query<string>(
+                    @"SELECT interaction_id
+                      FROM discord_interactions
                       WHERE status = 'Running' AND expires_utc > @RecoveredUtc;",
-                    new { RecoveredUtc = recoveredUtc });
+                    new { RecoveredUtc = recoveredUtc })
+                    .ToArray();
+                if (recoveredInteractionIds.Length == 0) return 0;
+
+                var recovered = connection.Execute(
+                    @"UPDATE discord_interactions
+                      SET status = @Status, completed_utc = @RecoveredUtc
+                      WHERE interaction_id IN @InteractionIds
+                        AND status = 'Running' AND expires_utc > @RecoveredUtc;",
+                    new
+                    {
+                        Status = DiscordInteractionStatuses.ResultUnknown,
+                        RecoveredUtc = recoveredUtc,
+                        InteractionIds = recoveredInteractionIds
+                    });
+                connection.Execute(
+                    @"DELETE FROM discord_interaction_secrets
+                      WHERE interaction_id IN @InteractionIds;",
+                    new { InteractionIds = recoveredInteractionIds });
+                return recovered;
             });
         }
 

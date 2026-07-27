@@ -1,8 +1,12 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
+using System.Web.Http;
 using Dapper;
 using DbUp;
 using LSTY.SevenDPanel.Adapters.Local.Backups;
@@ -16,10 +20,13 @@ using LSTY.SevenDPanel.Adapters.SevenDays.Announcements;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Backups;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Application.Announcements;
 using LSTY.SevenDPanel.Application.Backups;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
+using LSTY.SevenDPanel.Application.Discord;
 using LSTY.SevenDPanel.Application.Jobs;
 using LSTY.SevenDPanel.Application.Schedules;
 using LSTY.SevenDPanel.DependencyInjection;
@@ -34,6 +41,51 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
 {
     public sealed class JobsAndSchedulingCompositionTests
     {
+        [Fact]
+        public async Task Production_discord_interaction_composition_uses_the_persisted_public_key_and_three_argument_controller()
+        {
+            const string interactionPublicKey =
+                "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a";
+            using var fixture = new RuntimeFixture();
+            var provider = fixture.Provider;
+            var store = provider.GetRequiredService<IDiscordIntegrationStore>();
+            Assert.NotNull(provider.GetRequiredService<IDiscordInteractionSignatureVerifier>());
+            store.SetSecret(new DiscordSecretValue(
+                "interactionPublicKey",
+                interactionPublicKey,
+                "test",
+                DateTimeOffset.UtcNow));
+
+            var resolver = new MicrosoftDependencyResolver(provider);
+            using var scope = resolver.BeginScope();
+            var controller = Assert.IsType<DiscordIntegrationController>(
+                scope.GetService(typeof(DiscordIntegrationController)));
+            var deferredSinkField = typeof(DiscordIntegrationController).GetField(
+                "deferredInteractionSink",
+                BindingFlags.Instance | BindingFlags.NonPublic)!;
+            Assert.NotNull(deferredSinkField.GetValue(controller));
+
+            using var configuration = new HttpConfiguration
+            {
+                DependencyResolver = new MicrosoftDependencyResolver(provider)
+            };
+            configuration.MapHttpAttributeRoutes();
+            configuration.EnsureInitialized();
+            using var client = new HttpClient(new HttpServer(configuration))
+            {
+                BaseAddress = new Uri("http://localhost/")
+            };
+            using var response = await client.PostAsync(
+                "api/v1/integrations/discord/interactions",
+                new StringContent("{\"type\":1}", System.Text.Encoding.UTF8, "application/json"),
+                TestContext.Current.CancellationToken);
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.DoesNotContain("discord_interaction_verification_unavailable", body, StringComparison.Ordinal);
+            Assert.DoesNotContain(interactionPublicKey, body, StringComparison.Ordinal);
+        }
+
         [Fact]
         public void Application_ports_resolve_one_production_singleton()
         {
@@ -292,6 +344,7 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
 
         private sealed class RuntimeFixture : IDisposable
         {
+            private static Assembly? syntheticGameAssembly;
             private readonly string dataDirectory;
             private readonly ServiceProviderRuntime runtime;
 
@@ -372,8 +425,17 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
                     .SingleOrDefault(assembly =>
                         assembly.GetName().Name == "Assembly-CSharp");
                 if (loaded != null) return loaded;
-                return CreateGameAssembly();
+                syntheticGameAssembly = CreateGameAssembly();
+                AppDomain.CurrentDomain.AssemblyResolve += ResolveSyntheticGameAssembly;
+                return syntheticGameAssembly;
             }
+
+            private static Assembly? ResolveSyntheticGameAssembly(
+                object? sender,
+                ResolveEventArgs arguments) =>
+                arguments.Name.StartsWith(
+                    "Assembly-CSharp,",
+                    StringComparison.Ordinal) ? syntheticGameAssembly : null;
 
             private static Assembly CreateGameAssembly()
             {

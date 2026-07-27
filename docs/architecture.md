@@ -77,7 +77,7 @@ last_updated: "2026-07-27"
 
 ### 六波次功能对齐当前代码状态
 
-- SQLite migration `008_EvidenceFoundation.sql` 至 `014_DailyRewardPolicies.sql` 按波次保存专用权威记录，并逐步扩展只读 `unified_audit_projection`；投影只保存稳定摘要，不复制正文、Secret、路径或大字段，`gap` 始终独立于业务事件和管理员动作。
+- SQLite migration `008_EvidenceFoundation.sql` 至 `015_DiscordInteractionPersistence.sql` 按波次保存专用权威记录，并逐步扩展只读 `unified_audit_projection`；`015` 持久保存 Discord interaction token 与处理状态。投影只保存稳定摘要，不复制正文、Secret、路径或大字段，`gap` 始终独立于业务事件和管理员动作。
 - 第二波以持久作业、Cron、公告、备份目录和跨重启恢复意图为中心，Local Adapter 只访问批准根；作业、备份、恢复和调度状态由 SQLite 拥有，HTTP 202 与 Admin 页面不会把排队或 stage 表述为最终成功。
 - 第三波保存玩家 Profile、会话、背包/技能观察、物品证据及 grant/remove/reset 操作状态；SevenDays Adapter 在游戏线程重验稳定身份，`PendingReconciliation`/`ResultUnknown` 不自动重放副作用。
 - 第四波使用平衡的经济账本、奖励发放状态机、商品/兑换/成就/在线奖励及 Community Store。固定游戏命令通过现有唯一 `SevenDaysChatRuntime` 私发结果；`bal/pay/moneytop/daily/shop/buy/redeem`、家/城市/返回点、`tpa/tpaccept/tpreject` 和投票连接真实用例。`daily` 以稳定规则标识定位 `014_DailyRewardPolicies.sql` 中 Owner 配置的奖励包绑定，资格键为 `ruleId + crossplatformId + UTC yyyyMMdd`；缺失或禁用规则不创建 grant，同日重试复用既有奖励包快照。TPA 请求在 SQLite 中持久保存固定双方实体/世界快照与终态，接受通过条件更新竞争；生产组合根使用旧版默认的 30 秒有效期。Community Store 提供稳定排序的全量城市、好友记录、传送操作和投票轮次查询；传送设置与投票配置更新把 `expectedRowVersion` 下沉到 SQLite 条件更新。
@@ -166,7 +166,7 @@ flowchart LR
 | `backend/src/Core/LSTY.SevenDPanel.Application/` | 控制台、玩家、地图、治理、聊天、游戏资源、游戏事件/gap 与统一审计；作业、备份、调度、玩家证据与动作、经济、奖励、商业、Community、Automation、Discord、GeoIP、世界操作和功能模块的端口与用例 | Domain、.NET Framework BCL |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/` | 健康、认证、生产事件和既有管理 API；六波次新增的审计/游戏事件、作业/备份/调度、玩家证据/动作、经济/奖励/商业、Community、Automation/Discord/GeoIP、世界/地图作业/功能模块 Controller；公开运行时 OpenAPI JSON 与 Swagger UI；统一 Problem Details、认证、请求作用域、Katana Self Host、StaticFiles 和 SPA fallback | Application、Hosting、Web API/Katana、NSwag OWIN、Microsoft DI Abstractions、游戏提供的 JSON 兼容程序集 |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志、玩家、地图、治理、聊天/游戏事件和游戏资源标量采集；提供运行指标与世界只读快照、玩家证据、类型化玩家/Community/世界动作、公告、Automation trigger、GeoIP 加入策略、各有界 writer/runtime 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
-| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration `001` 至 `014`；持久身份/Token、专用审计和 `gap`；作业、备份、调度、玩家证据/动作、经济/奖励/商业/Community、Daily 奖励策略、Automation/Discord/GeoIP、世界操作/change set 与功能模块状态；逐波次扩展的只读统一审计投影 | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
+| `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration `001` 至 `015`；持久身份/Token、专用审计和 `gap`；作业、备份、调度、玩家证据/动作、经济/奖励/商业/Community、Daily 奖励策略、Automation/Discord/GeoIP、Discord interaction token 与处理状态、世界操作/change set 与功能模块状态；逐波次扩展的只读统一审计投影 | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Local/` | 批准存储根与路径约束、原子文件发布、备份归档与待恢复文件边界、后台作业、Discord HTTP 投递、MaxMind Web Service 查询、地图资源发布和世界 change set blob | Application、Domain、System.IO.Compression、System.Net.Http |
 | `frontend/apps/admin/` | 响应式应用壳、认证和双语运行时、既有管理页面，以及六波次 Owner-only 备份/调度、玩家 Profile/动作、经济/奖励/商业、Community、Automation、Discord、GeoIP、世界工具和功能模块页面；路由 meta、守卫、侧栏与 Dashboard Search 共用角色边界 | Vue 3、Vue Router、Pinia、Pinia Colada、Vue I18n、Valibot、Nuxt UI、Hey API 生成客户端、OpenLayers、Vite |
 
@@ -299,7 +299,7 @@ GET /
 | `/api/v1/player-evidence`、`/api/v1/player-actions` | `PlayerEvidenceController`、`PlayerActionsController` | Owner-only 玩家 Profile/证据查询和类型化物品/重置动作；稳定身份、操作状态和结果未知显式保留 |
 | `/api/v1/economy`、`/api/v1/rewards`、`/api/v1/commerce`、`/api/v1/achievements`、`/api/v1/online-rewards` | 对应 Controller | Owner-only 经济账本、奖励发放、商品/兑换、成就和在线奖励管理；`daily` 规则读写与领取资格从持久策略和观察运行时消费，不把未知结果伪装为完成 |
 | `/api/v1/community` | `CommunityController` | Owner-only 传送设置、城市、好友、传送操作和投票管理；全量列表端点稳定排序，传送设置/投票配置的版本冲突由底层条件更新和 HTTP 409 表达 |
-| `/api/v1/automations`、`/api/v1/discord`、`/api/v1/geoip` | 对应 Controller | Owner-only 固定自动化规则、Discord 配置/投递/绑定/命令、Gateway 和 interaction Ed25519 签名入口，以及 GeoIP 策略；不表示 Discord sandbox/真实往返或真实 MaxMind 已验证 |
+| `/api/v1/automations`、`/api/v1/integrations/discord`、`/api/v1/access-policies/geoip` | 对应 Controller | Owner-only 固定自动化规则、Discord 配置/投递/绑定/命令、Gateway 和 interaction Ed25519 签名入口，以及 GeoIP 策略；不表示 Discord sandbox/真实往返或真实 MaxMind 已验证 |
 | `/api/v1/world`、`/api/v1/world-operations`、`/api/v1/map-jobs`、`/api/v1/modules` | 对应 Controller | Owner-only 世界只读、持久世界/地图操作和固定功能模块；HTTP 接受或作业入队不表示危险副作用成功 |
 | `GET /` | StaticFiles | 返回 Admin `index.html` |
 | `GET/HEAD` 无扩展名、非 API 且非 `/assets` 路径 | SPA fallback + StaticFiles | 服务端返回 `index.html`；客户端是否存在该路由由 Vue Router 决定 |
@@ -313,7 +313,7 @@ GET /
 - 当前过渡阶段的 `authentication` 默认启用，使用已知引导凭据 `admin` / `password` 和 8 小时（480 分钟）Access Token 生命周期；服主可以在 `config.json` 中替换凭据，用户名和密码仍必须非空，Token 生命周期限制为 5 到 1440 分钟。密码用 PBKDF2-HMAC-SHA256、1000 次迭代与随机盐验证。每次启动按稳定 `Subject=owner` 同步唯一 SQLite 用户；凭据不变时保留 Access Token，用户名或密码变化时同事务更新并撤销该 Owner 的 Access Token。无效认证配置失败关闭但不替换有效监听配置，受保护 API 不会退化为匿名访问。
 - `allowInsecureHttp` 当前默认 true，与默认 `http` 监听共同允许明文 HTTP 上的 password grant；这是当前阶段按 `NFR-04` 接受的运行假设，启动日志只输出不含凭据的风险警告。用户管理能力能够安全维护至少一个 `Owner` 后，必须删除配置引导、已知默认凭据和明文远程认证例外。
 - `config.json`、`.env.local` 和运行时 `data/` 都不是发布模板内容。发布脚本不会覆盖已有 `config.json` 或 `data/`。
-- 当前持久状态包括 `data/7dpanel.db` 中的引导用户、DbUp migration journal、Access Token、API Key 安全元数据与 secret 摘要、既有专用审计/gap，以及 migration `008` 至 `014` 的游戏事件、禁言、作业、备份、调度、玩家证据/动作、经济/奖励/商业/Community、Daily 奖励策略、Automation/Discord/GeoIP、世界操作/change set 与功能模块记录。统一视图是专用审计的只读摘要投影，不是第二份审计写模型；备份归档、待恢复标记、地图资源和 change set blob 由批准本地根拥有。
+- 当前持久状态包括 `data/7dpanel.db` 中的引导用户、DbUp migration journal、Access Token、API Key 安全元数据与 secret 摘要、既有专用审计/gap，以及 migration `008` 至 `015` 的游戏事件、禁言、作业、备份、调度、玩家证据/动作、经济/奖励/商业/Community、Daily 奖励策略、Automation/Discord/GeoIP、Discord interaction token 与处理状态、世界操作/change set 与功能模块记录。统一视图是专用审计的只读摘要投影，不是第二份审计写模型；备份归档、待恢复标记、地图资源和 change set blob 由批准本地根拥有。
 
 ### 当前依赖兼容矩阵
 

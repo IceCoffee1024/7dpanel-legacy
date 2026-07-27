@@ -173,6 +173,13 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SqliteDiscordIntegrationStore>());
                 services.AddSingleton<IDiscordInteractionPersistenceStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteDiscordIntegrationStore>());
+                services.AddSingleton<IDiscordInteractionSignatureVerifier>(serviceProvider =>
+                    new DiscordInteractionSignatureVerifier(
+                        () => serviceProvider
+                            .GetRequiredService<IDiscordIntegrationStore>()
+                            .GetSecret("interactionPublicKey")?.SecretValue,
+                        () => DateTimeOffset.UtcNow,
+                        TimeSpan.FromMinutes(5)));
                 services.AddSingleton<GetDiscordConfigurationUseCase>();
                 services.AddSingleton(serviceProvider => new SaveDiscordConfigurationUseCase(
                     serviceProvider.GetRequiredService<IDiscordIntegrationStore>(),

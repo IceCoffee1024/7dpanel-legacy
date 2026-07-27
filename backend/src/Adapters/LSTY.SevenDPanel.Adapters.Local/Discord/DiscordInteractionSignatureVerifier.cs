@@ -74,7 +74,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
     public sealed class DiscordInteractionSignatureVerifier :
         IDiscordInteractionSignatureVerifier
     {
-        private readonly Ed25519SignatureVerifier verifier;
+        private readonly Func<Ed25519SignatureVerifier?> verifierProvider;
         private readonly Func<DateTimeOffset> utcNow;
         private readonly TimeSpan maximumAge;
 
@@ -82,8 +82,25 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             string publicKeyHex,
             Func<DateTimeOffset> utcNow,
             TimeSpan maximumAge)
+            : this(CreateFixedVerifierProvider(publicKeyHex), utcNow, maximumAge)
         {
-            verifier = new Ed25519SignatureVerifier(publicKeyHex);
+        }
+
+        public DiscordInteractionSignatureVerifier(
+            Func<string?> publicKeyHexProvider,
+            Func<DateTimeOffset> utcNow,
+            TimeSpan maximumAge)
+            : this(CreateLookupVerifierProvider(publicKeyHexProvider), utcNow, maximumAge)
+        {
+        }
+
+        private DiscordInteractionSignatureVerifier(
+            Func<Ed25519SignatureVerifier?> verifierProvider,
+            Func<DateTimeOffset> utcNow,
+            TimeSpan maximumAge)
+        {
+            this.verifierProvider = verifierProvider ??
+                throw new ArgumentNullException(nameof(verifierProvider));
             this.utcNow = utcNow ?? throw new ArgumentNullException(nameof(utcNow));
             if (maximumAge <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(maximumAge));
@@ -112,7 +129,37 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             var signedMessage = new byte[timestampBytes.Length + rawBody.Length];
             Buffer.BlockCopy(timestampBytes, 0, signedMessage, 0, timestampBytes.Length);
             Buffer.BlockCopy(rawBody, 0, signedMessage, timestampBytes.Length, rawBody.Length);
-            return verifier.Verify(signatureHex, signedMessage);
+            var verifier = verifierProvider();
+            return verifier != null && verifier.Verify(signatureHex, signedMessage);
+        }
+
+        private static Func<Ed25519SignatureVerifier?> CreateFixedVerifierProvider(
+            string publicKeyHex)
+        {
+            var verifier = new Ed25519SignatureVerifier(publicKeyHex);
+            return () => verifier;
+        }
+
+        private static Func<Ed25519SignatureVerifier?> CreateLookupVerifierProvider(
+            Func<string?> publicKeyHexProvider)
+        {
+            if (publicKeyHexProvider == null)
+                throw new ArgumentNullException(nameof(publicKeyHexProvider));
+
+            return () =>
+            {
+                try
+                {
+                    var publicKeyHex = publicKeyHexProvider();
+                    return string.IsNullOrWhiteSpace(publicKeyHex)
+                        ? null
+                        : new Ed25519SignatureVerifier(publicKeyHex!);
+                }
+                catch
+                {
+                    return null;
+                }
+            };
         }
 
         private static bool TryParseTimestamp(

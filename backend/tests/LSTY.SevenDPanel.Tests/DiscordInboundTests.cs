@@ -93,7 +93,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Deferred_interactions_are_accepted_once_claimed_recovered_and_completed_without_retaining_tokens()
+        public async Task Deferred_interactions_are_accepted_once_claimed_recovered_as_result_unknown_without_retaining_tokens()
         {
             using var database = ConfiguredDatabase();
             database.Store.SaveCommandSetting(new DiscordCommandSetting("status", true, true));
@@ -121,12 +121,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Null(database.Store.TryClaimNextInteraction(Now));
             Assert.Equal(1, process.RecoverRunningInteractions());
 
-            Assert.Equal(
-                DiscordInboundDisposition.Dispatched,
-                (await process.ExecuteNextAsync(CancellationToken.None))!.Disposition);
-            Assert.Single(dispatcher.StatusCommands);
-            Assert.Null(database.Store.GetInteractionToken("deferred-status", Now));
             Assert.Null(await process.ExecuteNextAsync(CancellationToken.None));
+            Assert.Empty(dispatcher.StatusCommands);
+            Assert.Null(database.Store.GetInteractionToken("deferred-status", Now));
 
             Assert.True(database.Store.TrySaveInteractionWithToken(
                 new DiscordInteraction(
@@ -178,6 +175,50 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal("app-1", response.ApplicationId);
             Assert.Equal("original-interaction-token", response.InteractionToken);
             Assert.Equal("Server is online", response.Content);
+        }
+
+        [Fact]
+        public async Task Recovered_running_interactions_are_not_resent_after_a_private_follow_up_may_have_succeeded()
+        {
+            using var database = ConfiguredDatabase();
+            database.Store.SaveCommandSetting(new DiscordCommandSetting("status", true, true));
+            Bind(database.Store, "discord-user-1", "player-1");
+            var dispatcher = new RecordingCommandDispatcher
+            {
+                StatusResponseContent = "Server is online"
+            };
+            var sender = new RecordingInteractionResponseSender();
+            var accept = new AcceptDiscordInteractionUseCase(database.Store, database.Store, () => Now);
+            var process = new ProcessDiscordInteractionUseCase(
+                database.Store, database.Store, dispatcher, () => Now, sender);
+            var interaction = new DiscordInteractionEnvelope(
+                "crashed-after-follow-up", 2, "guild-1", "channel-public", "discord-user-1",
+                false, "status", null);
+
+            Assert.Equal(
+                DiscordInboundDisposition.Accepted,
+                accept.Execute(interaction, "original-interaction-token").Disposition);
+            Assert.Equal(
+                DiscordInteractionStatuses.Running,
+                database.Store.TryClaimNextInteraction(Now)!.Status);
+
+            // Model Discord accepting the private follow-up immediately before the process crashes.
+            Assert.Equal(
+                DiscordInteractionResponseDisposition.Succeeded,
+                await sender.SendEphemeralAsync(
+                    new DiscordInteractionResponse(
+                        "app-1",
+                        "original-interaction-token",
+                        "Server is online",
+                        null),
+                    CancellationToken.None));
+
+            Assert.Equal(1, process.RecoverRunningInteractions());
+
+            Assert.Null(await process.ExecuteNextAsync(CancellationToken.None));
+            Assert.Single(sender.Responses);
+            Assert.Empty(dispatcher.StatusCommands);
+            Assert.Null(database.Store.GetInteractionToken("crashed-after-follow-up", Now));
         }
 
         [Fact]
