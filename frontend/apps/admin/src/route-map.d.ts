@@ -241,15 +241,12 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/players': RouteRecordInfo<
-      '/players',
+    '/players/': RouteRecordInfo<
+      '/players/',
       '/players',
       Record<never, never>,
       Record<never, never>,
-      | '/players/history/'
-      | '/players/history/[crossplatformId]'
-      | '/players/map'
-      | '/players/profile/[crossplatformId]'
+      | never
     >,
     '/players/history/': RouteRecordInfo<
       '/players/history/',
@@ -553,15 +550,11 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/players.vue': {
+    'src/pages/players/index.vue': {
       routes:
-        | '/players'
-        | '/players/history/'
-        | '/players/history/[crossplatformId]'
-        | '/players/map'
-        | '/players/profile/[crossplatformId]'
+        | '/players/'
       views:
-        | 'default'
+        | never
       pathParamNames:
         | never
     }

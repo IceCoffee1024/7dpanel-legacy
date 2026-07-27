@@ -30,6 +30,7 @@ test('owner can navigate across admin pages without Vue render errors', async ({
 
   await page.locator('a[href="/players/history"]').click()
   await expect(page).toHaveURL(/\/players\/history$/)
+  await expect(page.getByTestId('history-search')).toBeVisible()
   await page.locator('a[href="/api-keys"]').click()
   await expect(page).toHaveURL(/\/api-keys$/)
   await page.locator('a[href="/audit"]').click()
