@@ -6,8 +6,8 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web.Script.Serialization;
 using LSTY.SevenDPanel.Application.WorldOperations;
+using Newtonsoft.Json;
 
 namespace LSTY.SevenDPanel.Adapters.Local.MapTiles
 {
@@ -193,11 +193,8 @@ namespace LSTY.SevenDPanel.Adapters.Local.MapTiles
                 {
                     json = reader.ReadToEnd();
                 }
-                var document = new JavaScriptSerializer
-                {
-                    MaxJsonLength = MaximumManifestBytes,
-                    RecursionLimit = 16
-                }.Deserialize<ManifestDocument>(json);
+                var document = JsonConvert.DeserializeObject<ManifestDocument>(json,
+                    new JsonSerializerSettings { MaxDepth = 16 });
                 return document ?? throw new LocalMapResourcePublishException(ManifestInvalid);
             }
             catch (LocalMapResourcePublishException)

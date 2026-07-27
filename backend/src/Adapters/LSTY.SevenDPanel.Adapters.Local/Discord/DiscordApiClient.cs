@@ -8,8 +8,9 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using LSTY.SevenDPanel.Application.Discord;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LSTY.SevenDPanel.Adapters.Local.Discord
 {
@@ -102,7 +103,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 }
 
                 message.RequestUri = endpoint;
-                var json = new JavaScriptSerializer().Serialize(payload);
+                var json = JsonConvert.SerializeObject(payload);
                 message.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return message;
             }
@@ -213,11 +214,11 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             {
                 await response.Content.LoadIntoBufferAsync(16 * 1024).ConfigureAwait(false);
                 var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var parsed = new JavaScriptSerializer().DeserializeObject(json) as IDictionary<string, object>;
-                if (parsed == null || !parsed.TryGetValue("retry_after", out var raw) || raw == null)
+                var raw = JObject.Parse(json)["retry_after"];
+                if (raw == null)
                     return null;
                 if (!double.TryParse(
-                        Convert.ToString(raw, CultureInfo.InvariantCulture),
+                        raw.ToString(Formatting.None),
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
                         out var seconds) ||

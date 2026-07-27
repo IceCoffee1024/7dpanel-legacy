@@ -451,6 +451,31 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Local_adapter_uses_game_newtonsoft_json_without_system_web_extensions()
+        {
+            var projectPath = Path.Combine(
+                RepositoryRoot,
+                "backend",
+                "src",
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.Local",
+                "LSTY.SevenDPanel.Adapters.Local.csproj");
+            var project = File.ReadAllText(projectPath);
+            var localSources = Directory.GetFiles(
+                Path.GetDirectoryName(projectPath)!,
+                "*.cs",
+                SearchOption.AllDirectories)
+                .Select(File.ReadAllText)
+                .ToArray();
+
+            Assert.Contains("<Reference Include=\"Newtonsoft.Json\">", project);
+            Assert.Contains("<Private>false</Private>", project);
+            Assert.DoesNotContain("System.Web.Extensions", project);
+            Assert.All(localSources, source =>
+                Assert.DoesNotContain("System.Web.Script.Serialization", source));
+        }
+
+        [Fact]
         public void Publish_script_enforces_runtime_dependency_boundary()
         {
             var publishScript = File.ReadAllText(Path.Combine(

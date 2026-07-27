@@ -8,8 +8,9 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using LSTY.SevenDPanel.Application.Discord;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LSTY.SevenDPanel.Adapters.Local.Discord
 {
@@ -144,7 +145,6 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
 
         private readonly DiscordGatewayOptions options;
         private readonly IDiscordInboundTransportSink sink;
-        private readonly JavaScriptSerializer json = new JavaScriptSerializer();
         private bool heartbeatOutstanding;
         private string? resumeGatewayUrl;
 
@@ -226,7 +226,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         {
             if (CanResume)
             {
-                return json.Serialize(new
+                return JsonConvert.SerializeObject(new
                 {
                     op = 6,
                     d = new
@@ -238,7 +238,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 });
             }
 
-            return json.Serialize(new
+            return JsonConvert.SerializeObject(new
             {
                 op = 2,
                 d = new
@@ -259,7 +259,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         {
             if (failIfOutstanding && heartbeatOutstanding) return null;
             heartbeatOutstanding = true;
-            return json.Serialize(new
+            return JsonConvert.SerializeObject(new
             {
                 op = 1,
                 d = LastSequence.HasValue ? (object)LastSequence.Value : null
@@ -267,7 +267,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         }
 
         private async Task<bool> HandleDispatchAsync(
-            IDictionary<string, object> envelope,
+            JObject envelope,
             CancellationToken cancellationToken)
         {
             var eventName = OptionalString(envelope, "t");
@@ -298,8 +298,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             return false;
         }
 
-        private DiscordMessageCreateEnvelope? TryMapMessage(
-            IDictionary<string, object> data)
+        private DiscordMessageCreateEnvelope? TryMapMessage(JObject data)
         {
             var messageId = OptionalString(data, "id");
             var guildId = OptionalString(data, "guild_id");
@@ -308,7 +307,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             var author = OptionalObject(data, "author");
             var authorId = author == null ? null : OptionalString(author, "id");
             var authorIsBot = author != null && OptionalBoolean(author, "bot");
-            var isWebhook = data.TryGetValue("webhook_id", out var webhookId) && webhookId != null;
+            var isWebhook = data["webhook_id"]?.Type != JTokenType.Null;
 
             if (!string.Equals(guildId, options.GuildId, StringComparison.Ordinal) ||
                 channelId == null || !options.ChannelIds.Contains(channelId) ||
@@ -335,12 +334,13 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             }
         }
 
-        private void UpdateSequence(IDictionary<string, object> envelope)
+        private void UpdateSequence(JObject envelope)
         {
-            if (!envelope.TryGetValue("s", out var raw) || raw == null) return;
+            var raw = envelope["s"];
+            if (raw == null) return;
             try
             {
-                var sequence = Convert.ToInt64(raw, CultureInfo.InvariantCulture);
+                var sequence = raw.Value<long>();
                 if (sequence >= 0) LastSequence = sequence;
             }
             catch (FormatException)
@@ -362,16 +362,15 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             heartbeatOutstanding = false;
         }
 
-        private IDictionary<string, object> ParseObject(string payload)
+        private JObject ParseObject(string payload)
         {
             if (string.IsNullOrWhiteSpace(payload) || payload.Length > 64 * 1024)
                 throw new FormatException("discord_gateway_payload_invalid");
             try
             {
-                return json.DeserializeObject(payload) as IDictionary<string, object> ??
-                    throw new FormatException("discord_gateway_payload_invalid");
+                return JObject.Parse(payload);
             }
-            catch (InvalidOperationException)
+            catch (JsonException)
             {
                 throw new FormatException("discord_gateway_payload_invalid");
             }
@@ -381,13 +380,14 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             }
         }
 
-        private static int RequiredInt32(IDictionary<string, object> value, string key)
+        private static int RequiredInt32(JObject value, string key)
         {
-            if (!value.TryGetValue(key, out var raw) || raw == null)
+            var raw = value[key];
+            if (raw == null)
                 throw new FormatException("discord_gateway_payload_invalid");
             try
             {
-                return Convert.ToInt32(raw, CultureInfo.InvariantCulture);
+                return raw.Value<int>();
             }
             catch (Exception exception) when (
                 exception is FormatException ||
@@ -398,36 +398,35 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             }
         }
 
-        private static IDictionary<string, object> RequiredObject(
-            IDictionary<string, object> value,
+        private static JObject RequiredObject(
+            JObject value,
             string key) =>
             OptionalObject(value, key) ??
             throw new FormatException("discord_gateway_payload_invalid");
 
-        private static IDictionary<string, object>? OptionalObject(
-            IDictionary<string, object> value,
+        private static JObject? OptionalObject(
+            JObject value,
             string key) =>
-            value.TryGetValue(key, out var raw)
-                ? raw as IDictionary<string, object>
-                : null;
+            value[key] as JObject;
 
         private static string? OptionalString(
-            IDictionary<string, object> value,
+            JObject value,
             string key) =>
-            value.TryGetValue(key, out var raw) && raw is string text ? text : null;
+            value[key]?.Type == JTokenType.String ? value.Value<string>(key) : null;
 
         private static bool OptionalBoolean(
-            IDictionary<string, object> value,
+            JObject value,
             string key) =>
-            value.TryGetValue(key, out var raw) && raw is bool flag && flag;
+            value[key]?.Type == JTokenType.Boolean && value.Value<bool>(key);
 
         private static bool RequiredBoolean(
-            IDictionary<string, object> value,
+            JObject value,
             string key)
         {
-            if (!value.TryGetValue(key, out var raw) || raw is not bool flag)
+            var raw = value[key];
+            if (raw?.Type != JTokenType.Boolean)
                 throw new FormatException("discord_gateway_payload_invalid");
-            return flag;
+            return raw.Value<bool>();
         }
 
         private static DiscordGatewayProcessResult None() =>

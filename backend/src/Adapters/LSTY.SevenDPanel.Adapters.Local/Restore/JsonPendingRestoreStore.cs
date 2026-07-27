@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Web.Script.Serialization;
 using LSTY.SevenDPanel.Adapters.Local.Files;
 using LSTY.SevenDPanel.Application.Backups;
 using LSTY.SevenDPanel.Domain.Backups;
 using LSTY.SevenDPanel.Domain.Jobs;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LSTY.SevenDPanel.Adapters.Local.Restore
 {
@@ -279,11 +280,20 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
         internal static Dictionary<string, object?> ParseObject(string json)
         {
             if (string.IsNullOrWhiteSpace(json)) throw new FormatException("json_invalid");
-            var serializer = NewSerializer();
-            var value = serializer.DeserializeObject(json);
-            if (value is not Dictionary<string, object> dictionary)
+            if (json.Length > 2 * 1024 * 1024) throw new FormatException("json_invalid");
+            using var reader = new JsonTextReader(new StringReader(json))
+            {
+                MaxDepth = 32,
+                DateParseHandling = DateParseHandling.None,
+                FloatParseHandling = FloatParseHandling.Decimal
+            };
+            var value = JToken.ReadFrom(reader);
+            if (value is not JObject dictionary)
                 throw new FormatException("json_object_required");
-            return dictionary.ToDictionary(pair => pair.Key, pair => (object?)pair.Value, StringComparer.Ordinal);
+            return dictionary.Properties().ToDictionary(
+                pair => pair.Name,
+                pair => ToPlainValue(pair.Value),
+                StringComparer.Ordinal);
         }
 
         internal static void RequireProperties(
@@ -421,7 +431,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                 },
                 ["stage"] = stage.ToString()
             };
-            return NewSerializer().Serialize(value);
+            return JsonConvert.SerializeObject(value);
         }
 
         private static T ParseEnum<T>(string value) where T : struct
@@ -434,11 +444,28 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
             return result;
         }
 
-        private static JavaScriptSerializer NewSerializer() => new JavaScriptSerializer
+        private static object? ToPlainValue(JToken value) => value.Type switch
         {
-            MaxJsonLength = 2 * 1024 * 1024,
-            RecursionLimit = 32
+            JTokenType.Object => ((JObject)value).Properties().ToDictionary(
+                pair => pair.Name,
+                pair => ToPlainValue(pair.Value),
+                StringComparer.Ordinal),
+            JTokenType.Array => ((JArray)value).Select(ToPlainValue).ToArray(),
+            JTokenType.Integer => ToInteger(Convert.ToInt64(
+                ((JValue)value).Value,
+                CultureInfo.InvariantCulture)),
+            JTokenType.Float => Convert.ToDecimal(
+                ((JValue)value).Value,
+                CultureInfo.InvariantCulture),
+            JTokenType.String => (string?)((JValue)value).Value,
+            JTokenType.Boolean => (bool)((JValue)value).Value!,
+            JTokenType.Null => null,
+            _ when value is JValue scalar => scalar.Value,
+            _ => throw new FormatException("json_value_invalid")
         };
+
+        private static object ToInteger(long value) =>
+            value >= int.MinValue && value <= int.MaxValue ? (object)(int)value : value;
 
         private sealed record ParsedState(
             int Version,
