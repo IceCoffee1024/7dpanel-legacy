@@ -67,11 +67,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             Language = source.Language;
             ConnectionAddress = source.ConnectionAddress;
             ConnectionPort = source.ConnectionPort;
-            OnlinePlayerCount = source.OnlinePlayerCount;
             MaximumPlayerCount = source.MaximumPlayerCount;
-            HistoricalPlayerCount = source.HistoricalPlayerCount;
-            FramesPerSecond = source.FramesPerSecond;
-            GameTime = source.GameTime;
+            RuntimeMetrics = source.RuntimeMetrics == null
+                ? null
+                : new GameRuntimeMetricsHttpResponse(source.RuntimeMetrics);
         }
 
         public string Availability { get; }
@@ -87,11 +86,71 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public string? Language { get; }
         public string? ConnectionAddress { get; }
         public int? ConnectionPort { get; }
-        public int? OnlinePlayerCount { get; }
         public int? MaximumPlayerCount { get; }
-        public int? HistoricalPlayerCount { get; }
-        public double? FramesPerSecond { get; }
-        public string? GameTime { get; }
+        public GameRuntimeMetricsHttpResponse? RuntimeMetrics { get; }
+    }
+
+    public sealed class GameRuntimeMetricsHttpResponse
+    {
+        internal GameRuntimeMetricsHttpResponse(GameRuntimeMetrics source)
+        {
+            GameDayTime = new ObservedMetricHttpResponse<string>(source.GameDayTime);
+            IsBloodMoon = new ObservedMetricHttpResponse<bool?>(source.IsBloodMoon);
+            FramesPerSecond = new ObservedMetricHttpResponse<double?>(source.FramesPerSecond);
+            OnlinePlayerCount = new ObservedMetricHttpResponse<int?>(source.OnlinePlayerCount);
+            HistoricalPlayerCount = new ObservedMetricHttpResponse<int?>(source.HistoricalPlayerCount);
+            AnimalCount = new ObservedMetricHttpResponse<int?>(source.AnimalCount);
+            HostileEntityCount = new ObservedMetricHttpResponse<int?>(source.HostileEntityCount);
+            ActiveEntityCount = new ObservedMetricHttpResponse<int?>(source.ActiveEntityCount);
+            ChunkCount = new ObservedMetricHttpResponse<int?>(source.ChunkCount);
+            DroppedItemCount = new ObservedMetricHttpResponse<int?>(source.DroppedItemCount);
+            GameMemoryBytes = new ObservedMetricHttpResponse<long?>(source.GameMemoryBytes);
+        }
+
+        public ObservedMetricHttpResponse<string> GameDayTime { get; }
+        public ObservedMetricHttpResponse<bool?> IsBloodMoon { get; }
+        public ObservedMetricHttpResponse<double?> FramesPerSecond { get; }
+        public ObservedMetricHttpResponse<int?> OnlinePlayerCount { get; }
+        public ObservedMetricHttpResponse<int?> HistoricalPlayerCount { get; }
+        public ObservedMetricHttpResponse<int?> AnimalCount { get; }
+        public ObservedMetricHttpResponse<int?> HostileEntityCount { get; }
+        public ObservedMetricHttpResponse<int?> ActiveEntityCount { get; }
+        public ObservedMetricHttpResponse<int?> ChunkCount { get; }
+        public ObservedMetricHttpResponse<int?> DroppedItemCount { get; }
+        public ObservedMetricHttpResponse<long?> GameMemoryBytes { get; }
+    }
+
+    public sealed class ObservedMetricHttpResponse<T>
+    {
+        internal ObservedMetricHttpResponse(ObservedMetric<T> source)
+        {
+            Value = source.Value;
+            Source = source.Source;
+            Unit = source.Unit;
+            ObservedAtUtc = source.ObservedAtUtc;
+            Warning = ToContract(source.Warning);
+        }
+
+        public T? Value { get; }
+        public string Source { get; }
+        public string Unit { get; }
+        public DateTimeOffset ObservedAtUtc { get; }
+        public string? Warning { get; }
+
+        private static string? ToContract(RuntimeMetricWarningCode? warning)
+        {
+            switch (warning)
+            {
+                case RuntimeMetricWarningCode.ReadFailed:
+                    return "readFailed";
+                case RuntimeMetricWarningCode.Unsupported:
+                    return "unsupported";
+                case null:
+                    return null;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(warning));
+            }
+        }
     }
 
     public sealed class HostOverviewHttpResponse

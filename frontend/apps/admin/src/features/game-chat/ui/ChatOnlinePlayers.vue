@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import type { OnlinePlayer } from '../../players/api/onlinePlayers'
 
-const props = withDefaults(defineProps<{
+import { useI18n } from 'vue-i18n'
+
+const props = defineProps<{
   players: readonly OnlinePlayer[]
   selectedTarget: OnlinePlayer | null
-  emptyLabel?: string
-  unavailableLabel?: string
-}>(), {
-  emptyLabel: 'No players are online.',
-  unavailableLabel: 'Private messaging unavailable',
-})
+}>()
 
 const emit = defineEmits<{
   select: [player: OnlinePlayer]
 }>()
+const { t } = useI18n()
 
 function canSelect(player: OnlinePlayer): boolean {
   return player.crossplatformIdentity?.combinedId.trim() !== ''
@@ -30,7 +28,7 @@ function isSelected(player: OnlinePlayer): boolean {
 <template>
   <div class="min-h-0">
     <p v-if="players.length === 0" class="py-8 text-center text-sm text-muted">
-      {{ emptyLabel }}
+      {{ t('gameChat.live.playersEmpty') }}
     </p>
     <ul v-else class="space-y-2">
       <li v-for="player in players" :key="`${player.entityId}:${player.platformIdentity.combinedId}`">
@@ -45,11 +43,11 @@ function isSelected(player: OnlinePlayer): boolean {
         >
           <span class="min-w-0 flex-1">
             <span class="block truncate font-medium text-highlighted">{{ player.name }}</span>
-            <span class="block font-mono text-xs text-muted">entity {{ player.entityId }}</span>
+            <span class="block font-mono text-xs text-muted">{{ t('gameChat.common.entityIdValue', { id: player.entityId }) }}</span>
             <span v-if="player.crossplatformIdentity" class="block truncate font-mono text-xs text-dimmed">
               {{ player.crossplatformIdentity.combinedId }}
             </span>
-            <span v-else class="block text-xs text-warning">{{ unavailableLabel }}</span>
+            <span v-else class="block text-xs text-warning">{{ t('gameChat.live.privateUnavailable') }}</span>
           </span>
         </UButton>
       </li>

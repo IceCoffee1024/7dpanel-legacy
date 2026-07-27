@@ -1,24 +1,16 @@
 <script setup lang="ts">
 import type { OnlinePlayer } from '../../players/api/onlinePlayers'
 
+import { useI18n } from 'vue-i18n'
+
 const props = withDefaults(defineProps<{
   draft: string
   selectedTarget: OnlinePlayer | null
   isSubmitting: boolean
   sendError?: string | null
   sendHistory: readonly string[]
-  globalLabel?: string
-  privateLabel?: string
-  placeholder?: string
-  sendLabel?: string
-  clearTargetLabel?: string
 }>(), {
   sendError: null,
-  globalLabel: 'Global chat',
-  privateLabel: 'Private message',
-  placeholder: 'Type a message…',
-  sendLabel: 'Send',
-  clearTargetLabel: 'Clear private target',
 })
 
 const emit = defineEmits<{
@@ -27,6 +19,7 @@ const emit = defineEmits<{
   navigateHistory: [direction: -1 | 1]
   submit: []
 }>()
+const { t } = useI18n()
 
 function updateDraft(value: string | number) {
   emit('updateDraft', String(value))
@@ -51,7 +44,7 @@ function handleKeydown(event: KeyboardEvent) {
   <div class="shrink-0 border-t border-default bg-default p-3">
     <div class="mb-2 flex min-w-0 items-center gap-2 text-xs">
       <UBadge :color="selectedTarget ? 'warning' : 'info'" variant="subtle">
-        {{ selectedTarget ? privateLabel : globalLabel }}
+        {{ selectedTarget ? t('gameChat.live.composer.private') : t('gameChat.live.composer.global') }}
       </UBadge>
       <span v-if="selectedTarget" class="min-w-0 truncate font-medium text-highlighted">
         {{ selectedTarget.name }} · {{ selectedTarget.crossplatformIdentity?.combinedId }}
@@ -62,7 +55,7 @@ function handleKeydown(event: KeyboardEvent) {
         color="neutral"
         data-testid="clear-private-target"
         icon="i-lucide-x"
-        :label="clearTargetLabel"
+        :label="t('gameChat.live.composer.clearTarget')"
         size="xs"
         variant="ghost"
         @click="emit('clearTarget')"
@@ -80,14 +73,14 @@ function handleKeydown(event: KeyboardEvent) {
 
     <div class="flex min-w-0 items-end gap-2">
       <UTextarea
-        aria-label="Chat message"
+        :aria-label="t('gameChat.live.composer.messageAria')"
         autoresize
         class="min-w-0 flex-1"
         data-testid="chat-composer-input"
         :disabled="isSubmitting"
         :maxrows="6"
         :model-value="draft"
-        :placeholder="placeholder"
+        :placeholder="t('gameChat.live.composer.placeholder')"
         :rows="2"
         @keydown="handleKeydown"
         @update:model-value="updateDraft"
@@ -96,14 +89,14 @@ function handleKeydown(event: KeyboardEvent) {
         class="shrink-0"
         :disabled="isSubmitting || draft.trim() === ''"
         icon="i-lucide-send-horizontal"
-        :label="sendLabel"
+        :label="t('gameChat.live.composer.send')"
         :loading="isSubmitting"
         size="lg"
         @click="emit('submit')"
       />
     </div>
     <p class="mt-1 text-xs text-dimmed">
-      Enter to send · Shift+Enter for a new line
+      {{ t('gameChat.live.composer.keyboardHelp') }}
     </p>
   </div>
 </template>

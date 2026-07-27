@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AccessListsDeleteBanData, AccessListsDeleteBanResponses, AccessListsDeleteWhitelistData, AccessListsDeleteWhitelistResponses, AccessListsGetBansData, AccessListsGetBansResponses, AccessListsGetWhitelistData, AccessListsGetWhitelistResponses, AccessListsPutBanData, AccessListsPutBanResponses, AccessListsPutWhitelistData, AccessListsPutWhitelistResponses, ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, ChatCreateColoredProfileData, ChatCreateColoredProfileErrors, ChatCreateColoredProfileResponses, ChatDeleteColoredProfileData, ChatDeleteColoredProfileErrors, ChatDeleteColoredProfileResponses, ChatGetColoredProfilesData, ChatGetColoredProfilesErrors, ChatGetColoredProfilesResponses, ChatGetColoredSettingsData, ChatGetColoredSettingsErrors, ChatGetColoredSettingsResponses, ChatGetMessagesData, ChatGetMessagesErrors, ChatGetMessagesResponses, ChatGetRecentMessagesData, ChatGetRecentMessagesErrors, ChatGetRecentMessagesResponses, ChatGetSettingsData, ChatGetSettingsErrors, ChatGetSettingsResponses, ChatResetColoredSettingsData, ChatResetColoredSettingsErrors, ChatResetColoredSettingsResponses, ChatResetSettingsData, ChatResetSettingsErrors, ChatResetSettingsResponses, ChatSendGlobalMessageData, ChatSendGlobalMessageErrors, ChatSendGlobalMessageResponses, ChatSendPrivateMessageData, ChatSendPrivateMessageErrors, ChatSendPrivateMessageResponses, ChatUpdateColoredProfileData, ChatUpdateColoredProfileErrors, ChatUpdateColoredProfileResponses, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsErrors, ChatUpdateColoredSettingsResponses, ChatUpdateSettingsData, ChatUpdateSettingsErrors, ChatUpdateSettingsResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, GamePermissionsDeleteAdminData, GamePermissionsDeleteAdminResponses, GamePermissionsDeleteCommandData, GamePermissionsDeleteCommandResponses, GamePermissionsGetAdminsData, GamePermissionsGetAdminsResponses, GamePermissionsGetCommandsData, GamePermissionsGetCommandsResponses, GamePermissionsPutAdminData, GamePermissionsPutAdminResponses, GamePermissionsPutCommandData, GamePermissionsPutCommandResponses, GameResourcesGetData, GameResourcesGetErrors, GameResourcesGetIconData, GameResourcesGetIconErrors, GameResourcesGetIconResponses, GameResourcesGetResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, MapGetGameTimeData, MapGetGameTimeErrors, MapGetGameTimeResponses, MapGetLayerData, MapGetLayerErrors, MapGetLayerResponses, MapGetMetadataData, MapGetMetadataErrors, MapGetMetadataResponses, MapGetPlayerTrackData, MapGetPlayerTrackErrors, MapGetPlayerTrackResponses, MapGetTileData, MapGetTileErrors, MapGetTileResponses, MapSearchPlayersInAreaData, MapSearchPlayersInAreaErrors, MapSearchPlayersInAreaResponses, ModsGetData, ModsGetResponses, ModsPutData, ModsPutResponses, OverviewGetData, OverviewGetResponses, PanelUsersDeleteData, PanelUsersDeleteResponses, PanelUsersGetData, PanelUsersGetResponses, PanelUsersPostData, PanelUsersPostResponses, PanelUsersPutData, PanelUsersPutResponses, PanelUsersResetPasswordData, PanelUsersResetPasswordResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ServerConfigurationGetData, ServerConfigurationGetResponses, ServerConfigurationPutData, ServerConfigurationPutResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses } from './types.gen';
+import type { AccessListsDeleteBanData, AccessListsDeleteBanResponses, AccessListsDeleteWhitelistData, AccessListsDeleteWhitelistResponses, AccessListsGetBansData, AccessListsGetBansResponses, AccessListsGetWhitelistData, AccessListsGetWhitelistResponses, AccessListsPutBanData, AccessListsPutBanResponses, AccessListsPutWhitelistData, AccessListsPutWhitelistResponses, AchievementsGetRecordData, AchievementsGetRecordResponses, AchievementsPutDefinitionData, AchievementsPutDefinitionResponses, ApiKeysDeleteData, ApiKeysDeleteErrors, ApiKeysDeleteResponses, ApiKeysGetData, ApiKeysGetErrors, ApiKeysGetResponses, ApiKeysPostData, ApiKeysPostErrors, ApiKeysPostResponses, AutomationsCreateData, AutomationsCreateResponses, AutomationsDeleteData, AutomationsDeleteResponses, AutomationsDryRunData, AutomationsDryRunResponses, AutomationsFindData, AutomationsFindExecutionData, AutomationsFindExecutionResponses, AutomationsFindResponses, AutomationsListData, AutomationsListExecutionsData, AutomationsListExecutionsResponses, AutomationsListResponses, AutomationsUpdateData, AutomationsUpdateResponses, AutomationsValidateData, AutomationsValidateResponses, BackupPoliciesListData, BackupPoliciesListResponses, BackupPoliciesUpdateData, BackupPoliciesUpdateResponses, CancelJobData, CancelJobErrors, CancelJobResponses, ChatCreateColoredProfileData, ChatCreateColoredProfileErrors, ChatCreateColoredProfileResponses, ChatDeleteColoredProfileData, ChatDeleteColoredProfileErrors, ChatDeleteColoredProfileResponses, ChatGetColoredProfilesData, ChatGetColoredProfilesErrors, ChatGetColoredProfilesResponses, ChatGetColoredSettingsData, ChatGetColoredSettingsErrors, ChatGetColoredSettingsResponses, ChatGetMessagesData, ChatGetMessagesErrors, ChatGetMessagesResponses, ChatGetRecentMessagesData, ChatGetRecentMessagesErrors, ChatGetRecentMessagesResponses, ChatGetSettingsData, ChatGetSettingsErrors, ChatGetSettingsResponses, ChatResetColoredSettingsData, ChatResetColoredSettingsErrors, ChatResetColoredSettingsResponses, ChatResetSettingsData, ChatResetSettingsErrors, ChatResetSettingsResponses, ChatSendGlobalMessageData, ChatSendGlobalMessageErrors, ChatSendGlobalMessageResponses, ChatSendPrivateMessageData, ChatSendPrivateMessageErrors, ChatSendPrivateMessageResponses, ChatUpdateColoredProfileData, ChatUpdateColoredProfileErrors, ChatUpdateColoredProfileResponses, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsErrors, ChatUpdateColoredSettingsResponses, ChatUpdateSettingsData, ChatUpdateSettingsErrors, ChatUpdateSettingsResponses, CommerceAdjustBalanceData, CommerceAdjustBalanceResponses, CommerceCreateRedeemCodeData, CommerceCreateRedeemCodeResponses, CommerceFreezeAccountData, CommerceFreezeAccountResponses, CommerceGetAccountsData, CommerceGetAccountsResponses, CommerceGetLeaderboardData, CommerceGetLeaderboardResponses, CommerceGetProductData, CommerceGetProductResponses, CommerceGetPurchaseData, CommerceGetPurchaseResponses, CommerceGetRedeemCodeData, CommerceGetRedeemCodeResponses, CommerceGetTransactionsData, CommerceGetTransactionsResponses, CommercePurchaseData, CommercePurchaseResponses, CommercePutProductData, CommercePutProductResponses, CommerceRedeemData, CommerceRedeemResponses, CommunityCastVoteData, CommunityCastVoteResponses, CommunityCreateTeleportOperationData, CommunityCreateTeleportOperationResponses, CommunityDeleteFriendshipData, CommunityDeleteFriendshipResponses, CommunityDeleteHomeData, CommunityDeleteHomeResponses, CommunityDispatchVoteRoundData, CommunityDispatchVoteRoundResponses, CommunityGetCitiesData, CommunityGetCitiesResponses, CommunityGetCityData, CommunityGetCityResponses, CommunityGetFriendshipData, CommunityGetFriendshipRecordsData, CommunityGetFriendshipRecordsResponses, CommunityGetFriendshipResponses, CommunityGetHomeData, CommunityGetHomeResponses, CommunityGetHomesData, CommunityGetHomesResponses, CommunityGetTeleportOperationData, CommunityGetTeleportOperationResponses, CommunityGetTeleportOperationsData, CommunityGetTeleportOperationsResponses, CommunityGetTeleportSettingData, CommunityGetTeleportSettingResponses, CommunityGetTeleportSettingsData, CommunityGetTeleportSettingsResponses, CommunityGetVoteConfigurationData, CommunityGetVoteConfigurationResponses, CommunityGetVoteConfigurationsData, CommunityGetVoteConfigurationsResponses, CommunityGetVoteRoundData, CommunityGetVoteRoundResponses, CommunityGetVoteRoundsData, CommunityGetVoteRoundsResponses, CommunityInviteFriendData, CommunityInviteFriendResponses, CommunityPutCityData, CommunityPutCityResponses, CommunityPutTeleportSettingData, CommunityPutTeleportSettingResponses, CommunityPutVoteConfigurationData, CommunityPutVoteConfigurationResponses, CommunityRespondFriendData, CommunityRespondFriendResponses, CommunitySettleVoteRoundData, CommunitySettleVoteRoundResponses, CommunityStartVoteRoundData, CommunityStartVoteRoundResponses, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogErrors, ConsoleCommandsGetCatalogResponses, ConsoleCommandsPostData, ConsoleCommandsPostErrors, ConsoleCommandsPostResponses, ConsoleLogsGetRecentData, ConsoleLogsGetRecentErrors, ConsoleLogsGetRecentResponses, CreateChatMuteData, CreateChatMuteErrors, CreateChatMuteResponses, CreatePanelDatabaseBackupData, CreatePanelDatabaseBackupResponses, CreateScheduleData, CreateScheduleErrors, CreateScheduleResponses, CreateServerConfigurationBackupData, CreateServerConfigurationBackupResponses, CreateWorldBackupData, CreateWorldBackupResponses, DeleteBackupData, DeleteBackupResponses, DeleteScheduleData, DeleteScheduleErrors, DeleteScheduleResponses, DisableScheduleData, DisableScheduleErrors, DisableScheduleResponses, DiscordIntegrationCreateBindingCodeData, DiscordIntegrationCreateBindingCodeResponses, DiscordIntegrationDeleteBindingData, DiscordIntegrationDeleteBindingResponses, DiscordIntegrationGetBindingsData, DiscordIntegrationGetBindingsResponses, DiscordIntegrationGetCommandsData, DiscordIntegrationGetCommandsResponses, DiscordIntegrationGetConfigurationData, DiscordIntegrationGetConfigurationResponses, DiscordIntegrationGetDeliveriesData, DiscordIntegrationGetDeliveriesResponses, DiscordIntegrationPostInteractionData, DiscordIntegrationPostInteractionResponses, DiscordIntegrationPutConfigurationData, DiscordIntegrationPutConfigurationResponses, DiscordIntegrationRetryDeliveryData, DiscordIntegrationRetryDeliveryResponses, DiscordIntegrationTestData, DiscordIntegrationTestResponses, DownloadBackupData, DownloadBackupResponses, EnableScheduleData, EnableScheduleErrors, EnableScheduleResponses, GamePermissionsDeleteAdminData, GamePermissionsDeleteAdminResponses, GamePermissionsDeleteCommandData, GamePermissionsDeleteCommandResponses, GamePermissionsGetAdminsData, GamePermissionsGetAdminsResponses, GamePermissionsGetCommandsData, GamePermissionsGetCommandsResponses, GamePermissionsPutAdminData, GamePermissionsPutAdminResponses, GamePermissionsPutCommandData, GamePermissionsPutCommandResponses, GameResourcesGetData, GameResourcesGetErrors, GameResourcesGetIconData, GameResourcesGetIconErrors, GameResourcesGetIconResponses, GameResourcesGetResponses, GeoIpAccessPoliciesGetData, GeoIpAccessPoliciesGetDiagnosticsData, GeoIpAccessPoliciesGetDiagnosticsResponses, GeoIpAccessPoliciesGetResponses, GeoIpAccessPoliciesPutCredentialsData, GeoIpAccessPoliciesPutCredentialsResponses, GeoIpAccessPoliciesPutData, GeoIpAccessPoliciesPutResponses, GeoIpAccessPoliciesTestData, GeoIpAccessPoliciesTestResponses, GetJobData, GetJobErrors, GetJobResponses, GetScheduleData, GetScheduleErrors, GetScheduleResponses, HealthGet2Data, HealthGet2Responses, HealthGetData, HealthGetResponses, IssueAccessTokenData, IssueAccessTokenErrors, IssueAccessTokenResponses, ListAuditEntriesData, ListAuditEntriesErrors, ListAuditEntriesResponses, ListBackupsData, ListBackupsResponses, ListChatMutesData, ListChatMutesErrors, ListChatMutesResponses, ListGameEventsData, ListGameEventsErrors, ListGameEventsResponses, ListJobsData, ListJobsErrors, ListJobsResponses, ListSchedulesData, ListSchedulesErrors, ListSchedulesResponses, MapGetGameTimeData, MapGetGameTimeErrors, MapGetGameTimeResponses, MapGetLayerData, MapGetLayerErrors, MapGetLayerResponses, MapGetMetadataData, MapGetMetadataErrors, MapGetMetadataResponses, MapGetPlayerTrackData, MapGetPlayerTrackErrors, MapGetPlayerTrackResponses, MapGetTileData, MapGetTileErrors, MapGetTileResponses, MapJobsGetResourceVersionData, MapJobsGetResourceVersionResponses, MapJobsRefreshResourcesData, MapJobsRefreshResourcesResponses, MapJobsRenderExploredData, MapJobsRenderExploredResponses, MapJobsRenderFullData, MapJobsRenderFullResponses, MapSearchPlayersInAreaData, MapSearchPlayersInAreaErrors, MapSearchPlayersInAreaResponses, ModsGetData, ModsGetResponses, ModsPutData, ModsPutResponses, ModulesDisableData, ModulesDisableResponses, ModulesEnableData, ModulesEnableResponses, ModulesGetData, ModulesGetResponses, OnlineRewardsGetRecordsData, OnlineRewardsGetRecordsResponses, OnlineRewardsManualGrantData, OnlineRewardsManualGrantResponses, OnlineRewardsPutRuleData, OnlineRewardsPutRuleResponses, OverviewGetData, OverviewGetResponses, PanelUsersDeleteData, PanelUsersDeleteResponses, PanelUsersGetData, PanelUsersGetResponses, PanelUsersPostData, PanelUsersPostResponses, PanelUsersPutData, PanelUsersPutResponses, PanelUsersResetPasswordData, PanelUsersResetPasswordResponses, PlayerActionsClearInventoryData, PlayerActionsClearInventoryErrors, PlayerActionsClearInventoryResponses, PlayerActionsGetData, PlayerActionsGetErrors, PlayerActionsGetResponses, PlayerActionsGrantItemData, PlayerActionsGrantItemErrors, PlayerActionsGrantItemResponses, PlayerActionsRemoveItemData, PlayerActionsRemoveItemErrors, PlayerActionsRemoveItemResponses, PlayerActionsResetPlayerDataData, PlayerActionsResetPlayerDataErrors, PlayerActionsResetPlayerDataResponses, PlayerActionsResetSkillsData, PlayerActionsResetSkillsErrors, PlayerActionsResetSkillsResponses, PlayerEvidenceGetInventoryDiffsData, PlayerEvidenceGetInventoryDiffsErrors, PlayerEvidenceGetInventoryDiffsResponses, PlayerEvidenceGetInventorySnapshotsData, PlayerEvidenceGetInventorySnapshotsErrors, PlayerEvidenceGetInventorySnapshotsResponses, PlayerEvidenceGetProfileData, PlayerEvidenceGetProfileErrors, PlayerEvidenceGetProfileResponses, PlayerEvidenceGetSkillsData, PlayerEvidenceGetSkillsErrors, PlayerEvidenceGetSkillsResponses, PlayersGetData, PlayersGetErrors, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerErrors, PlayersGetHistoricalPlayerResponses, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersErrors, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsErrors, PlayersGetHistoricalPlayerSnapshotsResponses, PlayersGetHistoricalPlayersResponses, PlayersGetResponses, PlayersKickData, PlayersKickErrors, PlayersKickResponses, ReleaseChatMuteData, ReleaseChatMuteErrors, ReleaseChatMuteResponses, RestoreBackupData, RestoreBackupResponses, RewardsCompensateData, RewardsCompensateResponses, RewardsConfirmData, RewardsConfirmResponses, RewardsGetDailyPolicyData, RewardsGetDailyPolicyResponses, RewardsGetGrantData, RewardsGetGrantResponses, RewardsGetPackageData, RewardsGetPackageResponses, RewardsGetPendingGrantsData, RewardsGetPendingGrantsResponses, RewardsGrantData, RewardsGrantResponses, RewardsPutDailyPolicyData, RewardsPutDailyPolicyResponses, RewardsPutPackageData, RewardsPutPackageResponses, RewardsRefundData, RewardsRefundResponses, SendAnnouncementData, SendAnnouncementErrors, SendAnnouncementResponses, ServerConfigurationGetData, ServerConfigurationGetResponses, ServerConfigurationPutData, ServerConfigurationPutResponses, ServerEventsGetData, ServerEventsGetErrors, ServerEventsGetResponses, ServerOperationsRestartData, ServerOperationsRestartErrors, ServerOperationsRestartResponses, ServerOperationsShutdownData, ServerOperationsShutdownErrors, ServerOperationsShutdownResponses, UpdateChatMuteData, UpdateChatMuteErrors, UpdateChatMuteResponses, UpdateScheduleData, UpdateScheduleErrors, UpdateScheduleResponses, WorldGetBlockCatalogData, WorldGetBlockCatalogResponses, WorldGetContainersData, WorldGetContainersResponses, WorldGetDronesData, WorldGetDronesResponses, WorldGetEntityTypeCatalogData, WorldGetEntityTypeCatalogResponses, WorldGetLandClaimsData, WorldGetLandClaimsResponses, WorldGetPrefabCatalogData, WorldGetPrefabCatalogResponses, WorldGetSummaryData, WorldGetSummaryResponses, WorldGetVehiclesData, WorldGetVehiclesResponses, WorldOperationsCleanupEntitiesData, WorldOperationsCleanupEntitiesResponses, WorldOperationsClearRegionData, WorldOperationsClearRegionResponses, WorldOperationsCollectGarbageData, WorldOperationsCollectGarbageResponses, WorldOperationsCopyRegionData, WorldOperationsCopyRegionResponses, WorldOperationsDeleteEntityData, WorldOperationsDeleteEntityResponses, WorldOperationsDeleteLandClaimData, WorldOperationsDeleteLandClaimResponses, WorldOperationsFillRegionData, WorldOperationsFillRegionResponses, WorldOperationsGetData, WorldOperationsGetResponses, WorldOperationsMoveEntityData, WorldOperationsMoveEntityResponses, WorldOperationsMoveOnlinePlayerData, WorldOperationsMoveOnlinePlayerResponses, WorldOperationsPasteRegionData, WorldOperationsPasteRegionResponses, WorldOperationsPlacePrefabData, WorldOperationsPlacePrefabResponses, WorldOperationsReloadResourceData, WorldOperationsReloadResourceResponses, WorldOperationsRemovePrefabData, WorldOperationsRemovePrefabResponses, WorldOperationsSetBlockData, WorldOperationsSetBlockResponses, WorldOperationsSpawnEntityData, WorldOperationsSpawnEntityResponses, WorldOperationsUndoData, WorldOperationsUndoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -68,6 +68,35 @@ export const accessListsPutWhitelist = <ThrowOnError extends boolean = true>(opt
     }
 });
 
+export const achievementsPutDefinition = <ThrowOnError extends boolean = true>(options: Options<AchievementsPutDefinitionData, ThrowOnError>) => (options.client ?? client).put<AchievementsPutDefinitionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/achievements/definitions/{achievementId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const achievementsGetRecord = <ThrowOnError extends boolean = true>(options: Options<AchievementsGetRecordData, ThrowOnError>) => (options.client ?? client).get<AchievementsGetRecordResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/achievements/records/{achievementId}/{crossplatformId}',
+    ...options
+});
+
+export const sendAnnouncement = <ThrowOnError extends boolean = true>(options?: Options<SendAnnouncementData, ThrowOnError>) => (options?.client ?? client).post<SendAnnouncementResponses, SendAnnouncementErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/announcements',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
 export const apiKeysGet = <ThrowOnError extends boolean = true>(options?: Options<ApiKeysGetData, ThrowOnError>) => (options?.client ?? client).get<ApiKeysGetResponses, ApiKeysGetErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -97,6 +126,178 @@ export const apiKeysDelete = <ThrowOnError extends boolean = true>(options: Opti
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/api-keys/{keyId}',
     ...options
+});
+
+/**
+ * Returns the Owner-only unified audit summary projection without sensitive source payloads.
+ */
+export const listAuditEntries = <ThrowOnError extends boolean = true>(options?: Options<ListAuditEntriesData, ThrowOnError>) => (options?.client ?? client).get<ListAuditEntriesResponses, ListAuditEntriesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/audit',
+    ...options
+});
+
+export const automationsList = <ThrowOnError extends boolean = true>(options?: Options<AutomationsListData, ThrowOnError>) => (options?.client ?? client).get<AutomationsListResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations',
+    ...options
+});
+
+export const automationsCreate = <ThrowOnError extends boolean = true>(options?: Options<AutomationsCreateData, ThrowOnError>) => (options?.client ?? client).post<AutomationsCreateResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const automationsDelete = <ThrowOnError extends boolean = true>(options: Options<AutomationsDeleteData, ThrowOnError>) => (options.client ?? client).delete<AutomationsDeleteResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{ruleId}',
+    ...options
+});
+
+export const automationsFind = <ThrowOnError extends boolean = true>(options: Options<AutomationsFindData, ThrowOnError>) => (options.client ?? client).get<AutomationsFindResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{ruleId}',
+    ...options
+});
+
+export const automationsUpdate = <ThrowOnError extends boolean = true>(options: Options<AutomationsUpdateData, ThrowOnError>) => (options.client ?? client).put<AutomationsUpdateResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{ruleId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const automationsValidate = <ThrowOnError extends boolean = true>(options?: Options<AutomationsValidateData, ThrowOnError>) => (options?.client ?? client).post<AutomationsValidateResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/validate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const automationsDryRun = <ThrowOnError extends boolean = true>(options?: Options<AutomationsDryRunData, ThrowOnError>) => (options?.client ?? client).post<AutomationsDryRunResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/dry-run',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const automationsListExecutions = <ThrowOnError extends boolean = true>(options?: Options<AutomationsListExecutionsData, ThrowOnError>) => (options?.client ?? client).get<AutomationsListExecutionsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/executions',
+    ...options
+});
+
+export const automationsFindExecution = <ThrowOnError extends boolean = true>(options: Options<AutomationsFindExecutionData, ThrowOnError>) => (options.client ?? client).get<AutomationsFindExecutionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/executions/{executionId}',
+    ...options
+});
+
+export const backupPoliciesList = <ThrowOnError extends boolean = true>(options?: Options<BackupPoliciesListData, ThrowOnError>) => (options?.client ?? client).get<BackupPoliciesListResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/policies',
+    ...options
+});
+
+export const backupPoliciesUpdate = <ThrowOnError extends boolean = true>(options: Options<BackupPoliciesUpdateData, ThrowOnError>) => (options.client ?? client).put<BackupPoliciesUpdateResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/policies/{kind}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createWorldBackup = <ThrowOnError extends boolean = true>(options?: Options<CreateWorldBackupData, ThrowOnError>) => (options?.client ?? client).post<CreateWorldBackupResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/world',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const createPanelDatabaseBackup = <ThrowOnError extends boolean = true>(options?: Options<CreatePanelDatabaseBackupData, ThrowOnError>) => (options?.client ?? client).post<CreatePanelDatabaseBackupResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/panel-database',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const createServerConfigurationBackup = <ThrowOnError extends boolean = true>(options?: Options<CreateServerConfigurationBackupData, ThrowOnError>) => (options?.client ?? client).post<CreateServerConfigurationBackupResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/server-configuration',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const listBackups = <ThrowOnError extends boolean = true>(options?: Options<ListBackupsData, ThrowOnError>) => (options?.client ?? client).get<ListBackupsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups',
+    ...options
+});
+
+export const downloadBackup = <ThrowOnError extends boolean = true>(options: Options<DownloadBackupData, ThrowOnError>) => (options.client ?? client).get<DownloadBackupResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/{backupId}/download',
+    ...options
+});
+
+export const deleteBackup = <ThrowOnError extends boolean = true>(options: Options<DeleteBackupData, ThrowOnError>) => (options.client ?? client).delete<DeleteBackupResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/{backupId}',
+    ...options
+});
+
+export const restoreBackup = <ThrowOnError extends boolean = true>(options: Options<RestoreBackupData, ThrowOnError>) => (options.client ?? client).post<RestoreBackupResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/backups/{backupId}/restore',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -216,6 +417,54 @@ export const chatUpdateColoredSettings = <ThrowOnError extends boolean = true>(o
 });
 
 /**
+ * Returns Owner-only active chat mutes using bounded keyset pagination.
+ */
+export const listChatMutes = <ThrowOnError extends boolean = true>(options?: Options<ListChatMutesData, ThrowOnError>) => (options?.client ?? client).get<ListChatMutesResponses, ListChatMutesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/mutes',
+    ...options
+});
+
+/**
+ * Creates and applies an Owner-only permanent or temporary chat mute.
+ */
+export const createChatMute = <ThrowOnError extends boolean = true>(options?: Options<CreateChatMuteData, ThrowOnError>) => (options?.client ?? client).post<CreateChatMuteResponses, CreateChatMuteErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/mutes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Releases an existing Owner-only chat mute.
+ */
+export const releaseChatMute = <ThrowOnError extends boolean = true>(options: Options<ReleaseChatMuteData, ThrowOnError>) => (options.client ?? client).delete<ReleaseChatMuteResponses, ReleaseChatMuteErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/mutes/{crossplatformId}',
+    ...options
+});
+
+/**
+ * Updates and applies an existing Owner-only chat mute.
+ */
+export const updateChatMute = <ThrowOnError extends boolean = true>(options: Options<UpdateChatMuteData, ThrowOnError>) => (options.client ?? client).put<UpdateChatMuteResponses, UpdateChatMuteErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/chat/mutes/{crossplatformId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Returns Owner-only colored chat profiles using a filter-bound opaque cursor.
  */
 export const chatGetColoredProfiles = <ThrowOnError extends boolean = true>(options?: Options<ChatGetColoredProfilesData, ThrowOnError>) => (options?.client ?? client).get<ChatGetColoredProfilesResponses, ChatGetColoredProfilesErrors, ThrowOnError, 'data'>({
@@ -263,6 +512,328 @@ export const chatUpdateColoredProfile = <ThrowOnError extends boolean = true>(op
     }
 });
 
+export const commerceGetAccounts = <ThrowOnError extends boolean = true>(options?: Options<CommerceGetAccountsData, ThrowOnError>) => (options?.client ?? client).get<CommerceGetAccountsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/economy/accounts',
+    ...options
+});
+
+export const commerceGetLeaderboard = <ThrowOnError extends boolean = true>(options?: Options<CommerceGetLeaderboardData, ThrowOnError>) => (options?.client ?? client).get<CommerceGetLeaderboardResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/economy/leaderboard',
+    ...options
+});
+
+export const commerceGetTransactions = <ThrowOnError extends boolean = true>(options?: Options<CommerceGetTransactionsData, ThrowOnError>) => (options?.client ?? client).get<CommerceGetTransactionsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/economy/transactions',
+    ...options
+});
+
+export const commerceFreezeAccount = <ThrowOnError extends boolean = true>(options: Options<CommerceFreezeAccountData, ThrowOnError>) => (options.client ?? client).post<CommerceFreezeAccountResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/economy/accounts/{accountId}/freeze',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const commerceAdjustBalance = <ThrowOnError extends boolean = true>(options: Options<CommerceAdjustBalanceData, ThrowOnError>) => (options.client ?? client).post<CommerceAdjustBalanceResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/economy/accounts/{crossplatformId}/adjust',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const commerceGetProduct = <ThrowOnError extends boolean = true>(options: Options<CommerceGetProductData, ThrowOnError>) => (options.client ?? client).get<CommerceGetProductResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/shop/products/{productId}',
+    ...options
+});
+
+export const commercePutProduct = <ThrowOnError extends boolean = true>(options: Options<CommercePutProductData, ThrowOnError>) => (options.client ?? client).put<CommercePutProductResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/shop/products/{productId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const commerceGetPurchase = <ThrowOnError extends boolean = true>(options: Options<CommerceGetPurchaseData, ThrowOnError>) => (options.client ?? client).get<CommerceGetPurchaseResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/shop/purchases/{purchaseId}',
+    ...options
+});
+
+export const commercePurchase = <ThrowOnError extends boolean = true>(options: Options<CommercePurchaseData, ThrowOnError>) => (options.client ?? client).post<CommercePurchaseResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/shop/products/{productId}/purchases',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const commerceGetRedeemCode = <ThrowOnError extends boolean = true>(options: Options<CommerceGetRedeemCodeData, ThrowOnError>) => (options.client ?? client).get<CommerceGetRedeemCodeResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/redeem-codes/{codeId}',
+    ...options
+});
+
+export const commerceCreateRedeemCode = <ThrowOnError extends boolean = true>(options?: Options<CommerceCreateRedeemCodeData, ThrowOnError>) => (options?.client ?? client).post<CommerceCreateRedeemCodeResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/redeem-codes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const commerceRedeem = <ThrowOnError extends boolean = true>(options?: Options<CommerceRedeemData, ThrowOnError>) => (options?.client ?? client).post<CommerceRedeemResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/redemptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const communityGetTeleportSettings = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetTeleportSettingsData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetTeleportSettingsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/teleport-settings',
+    ...options
+});
+
+export const communityGetTeleportSetting = <ThrowOnError extends boolean = true>(options: Options<CommunityGetTeleportSettingData, ThrowOnError>) => (options.client ?? client).get<CommunityGetTeleportSettingResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/teleport-settings/{kind}',
+    ...options
+});
+
+export const communityPutTeleportSetting = <ThrowOnError extends boolean = true>(options: Options<CommunityPutTeleportSettingData, ThrowOnError>) => (options.client ?? client).put<CommunityPutTeleportSettingResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/teleport-settings/{kind}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const communityGetHomes = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetHomesData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetHomesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/homes',
+    ...options
+});
+
+export const communityDeleteHome = <ThrowOnError extends boolean = true>(options: Options<CommunityDeleteHomeData, ThrowOnError>) => (options.client ?? client).delete<CommunityDeleteHomeResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/homes/{crossplatformId}/{name}',
+    ...options
+});
+
+export const communityGetHome = <ThrowOnError extends boolean = true>(options: Options<CommunityGetHomeData, ThrowOnError>) => (options.client ?? client).get<CommunityGetHomeResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/homes/{crossplatformId}/{name}',
+    ...options
+});
+
+export const communityGetCities = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetCitiesData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetCitiesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/cities',
+    ...options
+});
+
+export const communityGetCity = <ThrowOnError extends boolean = true>(options: Options<CommunityGetCityData, ThrowOnError>) => (options.client ?? client).get<CommunityGetCityResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/cities/{name}',
+    ...options
+});
+
+export const communityPutCity = <ThrowOnError extends boolean = true>(options: Options<CommunityPutCityData, ThrowOnError>) => (options.client ?? client).put<CommunityPutCityResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/cities/{cityId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const communityGetFriendship = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetFriendshipData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetFriendshipResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/friendships',
+    ...options
+});
+
+export const communityGetFriendshipRecords = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetFriendshipRecordsData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetFriendshipRecordsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/friendships/records',
+    ...options
+});
+
+export const communityInviteFriend = <ThrowOnError extends boolean = true>(options?: Options<CommunityInviteFriendData, ThrowOnError>) => (options?.client ?? client).post<CommunityInviteFriendResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/friendships/requests',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const communityRespondFriend = <ThrowOnError extends boolean = true>(options: Options<CommunityRespondFriendData, ThrowOnError>) => (options.client ?? client).post<CommunityRespondFriendResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/friendships/requests/{requestId}/responses',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const communityDeleteFriendship = <ThrowOnError extends boolean = true>(options: Options<CommunityDeleteFriendshipData, ThrowOnError>) => (options.client ?? client).delete<CommunityDeleteFriendshipResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/friendships/{firstCrossplatformId}/{secondCrossplatformId}',
+    ...options
+});
+
+export const communityGetTeleportOperation = <ThrowOnError extends boolean = true>(options: Options<CommunityGetTeleportOperationData, ThrowOnError>) => (options.client ?? client).get<CommunityGetTeleportOperationResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/teleport-operations/{operationId}',
+    ...options
+});
+
+export const communityGetTeleportOperations = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetTeleportOperationsData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetTeleportOperationsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/teleport-operations',
+    ...options
+});
+
+export const communityCreateTeleportOperation = <ThrowOnError extends boolean = true>(options?: Options<CommunityCreateTeleportOperationData, ThrowOnError>) => (options?.client ?? client).post<CommunityCreateTeleportOperationResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/teleport-operations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const communityGetVoteConfigurations = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetVoteConfigurationsData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetVoteConfigurationsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-configurations',
+    ...options
+});
+
+export const communityGetVoteConfiguration = <ThrowOnError extends boolean = true>(options: Options<CommunityGetVoteConfigurationData, ThrowOnError>) => (options.client ?? client).get<CommunityGetVoteConfigurationResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-configurations/{kind}',
+    ...options
+});
+
+export const communityPutVoteConfiguration = <ThrowOnError extends boolean = true>(options: Options<CommunityPutVoteConfigurationData, ThrowOnError>) => (options.client ?? client).put<CommunityPutVoteConfigurationResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-configurations/{kind}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const communityGetVoteRounds = <ThrowOnError extends boolean = true>(options?: Options<CommunityGetVoteRoundsData, ThrowOnError>) => (options?.client ?? client).get<CommunityGetVoteRoundsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-rounds',
+    ...options
+});
+
+export const communityStartVoteRound = <ThrowOnError extends boolean = true>(options?: Options<CommunityStartVoteRoundData, ThrowOnError>) => (options?.client ?? client).post<CommunityStartVoteRoundResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-rounds',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const communityGetVoteRound = <ThrowOnError extends boolean = true>(options: Options<CommunityGetVoteRoundData, ThrowOnError>) => (options.client ?? client).get<CommunityGetVoteRoundResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-rounds/{roundId}',
+    ...options
+});
+
+export const communityCastVote = <ThrowOnError extends boolean = true>(options: Options<CommunityCastVoteData, ThrowOnError>) => (options.client ?? client).post<CommunityCastVoteResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-rounds/{roundId}/votes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const communitySettleVoteRound = <ThrowOnError extends boolean = true>(options: Options<CommunitySettleVoteRoundData, ThrowOnError>) => (options.client ?? client).post<CommunitySettleVoteRoundResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-rounds/{roundId}/settle',
+    ...options
+});
+
+export const communityDispatchVoteRound = <ThrowOnError extends boolean = true>(options: Options<CommunityDispatchVoteRoundData, ThrowOnError>) => (options.client ?? client).post<CommunityDispatchVoteRoundResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/community/vote-rounds/{roundId}/dispatch',
+    ...options
+});
+
 export const consoleCommandsGetCatalog = <ThrowOnError extends boolean = true>(options?: Options<ConsoleCommandsGetCatalogData, ThrowOnError>) => (options?.client ?? client).get<ConsoleCommandsGetCatalogResponses, ConsoleCommandsGetCatalogErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -285,6 +856,97 @@ export const consoleLogsGetRecent = <ThrowOnError extends boolean = true>(option
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/console/logs/recent',
+    ...options
+});
+
+export const discordIntegrationGetConfiguration = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationGetConfigurationData, ThrowOnError>) => (options?.client ?? client).get<DiscordIntegrationGetConfigurationResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord',
+    ...options
+});
+
+export const discordIntegrationPutConfiguration = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationPutConfigurationData, ThrowOnError>) => (options?.client ?? client).put<DiscordIntegrationPutConfigurationResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const discordIntegrationTest = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationTestData, ThrowOnError>) => (options?.client ?? client).post<DiscordIntegrationTestResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/test',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const discordIntegrationGetDeliveries = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationGetDeliveriesData, ThrowOnError>) => (options?.client ?? client).get<DiscordIntegrationGetDeliveriesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/deliveries',
+    ...options
+});
+
+export const discordIntegrationRetryDelivery = <ThrowOnError extends boolean = true>(options: Options<DiscordIntegrationRetryDeliveryData, ThrowOnError>) => (options.client ?? client).post<DiscordIntegrationRetryDeliveryResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/deliveries/{deliveryId}/retry',
+    ...options
+});
+
+export const discordIntegrationGetBindings = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationGetBindingsData, ThrowOnError>) => (options?.client ?? client).get<DiscordIntegrationGetBindingsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/bindings',
+    ...options
+});
+
+export const discordIntegrationCreateBindingCode = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationCreateBindingCodeData, ThrowOnError>) => (options?.client ?? client).post<DiscordIntegrationCreateBindingCodeResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/binding-codes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const discordIntegrationDeleteBinding = <ThrowOnError extends boolean = true>(options: Options<DiscordIntegrationDeleteBindingData, ThrowOnError>) => (options.client ?? client).delete<DiscordIntegrationDeleteBindingResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/bindings/{discordSubject}',
+    ...options
+});
+
+export const discordIntegrationGetCommands = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationGetCommandsData, ThrowOnError>) => (options?.client ?? client).get<DiscordIntegrationGetCommandsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/integrations/discord/commands',
+    ...options
+});
+
+export const discordIntegrationPostInteraction = <ThrowOnError extends boolean = true>(options?: Options<DiscordIntegrationPostInteractionData, ThrowOnError>) => (options?.client ?? client).post<DiscordIntegrationPostInteractionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/integrations/discord/interactions',
+    ...options
+});
+
+/**
+ * Returns Owner-only game lifecycle events and separate evidence-gap metadata.
+ */
+export const listGameEvents = <ThrowOnError extends boolean = true>(options?: Options<ListGameEventsData, ThrowOnError>) => (options?.client ?? client).get<ListGameEventsResponses, ListGameEventsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/game-events',
     ...options
 });
 
@@ -358,6 +1020,53 @@ export const gameResourcesGetIcon = <ThrowOnError extends boolean = true>(option
     ...options
 });
 
+export const geoIpAccessPoliciesGet = <ThrowOnError extends boolean = true>(options?: Options<GeoIpAccessPoliciesGetData, ThrowOnError>) => (options?.client ?? client).get<GeoIpAccessPoliciesGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-policies/geoip',
+    ...options
+});
+
+export const geoIpAccessPoliciesPut = <ThrowOnError extends boolean = true>(options?: Options<GeoIpAccessPoliciesPutData, ThrowOnError>) => (options?.client ?? client).put<GeoIpAccessPoliciesPutResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-policies/geoip',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const geoIpAccessPoliciesPutCredentials = <ThrowOnError extends boolean = true>(options?: Options<GeoIpAccessPoliciesPutCredentialsData, ThrowOnError>) => (options?.client ?? client).put<GeoIpAccessPoliciesPutCredentialsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-policies/geoip/credentials',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const geoIpAccessPoliciesTest = <ThrowOnError extends boolean = true>(options?: Options<GeoIpAccessPoliciesTestData, ThrowOnError>) => (options?.client ?? client).post<GeoIpAccessPoliciesTestResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-policies/geoip/test',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const geoIpAccessPoliciesGetDiagnostics = <ThrowOnError extends boolean = true>(options?: Options<GeoIpAccessPoliciesGetDiagnosticsData, ThrowOnError>) => (options?.client ?? client).get<GeoIpAccessPoliciesGetDiagnosticsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/access-policies/geoip/diagnostics',
+    ...options
+});
+
 export const healthGet = <ThrowOnError extends boolean = true>(options?: Options<HealthGetData, ThrowOnError>) => (options?.client ?? client).get<HealthGetResponses, unknown, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/health',
@@ -367,6 +1076,27 @@ export const healthGet = <ThrowOnError extends boolean = true>(options?: Options
 export const healthGet2 = <ThrowOnError extends boolean = true>(options?: Options<HealthGet2Data, ThrowOnError>) => (options?.client ?? client).get<HealthGet2Responses, unknown, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/api/v1/health',
+    ...options
+});
+
+export const listJobs = <ThrowOnError extends boolean = true>(options?: Options<ListJobsData, ThrowOnError>) => (options?.client ?? client).get<ListJobsResponses, ListJobsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/jobs',
+    ...options
+});
+
+export const getJob = <ThrowOnError extends boolean = true>(options: Options<GetJobData, ThrowOnError>) => (options.client ?? client).get<GetJobResponses, GetJobErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/jobs/{jobId}',
+    ...options
+});
+
+export const cancelJob = <ThrowOnError extends boolean = true>(options: Options<CancelJobData, ThrowOnError>) => (options.client ?? client).post<CancelJobResponses, CancelJobErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/jobs/{jobId}/cancel',
     ...options
 });
 
@@ -421,6 +1151,46 @@ export const mapSearchPlayersInArea = <ThrowOnError extends boolean = true>(opti
     ...options
 });
 
+export const mapJobsRefreshResources = <ThrowOnError extends boolean = true>(options?: Options<MapJobsRefreshResourcesData, ThrowOnError>) => (options?.client ?? client).post<MapJobsRefreshResourcesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map-jobs/refresh-resources',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const mapJobsRenderExplored = <ThrowOnError extends boolean = true>(options?: Options<MapJobsRenderExploredData, ThrowOnError>) => (options?.client ?? client).post<MapJobsRenderExploredResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map-jobs/render-explored',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const mapJobsRenderFull = <ThrowOnError extends boolean = true>(options?: Options<MapJobsRenderFullData, ThrowOnError>) => (options?.client ?? client).post<MapJobsRenderFullResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map-jobs/render-full',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const mapJobsGetResourceVersion = <ThrowOnError extends boolean = true>(options?: Options<MapJobsGetResourceVersionData, ThrowOnError>) => (options?.client ?? client).get<MapJobsGetResourceVersionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/map-jobs/resource-version',
+    ...options
+});
+
 export const modsGet = <ThrowOnError extends boolean = true>(options?: Options<ModsGetData, ThrowOnError>) => (options?.client ?? client).get<ModsGetResponses, unknown, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -436,6 +1206,64 @@ export const modsPut = <ThrowOnError extends boolean = true>(options: Options<Mo
     headers: {
         'Content-Type': 'application/json',
         ...options.headers
+    }
+});
+
+export const modulesGet = <ThrowOnError extends boolean = true>(options?: Options<ModulesGetData, ThrowOnError>) => (options?.client ?? client).get<ModulesGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/modules',
+    ...options
+});
+
+export const modulesEnable = <ThrowOnError extends boolean = true>(options: Options<ModulesEnableData, ThrowOnError>) => (options.client ?? client).post<ModulesEnableResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/modules/{moduleId}/enable',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const modulesDisable = <ThrowOnError extends boolean = true>(options: Options<ModulesDisableData, ThrowOnError>) => (options.client ?? client).post<ModulesDisableResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/modules/{moduleId}/disable',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const onlineRewardsPutRule = <ThrowOnError extends boolean = true>(options: Options<OnlineRewardsPutRuleData, ThrowOnError>) => (options.client ?? client).put<OnlineRewardsPutRuleResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/online-rewards/rules/{ruleId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const onlineRewardsGetRecords = <ThrowOnError extends boolean = true>(options?: Options<OnlineRewardsGetRecordsData, ThrowOnError>) => (options?.client ?? client).get<OnlineRewardsGetRecordsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/online-rewards/records',
+    ...options
+});
+
+export const onlineRewardsManualGrant = <ThrowOnError extends boolean = true>(options?: Options<OnlineRewardsManualGrantData, ThrowOnError>) => (options?.client ?? client).post<OnlineRewardsManualGrantResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/online-rewards/records/manual',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
     }
 });
 
@@ -493,6 +1321,126 @@ export const panelUsersResetPassword = <ThrowOnError extends boolean = true>(opt
     }
 });
 
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsGrantItem = <ThrowOnError extends boolean = true>(options?: Options<PlayerActionsGrantItemData, ThrowOnError>) => (options?.client ?? client).post<PlayerActionsGrantItemResponses, PlayerActionsGrantItemErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/player-actions/grant-item',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsRemoveItem = <ThrowOnError extends boolean = true>(options?: Options<PlayerActionsRemoveItemData, ThrowOnError>) => (options?.client ?? client).post<PlayerActionsRemoveItemResponses, PlayerActionsRemoveItemErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/player-actions/remove-item',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsResetSkills = <ThrowOnError extends boolean = true>(options?: Options<PlayerActionsResetSkillsData, ThrowOnError>) => (options?.client ?? client).post<PlayerActionsResetSkillsResponses, PlayerActionsResetSkillsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/player-actions/reset-skills',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsClearInventory = <ThrowOnError extends boolean = true>(options?: Options<PlayerActionsClearInventoryData, ThrowOnError>) => (options?.client ?? client).post<PlayerActionsClearInventoryResponses, PlayerActionsClearInventoryErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/player-actions/clear-inventory',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsResetPlayerData = <ThrowOnError extends boolean = true>(options?: Options<PlayerActionsResetPlayerDataData, ThrowOnError>) => (options?.client ?? client).post<PlayerActionsResetPlayerDataResponses, PlayerActionsResetPlayerDataErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/player-actions/reset-player-data',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Returns the fixed persisted result of one Owner-only player action operation.
+ */
+export const playerActionsGet = <ThrowOnError extends boolean = true>(options: Options<PlayerActionsGetData, ThrowOnError>) => (options.client ?? client).get<PlayerActionsGetResponses, PlayerActionsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/player-actions/{operationId}',
+    ...options
+});
+
+/**
+ * Returns the Owner-only sectioned player profile with independent observation and gap metadata.
+ */
+export const playerEvidenceGetProfile = <ThrowOnError extends boolean = true>(options: Options<PlayerEvidenceGetProfileData, ThrowOnError>) => (options.client ?? client).get<PlayerEvidenceGetProfileResponses, PlayerEvidenceGetProfileErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/players/{crossplatformId}/profile',
+    ...options
+});
+
+/**
+ * Returns Owner-only bounded player evidence using a player-bound opaque keyset cursor and explicit gap metadata.
+ */
+export const playerEvidenceGetInventorySnapshots = <ThrowOnError extends boolean = true>(options: Options<PlayerEvidenceGetInventorySnapshotsData, ThrowOnError>) => (options.client ?? client).get<PlayerEvidenceGetInventorySnapshotsResponses, PlayerEvidenceGetInventorySnapshotsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/players/{crossplatformId}/inventory-snapshots',
+    ...options
+});
+
+/**
+ * Returns Owner-only bounded player evidence using a player-bound opaque keyset cursor and explicit gap metadata.
+ */
+export const playerEvidenceGetInventoryDiffs = <ThrowOnError extends boolean = true>(options: Options<PlayerEvidenceGetInventoryDiffsData, ThrowOnError>) => (options.client ?? client).get<PlayerEvidenceGetInventoryDiffsResponses, PlayerEvidenceGetInventoryDiffsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/players/{crossplatformId}/inventory-diffs',
+    ...options
+});
+
+/**
+ * Returns Owner-only bounded player evidence using a player-bound opaque keyset cursor and explicit gap metadata.
+ */
+export const playerEvidenceGetSkills = <ThrowOnError extends boolean = true>(options: Options<PlayerEvidenceGetSkillsData, ThrowOnError>) => (options.client ?? client).get<PlayerEvidenceGetSkillsResponses, PlayerEvidenceGetSkillsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/players/{crossplatformId}/skills',
+    ...options
+});
+
 export const playersGet = <ThrowOnError extends boolean = true>(options?: Options<PlayersGetData, ThrowOnError>) => (options?.client ?? client).get<PlayersGetResponses, PlayersGetErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -534,6 +1482,161 @@ export const playersKick = <ThrowOnError extends boolean = true>(options: Option
     responseStyle: 'data',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/players/{entityId}/kick',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const rewardsGetDailyPolicy = <ThrowOnError extends boolean = true>(options: Options<RewardsGetDailyPolicyData, ThrowOnError>) => (options.client ?? client).get<RewardsGetDailyPolicyResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/daily-reward-rules/{ruleId}',
+    ...options
+});
+
+export const rewardsPutDailyPolicy = <ThrowOnError extends boolean = true>(options: Options<RewardsPutDailyPolicyData, ThrowOnError>) => (options.client ?? client).put<RewardsPutDailyPolicyResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/daily-reward-rules/{ruleId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const rewardsGetPackage = <ThrowOnError extends boolean = true>(options: Options<RewardsGetPackageData, ThrowOnError>) => (options.client ?? client).get<RewardsGetPackageResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/reward-packages/{packageId}',
+    ...options
+});
+
+export const rewardsPutPackage = <ThrowOnError extends boolean = true>(options: Options<RewardsPutPackageData, ThrowOnError>) => (options.client ?? client).put<RewardsPutPackageResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/reward-packages/{packageId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const rewardsGetGrant = <ThrowOnError extends boolean = true>(options: Options<RewardsGetGrantData, ThrowOnError>) => (options.client ?? client).get<RewardsGetGrantResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/grant-operations/{operationId}',
+    ...options
+});
+
+export const rewardsGetPendingGrants = <ThrowOnError extends boolean = true>(options?: Options<RewardsGetPendingGrantsData, ThrowOnError>) => (options?.client ?? client).get<RewardsGetPendingGrantsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/grant-operations',
+    ...options
+});
+
+export const rewardsGrant = <ThrowOnError extends boolean = true>(options?: Options<RewardsGrantData, ThrowOnError>) => (options?.client ?? client).post<RewardsGrantResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/grant-operations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const rewardsConfirm = <ThrowOnError extends boolean = true>(options: Options<RewardsConfirmData, ThrowOnError>) => (options.client ?? client).post<RewardsConfirmResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/grant-operations/{operationId}/confirm',
+    ...options
+});
+
+export const rewardsRefund = <ThrowOnError extends boolean = true>(options: Options<RewardsRefundData, ThrowOnError>) => (options.client ?? client).post<RewardsRefundResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/grant-operations/{operationId}/refund',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const rewardsCompensate = <ThrowOnError extends boolean = true>(options: Options<RewardsCompensateData, ThrowOnError>) => (options.client ?? client).post<RewardsCompensateResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/grant-operations/{operationId}/compensate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listSchedules = <ThrowOnError extends boolean = true>(options?: Options<ListSchedulesData, ThrowOnError>) => (options?.client ?? client).get<ListSchedulesResponses, ListSchedulesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules',
+    ...options
+});
+
+export const createSchedule = <ThrowOnError extends boolean = true>(options?: Options<CreateScheduleData, ThrowOnError>) => (options?.client ?? client).post<CreateScheduleResponses, CreateScheduleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const deleteSchedule = <ThrowOnError extends boolean = true>(options: Options<DeleteScheduleData, ThrowOnError>) => (options.client ?? client).delete<DeleteScheduleResponses, DeleteScheduleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules/{scheduleId}',
+    ...options
+});
+
+export const getSchedule = <ThrowOnError extends boolean = true>(options: Options<GetScheduleData, ThrowOnError>) => (options.client ?? client).get<GetScheduleResponses, GetScheduleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules/{scheduleId}',
+    ...options
+});
+
+export const updateSchedule = <ThrowOnError extends boolean = true>(options: Options<UpdateScheduleData, ThrowOnError>) => (options.client ?? client).put<UpdateScheduleResponses, UpdateScheduleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules/{scheduleId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const enableSchedule = <ThrowOnError extends boolean = true>(options: Options<EnableScheduleData, ThrowOnError>) => (options.client ?? client).post<EnableScheduleResponses, EnableScheduleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules/{scheduleId}/enable',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const disableSchedule = <ThrowOnError extends boolean = true>(options: Options<DisableScheduleData, ThrowOnError>) => (options.client ?? client).post<DisableScheduleResponses, DisableScheduleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/schedules/{scheduleId}/disable',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -589,6 +1692,245 @@ export const serverOperationsShutdown = <ThrowOnError extends boolean = true>(op
         'Content-Type': 'application/json',
         ...options?.headers
     }
+});
+
+export const worldGetSummary = <ThrowOnError extends boolean = true>(options?: Options<WorldGetSummaryData, ThrowOnError>) => (options?.client ?? client).get<WorldGetSummaryResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/summary',
+    ...options
+});
+
+export const worldGetLandClaims = <ThrowOnError extends boolean = true>(options?: Options<WorldGetLandClaimsData, ThrowOnError>) => (options?.client ?? client).get<WorldGetLandClaimsResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/land-claims',
+    ...options
+});
+
+export const worldGetVehicles = <ThrowOnError extends boolean = true>(options?: Options<WorldGetVehiclesData, ThrowOnError>) => (options?.client ?? client).get<WorldGetVehiclesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/vehicles',
+    ...options
+});
+
+export const worldGetDrones = <ThrowOnError extends boolean = true>(options?: Options<WorldGetDronesData, ThrowOnError>) => (options?.client ?? client).get<WorldGetDronesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/drones',
+    ...options
+});
+
+export const worldGetContainers = <ThrowOnError extends boolean = true>(options?: Options<WorldGetContainersData, ThrowOnError>) => (options?.client ?? client).get<WorldGetContainersResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/containers',
+    ...options
+});
+
+export const worldGetBlockCatalog = <ThrowOnError extends boolean = true>(options?: Options<WorldGetBlockCatalogData, ThrowOnError>) => (options?.client ?? client).get<WorldGetBlockCatalogResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/catalogs/blocks',
+    ...options
+});
+
+export const worldGetPrefabCatalog = <ThrowOnError extends boolean = true>(options?: Options<WorldGetPrefabCatalogData, ThrowOnError>) => (options?.client ?? client).get<WorldGetPrefabCatalogResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/catalogs/prefabs',
+    ...options
+});
+
+export const worldGetEntityTypeCatalog = <ThrowOnError extends boolean = true>(options?: Options<WorldGetEntityTypeCatalogData, ThrowOnError>) => (options?.client ?? client).get<WorldGetEntityTypeCatalogResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world/catalogs/entity-types',
+    ...options
+});
+
+export const worldOperationsDeleteLandClaim = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsDeleteLandClaimData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsDeleteLandClaimResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/land-claims/delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsMoveOnlinePlayer = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsMoveOnlinePlayerData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsMoveOnlinePlayerResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/players/move',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsMoveEntity = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsMoveEntityData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsMoveEntityResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/entities/move',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsCopyRegion = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsCopyRegionData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsCopyRegionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/regions/copy',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsFillRegion = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsFillRegionData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsFillRegionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/regions/fill',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsClearRegion = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsClearRegionData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsClearRegionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/regions/clear',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsPasteRegion = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsPasteRegionData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsPasteRegionResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/regions/paste',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsSetBlock = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsSetBlockData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsSetBlockResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/blocks/set',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsPlacePrefab = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsPlacePrefabData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsPlacePrefabResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/prefabs/place',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsRemovePrefab = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsRemovePrefabData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsRemovePrefabResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/prefabs/remove',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsSpawnEntity = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsSpawnEntityData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsSpawnEntityResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/entities/spawn',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsDeleteEntity = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsDeleteEntityData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsDeleteEntityResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/entities/delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsCleanupEntities = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsCleanupEntitiesData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsCleanupEntitiesResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/entities/cleanup',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsReloadResource = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsReloadResourceData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsReloadResourceResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/xml/reload',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsCollectGarbage = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsCollectGarbageData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsCollectGarbageResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/gc',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsUndo = <ThrowOnError extends boolean = true>(options?: Options<WorldOperationsUndoData, ThrowOnError>) => (options?.client ?? client).post<WorldOperationsUndoResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/undo',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const worldOperationsGet = <ThrowOnError extends boolean = true>(options: Options<WorldOperationsGetData, ThrowOnError>) => (options.client ?? client).get<WorldOperationsGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/world-operations/{operationId}',
+    ...options
 });
 
 /**

@@ -27,6 +27,17 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Runtime_state_loads_active_mutes_into_the_same_snapshot_as_chat_configuration()
+        {
+            var mute = new ChatMuteRecord("EOS_1", "Alice", "reason", null, "owner", DateTimeOffset.UtcNow, "owner", DateTimeOffset.UtcNow);
+            var state = new ChatRuntimeState(new SettingsStore(new List<string>()), new ColoredStore(new List<string>()), new MuteStore(mute));
+
+            state.Load();
+
+            Assert.True(state.Current.Mutes.ContainsKey("EOS_1"));
+        }
+
+        [Fact]
         public void Writer_DoesNotBlockWhenQueueIsFull()
         {
             using var gate = new ManualResetEventSlim(false);
@@ -76,6 +87,17 @@ namespace LSTY.SevenDPanel.Tests
             public bool TryCreateProfile(ColoredChatProfile profile) => false;
             public bool TryUpdateProfile(ColoredChatProfile profile) => false;
             public bool TryDeleteProfile(string crossplatformId) => false;
+        }
+
+        private sealed class MuteStore : IChatMuteStore
+        {
+            private readonly ChatMuteRecord mute;
+            public MuteStore(ChatMuteRecord mute) => this.mute = mute;
+            public ChatMutePage GetPage(int pageSize, ChatMuteCursor? cursor) => new ChatMutePage(new[] { mute }, null);
+            public ChatMuteRecord? Find(string crossplatformId) => mute;
+            public IReadOnlyList<ChatMuteRecord> Create(ChatMuteRecord record, ChatMuteOperation operation) => new[] { record };
+            public IReadOnlyList<ChatMuteRecord> Update(ChatMuteRecord record, ChatMuteOperation operation) => new[] { record };
+            public IReadOnlyList<ChatMuteRecord> Release(string crossplatformId, ChatMuteOperation operation) => Array.Empty<ChatMuteRecord>();
         }
 
         private class HistoryStore : IChatHistoryStore

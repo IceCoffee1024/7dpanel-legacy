@@ -55,6 +55,37 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Stale_game_partition_does_not_contaminate_the_available_host_partition()
+        {
+            var fixture = new OverviewFixture();
+            fixture.Game.Result = new GameOverviewSnapshot(
+                AvailabilityState.Stale,
+                fixture.GameSampledAtUtc,
+                "7 Days to Die",
+                "My Save",
+                "Navezgane",
+                3600L,
+                "2.0",
+                "Survival",
+                "Warrior",
+                "CN",
+                "zh-CN",
+                "example.test",
+                26900,
+                8,
+                CreateRuntimeMetrics(fixture.GameSampledAtUtc));
+
+            var overview = await fixture.UseCase.ExecuteAsync(
+                OverviewAudience.Owner,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(AvailabilityState.Stale, overview.Availability);
+            Assert.Equal(AvailabilityState.Stale, overview.Game.Availability);
+            Assert.Equal(AvailabilityState.Available, overview.Host.Availability);
+            Assert.Equal(fixture.HostSampledAtUtc, overview.Host.SampledAtUtc);
+        }
+
+        [Fact]
         public async Task Game_query_cancellation_is_propagated()
         {
             var fixture = new OverviewFixture();
@@ -272,11 +303,8 @@ namespace LSTY.SevenDPanel.Tests
                     "zh-CN",
                     "example.test",
                     26900,
-                    3,
                     8,
-                    12,
-                    58.5,
-                    "Day 7, 12:00"));
+                    CreateRuntimeMetrics(GameSampledAtUtc)));
                 Host = new RecordingHostQuery(CreateHost(HostSampledAtUtc, availability: availability));
                 RestartPolicy = new RecordingRestartPolicyQuery(new RestartPolicySummary(
                     availability,
@@ -348,6 +376,20 @@ namespace LSTY.SevenDPanel.Tests
                 4242,
                 hostSampledAtUtc.AddHours(-2));
         }
+
+        private static GameRuntimeMetrics CreateRuntimeMetrics(DateTimeOffset observedAtUtc) =>
+            new GameRuntimeMetrics(
+                new ObservedMetric<string>("Day 7, 12:00", "World.worldTime", "game-clock", observedAtUtc, null),
+                new ObservedMetric<bool?>(false, "World.aiDirector.BloodMoonComponent.BloodMoonActive", "boolean", observedAtUtc, null),
+                new ObservedMetric<double?>(58.5, "GameManager.frameTime", "frames/second", observedAtUtc, null),
+                new ObservedMetric<int?>(3, "World.Players.Count", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(12, "GameManager.persistentPlayerCount", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(4, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(9, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(25, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(144, "Chunk.InstanceCount", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(6, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<long?>(123456L, "GC.GetTotalMemory(false)", "bytes", observedAtUtc, null));
 
         private sealed class RecordingGameQuery : IGameOverviewQuery
         {

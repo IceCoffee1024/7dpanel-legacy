@@ -37,3 +37,22 @@ export function usedPercent(used: number | null, total: number | null): number |
 export function formatNumber(value: number | null, locale: string, digits = 1): string {
   return value === null ? '—' : new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)
 }
+
+export interface RuntimeMetricBooleanLabels {
+  trueLabel: string
+  falseLabel: string
+}
+
+export function formatRuntimeMetricValue(
+  value: string | number | boolean | null,
+  locale: string,
+  booleanLabels: RuntimeMetricBooleanLabels,
+): string {
+  if (value === null)
+    return '—'
+  if (typeof value === 'boolean')
+    return value ? booleanLabels.trueLabel : booleanLabels.falseLabel
+  if (typeof value === 'number')
+    return formatNumber(value, locale)
+  return value
+}

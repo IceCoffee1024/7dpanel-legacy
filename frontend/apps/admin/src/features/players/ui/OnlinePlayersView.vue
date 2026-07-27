@@ -6,6 +6,7 @@ import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { useAuthStore } from '../../auth'
 import { useKickPlayer } from '../model/useKickPlayer'
 import { useOnlinePlayers } from '../model/useOnlinePlayers'
 
@@ -18,6 +19,7 @@ import OnlinePlayersToolbar from './OnlinePlayersToolbar.vue'
 import PlayersSectionNavigation from './PlayersSectionNavigation.vue'
 
 const router = useRouter()
+const auth = useAuthStore()
 const toast = useToast()
 const { t } = useI18n()
 
@@ -76,6 +78,9 @@ const detailsCanKick = computed(() =>
   && state.value === 'fresh'
   && !sessionExpired.value
   && !detailsUnavailable.value)
+const detailsCanOpenProfile = computed(() =>
+  auth.role === 'Owner'
+  && !sessionExpired.value)
 const detailsOpen = computed({
   get: () => detailsPlayer.value !== null,
   set: (open: boolean) => {
@@ -116,6 +121,11 @@ function closeDetails() {
 function openDetailsKickDialog() {
   if (detailsPlayer.value !== null && detailsCanKick.value)
     openKickDialog(detailsPlayer.value)
+}
+
+function openProfile(crossplatformId: string) {
+  closeDetails()
+  void router.push(`/players/profile/${encodeURIComponent(crossplatformId)}`)
 }
 
 watch([state, snapshot], ([nextState, nextSnapshot]) => {
@@ -237,7 +247,9 @@ async function confirmKick(reason: string) {
     :player="detailsPlayer"
     :unavailable="detailsUnavailable"
     :can-kick="detailsCanKick"
+    :can-open-profile="detailsCanOpenProfile"
     @copy-value="copyValue"
     @kick-player="openDetailsKickDialog"
+    @open-profile="openProfile"
   />
 </template>

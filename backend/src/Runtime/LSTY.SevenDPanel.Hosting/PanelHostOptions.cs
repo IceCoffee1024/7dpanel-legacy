@@ -9,6 +9,7 @@ namespace LSTY.SevenDPanel.Hosting
         public const int DefaultPort = 18080;
         public const string DefaultBindAddress = "0.0.0.0";
         public const string DefaultScheme = "http";
+        public const string DefaultGeoIpDatabaseRelativePath = "data/GeoLite2-Country.mmdb";
 
         public PanelHostOptions(string url)
             : this(
@@ -16,8 +17,10 @@ namespace LSTY.SevenDPanel.Hosting
                 false,
                 PanelAuthenticationOptions.Disabled,
                 PanelOverviewOptions.Disabled,
+                PanelPlayerEvidenceOptions.Default,
                 RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")),
-                Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"))
+                Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"),
+                Path.Combine(AppContext.BaseDirectory, DefaultGeoIpDatabaseRelativePath))
         {
         }
 
@@ -26,8 +29,10 @@ namespace LSTY.SevenDPanel.Hosting
             bool allowWildcardHost,
             PanelAuthenticationOptions authentication,
             PanelOverviewOptions overview,
+            PanelPlayerEvidenceOptions playerEvidence,
             RestartScriptOptions restart,
-            string serverConfigurationPath)
+            string serverConfigurationPath,
+            string geoIpDatabasePath)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -41,8 +46,10 @@ namespace LSTY.SevenDPanel.Hosting
                 Url = url.EndsWith("/", StringComparison.Ordinal) ? url : url + "/";
                 Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
                 Overview = overview ?? throw new ArgumentNullException(nameof(overview));
+                PlayerEvidence = playerEvidence ?? throw new ArgumentNullException(nameof(playerEvidence));
                 Restart = restart ?? throw new ArgumentNullException(nameof(restart));
                 ServerConfigurationPath = Path.GetFullPath(serverConfigurationPath);
+                GeoIpDatabasePath = Path.GetFullPath(geoIpDatabasePath);
                 return;
             }
 
@@ -57,15 +64,19 @@ namespace LSTY.SevenDPanel.Hosting
                 : parsed.AbsoluteUri + "/";
             Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
             Overview = overview ?? throw new ArgumentNullException(nameof(overview));
+            PlayerEvidence = playerEvidence ?? throw new ArgumentNullException(nameof(playerEvidence));
             Restart = restart ?? throw new ArgumentNullException(nameof(restart));
             ServerConfigurationPath = Path.GetFullPath(serverConfigurationPath);
+            GeoIpDatabasePath = Path.GetFullPath(geoIpDatabasePath);
         }
 
         public string Url { get; }
         public PanelAuthenticationOptions Authentication { get; }
         public PanelOverviewOptions Overview { get; }
+        public PanelPlayerEvidenceOptions PlayerEvidence { get; }
         public RestartScriptOptions Restart { get; }
         public string ServerConfigurationPath { get; }
+        public string GeoIpDatabasePath { get; }
 
         public static PanelHostOptions FromBinding(
             int port,
@@ -74,7 +85,9 @@ namespace LSTY.SevenDPanel.Hosting
             PanelAuthenticationOptions? authentication = null,
             PanelOverviewOptions? overview = null,
             RestartScriptOptions? restart = null,
-            string? serverConfigurationPath = null)
+            string? serverConfigurationPath = null,
+            PanelPlayerEvidenceOptions? playerEvidence = null,
+            string? geoIpDatabasePath = null)
         {
             if (port < 1 || port > 65535)
             {
@@ -96,10 +109,14 @@ namespace LSTY.SevenDPanel.Hosting
                 listenerHost == "*",
                 authentication ?? PanelAuthenticationOptions.Disabled,
                 overview ?? PanelOverviewOptions.Disabled,
+                playerEvidence ?? PanelPlayerEvidenceOptions.Default,
                 restart ?? RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")),
                 string.IsNullOrWhiteSpace(serverConfigurationPath)
                     ? Path.Combine(AppContext.BaseDirectory, "serverconfig.xml")
-                    : serverConfigurationPath);
+                    : serverConfigurationPath!,
+                string.IsNullOrWhiteSpace(geoIpDatabasePath)
+                    ? Path.Combine(AppContext.BaseDirectory, DefaultGeoIpDatabaseRelativePath)
+                    : geoIpDatabasePath!);
         }
     }
 }

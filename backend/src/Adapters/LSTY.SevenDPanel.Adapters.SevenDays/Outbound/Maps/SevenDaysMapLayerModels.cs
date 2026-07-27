@@ -6,19 +6,33 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
     public abstract class SevenDaysMapFeatureSample
     {
         protected SevenDaysMapFeatureSample(string id, float x, float y, float z)
+            : this(id, id, x, y, z)
+        {
+        }
+
+        protected SevenDaysMapFeatureSample(
+            string id,
+            string stableIdentity,
+            float x,
+            float y,
+            float z)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("A map feature identifier is required.", nameof(id));
+            if (string.IsNullOrWhiteSpace(stableIdentity))
+                throw new ArgumentException("A stable map feature identity is required.", nameof(stableIdentity));
             ValidateFinite(x, nameof(x));
             ValidateFinite(y, nameof(y));
             ValidateFinite(z, nameof(z));
             Id = id;
+            StableIdentity = stableIdentity;
             X = x;
             Y = y;
             Z = z;
         }
 
         public string Id { get; }
+        public string StableIdentity { get; }
         public float X { get; }
         public float Y { get; }
         public float Z { get; }
@@ -90,7 +104,30 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             double? protectionRadius,
             bool? isValid,
             DateTimeOffset? ownerLastLoginUtc)
-            : base(id, x, y, z)
+            : this(
+                id,
+                id,
+                x,
+                y,
+                z,
+                ownerCrossplatformId,
+                protectionRadius,
+                isValid,
+                ownerLastLoginUtc)
+        {
+        }
+
+        public SevenDaysLandClaimMapSample(
+            string id,
+            string stableIdentity,
+            float x,
+            float y,
+            float z,
+            string? ownerCrossplatformId,
+            double? protectionRadius,
+            bool? isValid,
+            DateTimeOffset? ownerLastLoginUtc)
+            : base(id, stableIdentity, x, y, z)
         {
             ValidateOwnerCrossplatformId(ownerCrossplatformId, nameof(ownerCrossplatformId));
             ValidateOptionalNonNegativeFinite(protectionRadius, nameof(protectionRadius));
@@ -122,9 +159,43 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             int? quality,
             bool? isLocked,
             int? storageItemCount)
-            : base(id, x, y, z)
+            : this(
+                id,
+                id,
+                x,
+                y,
+                z,
+                vehicleType,
+                null,
+                ownerCrossplatformId,
+                loadState,
+                fuelPercentage,
+                quality,
+                isLocked,
+                storageItemCount,
+                null)
+        {
+        }
+
+        public SevenDaysVehicleMapSample(
+            string id,
+            string stableIdentity,
+            float x,
+            float y,
+            float z,
+            string? vehicleType,
+            string? entityTypeResourceId,
+            string? ownerCrossplatformId,
+            MapEntityLoadState loadState,
+            double? fuelPercentage,
+            int? quality,
+            bool? isLocked,
+            int? storageItemCount,
+            ContainerSummary? container)
+            : base(id, stableIdentity, x, y, z)
         {
             ValidateOptionalText(vehicleType, nameof(vehicleType));
+            ValidateOptionalText(entityTypeResourceId, nameof(entityTypeResourceId));
             ValidateOwnerCrossplatformId(ownerCrossplatformId, nameof(ownerCrossplatformId));
             if (!Enum.IsDefined(typeof(MapEntityLoadState), loadState))
                 throw new ArgumentOutOfRangeException(nameof(loadState));
@@ -141,21 +212,25 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             if (storageItemCount.HasValue && storageItemCount.Value < 0)
                 throw new ArgumentOutOfRangeException(nameof(storageItemCount));
             VehicleType = vehicleType;
+            EntityTypeResourceId = entityTypeResourceId;
             OwnerCrossplatformId = ownerCrossplatformId;
             LoadState = loadState;
             FuelPercentage = fuelPercentage;
             Quality = quality;
             IsLocked = isLocked;
             StorageItemCount = storageItemCount;
+            Container = container;
         }
 
         public string? VehicleType { get; }
+        public string? EntityTypeResourceId { get; }
         public string? OwnerCrossplatformId { get; }
         public MapEntityLoadState LoadState { get; }
         public double? FuelPercentage { get; }
         public int? Quality { get; }
         public bool? IsLocked { get; }
         public int? StorageItemCount { get; }
+        public ContainerSummary? Container { get; }
     }
 
     public sealed class SevenDaysDroneMapSample : SevenDaysMapFeatureSample
@@ -167,16 +242,43 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             float z,
             string? ownerCrossplatformId,
             MapEntityLoadState loadState)
-            : base(id, x, y, z)
+            : this(id, id, x, y, z, null, ownerCrossplatformId, loadState, null, null, null)
         {
+        }
+
+        public SevenDaysDroneMapSample(
+            string id,
+            string stableIdentity,
+            float x,
+            float y,
+            float z,
+            string? entityTypeResourceId,
+            string? ownerCrossplatformId,
+            MapEntityLoadState loadState,
+            bool? isLocked,
+            int? quality,
+            ContainerSummary? container)
+            : base(id, stableIdentity, x, y, z)
+        {
+            ValidateOptionalText(entityTypeResourceId, nameof(entityTypeResourceId));
             ValidateOwnerCrossplatformId(ownerCrossplatformId, nameof(ownerCrossplatformId));
             if (!Enum.IsDefined(typeof(MapEntityLoadState), loadState))
                 throw new ArgumentOutOfRangeException(nameof(loadState));
+            if (quality.HasValue && quality.Value < 0)
+                throw new ArgumentOutOfRangeException(nameof(quality));
+            EntityTypeResourceId = entityTypeResourceId;
             OwnerCrossplatformId = ownerCrossplatformId;
             LoadState = loadState;
+            IsLocked = isLocked;
+            Quality = quality;
+            Container = container;
         }
 
+        public string? EntityTypeResourceId { get; }
         public string? OwnerCrossplatformId { get; }
         public MapEntityLoadState LoadState { get; }
+        public bool? IsLocked { get; }
+        public int? Quality { get; }
+        public ContainerSummary? Container { get; }
     }
 }

@@ -1,5 +1,28 @@
 export type Availability = 'available' | 'stale' | 'unavailable' | 'forbidden'
 export type AdditionalMemoryKind = 'virtualAddressSpace' | 'swap'
+export type RuntimeMetricWarning = 'readFailed' | 'unsupported'
+
+export interface ObservedRuntimeMetric<T> {
+  value: T | null
+  source: string
+  unit: string
+  observedAtUtc: string
+  warning: RuntimeMetricWarning | null
+}
+
+export interface GameRuntimeMetrics {
+  gameDayTime: ObservedRuntimeMetric<string>
+  isBloodMoon: ObservedRuntimeMetric<boolean>
+  framesPerSecond: ObservedRuntimeMetric<number>
+  onlinePlayerCount: ObservedRuntimeMetric<number>
+  historicalPlayerCount: ObservedRuntimeMetric<number>
+  animalCount: ObservedRuntimeMetric<number>
+  hostileEntityCount: ObservedRuntimeMetric<number>
+  activeEntityCount: ObservedRuntimeMetric<number>
+  chunkCount: ObservedRuntimeMetric<number>
+  droppedItemCount: ObservedRuntimeMetric<number>
+  gameMemoryBytes: ObservedRuntimeMetric<number>
+}
 
 export interface GameOverview {
   availability: Availability
@@ -15,11 +38,14 @@ export interface GameOverview {
   language: string | null
   connectionAddress: string | null
   connectionPort: number | null
-  onlinePlayerCount: number | null
   maximumPlayerCount: number | null
-  historicalPlayerCount: number | null
-  framesPerSecond: number | null
-  gameTime: string | null
+  /** Runtime responses always include this field; optionality keeps legacy typed fixtures buildable. */
+  runtimeMetrics?: GameRuntimeMetrics | null
+  /** Compatibility-only fixture fields; the response parser rejects these wire aliases. */
+  onlinePlayerCount?: number | null
+  historicalPlayerCount?: number | null
+  framesPerSecond?: number | null
+  gameTime?: string | null
 }
 
 export interface HostAdditionalMemory {
@@ -132,11 +158,21 @@ const gameKeys = [
   'language',
   'connectionAddress',
   'connectionPort',
-  'onlinePlayerCount',
   'maximumPlayerCount',
-  'historicalPlayerCount',
+  'runtimeMetrics',
+] as const
+const runtimeMetricKeys = [
+  'gameDayTime',
+  'isBloodMoon',
   'framesPerSecond',
-  'gameTime',
+  'onlinePlayerCount',
+  'historicalPlayerCount',
+  'animalCount',
+  'hostileEntityCount',
+  'activeEntityCount',
+  'chunkCount',
+  'droppedItemCount',
+  'gameMemoryBytes',
 ] as const
 const hostKeys = [
   'availability',
@@ -271,6 +307,51 @@ function nullableUtcTimestamp(value: unknown): string | null {
   return utcTimestamp(value)
 }
 
+function metricWarning(value: unknown): RuntimeMetricWarning | null {
+  if (value === null || value === 'readFailed' || value === 'unsupported')
+    return value
+  return invalid()
+}
+
+function parseMetric<T>(
+  value: unknown,
+  parseValue: (candidate: unknown) => T | null,
+): ObservedRuntimeMetric<T> {
+  const source = record(value, ['value', 'source', 'unit', 'observedAtUtc', 'warning'])
+  const parsedValue = parseValue(source.value)
+  const warning = metricWarning(source.warning)
+  if ((parsedValue === null) !== (warning !== null))
+    invalid()
+
+  return Object.freeze({
+    value: parsedValue,
+    source: requiredString(source.source),
+    unit: requiredString(source.unit),
+    observedAtUtc: utcTimestamp(source.observedAtUtc),
+    warning,
+  })
+}
+
+function parseRuntimeMetrics(value: unknown): GameRuntimeMetrics {
+  const source = record(value, runtimeMetricKeys)
+  const metrics = Object.freeze({
+    gameDayTime: parseMetric(source.gameDayTime, nullableString),
+    isBloodMoon: parseMetric(source.isBloodMoon, nullableBoolean),
+    framesPerSecond: parseMetric(source.framesPerSecond, candidate => nullableNumber(candidate)),
+    onlinePlayerCount: parseMetric(source.onlinePlayerCount, candidate => nullableNumber(candidate, true)),
+    historicalPlayerCount: parseMetric(source.historicalPlayerCount, candidate => nullableNumber(candidate, true)),
+    animalCount: parseMetric(source.animalCount, candidate => nullableNumber(candidate, true)),
+    hostileEntityCount: parseMetric(source.hostileEntityCount, candidate => nullableNumber(candidate, true)),
+    activeEntityCount: parseMetric(source.activeEntityCount, candidate => nullableNumber(candidate, true)),
+    chunkCount: parseMetric(source.chunkCount, candidate => nullableNumber(candidate, true)),
+    droppedItemCount: parseMetric(source.droppedItemCount, candidate => nullableNumber(candidate, true)),
+    gameMemoryBytes: parseMetric(source.gameMemoryBytes, candidate => nullableNumber(candidate, true)),
+  })
+  if (new Set(Object.values(metrics).map(metric => metric.observedAtUtc)).size !== 1)
+    invalid()
+  return metrics
+}
+
 function parseGame(value: unknown): GameOverview {
   const source = record(value, gameKeys)
   return Object.freeze({
@@ -287,11 +368,8 @@ function parseGame(value: unknown): GameOverview {
     language: nullableString(source.language),
     connectionAddress: nullableString(source.connectionAddress),
     connectionPort: nullableNumber(source.connectionPort, true, 65_535),
-    onlinePlayerCount: nullableNumber(source.onlinePlayerCount, true),
     maximumPlayerCount: nullableNumber(source.maximumPlayerCount, true),
-    historicalPlayerCount: nullableNumber(source.historicalPlayerCount, true),
-    framesPerSecond: nullableNumber(source.framesPerSecond),
-    gameTime: nullableString(source.gameTime),
+    runtimeMetrics: source.runtimeMetrics === null ? null : parseRuntimeMetrics(source.runtimeMetrics),
   })
 }
 

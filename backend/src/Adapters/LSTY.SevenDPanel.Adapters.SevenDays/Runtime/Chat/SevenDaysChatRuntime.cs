@@ -12,6 +12,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat
         private readonly ChatHistoryWriteService writer;
         private readonly Func<IDisposable> subscribe;
         private readonly IModRuntime inner;
+        private readonly ChatMuteExpiryService? muteExpiry;
         private readonly object gate = new object();
         private IDisposable? subscription;
         private bool started;
@@ -21,19 +22,22 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat
             ChatRuntimeState runtimeState,
             ChatHistoryWriteService writer,
             SevenDaysChatMessageCoordinator coordinator,
-            IModRuntime inner)
-            : this(runtimeState, writer, () => Subscribe(coordinator), inner) { }
+            IModRuntime inner,
+            ChatMuteExpiryService? muteExpiry = null)
+            : this(runtimeState, writer, () => Subscribe(coordinator), inner, muteExpiry) { }
 
         internal SevenDaysChatRuntime(
             ChatRuntimeState runtimeState,
             ChatHistoryWriteService writer,
             Func<IDisposable> subscribe,
-            IModRuntime inner)
+            IModRuntime inner,
+            ChatMuteExpiryService? muteExpiry = null)
         {
             this.runtimeState = runtimeState ?? throw new ArgumentNullException(nameof(runtimeState));
             this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
             this.subscribe = subscribe ?? throw new ArgumentNullException(nameof(subscribe));
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            this.muteExpiry = muteExpiry;
         }
 
         public void Start()
@@ -45,6 +49,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat
                 {
                     writer.Start();
                     runtimeState.Load();
+                    muteExpiry?.Start();
                     subscription = subscribe();
                     inner.Start();
                     started = true;
@@ -53,6 +58,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat
                 {
                     try { subscription?.Dispose(); } catch { }
                     try { writer.Stop(); } catch { }
+                    try { muteExpiry?.Stop(); } catch { }
                     try { inner.Stop(); } catch { }
                     stopped = true;
                     throw;
@@ -72,6 +78,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat
                 var failures = new List<Exception>();
                 try { Interlocked.Exchange(ref subscription, null)?.Dispose(); } catch (Exception exception) { failures.Add(exception); }
                 try { writer.Stop(); } catch (Exception exception) { failures.Add(exception); }
+                try { muteExpiry?.Stop(); } catch (Exception exception) { failures.Add(exception); }
                 try { inner.Stop(); } catch (Exception exception) { failures.Add(exception); }
                 if (failures.Count > 0) throw new AggregateException(failures);
             }

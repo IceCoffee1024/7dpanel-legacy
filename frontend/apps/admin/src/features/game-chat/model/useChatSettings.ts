@@ -102,7 +102,7 @@ export function useChatSettings(options: UseChatSettingsOptions = {}): ChatSetti
       return
     }
     state.value = hadValue ? 'stale' : 'failed'
-    feedbackMessage.value = '设置操作失败，请重试。'
+    feedbackMessage.value = 'gameChat.feedback.settingsOperationFailed'
   }
 
   function authorization(): string | null {

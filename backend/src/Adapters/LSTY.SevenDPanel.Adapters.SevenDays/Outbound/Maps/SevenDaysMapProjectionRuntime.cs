@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Runtime;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World;
 using LSTY.SevenDPanel.Hosting;
 
 namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
@@ -20,6 +21,9 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
         private readonly IModRuntime inner;
         private readonly Func<string, Func<SevenDaysMapSample>, TimeSpan, Task<SevenDaysMapSample>> dispatch;
         private readonly Func<SevenDaysMapSample> capture;
+        private readonly SevenDaysWorldSnapshotProjection? worldProjection;
+        private readonly SevenDaysWorldToolCatalog? worldToolCatalog;
+        private readonly Func<CancellationToken, Task<SevenDaysWorldScalarSnapshot>>? captureWorld;
         private readonly Func<DateTimeOffset> utcNow;
         private readonly TimeSpan refreshPeriod;
         private readonly Timer timer;
@@ -49,7 +53,40 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                     CancellationToken.None),
                 CaptureOnGameThread,
                 () => DateTimeOffset.UtcNow,
-                DefaultRefreshPeriod)
+                DefaultRefreshPeriod,
+                captureWorld: cancellationToken => GameThreadDispatcher.Enqueue(
+                    "7DPanel.World.ReadSnapshot",
+                    SevenDaysWorldSnapshotProjection.CaptureOnGameThread,
+                    DispatchTimeout,
+                    cancellationToken))
+        {
+        }
+
+        public SevenDaysMapProjectionRuntime(
+            SevenDaysMapMetadataProjection metadataProjection,
+            SevenDaysMapGameTimeProjection gameTimeProjection,
+            SevenDaysMapLayerProjection layerProjection,
+            SevenDaysTransientEntityProjection transientEntityProjection,
+            SevenDaysWorldSnapshotProjection worldProjection,
+            SevenDaysWorldToolCatalog worldToolCatalog,
+            IModRuntime inner)
+            : this(
+                metadataProjection,
+                gameTimeProjection,
+                layerProjection,
+                transientEntityProjection,
+                inner,
+                (operationName, action, timeout) => GameThreadDispatcher.Enqueue(
+                    operationName,
+                    action,
+                    timeout,
+                    CancellationToken.None),
+                CaptureOnGameThread,
+                () => DateTimeOffset.UtcNow,
+                DefaultRefreshPeriod,
+                worldProjection,
+                worldToolCatalog,
+                cancellationToken => worldProjection.CaptureAsync(cancellationToken))
         {
         }
 
@@ -60,7 +97,10 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             Func<string, Func<SevenDaysMapSample>, TimeSpan, Task<SevenDaysMapSample>> dispatch,
             Func<SevenDaysMapSample> capture,
             Func<DateTimeOffset> utcNow,
-            TimeSpan refreshPeriod)
+            TimeSpan refreshPeriod,
+            SevenDaysWorldSnapshotProjection? worldProjection = null,
+            SevenDaysWorldToolCatalog? worldToolCatalog = null,
+            Func<CancellationToken, Task<SevenDaysWorldScalarSnapshot>>? captureWorld = null)
             : this(
                 metadataProjection,
                 gameTimeProjection,
@@ -70,7 +110,10 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                 dispatch,
                 capture,
                 utcNow,
-                refreshPeriod)
+                refreshPeriod,
+                worldProjection,
+                worldToolCatalog,
+                captureWorld)
         {
         }
 
@@ -83,7 +126,10 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             Func<string, Func<SevenDaysMapSample>, TimeSpan, Task<SevenDaysMapSample>> dispatch,
             Func<SevenDaysMapSample> capture,
             Func<DateTimeOffset> utcNow,
-            TimeSpan refreshPeriod)
+            TimeSpan refreshPeriod,
+            SevenDaysWorldSnapshotProjection? worldProjection = null,
+            SevenDaysWorldToolCatalog? worldToolCatalog = null,
+            Func<CancellationToken, Task<SevenDaysWorldScalarSnapshot>>? captureWorld = null)
         {
             if (refreshPeriod <= TimeSpan.Zero)
                 throw new ArgumentOutOfRangeException(nameof(refreshPeriod));
@@ -98,6 +144,9 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
             this.dispatch = dispatch ?? throw new ArgumentNullException(nameof(dispatch));
             this.capture = capture ?? throw new ArgumentNullException(nameof(capture));
+            this.worldProjection = worldProjection;
+            this.worldToolCatalog = worldToolCatalog;
+            this.captureWorld = captureWorld;
             this.utcNow = utcNow ?? throw new ArgumentNullException(nameof(utcNow));
             this.refreshPeriod = refreshPeriod;
             timer = new Timer(_ => BeginRefresh(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -134,6 +183,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                 try { gameTimeProjection.Clear(); } catch (Exception exception) { failures.Add(exception); }
                 try { layerProjection.Clear(); } catch (Exception exception) { failures.Add(exception); }
                 try { transientEntityProjection.Stop(); } catch (Exception exception) { failures.Add(exception); }
+                try { worldProjection?.Clear(); } catch (Exception exception) { failures.Add(exception); }
+                try { worldToolCatalog?.Clear(); } catch (Exception exception) { failures.Add(exception); }
                 try { inner.Stop(); } catch (Exception exception) { failures.Add(exception); }
             }
 
@@ -174,11 +225,21 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
         {
             try
             {
-                var sample = await dispatch(
-                        "7DPanel.Map.Projection",
-                        capture,
-                        DispatchTimeout)
-                    .ConfigureAwait(false);
+                SevenDaysWorldScalarSnapshot? worldSample = null;
+                SevenDaysMapSample sample;
+                if (captureWorld == null)
+                {
+                    sample = await dispatch(
+                            "7DPanel.Map.Projection",
+                            capture,
+                            DispatchTimeout)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    worldSample = await captureWorld(CancellationToken.None).ConfigureAwait(false);
+                    sample = worldSample.MapSample;
+                }
                 var observedAtUtc = utcNow();
                 lock (lifecycleSync)
                 {
@@ -186,9 +247,12 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                     {
                         metadataProjection.Publish(sample, observedAtUtc);
                         gameTimeProjection.Publish(sample, observedAtUtc);
-                        // Game entities and persistent map objects are not extracted by the
-                        // supported game API boundary yet. Keep both projections explicit.
-                        layerProjection.Clear();
+                        if (worldSample != null)
+                        {
+                            layerProjection.Publish(worldSample, observedAtUtc);
+                            worldProjection?.Publish(worldSample, observedAtUtc);
+                            worldToolCatalog?.Publish(worldSample, observedAtUtc);
+                        }
                         transientEntityProjection.Stop();
                     }
                 }
@@ -201,7 +265,9 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                     {
                         metadataProjection.MarkCaptureFailed();
                         gameTimeProjection.MarkCaptureFailed();
-                        layerProjection.Clear();
+                        layerProjection.MarkCaptureFailed();
+                        worldProjection?.MarkCaptureFailed();
+                        worldToolCatalog?.MarkCaptureFailed();
                         transientEntityProjection.Stop();
                     }
                 }
@@ -217,66 +283,6 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
         }
 
         private static SevenDaysMapSample CaptureOnGameThread()
-        {
-            var manager = global::GameManager.Instance;
-            var world = manager?.World;
-            if (manager == null || world == null)
-                return new SevenDaysMapSample(null, null, worldAvailable: false);
-
-            SevenDaysMapMetadataSample? metadata = null;
-            SevenDaysMapGameTimeSample? gameTime = null;
-            var metadataCaptureFailed = false;
-            var gameTimeCaptureFailed = false;
-            try
-            {
-                if (world.GetWorldExtent(out var minimum, out var maximum))
-                {
-                    var worldName = global::GamePrefs.GetString(global::EnumGamePrefs.GameWorld);
-                    var worldId = world.Guid;
-                    var tileSize = global::MapRendering.Constants.MapBlockSize;
-                    var zoomLevelCount = global::MapRendering.Constants.Zoomlevels;
-                    if (!string.IsNullOrWhiteSpace(worldName) &&
-                        !string.IsNullOrWhiteSpace(worldId) &&
-                        maximum.x > minimum.x &&
-                        maximum.z > minimum.z &&
-                        tileSize > 0 &&
-                        zoomLevelCount > 0)
-                    {
-                        metadata = new SevenDaysMapMetadataSample(
-                            worldName,
-                            worldId,
-                            minimum.x,
-                            minimum.z,
-                            maximum.x,
-                            maximum.z,
-                            tileSize,
-                            zoomLevelCount);
-                    }
-                }
-            }
-            catch
-            {
-                metadataCaptureFailed = true;
-            }
-
-            try
-            {
-                var worldTime = world.worldTime;
-                gameTime = new SevenDaysMapGameTimeSample(
-                    global::GameUtils.WorldTimeToDays(worldTime),
-                    global::GameUtils.WorldTimeToHours(worldTime),
-                    global::GameUtils.WorldTimeToMinutes(worldTime));
-            }
-            catch
-            {
-                gameTimeCaptureFailed = true;
-            }
-
-            return new SevenDaysMapSample(
-                metadata,
-                gameTime,
-                metadataCaptureFailed,
-                gameTimeCaptureFailed);
-        }
+            => SevenDaysWorldSnapshotProjection.CaptureOnGameThread().MapSample;
     }
 }

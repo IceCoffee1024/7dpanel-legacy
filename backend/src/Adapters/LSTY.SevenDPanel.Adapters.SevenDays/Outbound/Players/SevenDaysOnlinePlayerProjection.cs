@@ -590,7 +590,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             if (string.IsNullOrWhiteSpace(value))
                 throw new InvalidOperationException("The player name is unavailable.");
 
-            return value;
+            return value!;
         }
 
         private static string? NormalizeOptionalString(string? value) =>

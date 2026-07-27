@@ -2,20 +2,17 @@
 import type { ChatChannel, ChatMessage, ChatSourceKind } from '../model/chatMessage'
 
 import { nextTick, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   messages: readonly ChatMessage[]
   unreadCount: number
-  emptyLabel?: string
-  unreadLabel?: string
-}>(), {
-  emptyLabel: 'No chat messages yet.',
-  unreadLabel: 'Back to latest',
-})
+}>()
 
 const emit = defineEmits<{
   updateFollowingLatest: [following: boolean]
 }>()
+const { locale, t } = useI18n()
 
 type SemanticColor = 'neutral' | 'info' | 'success' | 'warning' | 'error'
 
@@ -48,7 +45,7 @@ function formatTime(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime()))
     return value
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale.value, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -98,7 +95,7 @@ onMounted(() => {
       @scroll="handleScroll"
     >
       <p v-if="messages.length === 0" class="py-10 text-center text-sm text-muted">
-        {{ emptyLabel }}
+        {{ t('gameChat.live.messagesEmpty') }}
       </p>
 
       <ol v-else class="space-y-3">
@@ -110,11 +107,11 @@ onMounted(() => {
         >
           <div class="flex min-w-0 flex-wrap items-center gap-2 text-xs">
             <UBadge :color="channelColor(message.channel)" size="xs" variant="subtle">
-              {{ message.channel }}
+              {{ t(`gameChat.channels.${message.channel}`) }}
             </UBadge>
             <span class="font-semibold text-highlighted">{{ message.senderName }}</span>
             <UBadge :color="sourceColor(message.sourceKind)" size="xs" variant="outline">
-              {{ message.sourceKind }}
+              {{ t(`gameChat.sources.${message.sourceKind}`) }}
             </UBadge>
             <time class="ml-auto text-dimmed" :datetime="message.occurredAtUtc">
               {{ formatTime(message.occurredAtUtc) }}
@@ -133,7 +130,7 @@ onMounted(() => {
       color="neutral"
       data-testid="chat-unread"
       icon="i-lucide-arrow-down"
-      :label="`${unreadLabel} (${unreadCount})`"
+      :label="t('gameChat.live.backToLatest', { count: unreadCount })"
       size="sm"
       variant="solid"
       @click="scrollToLatest"

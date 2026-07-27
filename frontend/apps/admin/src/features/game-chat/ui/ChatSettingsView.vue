@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { ChatSettings } from '../model/gameChatManagement'
 
-import { reactive, watch } from 'vue'
+import { reactive, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { normalizeCommandPrefixes } from '../model/gameChatManagement'
 
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   reset: []
   dirtyChange: [dirty: boolean]
 }>()
+const { t } = useI18n()
 
 const draft = reactive({
   isEnabled: true,
@@ -27,6 +29,7 @@ const draft = reactive({
   historyRetentionDays: 0,
 })
 let syncing = false
+const validationError = shallowRef<'commandPrefixes' | 'historyRetentionDays' | null>(null)
 
 watch(() => props.settings, (settings) => {
   syncing = true
@@ -49,13 +52,18 @@ watch(draft, () => {
 
 function submit() {
   const prefixes = normalizeCommandPrefixes(draft.commandPrefixes)
-  if (prefixes === undefined || prefixes.length === 0)
+  if (prefixes === undefined || prefixes.length === 0) {
+    validationError.value = 'commandPrefixes'
     return
+  }
   if (!Number.isInteger(draft.historyRetentionDays)
     || draft.historyRetentionDays < 0
-    || draft.historyRetentionDays > 3650)
+    || draft.historyRetentionDays > 3650) {
+    validationError.value = 'historyRetentionDays'
     return
+  }
 
+  validationError.value = null
   emit('save', {
     isEnabled: draft.isEnabled,
     globalServerName: draft.globalServerName.trim() || null,
@@ -71,27 +79,27 @@ function submit() {
   <section class="space-y-5" aria-labelledby="chat-settings-title">
     <header>
       <h1 id="chat-settings-title" class="text-lg font-semibold text-highlighted">
-        聊天设置
+        {{ t('gameChat.settings.title') }}
       </h1>
       <p class="text-sm text-muted">
-        关闭聊天功能不会删除已有历史；重新启用后才继续捕获和允许面板发送。
+        {{ t('gameChat.settings.description') }}
       </p>
     </header>
 
     <UForm :state="draft" class="space-y-5" @submit="submit">
       <section class="space-y-4 rounded-lg border border-default p-4">
         <div>
-          <h2 class="font-medium text-highlighted">功能与发送名称</h2>
-          <p class="text-sm text-muted">控制捕获和面板发送，并设置服务端显示名称。</p>
+          <h2 class="font-medium text-highlighted">{{ t('gameChat.settings.sections.featureTitle') }}</h2>
+          <p class="text-sm text-muted">{{ t('gameChat.settings.sections.featureDescription') }}</p>
         </div>
-        <UFormField label="启用聊天功能" name="isEnabled">
-          <USwitch v-model="draft.isEnabled" label="允许捕获聊天和从面板发送消息" :disabled="isSaving || isResetting" />
+        <UFormField :label="t('gameChat.settings.fields.enabled')" name="isEnabled">
+          <USwitch v-model="draft.isEnabled" :label="t('gameChat.settings.fields.enabledDescription')" :disabled="isSaving || isResetting" />
         </UFormField>
         <div class="grid gap-4 md:grid-cols-2">
-          <UFormField label="全局消息服务端名称" name="globalServerName" hint="可选">
+          <UFormField :label="t('gameChat.settings.fields.globalServerName')" name="globalServerName" :hint="t('gameChat.common.optional')">
             <UInput v-model="draft.globalServerName" class="w-full" :disabled="isSaving || isResetting" />
           </UFormField>
-          <UFormField label="私聊消息服务端名称" name="whisperServerName" hint="可选">
+          <UFormField :label="t('gameChat.settings.fields.whisperServerName')" name="whisperServerName" :hint="t('gameChat.common.optional')">
             <UInput v-model="draft.whisperServerName" class="w-full" :disabled="isSaving || isResetting" />
           </UFormField>
         </div>
@@ -99,10 +107,10 @@ function submit() {
 
       <section class="space-y-4 rounded-lg border border-default p-4">
         <div>
-          <h2 class="font-medium text-highlighted">命令与历史</h2>
-          <p class="text-sm text-muted">每个命令前缀必须是一个非空白字符；0 表示不自动清理。</p>
+          <h2 class="font-medium text-highlighted">{{ t('gameChat.settings.sections.commandTitle') }}</h2>
+          <p class="text-sm text-muted">{{ t('gameChat.settings.sections.commandDescription') }}</p>
         </div>
-        <UFormField label="命令前缀" name="commandPrefixes" description="输入一个或多个单字符前缀。">
+        <UFormField :label="t('gameChat.settings.fields.commandPrefixes')" name="commandPrefixes" :description="t('gameChat.settings.fields.commandPrefixesDescription')">
           <UInputTags
             v-model="draft.commandPrefixes"
             data-testid="command-prefixes"
@@ -110,14 +118,14 @@ function submit() {
             :disabled="isSaving || isResetting"
           />
         </UFormField>
-        <UFormField label="排除命令历史" name="excludeCommandsFromHistory">
+        <UFormField :label="t('gameChat.settings.fields.excludeCommands')" name="excludeCommandsFromHistory">
           <UCheckbox
             v-model="draft.excludeCommandsFromHistory"
-            label="命令消息不写入历史记录"
+            :label="t('gameChat.settings.fields.excludeCommandsDescription')"
             :disabled="isSaving || isResetting"
           />
         </UFormField>
-        <UFormField label="历史保留天数" name="historyRetentionDays" description="范围 0..3650；0 表示不自动清理。">
+        <UFormField :label="t('gameChat.settings.fields.retentionDays')" name="historyRetentionDays" :description="t('gameChat.settings.fields.retentionDaysDescription')">
           <UInputNumber
             v-model="draft.historyRetentionDays"
             data-testid="history-retention-days"
@@ -129,8 +137,12 @@ function submit() {
         </UFormField>
       </section>
 
+      <p v-if="validationError" role="alert" class="text-sm text-error">
+        {{ t(`gameChat.settings.validation.${validationError}`) }}
+      </p>
+
       <p v-if="feedbackMessage" role="status" class="text-sm text-error">
-        {{ feedbackMessage }}
+        {{ t(feedbackMessage) }}
       </p>
 
       <div class="flex flex-wrap justify-end gap-2">
@@ -139,7 +151,7 @@ function submit() {
           type="button"
           color="neutral"
           variant="outline"
-          label="恢复默认值"
+          :label="t('gameChat.common.resetDefaults')"
           :loading="isResetting"
           :disabled="isSaving || isResetting"
           @click="emit('reset')"
@@ -147,7 +159,7 @@ function submit() {
         <UButton
           type="submit"
           icon="i-lucide-save"
-          label="保存聊天设置"
+          :label="t('gameChat.settings.save')"
           :loading="isSaving"
           :disabled="isSaving || isResetting"
         />

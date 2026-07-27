@@ -30,17 +30,64 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Query_maps_fps_player_counts_and_game_time()
+        public async Task Query_maps_fixed_runtime_metrics_with_shared_observation_time()
         {
             var query = CreateQuery(CreateAvailableSample());
 
             var snapshot = await query.GetGameOverviewAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(58.5d, snapshot.FramesPerSecond);
-            Assert.Equal(3, snapshot.OnlinePlayerCount);
+            var metrics = Assert.IsType<GameRuntimeMetrics>(snapshot.RuntimeMetrics);
+            Assert.Equal("Day 4 13:27", metrics.GameDayTime.Value);
+            Assert.False(metrics.IsBloodMoon.Value);
+            Assert.Equal(58.5d, metrics.FramesPerSecond.Value);
+            Assert.Equal(3, metrics.OnlinePlayerCount.Value);
+            Assert.Equal(17, metrics.HistoricalPlayerCount.Value);
+            Assert.Equal(4, metrics.AnimalCount.Value);
+            Assert.Equal(9, metrics.HostileEntityCount.Value);
+            Assert.Equal(25, metrics.ActiveEntityCount.Value);
+            Assert.Equal(144, metrics.ChunkCount.Value);
+            Assert.Equal(6, metrics.DroppedItemCount.Value);
+            Assert.Equal(123456L, metrics.GameMemoryBytes.Value);
+            Assert.Equal("World.worldTime", metrics.GameDayTime.Source);
+            Assert.Equal("game-clock", metrics.GameDayTime.Unit);
+            Assert.Equal("World.aiDirector.BloodMoonComponent.BloodMoonActive", metrics.IsBloodMoon.Source);
+            Assert.Equal("boolean", metrics.IsBloodMoon.Unit);
+            Assert.Equal("GameManager.frameTime", metrics.FramesPerSecond.Source);
+            Assert.Equal("frames/second", metrics.FramesPerSecond.Unit);
+            Assert.Equal("World.Players.Count", metrics.OnlinePlayerCount.Source);
+            Assert.Equal("GameManager.persistentPlayerCount", metrics.HistoricalPlayerCount.Source);
+            Assert.Equal("World.Entities", metrics.AnimalCount.Source);
+            Assert.Equal("World.Entities", metrics.HostileEntityCount.Source);
+            Assert.Equal("World.Entities", metrics.ActiveEntityCount.Source);
+            Assert.Equal("Chunk.InstanceCount", metrics.ChunkCount.Source);
+            Assert.Equal("World.Entities", metrics.DroppedItemCount.Source);
+            Assert.Equal("GC.GetTotalMemory(false)", metrics.GameMemoryBytes.Source);
+            Assert.All(new[]
+            {
+                metrics.OnlinePlayerCount.Unit,
+                metrics.HistoricalPlayerCount.Unit,
+                metrics.AnimalCount.Unit,
+                metrics.HostileEntityCount.Unit,
+                metrics.ActiveEntityCount.Unit,
+                metrics.ChunkCount.Unit,
+                metrics.DroppedItemCount.Unit
+            }, unit => Assert.Equal("count", unit));
+            Assert.Equal("bytes", metrics.GameMemoryBytes.Unit);
+            Assert.All(new[]
+            {
+                metrics.GameDayTime.ObservedAtUtc,
+                metrics.IsBloodMoon.ObservedAtUtc,
+                metrics.FramesPerSecond.ObservedAtUtc,
+                metrics.OnlinePlayerCount.ObservedAtUtc,
+                metrics.HistoricalPlayerCount.ObservedAtUtc,
+                metrics.AnimalCount.ObservedAtUtc,
+                metrics.HostileEntityCount.ObservedAtUtc,
+                metrics.ActiveEntityCount.ObservedAtUtc,
+                metrics.ChunkCount.ObservedAtUtc,
+                metrics.DroppedItemCount.ObservedAtUtc,
+                metrics.GameMemoryBytes.ObservedAtUtc
+            }, observedAtUtc => Assert.Equal(SampledAt, observedAtUtc));
             Assert.Equal(8, snapshot.MaximumPlayerCount);
-            Assert.Equal(17, snapshot.HistoricalPlayerCount);
-            Assert.Equal("Day 4 13:27", snapshot.GameTime);
             Assert.Equal("2.1.0", snapshot.Version);
             Assert.Equal("SurvivalMP", snapshot.GameMode);
             Assert.Equal("Warrior", snapshot.Difficulty);
@@ -51,7 +98,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public void Query_and_capture_contract_do_not_expose_live_game_handles_or_legacy_fields()
+        public void Query_and_capture_contract_do_not_expose_live_game_handles_or_legacy_metric_aliases()
         {
             var permitted = new[]
             {
@@ -61,8 +108,17 @@ namespace LSTY.SevenDPanel.Tests
             var captureProperties = typeof(SevenDaysGameOverviewSample)
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-            Assert.All(captureProperties, property =>
+            Assert.All(captureProperties.Where(property => property.Name != "RuntimeMetrics"), property =>
                 Assert.Contains(property.PropertyType, permitted));
+            var metricSampleTypes = typeof(SevenDaysGameRuntimeMetricsSample)
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Select(property => property.PropertyType)
+                .ToArray();
+            Assert.All(metricSampleTypes, type =>
+            {
+                Assert.True(type.IsGenericType);
+                Assert.Equal(typeof(SevenDaysMetricSample<>), type.GetGenericTypeDefinition());
+            });
             Assert.DoesNotContain("GameName", captureProperties.Select(property => property.Name));
             Assert.DoesNotContain("MapName", captureProperties.Select(property => property.Name));
             Assert.DoesNotContain("UnityHeapBytes", captureProperties.Select(property => property.Name));
@@ -71,6 +127,15 @@ namespace LSTY.SevenDPanel.Tests
                 typeof(SevenDaysGameOverviewQuery)
                     .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public),
                 field => field.FieldType == typeof(SevenDaysGameOverviewSample));
+
+            var snapshotProperties = typeof(GameOverviewSnapshot)
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Select(property => property.Name)
+                .ToArray();
+            Assert.DoesNotContain("GameTime", snapshotProperties);
+            Assert.DoesNotContain("FramesPerSecond", snapshotProperties);
+            Assert.DoesNotContain("OnlinePlayerCount", snapshotProperties);
+            Assert.DoesNotContain("HistoricalPlayerCount", snapshotProperties);
         }
 
         [Fact]
@@ -145,7 +210,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Dispatch_timeout_maps_to_stale_without_exception_details()
+        public async Task Dispatch_timeout_without_history_maps_to_unavailable_without_exception_details()
         {
             var query = new SevenDaysGameOverviewQuery(
                 (_, _, _) => Task.FromException<SevenDaysGameOverviewSample>(new TimeoutException("private timeout")),
@@ -155,24 +220,70 @@ namespace LSTY.SevenDPanel.Tests
 
             var snapshot = await query.GetGameOverviewAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(AvailabilityState.Stale, snapshot.Availability);
+            Assert.Equal(AvailabilityState.Unavailable, snapshot.Availability);
             Assert.Null(snapshot.SampledAtUtc);
             Assert.Null(snapshot.GameTitle);
+        }
+
+        [Fact]
+        public async Task Dispatch_timeout_preserves_the_last_successful_snapshot_as_stale()
+        {
+            var now = SampledAt;
+            var dispatchCount = 0;
+            var query = new SevenDaysGameOverviewQuery(
+                (_, action, _) =>
+                {
+                    dispatchCount++;
+                    return dispatchCount == 1
+                        ? Task.FromResult(action())
+                        : Task.FromException<SevenDaysGameOverviewSample>(new TimeoutException("private timeout"));
+                },
+                CreateAvailableSample,
+                () => now,
+                TimeSpan.FromSeconds(4));
+
+            var available = await query.GetGameOverviewAsync(TestContext.Current.CancellationToken);
+            now = now.AddSeconds(5);
+            var stale = await query.GetGameOverviewAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal(AvailabilityState.Available, available.Availability);
+            Assert.Equal(AvailabilityState.Stale, stale.Availability);
+            Assert.Equal(available.SampledAtUtc, stale.SampledAtUtc);
+            Assert.Equal(available.SaveGameName, stale.SaveGameName);
+            Assert.Equal(
+                available.RuntimeMetrics!.FramesPerSecond.Value,
+                stale.RuntimeMetrics!.FramesPerSecond.Value);
         }
 
         [Fact]
         public async Task Unavailable_fields_remain_null_in_an_available_snapshot()
         {
             var query = CreateQuery(new SevenDaysGameOverviewSample(
-                true, "Save", "World", 10L, null, null, null, null, null, null, null, null, null, null, null, null));
+                true,
+                "Save",
+                "World",
+                10L,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                CreateUnavailableMetricSample()));
 
             var snapshot = await query.GetGameOverviewAsync(TestContext.Current.CancellationToken);
 
             Assert.Equal(AvailabilityState.Available, snapshot.Availability);
             Assert.Null(snapshot.Version);
-            Assert.Null(snapshot.OnlinePlayerCount);
-            Assert.Null(snapshot.FramesPerSecond);
-            Assert.Null(snapshot.GameTime);
+            var metrics = Assert.IsType<GameRuntimeMetrics>(snapshot.RuntimeMetrics);
+            Assert.Null(metrics.OnlinePlayerCount.Value);
+            Assert.Equal(RuntimeMetricWarningCode.ReadFailed, metrics.OnlinePlayerCount.Warning);
+            Assert.Null(metrics.FramesPerSecond.Value);
+            Assert.Equal(RuntimeMetricWarningCode.ReadFailed, metrics.FramesPerSecond.Warning);
+            Assert.Null(metrics.GameDayTime.Value);
+            Assert.Equal(RuntimeMetricWarningCode.Unsupported, metrics.GameDayTime.Warning);
         }
 
         [Fact]
@@ -276,7 +387,8 @@ namespace LSTY.SevenDPanel.Tests
                     return Task.FromResult(action());
                 },
                 () => new SevenDaysGameOverviewSample(
-                    true, "Save " + dispatchCount, "World", 10L, null, null, null, null, null, null, null, null, null, null, null, null),
+                    true, "Save " + dispatchCount, "World", 10L, null, null, null, null, null, null, null, null,
+                    CreateUnavailableMetricSample()),
                 () => now,
                 TimeSpan.FromSeconds(4));
 
@@ -305,7 +417,8 @@ namespace LSTY.SevenDPanel.Tests
                     return Task.FromResult(action());
                 },
                 () => new SevenDaysGameOverviewSample(
-                    true, "Save " + dispatchCount, "World", 10L, null, null, null, null, null, null, null, null, null, null, null, null),
+                    true, "Save " + dispatchCount, "World", 10L, null, null, null, null, null, null, null, null,
+                    CreateUnavailableMetricSample()),
                 () => now,
                 TimeSpan.FromSeconds(4));
 
@@ -358,6 +471,32 @@ namespace LSTY.SevenDPanel.Tests
         private static SevenDaysGameOverviewSample CreateAvailableSample() =>
             new SevenDaysGameOverviewSample(
                 true, "Navezgane Save", "Navezgane", 321L, "2.1.0", "SurvivalMP", "Warrior", "Europe", "en",
-                "203.0.113.10", 26900, 3, 8, 17, 58.5d, "Day 4 13:27");
+                "203.0.113.10", 26900, 8,
+                new SevenDaysGameRuntimeMetricsSample(
+                    new SevenDaysMetricSample<string>("Day 4 13:27", null),
+                    new SevenDaysMetricSample<bool?>(false, null),
+                    new SevenDaysMetricSample<double?>(58.5d, null),
+                    new SevenDaysMetricSample<int?>(3, null),
+                    new SevenDaysMetricSample<int?>(17, null),
+                    new SevenDaysMetricSample<int?>(4, null),
+                    new SevenDaysMetricSample<int?>(9, null),
+                    new SevenDaysMetricSample<int?>(25, null),
+                    new SevenDaysMetricSample<int?>(144, null),
+                    new SevenDaysMetricSample<int?>(6, null),
+                    new SevenDaysMetricSample<long?>(123456L, null)));
+
+        private static SevenDaysGameRuntimeMetricsSample CreateUnavailableMetricSample() =>
+            new SevenDaysGameRuntimeMetricsSample(
+                new SevenDaysMetricSample<string>(null!, RuntimeMetricWarningCode.Unsupported),
+                new SevenDaysMetricSample<bool?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<double?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<int?>(null, RuntimeMetricWarningCode.ReadFailed),
+                new SevenDaysMetricSample<long?>(null, RuntimeMetricWarningCode.ReadFailed));
     }
 }

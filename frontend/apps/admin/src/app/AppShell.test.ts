@@ -31,6 +31,7 @@ async function mountAppShell() {
     routes: [
       { path: '/', component: { template: '<div />' } },
       { path: '/players', component: { template: '<div />' } },
+      { path: '/players/history', component: { template: '<div />' } },
       { path: '/game-resources', component: { template: '<div />' } },
       { path: '/api-keys', component: { template: '<div />' } },
       { path: '/console-logs', component: { template: '<div />' } },
@@ -38,6 +39,25 @@ async function mountAppShell() {
       { path: '/game-chat/history', component: { template: '<div />' } },
       { path: '/game-chat/settings', component: { template: '<div />' } },
       { path: '/game-chat/colored', component: { template: '<div />' } },
+      { path: '/game-chat/mutes', component: { template: '<div />' } },
+      { path: '/audit', component: { template: '<div />' } },
+      { path: '/world-tools', component: { template: '<div />' } },
+      { path: '/modules', component: { template: '<div />' } },
+      { path: '/backups', component: { template: '<div />' } },
+      { path: '/schedules', component: { template: '<div />' } },
+      { path: '/automation', component: { template: '<div />' } },
+      { path: '/economy/accounts', component: { template: '<div />' } },
+      { path: '/economy/transactions', component: { template: '<div />' } },
+      { path: '/economy/reward-packages', component: { template: '<div />' } },
+      { path: '/economy/reward-operations', component: { template: '<div />' } },
+      { path: '/economy/shop', component: { template: '<div />' } },
+      { path: '/economy/redeem-codes', component: { template: '<div />' } },
+      { path: '/economy/achievement-online-rewards', component: { template: '<div />' } },
+      { path: '/community/teleport', component: { template: '<div />' } },
+      { path: '/community/cities', component: { template: '<div />' } },
+      { path: '/community/votes', component: { template: '<div />' } },
+      { path: '/integrations/discord', component: { template: '<div />' } },
+      { path: '/integrations/geoip', component: { template: '<div />' } },
       { path: '/server-configuration', component: { template: '<div />' } },
       { path: '/access-lists', component: { template: '<div />' } },
       { path: '/permissions', component: { template: '<div />' } },
@@ -153,7 +173,52 @@ describe('appShell', () => {
     expect(wrapper.text()).not.toContain('游戏聊天')
   })
 
-  it.each(['Owner', 'Admin', 'Viewer'] as const)('groups Players and Game resources for %s and flattens both into search', async (role) => {
+  it('shows audit, game events, and mute management only to Owner', async () => {
+    const { auth, wrapper } = await mountAppShell()
+
+    expect(wrapper.text()).toContain('审计与事件')
+    let navigation = wrapper.findComponent({ name: 'NavigationMenu' })
+    let items = navigation.props('items') as Array<{ label: string, children?: Array<{ label: string }> }>
+    expect(items.find(item => item.label === '游戏聊天')?.children?.map(item => item.label)).toContain('禁言管理')
+
+    auth.role = 'Admin'
+    await nextTick()
+    expect(wrapper.text()).not.toContain('审计与事件')
+    navigation = wrapper.findComponent({ name: 'NavigationMenu' })
+    items = navigation.props('items') as Array<{ label: string, children?: Array<{ label: string }> }>
+    expect(items.some(item => item.label === '游戏聊天')).toBe(false)
+
+    auth.role = 'Viewer'
+    await nextTick()
+    expect(wrapper.text()).not.toContain('审计与事件')
+    navigation = wrapper.findComponent({ name: 'NavigationMenu' })
+    items = navigation.props('items') as Array<{ label: string, children?: Array<{ label: string }> }>
+    expect(items.some(item => item.label === '游戏聊天')).toBe(false)
+  })
+
+  it('shows parity operation groups only to Owner and exposes their destinations to search', async () => {
+    const { auth, wrapper } = await mountAppShell()
+    const navigation = wrapper.findComponent({ name: 'NavigationMenu' })
+    const ownerItems = navigation.props('items') as Array<{ label: string, children?: Array<{ label: string }> }>
+
+    expect(ownerItems.find(item => item.label === '服务器运维')?.children?.map(item => item.label))
+      .toEqual(expect.arrayContaining(['世界工具', '功能模块', '事件自动化']))
+    expect(ownerItems.find(item => item.label === '经济与奖励')?.children).toHaveLength(8)
+    expect(ownerItems.find(item => item.label === '传送与投票')?.children).toHaveLength(3)
+    expect(ownerItems.find(item => item.label === '集成与访问策略')?.children).toHaveLength(2)
+
+    const search = wrapper.findComponent({ name: 'DashboardSearch' })
+    const groups = search.props('groups') as Array<{ items: Array<{ label: string }> }>
+    expect(groups[0]?.items.map(item => item.label))
+      .toEqual(expect.arrayContaining(['经济账户', '传送设置', 'Discord 集成', 'GeoIP 访问策略']))
+
+    auth.role = 'Admin'
+    await nextTick()
+    expect(wrapper.text()).not.toContain('服务器运维')
+    expect(wrapper.text()).not.toContain('经济与奖励')
+  })
+
+  it.each(['Owner', 'Admin', 'Viewer'] as const)('groups player destinations for %s and flattens accessible entries into search', async (role) => {
     const { auth, wrapper } = await mountAppShell()
     auth.role = role
     await nextTick()
@@ -161,10 +226,11 @@ describe('appShell', () => {
     const navigation = wrapper.findComponent({ name: 'NavigationMenu' })
     const items = navigation.props('items') as Array<{ label: string, children?: Array<{ label: string }> }>
     const group = items.find(item => item.label === '玩家与世界')
-    expect(group?.children?.map(item => item.label)).toEqual(['玩家', '游戏资源'])
+    const expected = role === 'Owner' ? ['玩家', '玩家档案与证据', '游戏资源'] : ['玩家', '游戏资源']
+    expect(group?.children?.map(item => item.label)).toEqual(expected)
     const search = wrapper.findComponent({ name: 'DashboardSearch' })
     const groups = search.props('groups') as Array<{ items: Array<{ label: string }> }>
-    expect(groups[0]?.items.map(item => item.label)).toEqual(expect.arrayContaining(['玩家', '游戏资源']))
+    expect(groups[0]?.items.map(item => item.label)).toEqual(expect.arrayContaining(expected))
   })
 
   it('keeps g-p and adds g-r navigation shortcuts', async () => {

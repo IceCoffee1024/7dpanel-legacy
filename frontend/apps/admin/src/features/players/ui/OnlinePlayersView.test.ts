@@ -17,7 +17,9 @@ import OnlinePlayersList from './OnlinePlayersList.vue'
 import OnlinePlayersTable from './OnlinePlayersTable.vue'
 import OnlinePlayersView from './OnlinePlayersView.vue'
 
-const { routerReplaceMock, toastAddMock, useKickPlayerMock, useOnlinePlayersMock } = vi.hoisted(() => ({
+const { authState, routerPushMock, routerReplaceMock, toastAddMock, useKickPlayerMock, useOnlinePlayersMock } = vi.hoisted(() => ({
+  authState: { role: 'Owner' as 'Owner' | 'Admin' | 'Viewer' },
+  routerPushMock: vi.fn(),
   routerReplaceMock: vi.fn(),
   toastAddMock: vi.fn(),
   useKickPlayerMock: vi.fn(),
@@ -37,9 +39,13 @@ vi.mock('../model/useOnlinePlayers', () => ({
   useOnlinePlayers: useOnlinePlayersMock,
 }))
 
+vi.mock('../../auth', () => ({
+  useAuthStore: () => authState,
+}))
+
 vi.mock('vue-router', async importOriginal => ({
   ...await importOriginal<typeof import('vue-router')>(),
-  useRouter: () => ({ replace: routerReplaceMock }),
+  useRouter: () => ({ push: routerPushMock, replace: routerReplaceMock }),
 }))
 
 const player: OnlinePlayer = {
@@ -140,15 +146,17 @@ function mountOnlinePlayersView(values: ControllerValues = {}, kickOptions: {
             `,
           },
           OnlinePlayerDetailsSlideover: {
-            props: ['open', 'player', 'unavailable', 'canKick'],
-            emits: ['update:open', 'copyValue', 'kickPlayer'],
+            props: ['open', 'player', 'unavailable', 'canKick', 'canOpenProfile'],
+            emits: ['update:open', 'copyValue', 'kickPlayer', 'openProfile'],
             template: `
               <section v-if="open" data-testid="details-slideover">
                 <span data-testid="details-player">{{ player?.name }}</span>
                 <span data-testid="details-unavailable">{{ unavailable }}</span>
                 <span data-testid="details-can-kick">{{ canKick }}</span>
+                <span data-testid="details-can-open-profile">{{ canOpenProfile }}</span>
                 <button data-testid="details-close" @click="$emit('update:open', false)">关闭</button>
                 <button data-testid="details-kick" @click="$emit('kickPlayer', player)">踢出</button>
+                <button v-if="canOpenProfile && player?.crossplatformIdentity" data-testid="details-profile" @click="$emit('openProfile', player.crossplatformIdentity.combinedId)">档案</button>
               </section>
             `,
           },
@@ -171,6 +179,8 @@ function onePlayerSnapshot(overrides: Partial<OnlinePlayer> = {}): OnlinePlayers
 }
 
 beforeEach(() => {
+  authState.role = 'Owner'
+  routerPushMock.mockReset()
   routerReplaceMock.mockReset()
   toastAddMock.mockReset()
   useKickPlayerMock.mockReset()
@@ -326,6 +336,33 @@ it('keeps the confirmation target fixed while detail refreshes or closes', async
 
   expect(wrapper.get('[data-testid="kick-dialog-player"]').text()).toBe('Test Player')
   expect(submit).toHaveBeenCalledWith(player, '违反服务器规则')
+})
+
+it('opens stable player profiles only for Owner', async () => {
+  const stablePlayer = {
+    ...player,
+    crossplatformIdentity: { combinedId: 'EOS_profile/id', platform: 'EOS' },
+  }
+  const { wrapper } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: { players: [stablePlayer] },
+  })
+
+  wrapper.getComponent(OnlinePlayersTable).vm.$emit('viewDetails', stablePlayer)
+  await nextTick()
+  await wrapper.get('[data-testid="details-profile"]').trigger('click')
+
+  expect(routerPushMock).toHaveBeenCalledWith('/players/profile/EOS_profile%2Fid')
+
+  authState.role = 'Admin'
+  const admin = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: { players: [stablePlayer] },
+  })
+  admin.wrapper.getComponent(OnlinePlayersTable).vm.$emit('viewDetails', stablePlayer)
+  await nextTick()
+  expect(admin.wrapper.get('[data-testid="details-can-open-profile"]').text()).toBe('false')
+  expect(admin.wrapper.find('[data-testid="details-profile"]').exists()).toBe(false)
 })
 
 it('closes, notifies and refreshes after a successful kick', async () => {

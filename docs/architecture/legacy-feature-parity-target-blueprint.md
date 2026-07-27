@@ -93,7 +93,7 @@ last_updated: "2026-07-26"
 
 - 已从当前游戏版本边界复制物品、方块、可见性、堆叠/品质、本地化名称和 PNG 图标元数据；
 - 已提供版本化不可变 snapshot、安全图标读取、搜索/分页 API 和 Admin 响应式只读页面；
-- 背包、发物品、奖励包、商店和自动化仍未实现，后续切片只能消费当前类型化目录合同，不得把本阶段扩成通用文件、缓存或资源注册表。
+- 后续第三至第五波已经消费该类型化目录完成玩家物品动作、奖励包、商店和固定自动化动作；当前实现事实见[系统架构](../architecture.md#六波次功能对齐当前代码状态)，真实游戏证据缺口见[测试策略](../test.md#六波次功能对齐当前工作树证据)。
 
 这是第一项实施切片。它只读、可缓存、不会修改玩家或世界，同时能尽早验证旧版字段提取、游戏线程复制、路径安全、OpenAPI 生成和 Admin Feature 的完整链路。
 
@@ -141,6 +141,34 @@ last_updated: "2026-07-26"
 - 无法证明结果或恢复语义的旧版工具可以延期，不用通用控制台页面冒充功能对齐。
 
 阶段按底层依赖排序，但不要求一个阶段的所有低价值边角完成后才能开始下一个阶段。允许在依赖已稳定时交错实施，前提是每个合并单元仍是完整纵向切片，且没有为未来阶段预建无消费者基础设施。
+
+## 六波次全量对齐规格集
+
+游戏资源目录已作为前置切片提交于 `a040f84`。剩余阶段已经收敛为下列六份获批 Change Record 及其一对一主实施计划。规格和计划继续拥有目标与执行顺序；当前代码状态已经提升到[系统架构](../architecture.md#六波次功能对齐当前代码状态)，验证结果与缺口由[测试策略](../test.md#六波次功能对齐当前工作树证据)拥有，本蓝图不重复宣称实现或验收。
+
+| 波次 | 主规格 | 主实施计划 | 覆盖原阶段与能力 | 直接依赖 |
+|---|---|---|---|---|
+| 第一波 | [运行指标与证据闭环](../superpowers/specs/2026-07-26-legacy-parity-evidence-foundation-design.md) | [实施计划](../superpowers/plans/2026-07-26-legacy-parity-evidence-foundation.md) | 阶段 2；`CAP-01` 指标、`CAP-05` 游戏事件/统一审计、`CAP-07` 禁言/命令目录/双语收口 | 当前概览、专用审计、聊天与 SSE |
+| 第二波 | [持久作业、备份恢复与调度](../superpowers/specs/2026-07-26-legacy-parity-jobs-backup-design.md) | [实施计划](../superpowers/plans/2026-07-26-legacy-parity-jobs-backup.md) | 阶段 4；`CAP-03` 全部及 `CAP-04` 公告、Cron、计划命令/重启基础 | 当前 SQLite、服务器操作、控制台与游戏线程调度 |
+| 第三波 | [玩家资料、物品证据与类型化动作](../superpowers/specs/2026-07-26-legacy-parity-player-evidence-actions-design.md) | [实施计划](../superpowers/plans/2026-07-26-legacy-parity-player-evidence-actions.md) | 阶段 3 与阶段 5 的玩家部分；`CAP-08` Profile/背包/技能/来源/物品动作 | 游戏资源目录、玩家历史、第一波事件 |
+| 第四波 | [经济、奖励、传送与社区投票](../superpowers/specs/2026-07-26-legacy-parity-economy-community-design.md) | [实施计划](../superpowers/plans/2026-07-26-legacy-parity-economy-community.md) | 阶段 5 社区部分与阶段 6；`CAP-09`、`CAP-10` | 第二波作业、第三波玩家/物品动作 |
+| 第五波 | [事件自动化、Discord 与 GeoIP](../superpowers/specs/2026-07-26-legacy-parity-automation-integrations-design.md) | [实施计划](../superpowers/plans/2026-07-26-legacy-parity-automation-integrations.md) | 阶段 7；完成 `CAP-04` 规则并交付 `CAP-11` | 第一波事件、第二波调度、第三/四波类型化动作 |
+| 第六波 | [世界工具、地图作业与功能模块](../superpowers/specs/2026-07-26-legacy-parity-world-tools-modules-design.md) | [实施计划](../superpowers/plans/2026-07-26-legacy-parity-world-tools-modules.md) | 阶段 8 及剩余地图动作；`CAP-12` | 第二波作业、现有只读地图和全部真实模块消费者 |
+
+### 实施后的剩余目标
+
+六波次的 migration、主要 Domain/Application/Adapter/Web/DI 和 Admin 页面已经在当前工作树形成代码切片，已采用结构不再由本 Target 文档重复定义。以下条目仍保留为目标或验收缺口：
+
+- `daily/claim`、`shop`、`tpa/tpaccept/tpreject` 需要先补专用持久合同，不能用浏览器状态、测试 Stub 或控制台原文冒充；
+- Community 全量城市、好友、传送操作和投票轮次查询，以及底层原子 expected-version Store 合同仍不完整；
+- Discord Gateway 网络连接、interaction Ed25519 transport、真实 sandbox 往返，以及 GeoIP/MaxMind 真实加入决策仍未完成；
+- 奖励、成就和在线奖励 evidence runtime 尚未接入生产 `PlayerSnapshot`/`PlayerSession` 观察源；
+- 真实备份恢复、玩家动作、经济/传送/投票、世界 change set/undo 和危险世界工具必须在受控 `v3.0.1-b4` 实例取得证据；危险操作前必须确认备份与回滚目标；
+- 最终 Admin typecheck、AppShell/router/i18n/Community 聚焦 Vitest 和 JSON key audit 已按[测试策略](../test.md#六波次功能对齐当前工作树证据)执行并通过；world-tools/modules/player-map 完整聚焦组合、定向 lint、全量门禁、Playwright、publish 和 Windows/Linux 候选发布证据仍未闭合，当前精简实现不能替代这些边界。
+
+连续实施固定占用 `008_EvidenceFoundation.sql`、`009_JobsBackupsSchedules.sql`、`010_PlayerEvidenceActions.sql`、`011_EconomyCommunity.sql`、`012_AutomationIntegrations.sql` 和 `013_WorldToolsAndFeatureModules.sql`。每个后续 migration 在保留专用权威记录的同时重新创建第一波只读 `unified_audit_projection`，只增加新波次稳定摘要；不得复制业务正文、Secret、路径或大字段，也不得把 gap 投影为已发生动作。
+
+上述六份规格已于 2026-07-26 一次性批准，每份规格已经创建且只创建一个主实施计划。执行按波次顺序连续推进；波次内部可以并发实施 Application/Domain、Adapters、Web/OpenAPI、Admin 和聚焦验证，但同一 migration、组合根、生成合同和 Current 文档由主执行者串行合流。只有产品决策变化、破坏性真实环境操作或真实环境证据阻塞才暂停请求用户确认。
 
 ## 精简验证策略
 

@@ -8,6 +8,17 @@ vi.mock('../../../shared/api/http', () => ({
   requestJson: vi.fn(),
 }))
 
+const runtimeObservedAtUtc = '2026-07-25T01:02:03.1234567Z'
+
+function metric<T>(
+  value: T | null,
+  source: string,
+  unit: string,
+  warning: 'readFailed' | 'unsupported' | null = null,
+) {
+  return { value, source, unit, observedAtUtc: runtimeObservedAtUtc, warning }
+}
+
 function ownerOverview() {
   return {
     availability: 'available',
@@ -25,11 +36,20 @@ function ownerOverview() {
       language: 'English',
       connectionAddress: '127.0.0.1',
       connectionPort: 26900,
-      onlinePlayerCount: 2,
       maximumPlayerCount: 8,
-      historicalPlayerCount: 10,
-      framesPerSecond: 60.5,
-      gameTime: 'Day 3',
+      runtimeMetrics: {
+        gameDayTime: metric('Day 3', 'World.worldTime', 'game-clock'),
+        isBloodMoon: metric(false, 'World.aiDirector.BloodMoonComponent.BloodMoonActive', 'boolean'),
+        framesPerSecond: metric(60.5, 'GameManager.frameTime', 'frames/second'),
+        onlinePlayerCount: metric(0, 'World.Players.Count', 'count'),
+        historicalPlayerCount: metric(10, 'GameManager.persistentPlayerCount', 'count'),
+        animalCount: metric(4, 'World.Entities', 'count'),
+        hostileEntityCount: metric(9, 'World.Entities', 'count'),
+        activeEntityCount: metric(25, 'World.Entities', 'count'),
+        chunkCount: metric(144, 'Chunk.InstanceCount', 'count'),
+        droppedItemCount: metric(null, 'World.Entities', 'count', 'readFailed'),
+        gameMemoryBytes: metric(null, 'GC.GetTotalMemory(false)', 'bytes', 'unsupported'),
+      },
     },
     host: {
       availability: 'available',
@@ -105,6 +125,18 @@ describe('parseOverview', () => {
     expect(result).toEqual(wire)
     expect(result).not.toBe(wire)
     expect(result.host).not.toBe(wire.host)
+    expect(result.game.runtimeMetrics).not.toBe(wire.game.runtimeMetrics)
+    expect(result.game.runtimeMetrics?.onlinePlayerCount).toEqual({
+      value: 0,
+      source: 'World.Players.Count',
+      unit: 'count',
+      observedAtUtc: runtimeObservedAtUtc,
+      warning: null,
+    })
+    expect(result.game.runtimeMetrics?.gameMemoryBytes).toMatchObject({
+      value: null,
+      warning: 'unsupported',
+    })
     expect(result.host.storageVolumes[0]).not.toBe(wire.host.storageVolumes[0])
     expect(result.recentActivity.items[0]?.messageArguments).not.toBe(wire.recentActivity.items[0]?.messageArguments)
     expect(Object.isFrozen(result)).toBe(true)
@@ -152,11 +184,14 @@ describe('parseOverview', () => {
   it.each([
     ['unknown availability', (wire: ReturnType<typeof ownerOverview>) => { wire.game.availability = 'ready' }],
     ['unknown additional-memory kind', (wire: ReturnType<typeof ownerOverview>) => { wire.host.additionalMemory.kind = 'physical' }],
-    ['numeric string', (wire: ReturnType<typeof ownerOverview>) => { wire.game.onlinePlayerCount = '2' as unknown as number }],
+    ['numeric string', (wire: ReturnType<typeof ownerOverview>) => { wire.game.runtimeMetrics.onlinePlayerCount.value = '2' as unknown as number }],
     ['negative byte count', (wire: ReturnType<typeof ownerOverview>) => { wire.host.memoryTotalBytes = -1 }],
     ['fractional integer', (wire: ReturnType<typeof ownerOverview>) => { wire.host.processId = 1.5 }],
     ['unsafe integer', (wire: ReturnType<typeof ownerOverview>) => { wire.game.worldSessionUptimeSeconds = Number.MAX_SAFE_INTEGER + 1 }],
-    ['NaN', (wire: ReturnType<typeof ownerOverview>) => { wire.game.framesPerSecond = Number.NaN }],
+    ['NaN', (wire: ReturnType<typeof ownerOverview>) => { wire.game.runtimeMetrics.framesPerSecond.value = Number.NaN }],
+    ['missing warning for null metric', (wire: ReturnType<typeof ownerOverview>) => { wire.game.runtimeMetrics.droppedItemCount.warning = null }],
+    ['warning on available metric', (wire: ReturnType<typeof ownerOverview>) => { wire.game.runtimeMetrics.animalCount.warning = 'readFailed' }],
+    ['mismatched metric observation time', (wire: ReturnType<typeof ownerOverview>) => { wire.game.runtimeMetrics.chunkCount.observedAtUtc = '2026-07-25T01:02:04Z' }],
     ['Infinity', (wire: ReturnType<typeof ownerOverview>) => { wire.host.cpuUsagePercent = Number.POSITIVE_INFINITY }],
     ['non-UTC time', (wire: ReturnType<typeof ownerOverview>) => { wire.game.sampledAtUtc = '2026-07-25T09:02:03+08:00' }],
     ['impossible time', (wire: ReturnType<typeof ownerOverview>) => { wire.host.processStartedAtUtc = '2026-02-29T00:00:00Z' }],
@@ -166,6 +201,7 @@ describe('parseOverview', () => {
     ['legacy mapName field', (wire: ReturnType<typeof ownerOverview>) => { Object.assign(wire.game, { mapName: 'legacy' }) }],
     ['legacy unityHeapBytes field', (wire: ReturnType<typeof ownerOverview>) => { Object.assign(wire.host, { unityHeapBytes: 1 }) }],
     ['legacy serverUptimeSeconds field', (wire: ReturnType<typeof ownerOverview>) => { Object.assign(wire.game, { serverUptimeSeconds: 1 }) }],
+    ['legacy gameTime field', (wire: ReturnType<typeof ownerOverview>) => { Object.assign(wire.game, { gameTime: 'legacy' }) }],
   ])('rejects %s with a stable safe error', (_name, mutate) => {
     const wire = ownerOverview()
     mutate(wire)

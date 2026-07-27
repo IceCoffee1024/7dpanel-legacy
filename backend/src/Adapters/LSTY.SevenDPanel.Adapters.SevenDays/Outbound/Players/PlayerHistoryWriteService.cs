@@ -19,7 +19,9 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
         private readonly Func<DateTimeOffset> utcClock;
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private readonly object sync = new object();
+        private readonly object persistedSync = new object();
         private readonly Dictionary<GapKey, GapWindow> pendingGaps = new Dictionary<GapKey, GapWindow>();
+        private Action<PlayerSnapshot>? persisted;
         private Task? consumer;
         private int queueDepth;
         private bool accepting;
@@ -106,6 +108,16 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             }
         }
 
+        internal IDisposable SubscribePersisted(Action<PlayerSnapshot> observer)
+        {
+            if (observer == null) throw new ArgumentNullException(nameof(observer));
+            lock (persistedSync) persisted += observer;
+            return new PersistedSubscription(() =>
+            {
+                lock (persistedSync) persisted -= observer;
+            });
+        }
+
         public void Stop()
         {
             Task? pending;
@@ -157,6 +169,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                             FlushPendingGaps(id!);
                             store.Append(snapshot);
                             lock (sync) PersistedCount++;
+                            PublishPersisted(snapshot);
                         }
                         catch
                         {
@@ -230,6 +243,18 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 pendingGaps[key] = new GapWindow(startedAtUtc, completedAtUtc, count, reason);
         }
 
+        private void PublishPersisted(PlayerSnapshot snapshot)
+        {
+            Action<PlayerSnapshot>? observers;
+            lock (persistedSync) observers = persisted;
+            if (observers == null) return;
+            foreach (Action<PlayerSnapshot> observer in observers.GetInvocationList())
+            {
+                try { observer(snapshot); }
+                catch { }
+            }
+        }
+
         private readonly struct GapKey : IEquatable<GapKey>
         {
             public GapKey(string crossplatformId, PlayerHistoryGapReason reason) { CrossplatformId = crossplatformId; Reason = reason; }
@@ -248,6 +273,16 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             public long DroppedCount { get; }
             public PlayerHistoryGapReason Reason { get; }
             public GapWindow Include(DateTimeOffset started, DateTimeOffset completed, long count) => new GapWindow(started < StartedAtUtc ? started : StartedAtUtc, completed > CompletedAtUtc ? completed : CompletedAtUtc, DroppedCount + count, Reason);
+        }
+
+        private sealed class PersistedSubscription : IDisposable
+        {
+            private Action? unsubscribe;
+
+            public PersistedSubscription(Action unsubscribe) =>
+                this.unsubscribe = unsubscribe ?? throw new ArgumentNullException(nameof(unsubscribe));
+
+            public void Dispose() => Interlocked.Exchange(ref unsubscribe, null)?.Invoke();
         }
     }
 }

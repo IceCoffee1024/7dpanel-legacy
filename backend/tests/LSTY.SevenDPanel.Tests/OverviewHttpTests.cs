@@ -77,12 +77,29 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal("save-1", (string?)json["game"]?["saveGameName"]);
             Assert.Equal("world-1", (string?)json["game"]?["worldName"]);
             Assert.Equal(321L, (long?)json["game"]?["worldSessionUptimeSeconds"]);
+            var runtimeMetrics = Assert.IsType<JObject>(json["game"]?["runtimeMetrics"]);
+            Assert.Equal(11, runtimeMetrics.Properties().Count());
+            Assert.Equal("Day 3", (string?)runtimeMetrics["gameDayTime"]?["value"]);
+            Assert.Equal("World.worldTime", (string?)runtimeMetrics["gameDayTime"]?["source"]);
+            Assert.Equal("game-clock", (string?)runtimeMetrics["gameDayTime"]?["unit"]);
+            Assert.Equal(
+                new DateTimeOffset(2026, 7, 25, 1, 2, 3, TimeSpan.Zero),
+                (DateTimeOffset?)runtimeMetrics["gameDayTime"]?["observedAtUtc"]);
+            Assert.Equal(60d, (double?)runtimeMetrics["framesPerSecond"]?["value"]);
+            Assert.Equal(2, (int?)runtimeMetrics["onlinePlayerCount"]?["value"]);
+            Assert.Equal(10, (int?)runtimeMetrics["historicalPlayerCount"]?["value"]);
+            Assert.Equal("unsupported", (string?)runtimeMetrics["gameMemoryBytes"]?["warning"]);
+            Assert.Equal(JTokenType.Null, runtimeMetrics["gameMemoryBytes"]?["value"]?.Type);
             Assert.Equal(456L, (long?)json["host"]?["processUptimeSeconds"]);
             Assert.Equal(789L, (long?)json["host"]?["managedHeapBytes"]);
             Assert.Null(json.SelectToken("$..gameName"));
             Assert.Null(json.SelectToken("$..mapName"));
             Assert.Null(json.SelectToken("$..unityHeapBytes"));
             Assert.Null(json.SelectToken("$..serverUptimeSeconds"));
+            Assert.Null(json["game"]?["gameTime"]);
+            Assert.Null(json["game"]?["framesPerSecond"]);
+            Assert.Null(json["game"]?["onlinePlayerCount"]);
+            Assert.Null(json["game"]?["historicalPlayerCount"]);
         }
 
         [Theory]
@@ -163,13 +180,27 @@ namespace LSTY.SevenDPanel.Tests
                 new GameQuery(new GameOverviewSnapshot(
                     AvailabilityState.Available, now, "7 Days to Die", "save-1", "world-1",
                     321, "2.4", "Survival", "Nomad", "EU", "English",
-                    "127.0.0.1", 26900, 2, 8, 10, 60, "Day 3")),
+                    "127.0.0.1", 26900, 8, CreateRuntimeMetrics(now))),
                 new HostQuery(CreateHostSnapshot()),
                 new RestartQuery(new RestartPolicySummary(
                     AvailabilityState.Available, true, "daily", now.AddHours(1))),
                 new RecentQuery(new RecentActivitySnapshot(
                     AvailabilityState.Available, now, Array.Empty<RecentActivityItem>())));
         }
+
+        private static GameRuntimeMetrics CreateRuntimeMetrics(DateTimeOffset observedAtUtc) =>
+            new GameRuntimeMetrics(
+                new ObservedMetric<string>("Day 3", "World.worldTime", "game-clock", observedAtUtc, null),
+                new ObservedMetric<bool?>(false, "World.aiDirector.BloodMoonComponent.BloodMoonActive", "boolean", observedAtUtc, null),
+                new ObservedMetric<double?>(60d, "GameManager.frameTime", "frames/second", observedAtUtc, null),
+                new ObservedMetric<int?>(2, "World.Players.Count", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(10, "GameManager.persistentPlayerCount", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(4, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(9, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(25, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(144, "Chunk.InstanceCount", "count", observedAtUtc, null),
+                new ObservedMetric<int?>(6, "World.Entities", "count", observedAtUtc, null),
+                new ObservedMetric<long?>(null, "GC.GetTotalMemory(false)", "bytes", observedAtUtc, RuntimeMetricWarningCode.Unsupported));
 
         private static GetOverviewUseCase CreateUseCaseWithAdditionalMemory(
             HostAdditionalMemoryKind kind)

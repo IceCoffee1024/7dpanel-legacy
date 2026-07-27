@@ -31,11 +31,8 @@ function snapshot(
       language: null,
       connectionAddress: null,
       connectionPort: null,
-      onlinePlayerCount: null,
       maximumPlayerCount: null,
-      historicalPlayerCount: null,
-      framesPerSecond: null,
-      gameTime: null,
+      runtimeMetrics: null,
     },
     host: {
       availability: 'available',
@@ -304,6 +301,7 @@ describe('useOverview', () => {
 
     expect(mounted.overview().snapshot.value).toEqual(previous)
     expect(mounted.overview().snapshot.value?.game.sampledAtUtc).toBe('2026-07-25T01:02:03Z')
+    expect(mounted.overview().snapshot.value?.game.runtimeMetrics).toBeNull()
     expect(mounted.overview().status.value).toBe('stale')
     expect(mounted.overview().error.value).toEqual({ code: 'network' })
     expect(JSON.stringify(mounted.overview().error.value)).not.toContain('private backend detail')

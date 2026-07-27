@@ -102,18 +102,13 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
                         sample.Language,
                         sample.ConnectionAddress,
                         sample.ConnectionPort,
-                        sample.OnlinePlayerCount,
                         sample.MaximumPlayerCount,
-                        sample.HistoricalPlayerCount,
-                        sample.FramesPerSecond,
-                        sample.GameTime);
+                        CreateRuntimeMetrics(sample.RuntimeMetrics!, sampledAtUtc));
                 }
             }
             catch (TimeoutException)
             {
-                snapshot = new GameOverviewSnapshot(
-                    AvailabilityState.Stale, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null, null, null);
+                snapshot = GetTimeoutSnapshot();
             }
             catch
             {
@@ -136,6 +131,32 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
                 return false;
 
             return now - snapshot.SampledAtUtc.Value < cacheLifetime;
+        }
+
+        private GameOverviewSnapshot GetTimeoutSnapshot()
+        {
+            lock (sync)
+            {
+                if (cached == null)
+                    return GameOverviewSnapshot.Unavailable();
+
+                return new GameOverviewSnapshot(
+                    AvailabilityState.Stale,
+                    cached.SampledAtUtc,
+                    cached.GameTitle,
+                    cached.SaveGameName,
+                    cached.WorldName,
+                    cached.WorldSessionUptimeSeconds,
+                    cached.Version,
+                    cached.GameMode,
+                    cached.Difficulty,
+                    cached.Region,
+                    cached.Language,
+                    cached.ConnectionAddress,
+                    cached.ConnectionPort,
+                    cached.MaximumPlayerCount,
+                    cached.RuntimeMetrics);
+            }
         }
 
         private static async Task<GameOverviewSnapshot> AwaitForCallerAsync(
@@ -163,6 +184,43 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
             if (preferences == null || manager == null || world == null)
                 return SevenDaysGameOverviewSample.NotReady();
 
+            SevenDaysMetricSample<int?> animalCount;
+            SevenDaysMetricSample<int?> hostileEntityCount;
+            SevenDaysMetricSample<int?> activeEntityCount;
+            SevenDaysMetricSample<int?> droppedItemCount;
+            try
+            {
+                var entities = world.Entities?.list;
+                if (entities == null)
+                    throw new InvalidOperationException();
+
+                var animals = 0;
+                var hostileEntities = 0;
+                var droppedItems = 0;
+                for (var index = 0; index < entities.Count; index++)
+                {
+                    var entity = entities[index];
+                    if (entity is global::EntityAnimal)
+                        animals++;
+                    if (entity is global::EntityZombie)
+                        hostileEntities++;
+                    if (entity is global::EntityItem)
+                        droppedItems++;
+                }
+
+                animalCount = SevenDaysMetricSample<int?>.Available(animals);
+                hostileEntityCount = SevenDaysMetricSample<int?>.Available(hostileEntities);
+                activeEntityCount = SevenDaysMetricSample<int?>.Available(entities.Count);
+                droppedItemCount = SevenDaysMetricSample<int?>.Available(droppedItems);
+            }
+            catch
+            {
+                animalCount = SevenDaysMetricSample<int?>.ReadFailed();
+                hostileEntityCount = SevenDaysMetricSample<int?>.ReadFailed();
+                activeEntityCount = SevenDaysMetricSample<int?>.ReadFailed();
+                droppedItemCount = SevenDaysMetricSample<int?>.ReadFailed();
+            }
+
             return new SevenDaysGameOverviewSample(
                 true,
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.GameName)),
@@ -175,14 +233,60 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.Language)),
                 Read(() => global::GamePrefs.GetString(global::EnumGamePrefs.ConnectToServerIP)),
                 Read(() => (int?)global::GamePrefs.GetInt(global::EnumGamePrefs.ConnectToServerPort)),
-                Read(() => (int?)world.Players?.Count),
                 Read(() => (int?)global::GamePrefs.GetInt(global::EnumGamePrefs.ServerMaxPlayerCount)),
-                Read(() => (int?)manager.persistentPlayerCount),
-                Read(() => global::GameManager.frameTime > 0f
-                    ? (double?)(1d / global::GameManager.frameTime)
-                    : null),
-                Read(() => global::GameUtils.WorldTimeToString(world.worldTime)));
+                new SevenDaysGameRuntimeMetricsSample(
+                    CaptureMetric(() => global::GameUtils.WorldTimeToString(world.worldTime)),
+                    CaptureMetric<bool?>(() => world.aiDirector.BloodMoonComponent.BloodMoonActive),
+                    CaptureMetric<double?>(() => global::GameManager.frameTime > 0f
+                        ? 1d / global::GameManager.frameTime
+                        : (double?)null),
+                    CaptureMetric<int?>(() => world.Players?.Count),
+                    CaptureMetric<int?>(() => manager.persistentPlayerCount),
+                    animalCount,
+                    hostileEntityCount,
+                    activeEntityCount,
+                    CaptureMetric<int?>(() => global::Chunk.InstanceCount),
+                    droppedItemCount,
+                    CaptureMetric<long?>(() => GC.GetTotalMemory(false))));
         }
+
+        private static SevenDaysMetricSample<T> CaptureMetric<T>(Func<T> read)
+        {
+            try
+            {
+                var value = read();
+                return value is null
+                    ? SevenDaysMetricSample<T>.ReadFailed()
+                    : SevenDaysMetricSample<T>.Available(value);
+            }
+            catch
+            {
+                return SevenDaysMetricSample<T>.ReadFailed();
+            }
+        }
+
+        private static GameRuntimeMetrics CreateRuntimeMetrics(
+            SevenDaysGameRuntimeMetricsSample sample,
+            DateTimeOffset observedAtUtc) =>
+            new GameRuntimeMetrics(
+                Observe(sample.GameDayTime, "World.worldTime", "game-clock", observedAtUtc),
+                Observe(sample.IsBloodMoon, "World.aiDirector.BloodMoonComponent.BloodMoonActive", "boolean", observedAtUtc),
+                Observe(sample.FramesPerSecond, "GameManager.frameTime", "frames/second", observedAtUtc),
+                Observe(sample.OnlinePlayerCount, "World.Players.Count", "count", observedAtUtc),
+                Observe(sample.HistoricalPlayerCount, "GameManager.persistentPlayerCount", "count", observedAtUtc),
+                Observe(sample.AnimalCount, "World.Entities", "count", observedAtUtc),
+                Observe(sample.HostileEntityCount, "World.Entities", "count", observedAtUtc),
+                Observe(sample.ActiveEntityCount, "World.Entities", "count", observedAtUtc),
+                Observe(sample.ChunkCount, "Chunk.InstanceCount", "count", observedAtUtc),
+                Observe(sample.DroppedItemCount, "World.Entities", "count", observedAtUtc),
+                Observe(sample.GameMemoryBytes, "GC.GetTotalMemory(false)", "bytes", observedAtUtc));
+
+        private static ObservedMetric<T> Observe<T>(
+            SevenDaysMetricSample<T> sample,
+            string source,
+            string unit,
+            DateTimeOffset observedAtUtc) =>
+            new ObservedMetric<T>(sample.Value, source, unit, observedAtUtc, sample.Warning);
 
         private static T? Read<T>(Func<T> read) where T : class
         {
@@ -211,12 +315,12 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
             string? language,
             string? connectionAddress,
             int? connectionPort,
-            int? onlinePlayerCount,
             int? maximumPlayerCount,
-            int? historicalPlayerCount,
-            double? framesPerSecond,
-            string? gameTime)
+            SevenDaysGameRuntimeMetricsSample? runtimeMetrics)
         {
+            if (isGameReady && runtimeMetrics == null)
+                throw new ArgumentNullException(nameof(runtimeMetrics));
+
             IsGameReady = isGameReady;
             SaveGameName = saveGameName;
             WorldName = worldName;
@@ -228,11 +332,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
             Language = language;
             ConnectionAddress = connectionAddress;
             ConnectionPort = connectionPort;
-            OnlinePlayerCount = onlinePlayerCount;
             MaximumPlayerCount = maximumPlayerCount;
-            HistoricalPlayerCount = historicalPlayerCount;
-            FramesPerSecond = framesPerSecond;
-            GameTime = gameTime;
+            RuntimeMetrics = runtimeMetrics;
         }
 
         public bool IsGameReady { get; }
@@ -246,11 +347,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
         public string? Language { get; }
         public string? ConnectionAddress { get; }
         public int? ConnectionPort { get; }
-        public int? OnlinePlayerCount { get; }
         public int? MaximumPlayerCount { get; }
-        public int? HistoricalPlayerCount { get; }
-        public double? FramesPerSecond { get; }
-        public string? GameTime { get; }
+        public SevenDaysGameRuntimeMetricsSample? RuntimeMetrics { get; }
 
         internal static SevenDaysGameOverviewSample NotReady() =>
             new SevenDaysGameOverviewSample(
@@ -266,9 +364,73 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview
                 null,
                 null,
                 null,
-                null,
-                null,
-                null,
                 null);
+    }
+
+    public readonly struct SevenDaysMetricSample<T>
+    {
+        public SevenDaysMetricSample(T value, RuntimeMetricWarningCode? warning)
+        {
+            if (warning.HasValue && !Enum.IsDefined(typeof(RuntimeMetricWarningCode), warning.Value))
+                throw new ArgumentOutOfRangeException(nameof(warning));
+            if (value is null && !warning.HasValue)
+                throw new ArgumentException("A missing metric value requires a warning.", nameof(warning));
+            if (value is not null && warning.HasValue)
+                throw new ArgumentException("An available metric value cannot carry a warning.", nameof(warning));
+
+            Value = value;
+            Warning = warning;
+        }
+
+        public T Value { get; }
+        public RuntimeMetricWarningCode? Warning { get; }
+
+        public static SevenDaysMetricSample<T> Available(T value) =>
+            new SevenDaysMetricSample<T>(value, null);
+
+        public static SevenDaysMetricSample<T> ReadFailed() =>
+            new SevenDaysMetricSample<T>(default!, RuntimeMetricWarningCode.ReadFailed);
+
+    }
+
+    public sealed class SevenDaysGameRuntimeMetricsSample
+    {
+        public SevenDaysGameRuntimeMetricsSample(
+            SevenDaysMetricSample<string> gameDayTime,
+            SevenDaysMetricSample<bool?> isBloodMoon,
+            SevenDaysMetricSample<double?> framesPerSecond,
+            SevenDaysMetricSample<int?> onlinePlayerCount,
+            SevenDaysMetricSample<int?> historicalPlayerCount,
+            SevenDaysMetricSample<int?> animalCount,
+            SevenDaysMetricSample<int?> hostileEntityCount,
+            SevenDaysMetricSample<int?> activeEntityCount,
+            SevenDaysMetricSample<int?> chunkCount,
+            SevenDaysMetricSample<int?> droppedItemCount,
+            SevenDaysMetricSample<long?> gameMemoryBytes)
+        {
+            GameDayTime = gameDayTime;
+            IsBloodMoon = isBloodMoon;
+            FramesPerSecond = framesPerSecond;
+            OnlinePlayerCount = onlinePlayerCount;
+            HistoricalPlayerCount = historicalPlayerCount;
+            AnimalCount = animalCount;
+            HostileEntityCount = hostileEntityCount;
+            ActiveEntityCount = activeEntityCount;
+            ChunkCount = chunkCount;
+            DroppedItemCount = droppedItemCount;
+            GameMemoryBytes = gameMemoryBytes;
+        }
+
+        public SevenDaysMetricSample<string> GameDayTime { get; }
+        public SevenDaysMetricSample<bool?> IsBloodMoon { get; }
+        public SevenDaysMetricSample<double?> FramesPerSecond { get; }
+        public SevenDaysMetricSample<int?> OnlinePlayerCount { get; }
+        public SevenDaysMetricSample<int?> HistoricalPlayerCount { get; }
+        public SevenDaysMetricSample<int?> AnimalCount { get; }
+        public SevenDaysMetricSample<int?> HostileEntityCount { get; }
+        public SevenDaysMetricSample<int?> ActiveEntityCount { get; }
+        public SevenDaysMetricSample<int?> ChunkCount { get; }
+        public SevenDaysMetricSample<int?> DroppedItemCount { get; }
+        public SevenDaysMetricSample<long?> GameMemoryBytes { get; }
     }
 }

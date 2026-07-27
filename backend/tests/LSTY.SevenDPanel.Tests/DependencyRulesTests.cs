@@ -60,8 +60,9 @@ namespace LSTY.SevenDPanel.Tests
                     Assert.All(references, reference =>
                         Assert.True(
                             IsIn(reference, "Runtime", "LSTY.SevenDPanel.Hosting") ||
-                            IsIn(reference, "Core", "LSTY.SevenDPanel.Application"),
-                            "Adapters may only reference Hosting or Application: " + reference));
+                            IsIn(reference, "Core", "LSTY.SevenDPanel.Application") ||
+                            IsIn(reference, "Core", "LSTY.SevenDPanel.Domain"),
+                            "Adapters may only reference Hosting, Application, or Domain: " + reference));
                 }
             }
         }
@@ -104,9 +105,25 @@ namespace LSTY.SevenDPanel.Tests
                 "Inbound",
                 "Lifecycle",
                 "SevenDaysGameLifecycleAdapter.cs");
+            var jobsRuntimePath = Path.Combine(
+                SourceRoot,
+                "Bootstrap",
+                "LSTY.SevenDPanel",
+                "Runtime",
+                "JobsAndSchedulingRuntime.cs");
+            var playerActionRecoveryRuntimePath = Path.Combine(
+                SourceRoot,
+                "Adapters",
+                "LSTY.SevenDPanel.Adapters.SevenDays",
+                "Outbound",
+                "Players",
+                "PlayerActionRecoveryRuntime.cs");
             var modMainSource = File.ReadAllText(modMainPath);
             var providerFactorySource = File.ReadAllText(providerFactoryPath);
             var lifecycleSource = File.ReadAllText(lifecyclePath);
+            var jobsRuntimeSource = File.ReadAllText(jobsRuntimePath);
+            var playerActionRecoveryRuntimeSource = File.ReadAllText(
+                playerActionRecoveryRuntimePath);
 
             Assert.Contains("candidateAdapter.RegisterAndStart();", modMainSource);
             Assert.Contains("PanelServiceProviderFactory.CreateRuntime(", modMainSource);
@@ -125,6 +142,16 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("services.AddSingleton<SevenDaysPlayerActions>();", providerFactorySource);
             Assert.Contains("services.AddSingleton<IPlayerActions>", providerFactorySource);
             Assert.Contains("services.AddSingleton<KickPlayerUseCase>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<SqlitePlayerEvidenceStore>();", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IPlayerEvidenceStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IGrantItemOperationStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IRemoveItemOperationStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IResetSkillsOperationStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IClearInventoryOperationStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IResetPlayerDataOperationStore>", providerFactorySource);
+            Assert.Contains("services.AddSingleton<IPlayerActionOperationQuery>", providerFactorySource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new PlayerEvidenceRuntime(", providerFactorySource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new PlayerActionRecoveryRuntime(", providerFactorySource);
             Assert.Contains("services.AddSingleton<SqliteConsoleCommandAuditStore>();", providerFactorySource);
             Assert.Contains("services.AddSingleton<IConsoleCommandAuditStore>", providerFactorySource);
             Assert.Contains("services.AddSingleton<SevenDaysConsoleCommandService>();", providerFactorySource);
@@ -134,19 +161,30 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("ValidateOnBuild = true", providerFactorySource);
             Assert.Contains("ValidateScopes = true", providerFactorySource);
 
-            var upgradeIndex = providerFactorySource.IndexOf(
-                "databaseBootstrapper.Upgrade();",
-                StringComparison.Ordinal);
             var recoveryIndex = providerFactorySource.IndexOf(
                 "playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);",
                 StringComparison.Ordinal);
             var webHostIndex = providerFactorySource.IndexOf(
                 "return new OwinWebHost(",
                 StringComparison.Ordinal);
-            Assert.True(upgradeIndex >= 0 && recoveryIndex > upgradeIndex,
-                "Pending player actions must be recovered after the database upgrade.");
-            Assert.True(webHostIndex > recoveryIndex,
+            Assert.True(recoveryIndex >= 0 && webHostIndex > recoveryIndex,
                 "Pending player actions must be recovered before the OWIN host is created.");
+            var databaseStartupIndex = jobsRuntimeSource.IndexOf(
+                "startup.Execute();",
+                StringComparison.Ordinal);
+            var jobsInnerStartIndex = jobsRuntimeSource.IndexOf(
+                "inner.Start();",
+                StringComparison.Ordinal);
+            Assert.True(databaseStartupIndex >= 0 && jobsInnerStartIndex > databaseStartupIndex,
+                "SQLite startup must complete before the runtime chain accepts observations.");
+            var typedRecoveryIndex = playerActionRecoveryRuntimeSource.IndexOf(
+                "recovery.Recover();",
+                StringComparison.Ordinal);
+            var recoveryInnerStartIndex = playerActionRecoveryRuntimeSource.IndexOf(
+                "inner.Start();",
+                StringComparison.Ordinal);
+            Assert.True(typedRecoveryIndex >= 0 && recoveryInnerStartIndex > typedRecoveryIndex,
+                "Typed player action recovery must finish before the existing runtime starts.");
             var candidateRuntimeIndex = modMainSource.IndexOf("candidateRuntime = PanelServiceProviderFactory.CreateRuntime(", StringComparison.Ordinal);
             var commandHarmonyIndex = modMainSource.IndexOf(
                 "candidateCommandHarmony = ConsoleCommandHarmonyRuntime.Install(candidateRuntime);",
@@ -168,14 +206,11 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("candidateRuntime?.Dispose();", modMainSource);
             Assert.Contains("candidateCommandHarmony?.Dispose();", modMainSource);
 
-            var providerUpgradeIndex = providerFactorySource.LastIndexOf(
-                ".Upgrade();",
-                StringComparison.Ordinal);
             var resolveRuntimeIndex = providerFactorySource.IndexOf(
                 "provider.GetRequiredService<IModRuntime>();",
                 StringComparison.Ordinal);
-            Assert.True(providerUpgradeIndex >= 0 && resolveRuntimeIndex > providerUpgradeIndex,
-                "SQLite migrations must complete before command services can start accepting observations.");
+            Assert.True(resolveRuntimeIndex >= 0,
+                "The validated composition root must resolve one runtime chain.");
 
             var registeredIndex = lifecycleSource.IndexOf("registered = true;", StringComparison.Ordinal);
             var startIndex = lifecycleSource.IndexOf("runtime.Start();", StringComparison.Ordinal);
@@ -317,16 +352,16 @@ namespace LSTY.SevenDPanel.Tests
                     package => package.Version,
                     StringComparer.OrdinalIgnoreCase);
 
-            Assert.Equal("6.1.1", Assert.Single(packageVersions["dbup-core"]));
-            Assert.Equal("6.0.4", Assert.Single(packageVersions["dbup-sqlite"]));
-            Assert.Equal("10.0.10", Assert.Single(packageVersions["Microsoft.Data.Sqlite"]));
+            Assert.Equal("6.1.1", Assert.Single(packageVersions["dbup-core"].Distinct(StringComparer.OrdinalIgnoreCase)));
+            Assert.Equal("6.0.4", Assert.Single(packageVersions["dbup-sqlite"].Distinct(StringComparer.OrdinalIgnoreCase)));
+            Assert.Equal("10.0.10", Assert.Single(packageVersions["Microsoft.Data.Sqlite"].Distinct(StringComparer.OrdinalIgnoreCase)));
             Assert.Equal(
                 "10.0.10",
-                Assert.Single(packageVersions["Microsoft.Extensions.DependencyInjection"]));
+                Assert.Single(packageVersions["Microsoft.Extensions.DependencyInjection"].Distinct(StringComparer.OrdinalIgnoreCase)));
             Assert.Equal(
                 "10.0.10",
-                Assert.Single(packageVersions["Microsoft.Extensions.DependencyInjection.Abstractions"]));
-            Assert.Equal("10.0.10", Assert.Single(packageVersions["System.Threading.Channels"]));
+                Assert.Single(packageVersions["Microsoft.Extensions.DependencyInjection.Abstractions"].Distinct(StringComparer.OrdinalIgnoreCase)));
+            Assert.Equal("10.0.10", Assert.Single(packageVersions["System.Threading.Channels"].Distinct(StringComparer.OrdinalIgnoreCase)));
             Assert.NotEmpty(packageVersions["Microsoft.Bcl.AsyncInterfaces"]);
             Assert.All(
                 packageVersions["Microsoft.Bcl.AsyncInterfaces"],
@@ -593,6 +628,43 @@ namespace LSTY.SevenDPanel.Tests
                     .Select(File.ReadAllText));
             Assert.DoesNotContain("SQLite3Provider_dynamic_cdecl.Setup", persistenceSource);
             Assert.DoesNotContain("raw.SetProvider", persistenceSource);
+        }
+
+        [Fact]
+        public void Automation_domain_remains_product_only()
+        {
+            var automationsRoot = Path.Combine(
+                SourceRoot,
+                "Core",
+                "LSTY.SevenDPanel.Domain",
+                "Automations");
+            var source = string.Join(
+                Environment.NewLine,
+                Directory.GetFiles(automationsRoot, "*.cs", SearchOption.AllDirectories)
+                    .Select(File.ReadAllText));
+
+            var forbiddenDependencies = new[]
+            {
+                "LSTY.SevenDPanel.Application",
+                "LSTY.SevenDPanel.Adapters",
+                "Microsoft.Data.Sqlite",
+                "Newtonsoft.Json",
+                "System.Text.Json",
+                "System.Reflection",
+                "Discord",
+                "7DaysToDie",
+                "EventBus",
+                "Registry",
+                "Script"
+            };
+
+            foreach (var forbiddenDependency in forbiddenDependencies)
+            {
+                Assert.DoesNotContain(
+                    forbiddenDependency,
+                    source,
+                    StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         private static void AssertDirectionDoesNotReference(

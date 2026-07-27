@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World;
 using LSTY.SevenDPanel.Application;
 
 namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
@@ -14,15 +15,33 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
         {
             if (sample == null) throw new ArgumentNullException(nameof(sample));
             RequireUtc(observedAtUtc, nameof(observedAtUtc));
-
             var next = new PublishedSnapshot(
-                observedAtUtc,
-                sample.Traders.Select(ToFeature).ToArray(),
-                sample.LandClaims.Select(ToFeature).ToArray(),
-                sample.Vehicles.Select(ToFeature).ToArray(),
-                sample.Drones.Select(ToFeature).ToArray(),
-                isStale: false);
+                LayerState.Available(observedAtUtc, sample.Traders.Select(ToFeature)),
+                LayerState.Available(observedAtUtc, sample.LandClaims.Select(ToFeature)),
+                LayerState.Available(observedAtUtc, sample.Vehicles.Select(ToFeature)),
+                LayerState.Available(observedAtUtc, sample.Drones.Select(ToFeature)));
             lock (sync) published = next;
+        }
+
+        public void Publish(SevenDaysWorldScalarSnapshot sample, DateTimeOffset observedAtUtc)
+        {
+            if (sample == null) throw new ArgumentNullException(nameof(sample));
+            RequireUtc(observedAtUtc, nameof(observedAtUtc));
+            lock (sync)
+            {
+                if (!sample.WorldAvailable)
+                {
+                    published = null;
+                    return;
+                }
+
+                var previous = published ?? PublishedSnapshot.Empty;
+                published = new PublishedSnapshot(
+                    previous.Traders,
+                    Source(sample.LandClaimsCaptureFailed, observedAtUtc, sample.LandClaims.Select(ToFeature)),
+                    Source(sample.VehiclesCaptureFailed, observedAtUtc, sample.Vehicles.Select(ToFeature)),
+                    Source(sample.DronesCaptureFailed, observedAtUtc, sample.Drones.Select(ToFeature)));
+            }
         }
 
         public MapLayerProjectionSnapshot Query(MapLayerQuery query)
@@ -33,9 +52,13 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                 if (published == null)
                     return MapLayerProjectionSnapshot.Unavailable(query.Layer);
 
+                var source = published.Get(query.Layer);
+                if (source.Availability == AvailabilityState.Unavailable || !source.ObservedAtUtc.HasValue)
+                    return MapLayerProjectionSnapshot.Unavailable(query.Layer);
+
                 var isZoomSufficient = query.Zoom >= MapLayerQuery.MinimumZoom(query.Layer);
                 var matches = isZoomSufficient
-                    ? Features(query.Layer)
+                    ? source.Features
                         .Where(feature => Contains(query.Extent, feature.Position))
                         .Take(query.Limit + 1)
                         .ToArray()
@@ -43,15 +66,15 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
                 if (matches.Length > query.Limit)
                     throw new MapLayerLimitExceededException();
 
-                return published.IsStale
+                return source.Availability == AvailabilityState.Stale
                     ? MapLayerProjectionSnapshot.Stale(
                         query.Layer,
-                        published.ObservedAtUtc,
+                        source.ObservedAtUtc.Value,
                         matches,
                         isZoomSufficient)
                     : MapLayerProjectionSnapshot.Available(
                         query.Layer,
-                        published.ObservedAtUtc,
+                        source.ObservedAtUtc.Value,
                         matches,
                         isZoomSufficient);
             }
@@ -70,17 +93,13 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
             lock (sync) published = null;
         }
 
-        private IReadOnlyList<MapLayerFeature> Features(MapLayerKind layer)
-        {
-            switch (layer)
-            {
-                case MapLayerKind.Traders: return published!.Traders;
-                case MapLayerKind.LandClaims: return published!.LandClaims;
-                case MapLayerKind.Vehicles: return published!.Vehicles;
-                case MapLayerKind.Drones: return published!.Drones;
-                default: throw new ArgumentOutOfRangeException(nameof(layer));
-            }
-        }
+        private static LayerState Source(
+            bool captureFailed,
+            DateTimeOffset observedAtUtc,
+            IEnumerable<MapLayerFeature> features) =>
+            captureFailed
+                ? LayerState.Unavailable()
+                : LayerState.Available(observedAtUtc, features);
 
         private static TraderMapFeature ToFeature(SevenDaysTraderMapSample sample) =>
             new TraderMapFeature(
@@ -94,6 +113,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
         private static LandClaimMapFeature ToFeature(SevenDaysLandClaimMapSample sample) =>
             new LandClaimMapFeature(
                 sample.Id,
+                sample.StableIdentity,
                 Position(sample),
                 sample.OwnerCrossplatformId,
                 sample.ProtectionRadius,
@@ -103,21 +123,66 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
         private static VehicleMapFeature ToFeature(SevenDaysVehicleMapSample sample) =>
             new VehicleMapFeature(
                 sample.Id,
+                sample.StableIdentity,
                 Position(sample),
                 sample.VehicleType,
+                sample.EntityTypeResourceId,
                 sample.OwnerCrossplatformId,
                 sample.LoadState,
                 sample.FuelPercentage,
                 sample.Quality,
                 sample.IsLocked,
-                sample.StorageItemCount);
+                sample.StorageItemCount,
+                sample.Container);
 
         private static DroneMapFeature ToFeature(SevenDaysDroneMapSample sample) =>
             new DroneMapFeature(
                 sample.Id,
+                sample.StableIdentity,
                 Position(sample),
+                sample.EntityTypeResourceId,
                 sample.OwnerCrossplatformId,
-                sample.LoadState);
+                sample.LoadState,
+                sample.IsLocked,
+                sample.Quality,
+                sample.Container);
+
+        private static LandClaimMapFeature ToFeature(LandClaimSummary sample) =>
+            new LandClaimMapFeature(
+                sample.ServerId,
+                sample.StableIdentity,
+                sample.Position,
+                sample.OwnerStableIdentity,
+                sample.ProtectionRadius,
+                sample.IsValid,
+                sample.OwnerLastLoginUtc);
+
+        private static VehicleMapFeature ToFeature(VehicleSummary sample) =>
+            new VehicleMapFeature(
+                sample.ServerId,
+                sample.StableIdentity,
+                sample.Position,
+                null,
+                sample.EntityTypeResourceId,
+                sample.OwnerStableIdentity,
+                sample.LoadState,
+                sample.FuelPercentage,
+                sample.Quality,
+                sample.IsLocked,
+                sample.Container?.UsedSlotCount,
+                sample.Container);
+
+        private static DroneMapFeature ToFeature(DroneSummary sample) =>
+            new DroneMapFeature(
+                sample.ServerId,
+                sample.StableIdentity,
+                sample.Position,
+                sample.EntityTypeResourceId,
+                sample.OwnerStableIdentity,
+                sample.LoadState,
+                sample.IsLocked,
+                sample.Quality,
+                sample.Container);
 
         private static MapLayerPosition Position(SevenDaysMapFeatureSample sample) =>
             new MapLayerPosition(sample.X, sample.Y, sample.Z);
@@ -136,39 +201,77 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps
 
         private sealed class PublishedSnapshot
         {
+            public static PublishedSnapshot Empty { get; } = new PublishedSnapshot(
+                LayerState.Unavailable(),
+                LayerState.Unavailable(),
+                LayerState.Unavailable(),
+                LayerState.Unavailable());
+
             public PublishedSnapshot(
-                DateTimeOffset observedAtUtc,
-                TraderMapFeature[] traders,
-                LandClaimMapFeature[] landClaims,
-                VehicleMapFeature[] vehicles,
-                DroneMapFeature[] drones,
-                bool isStale)
+                LayerState traders,
+                LayerState landClaims,
+                LayerState vehicles,
+                LayerState drones)
             {
-                ObservedAtUtc = observedAtUtc;
                 Traders = traders;
                 LandClaims = landClaims;
                 Vehicles = vehicles;
                 Drones = drones;
-                IsStale = isStale;
             }
 
-            public DateTimeOffset ObservedAtUtc { get; }
-            public TraderMapFeature[] Traders { get; }
-            public LandClaimMapFeature[] LandClaims { get; }
-            public VehicleMapFeature[] Vehicles { get; }
-            public DroneMapFeature[] Drones { get; }
-            public bool IsStale { get; }
+            public LayerState Traders { get; }
+            public LayerState LandClaims { get; }
+            public LayerState Vehicles { get; }
+            public LayerState Drones { get; }
+
+            public LayerState Get(MapLayerKind layer)
+            {
+                switch (layer)
+                {
+                    case MapLayerKind.Traders: return Traders;
+                    case MapLayerKind.LandClaims: return LandClaims;
+                    case MapLayerKind.Vehicles: return Vehicles;
+                    case MapLayerKind.Drones: return Drones;
+                    default: throw new ArgumentOutOfRangeException(nameof(layer));
+                }
+            }
 
             public PublishedSnapshot AsStale() =>
-                IsStale
+                new PublishedSnapshot(
+                    Traders.AsStale(),
+                    LandClaims.AsStale(),
+                    Vehicles.AsStale(),
+                    Drones.AsStale());
+        }
+
+        private sealed class LayerState
+        {
+            private LayerState(
+                AvailabilityState availability,
+                DateTimeOffset? observedAtUtc,
+                MapLayerFeature[] features)
+            {
+                Availability = availability;
+                ObservedAtUtc = observedAtUtc;
+                Features = features;
+            }
+
+            public AvailabilityState Availability { get; }
+            public DateTimeOffset? ObservedAtUtc { get; }
+            public MapLayerFeature[] Features { get; }
+
+            public static LayerState Available(
+                DateTimeOffset observedAtUtc,
+                IEnumerable<MapLayerFeature> features) =>
+                new LayerState(AvailabilityState.Available, observedAtUtc, features.ToArray());
+
+            public static LayerState Unavailable() =>
+                new LayerState(AvailabilityState.Unavailable, null, Array.Empty<MapLayerFeature>());
+
+            public LayerState AsStale() =>
+                Availability == AvailabilityState.Unavailable || !ObservedAtUtc.HasValue
                     ? this
-                    : new PublishedSnapshot(
-                        ObservedAtUtc,
-                        Traders,
-                        LandClaims,
-                        Vehicles,
-                        Drones,
-                        isStale: true);
+                    : new LayerState(AvailabilityState.Stale, ObservedAtUtc, Features);
         }
     }
 }

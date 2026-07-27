@@ -52,9 +52,107 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/audit': RouteRecordInfo<
+      '/audit',
+      '/audit',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/automation/': RouteRecordInfo<
+      '/automation/',
+      '/automation',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/backups': RouteRecordInfo<
+      '/backups',
+      '/backups',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/community/cities': RouteRecordInfo<
+      '/community/cities',
+      '/community/cities',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/community/teleport': RouteRecordInfo<
+      '/community/teleport',
+      '/community/teleport',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/community/votes': RouteRecordInfo<
+      '/community/votes',
+      '/community/votes',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/console-logs': RouteRecordInfo<
       '/console-logs',
       '/console-logs',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/accounts': RouteRecordInfo<
+      '/economy/accounts',
+      '/economy/accounts',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/achievement-online-rewards': RouteRecordInfo<
+      '/economy/achievement-online-rewards',
+      '/economy/achievement-online-rewards',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/daily-reward': RouteRecordInfo<
+      '/economy/daily-reward',
+      '/economy/daily-reward',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/redeem-codes': RouteRecordInfo<
+      '/economy/redeem-codes',
+      '/economy/redeem-codes',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/reward-operations': RouteRecordInfo<
+      '/economy/reward-operations',
+      '/economy/reward-operations',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/reward-packages': RouteRecordInfo<
+      '/economy/reward-packages',
+      '/economy/reward-packages',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/shop': RouteRecordInfo<
+      '/economy/shop',
+      '/economy/shop',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/economy/transactions': RouteRecordInfo<
+      '/economy/transactions',
+      '/economy/transactions',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -80,6 +178,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/game-chat/mutes': RouteRecordInfo<
+      '/game-chat/mutes',
+      '/game-chat/mutes',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/game-chat/settings': RouteRecordInfo<
       '/game-chat/settings',
       '/game-chat/settings',
@@ -94,6 +199,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/integrations/discord': RouteRecordInfo<
+      '/integrations/discord',
+      '/integrations/discord',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/integrations/geoip': RouteRecordInfo<
+      '/integrations/geoip',
+      '/integrations/geoip',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/login': RouteRecordInfo<
       '/login',
       '/login',
@@ -104,6 +223,13 @@ declare module 'vue-router/auto-routes' {
     '/mods': RouteRecordInfo<
       '/mods',
       '/mods',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/modules': RouteRecordInfo<
+      '/modules',
+      '/modules',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -123,6 +249,7 @@ declare module 'vue-router/auto-routes' {
       | '/players/history/'
       | '/players/history/[crossplatformId]'
       | '/players/map'
+      | '/players/profile/[crossplatformId]'
     >,
     '/players/history/': RouteRecordInfo<
       '/players/history/',
@@ -145,9 +272,30 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/players/profile/[crossplatformId]': RouteRecordInfo<
+      '/players/profile/[crossplatformId]',
+      '/players/profile/:crossplatformId',
+      { crossplatformId: ParamValue<true> },
+      { crossplatformId: ParamValue<false> },
+      | never
+    >,
+    '/schedules': RouteRecordInfo<
+      '/schedules',
+      '/schedules',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/server-configuration': RouteRecordInfo<
       '/server-configuration',
       '/server-configuration',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/world-tools': RouteRecordInfo<
+      '/world-tools',
+      '/world-tools',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -189,9 +337,121 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/audit.vue': {
+      routes:
+        | '/audit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/automation/index.vue': {
+      routes:
+        | '/automation/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/backups.vue': {
+      routes:
+        | '/backups'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/community/cities.vue': {
+      routes:
+        | '/community/cities'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/community/teleport.vue': {
+      routes:
+        | '/community/teleport'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/community/votes.vue': {
+      routes:
+        | '/community/votes'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/console-logs.vue': {
       routes:
         | '/console-logs'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/accounts.vue': {
+      routes:
+        | '/economy/accounts'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/achievement-online-rewards.vue': {
+      routes:
+        | '/economy/achievement-online-rewards'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/daily-reward.vue': {
+      routes:
+        | '/economy/daily-reward'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/redeem-codes.vue': {
+      routes:
+        | '/economy/redeem-codes'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/reward-operations.vue': {
+      routes:
+        | '/economy/reward-operations'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/reward-packages.vue': {
+      routes:
+        | '/economy/reward-packages'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/shop.vue': {
+      routes:
+        | '/economy/shop'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/economy/transactions.vue': {
+      routes:
+        | '/economy/transactions'
       views:
         | never
       pathParamNames:
@@ -221,6 +481,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/game-chat/mutes.vue': {
+      routes:
+        | '/game-chat/mutes'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/game-chat/settings.vue': {
       routes:
         | '/game-chat/settings'
@@ -232,6 +500,22 @@ declare module 'vue-router/auto-routes' {
     'src/pages/game-resources.vue': {
       routes:
         | '/game-resources'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/integrations/discord.vue': {
+      routes:
+        | '/integrations/discord'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/integrations/geoip.vue': {
+      routes:
+        | '/integrations/geoip'
       views:
         | never
       pathParamNames:
@@ -253,6 +537,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/modules.vue': {
+      routes:
+        | '/modules'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/permissions.vue': {
       routes:
         | '/permissions'
@@ -267,6 +559,7 @@ declare module 'vue-router/auto-routes' {
         | '/players/history/'
         | '/players/history/[crossplatformId]'
         | '/players/map'
+        | '/players/profile/[crossplatformId]'
       views:
         | 'default'
       pathParamNames:
@@ -296,9 +589,33 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/players/profile/[crossplatformId].vue': {
+      routes:
+        | '/players/profile/[crossplatformId]'
+      views:
+        | never
+      pathParamNames:
+        | 'crossplatformId'
+    }
+    'src/pages/schedules.vue': {
+      routes:
+        | '/schedules'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/server-configuration.vue': {
       routes:
         | '/server-configuration'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/world-tools.vue': {
+      routes:
+        | '/world-tools'
       views:
         | never
       pathParamNames:

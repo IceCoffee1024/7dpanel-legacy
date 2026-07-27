@@ -4,8 +4,8 @@ import { type _JSONValue, defineQueryOptions, type UseMutationOptions } from '@p
 
 import { serializeQueryKeyValue } from '../client';
 import { client } from '../client.gen';
-import { accessListsDeleteBan, accessListsDeleteWhitelist, accessListsGetBans, accessListsGetWhitelist, accessListsPutBan, accessListsPutWhitelist, apiKeysDelete, apiKeysGet, apiKeysPost, chatCreateColoredProfile, chatDeleteColoredProfile, chatGetColoredProfiles, chatGetColoredSettings, chatGetMessages, chatGetRecentMessages, chatGetSettings, chatResetColoredSettings, chatResetSettings, chatSendGlobalMessage, chatSendPrivateMessage, chatUpdateColoredProfile, chatUpdateColoredSettings, chatUpdateSettings, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, gamePermissionsDeleteAdmin, gamePermissionsDeleteCommand, gamePermissionsGetAdmins, gamePermissionsGetCommands, gamePermissionsPutAdmin, gamePermissionsPutCommand, gameResourcesGet, gameResourcesGetIcon, healthGet, healthGet2, issueAccessToken, mapGetGameTime, mapGetLayer, mapGetMetadata, mapGetPlayerTrack, mapGetTile, mapSearchPlayersInArea, modsGet, modsPut, type Options, overviewGet, panelUsersDelete, panelUsersGet, panelUsersPost, panelUsersPut, panelUsersResetPassword, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, serverConfigurationGet, serverConfigurationPut, serverOperationsRestart, serverOperationsShutdown } from '../sdk.gen';
-import type { AccessListsDeleteBanData, AccessListsDeleteBanResponse, AccessListsDeleteWhitelistData, AccessListsDeleteWhitelistResponse, AccessListsGetBansData, AccessListsGetBansResponse, AccessListsGetWhitelistData, AccessListsGetWhitelistResponse, AccessListsPutBanData, AccessListsPutBanResponse, AccessListsPutWhitelistData, AccessListsPutWhitelistResponse, ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, ChatCreateColoredProfileData, ChatCreateColoredProfileError, ChatCreateColoredProfileResponse, ChatDeleteColoredProfileData, ChatDeleteColoredProfileError, ChatDeleteColoredProfileResponse, ChatGetColoredProfilesData, ChatGetColoredProfilesError, ChatGetColoredProfilesResponse, ChatGetColoredSettingsData, ChatGetColoredSettingsError, ChatGetColoredSettingsResponse, ChatGetMessagesData, ChatGetMessagesError, ChatGetMessagesResponse, ChatGetRecentMessagesData, ChatGetRecentMessagesError, ChatGetRecentMessagesResponse, ChatGetSettingsData, ChatGetSettingsError, ChatGetSettingsResponse, ChatResetColoredSettingsData, ChatResetColoredSettingsError, ChatResetColoredSettingsResponse, ChatResetSettingsData, ChatResetSettingsError, ChatResetSettingsResponse, ChatSendGlobalMessageData, ChatSendGlobalMessageError, ChatSendGlobalMessageResponse, ChatSendPrivateMessageData, ChatSendPrivateMessageError, ChatSendPrivateMessageResponse, ChatUpdateColoredProfileData, ChatUpdateColoredProfileError, ChatUpdateColoredProfileResponse, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsError, ChatUpdateColoredSettingsResponse, ChatUpdateSettingsData, ChatUpdateSettingsError, ChatUpdateSettingsResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, GamePermissionsDeleteAdminData, GamePermissionsDeleteAdminResponse, GamePermissionsDeleteCommandData, GamePermissionsDeleteCommandResponse, GamePermissionsGetAdminsData, GamePermissionsGetAdminsResponse, GamePermissionsGetCommandsData, GamePermissionsGetCommandsResponse, GamePermissionsPutAdminData, GamePermissionsPutAdminResponse, GamePermissionsPutCommandData, GamePermissionsPutCommandResponse, GameResourcesGetData, GameResourcesGetError, GameResourcesGetIconData, GameResourcesGetIconError, GameResourcesGetIconResponse, GameResourcesGetResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, MapGetGameTimeData, MapGetGameTimeError, MapGetGameTimeResponse, MapGetLayerData, MapGetLayerError, MapGetLayerResponse, MapGetMetadataData, MapGetMetadataError, MapGetMetadataResponse, MapGetPlayerTrackData, MapGetPlayerTrackError, MapGetPlayerTrackResponse, MapGetTileData, MapGetTileError, MapGetTileResponse, MapSearchPlayersInAreaData, MapSearchPlayersInAreaError, MapSearchPlayersInAreaResponse, ModsGetData, ModsGetResponse, ModsPutData, ModsPutResponse, OverviewGetData, OverviewGetResponse, PanelUsersDeleteData, PanelUsersDeleteResponse, PanelUsersGetData, PanelUsersGetResponse, PanelUsersPostData, PanelUsersPostResponse, PanelUsersPutData, PanelUsersPutResponse, PanelUsersResetPasswordData, PanelUsersResetPasswordResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ServerConfigurationGetData, ServerConfigurationGetResponse, ServerConfigurationPutData, ServerConfigurationPutResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse } from '../types.gen';
+import { accessListsDeleteBan, accessListsDeleteWhitelist, accessListsGetBans, accessListsGetWhitelist, accessListsPutBan, accessListsPutWhitelist, achievementsGetRecord, achievementsPutDefinition, apiKeysDelete, apiKeysGet, apiKeysPost, automationsCreate, automationsDelete, automationsDryRun, automationsFind, automationsFindExecution, automationsList, automationsListExecutions, automationsUpdate, automationsValidate, backupPoliciesList, backupPoliciesUpdate, cancelJob, chatCreateColoredProfile, chatDeleteColoredProfile, chatGetColoredProfiles, chatGetColoredSettings, chatGetMessages, chatGetRecentMessages, chatGetSettings, chatResetColoredSettings, chatResetSettings, chatSendGlobalMessage, chatSendPrivateMessage, chatUpdateColoredProfile, chatUpdateColoredSettings, chatUpdateSettings, commerceAdjustBalance, commerceCreateRedeemCode, commerceFreezeAccount, commerceGetAccounts, commerceGetLeaderboard, commerceGetProduct, commerceGetPurchase, commerceGetRedeemCode, commerceGetTransactions, commercePurchase, commercePutProduct, commerceRedeem, communityCastVote, communityCreateTeleportOperation, communityDeleteFriendship, communityDeleteHome, communityDispatchVoteRound, communityGetCities, communityGetCity, communityGetFriendship, communityGetFriendshipRecords, communityGetHome, communityGetHomes, communityGetTeleportOperation, communityGetTeleportOperations, communityGetTeleportSetting, communityGetTeleportSettings, communityGetVoteConfiguration, communityGetVoteConfigurations, communityGetVoteRound, communityGetVoteRounds, communityInviteFriend, communityPutCity, communityPutTeleportSetting, communityPutVoteConfiguration, communityRespondFriend, communitySettleVoteRound, communityStartVoteRound, consoleCommandsGetCatalog, consoleCommandsPost, consoleLogsGetRecent, createChatMute, createPanelDatabaseBackup, createSchedule, createServerConfigurationBackup, createWorldBackup, deleteBackup, deleteSchedule, disableSchedule, discordIntegrationCreateBindingCode, discordIntegrationDeleteBinding, discordIntegrationGetBindings, discordIntegrationGetCommands, discordIntegrationGetConfiguration, discordIntegrationGetDeliveries, discordIntegrationPostInteraction, discordIntegrationPutConfiguration, discordIntegrationRetryDelivery, discordIntegrationTest, downloadBackup, enableSchedule, gamePermissionsDeleteAdmin, gamePermissionsDeleteCommand, gamePermissionsGetAdmins, gamePermissionsGetCommands, gamePermissionsPutAdmin, gamePermissionsPutCommand, gameResourcesGet, gameResourcesGetIcon, geoIpAccessPoliciesGet, geoIpAccessPoliciesGetDiagnostics, geoIpAccessPoliciesPut, geoIpAccessPoliciesPutCredentials, geoIpAccessPoliciesTest, getJob, getSchedule, healthGet, healthGet2, issueAccessToken, listAuditEntries, listBackups, listChatMutes, listGameEvents, listJobs, listSchedules, mapGetGameTime, mapGetLayer, mapGetMetadata, mapGetPlayerTrack, mapGetTile, mapJobsGetResourceVersion, mapJobsRefreshResources, mapJobsRenderExplored, mapJobsRenderFull, mapSearchPlayersInArea, modsGet, modsPut, modulesDisable, modulesEnable, modulesGet, onlineRewardsGetRecords, onlineRewardsManualGrant, onlineRewardsPutRule, type Options, overviewGet, panelUsersDelete, panelUsersGet, panelUsersPost, panelUsersPut, panelUsersResetPassword, playerActionsClearInventory, playerActionsGet, playerActionsGrantItem, playerActionsRemoveItem, playerActionsResetPlayerData, playerActionsResetSkills, playerEvidenceGetInventoryDiffs, playerEvidenceGetInventorySnapshots, playerEvidenceGetProfile, playerEvidenceGetSkills, playersGet, playersGetHistoricalPlayer, playersGetHistoricalPlayers, playersGetHistoricalPlayerSnapshots, playersKick, releaseChatMute, restoreBackup, rewardsCompensate, rewardsConfirm, rewardsGetDailyPolicy, rewardsGetGrant, rewardsGetPackage, rewardsGetPendingGrants, rewardsGrant, rewardsPutDailyPolicy, rewardsPutPackage, rewardsRefund, sendAnnouncement, serverConfigurationGet, serverConfigurationPut, serverOperationsRestart, serverOperationsShutdown, updateChatMute, updateSchedule, worldGetBlockCatalog, worldGetContainers, worldGetDrones, worldGetEntityTypeCatalog, worldGetLandClaims, worldGetPrefabCatalog, worldGetSummary, worldGetVehicles, worldOperationsCleanupEntities, worldOperationsClearRegion, worldOperationsCollectGarbage, worldOperationsCopyRegion, worldOperationsDeleteEntity, worldOperationsDeleteLandClaim, worldOperationsFillRegion, worldOperationsGet, worldOperationsMoveEntity, worldOperationsMoveOnlinePlayer, worldOperationsPasteRegion, worldOperationsPlacePrefab, worldOperationsReloadResource, worldOperationsRemovePrefab, worldOperationsSetBlock, worldOperationsSpawnEntity, worldOperationsUndo } from '../sdk.gen';
+import type { AccessListsDeleteBanData, AccessListsDeleteBanResponse, AccessListsDeleteWhitelistData, AccessListsDeleteWhitelistResponse, AccessListsGetBansData, AccessListsGetBansResponse, AccessListsGetWhitelistData, AccessListsGetWhitelistResponse, AccessListsPutBanData, AccessListsPutBanResponse, AccessListsPutWhitelistData, AccessListsPutWhitelistResponse, AchievementsGetRecordData, AchievementsGetRecordResponse, AchievementsPutDefinitionData, AchievementsPutDefinitionResponse, ApiKeysDeleteData, ApiKeysDeleteError, ApiKeysDeleteResponse, ApiKeysGetData, ApiKeysGetError, ApiKeysGetResponse, ApiKeysPostData, ApiKeysPostError, ApiKeysPostResponse, AutomationsCreateData, AutomationsCreateResponse, AutomationsDeleteData, AutomationsDeleteResponse, AutomationsDryRunData, AutomationsDryRunResponse, AutomationsFindData, AutomationsFindExecutionData, AutomationsFindExecutionResponse, AutomationsFindResponse, AutomationsListData, AutomationsListExecutionsData, AutomationsListExecutionsResponse, AutomationsListResponse, AutomationsUpdateData, AutomationsUpdateResponse, AutomationsValidateData, AutomationsValidateResponse, BackupPoliciesListData, BackupPoliciesListResponse, BackupPoliciesUpdateData, BackupPoliciesUpdateResponse, CancelJobData, CancelJobError, CancelJobResponse, ChatCreateColoredProfileData, ChatCreateColoredProfileError, ChatCreateColoredProfileResponse, ChatDeleteColoredProfileData, ChatDeleteColoredProfileError, ChatDeleteColoredProfileResponse, ChatGetColoredProfilesData, ChatGetColoredProfilesError, ChatGetColoredProfilesResponse, ChatGetColoredSettingsData, ChatGetColoredSettingsError, ChatGetColoredSettingsResponse, ChatGetMessagesData, ChatGetMessagesError, ChatGetMessagesResponse, ChatGetRecentMessagesData, ChatGetRecentMessagesError, ChatGetRecentMessagesResponse, ChatGetSettingsData, ChatGetSettingsError, ChatGetSettingsResponse, ChatResetColoredSettingsData, ChatResetColoredSettingsError, ChatResetColoredSettingsResponse, ChatResetSettingsData, ChatResetSettingsError, ChatResetSettingsResponse, ChatSendGlobalMessageData, ChatSendGlobalMessageError, ChatSendGlobalMessageResponse, ChatSendPrivateMessageData, ChatSendPrivateMessageError, ChatSendPrivateMessageResponse, ChatUpdateColoredProfileData, ChatUpdateColoredProfileError, ChatUpdateColoredProfileResponse, ChatUpdateColoredSettingsData, ChatUpdateColoredSettingsError, ChatUpdateColoredSettingsResponse, ChatUpdateSettingsData, ChatUpdateSettingsError, ChatUpdateSettingsResponse, CommerceAdjustBalanceData, CommerceAdjustBalanceResponse, CommerceCreateRedeemCodeData, CommerceCreateRedeemCodeResponse, CommerceFreezeAccountData, CommerceFreezeAccountResponse, CommerceGetAccountsData, CommerceGetAccountsResponse, CommerceGetLeaderboardData, CommerceGetLeaderboardResponse, CommerceGetProductData, CommerceGetProductResponse, CommerceGetPurchaseData, CommerceGetPurchaseResponse, CommerceGetRedeemCodeData, CommerceGetRedeemCodeResponse, CommerceGetTransactionsData, CommerceGetTransactionsResponse, CommercePurchaseData, CommercePurchaseResponse, CommercePutProductData, CommercePutProductResponse, CommerceRedeemData, CommerceRedeemResponse, CommunityCastVoteData, CommunityCastVoteResponse, CommunityCreateTeleportOperationData, CommunityCreateTeleportOperationResponse, CommunityDeleteFriendshipData, CommunityDeleteFriendshipResponse, CommunityDeleteHomeData, CommunityDeleteHomeResponse, CommunityDispatchVoteRoundData, CommunityDispatchVoteRoundResponse, CommunityGetCitiesData, CommunityGetCitiesResponse, CommunityGetCityData, CommunityGetCityResponse, CommunityGetFriendshipData, CommunityGetFriendshipRecordsData, CommunityGetFriendshipRecordsResponse, CommunityGetFriendshipResponse, CommunityGetHomeData, CommunityGetHomeResponse, CommunityGetHomesData, CommunityGetHomesResponse, CommunityGetTeleportOperationData, CommunityGetTeleportOperationResponse, CommunityGetTeleportOperationsData, CommunityGetTeleportOperationsResponse, CommunityGetTeleportSettingData, CommunityGetTeleportSettingResponse, CommunityGetTeleportSettingsData, CommunityGetTeleportSettingsResponse, CommunityGetVoteConfigurationData, CommunityGetVoteConfigurationResponse, CommunityGetVoteConfigurationsData, CommunityGetVoteConfigurationsResponse, CommunityGetVoteRoundData, CommunityGetVoteRoundResponse, CommunityGetVoteRoundsData, CommunityGetVoteRoundsResponse, CommunityInviteFriendData, CommunityInviteFriendResponse, CommunityPutCityData, CommunityPutCityResponse, CommunityPutTeleportSettingData, CommunityPutTeleportSettingResponse, CommunityPutVoteConfigurationData, CommunityPutVoteConfigurationResponse, CommunityRespondFriendData, CommunityRespondFriendResponse, CommunitySettleVoteRoundData, CommunitySettleVoteRoundResponse, CommunityStartVoteRoundData, CommunityStartVoteRoundResponse, ConsoleCommandsGetCatalogData, ConsoleCommandsGetCatalogError, ConsoleCommandsGetCatalogResponse, ConsoleCommandsPostData, ConsoleCommandsPostError, ConsoleCommandsPostResponse, ConsoleLogsGetRecentData, ConsoleLogsGetRecentError, ConsoleLogsGetRecentResponse, CreateChatMuteData, CreateChatMuteError, CreateChatMuteResponse, CreatePanelDatabaseBackupData, CreatePanelDatabaseBackupResponse, CreateScheduleData, CreateScheduleError, CreateScheduleResponse, CreateServerConfigurationBackupData, CreateServerConfigurationBackupResponse, CreateWorldBackupData, CreateWorldBackupResponse, DeleteBackupData, DeleteBackupResponse, DeleteScheduleData, DeleteScheduleError, DeleteScheduleResponse, DisableScheduleData, DisableScheduleError, DisableScheduleResponse, DiscordIntegrationCreateBindingCodeData, DiscordIntegrationCreateBindingCodeResponse, DiscordIntegrationDeleteBindingData, DiscordIntegrationDeleteBindingResponse, DiscordIntegrationGetBindingsData, DiscordIntegrationGetBindingsResponse, DiscordIntegrationGetCommandsData, DiscordIntegrationGetCommandsResponse, DiscordIntegrationGetConfigurationData, DiscordIntegrationGetConfigurationResponse, DiscordIntegrationGetDeliveriesData, DiscordIntegrationGetDeliveriesResponse, DiscordIntegrationPostInteractionData, DiscordIntegrationPostInteractionResponse, DiscordIntegrationPutConfigurationData, DiscordIntegrationPutConfigurationResponse, DiscordIntegrationRetryDeliveryData, DiscordIntegrationRetryDeliveryResponse, DiscordIntegrationTestData, DiscordIntegrationTestResponse, DownloadBackupData, DownloadBackupResponse, EnableScheduleData, EnableScheduleError, EnableScheduleResponse, GamePermissionsDeleteAdminData, GamePermissionsDeleteAdminResponse, GamePermissionsDeleteCommandData, GamePermissionsDeleteCommandResponse, GamePermissionsGetAdminsData, GamePermissionsGetAdminsResponse, GamePermissionsGetCommandsData, GamePermissionsGetCommandsResponse, GamePermissionsPutAdminData, GamePermissionsPutAdminResponse, GamePermissionsPutCommandData, GamePermissionsPutCommandResponse, GameResourcesGetData, GameResourcesGetError, GameResourcesGetIconData, GameResourcesGetIconError, GameResourcesGetIconResponse, GameResourcesGetResponse, GeoIpAccessPoliciesGetData, GeoIpAccessPoliciesGetDiagnosticsData, GeoIpAccessPoliciesGetDiagnosticsResponse, GeoIpAccessPoliciesGetResponse, GeoIpAccessPoliciesPutCredentialsData, GeoIpAccessPoliciesPutCredentialsResponse, GeoIpAccessPoliciesPutData, GeoIpAccessPoliciesPutResponse, GeoIpAccessPoliciesTestData, GeoIpAccessPoliciesTestResponse, GetJobData, GetJobError, GetJobResponse, GetScheduleData, GetScheduleError, GetScheduleResponse, HealthGet2Data, HealthGet2Response, HealthGetData, HealthGetResponse, IssueAccessTokenData, IssueAccessTokenError, IssueAccessTokenResponse, ListAuditEntriesData, ListAuditEntriesError, ListAuditEntriesResponse, ListBackupsData, ListBackupsResponse, ListChatMutesData, ListChatMutesError, ListChatMutesResponse, ListGameEventsData, ListGameEventsError, ListGameEventsResponse, ListJobsData, ListJobsError, ListJobsResponse, ListSchedulesData, ListSchedulesError, ListSchedulesResponse, MapGetGameTimeData, MapGetGameTimeError, MapGetGameTimeResponse, MapGetLayerData, MapGetLayerError, MapGetLayerResponse, MapGetMetadataData, MapGetMetadataError, MapGetMetadataResponse, MapGetPlayerTrackData, MapGetPlayerTrackError, MapGetPlayerTrackResponse, MapGetTileData, MapGetTileError, MapGetTileResponse, MapJobsGetResourceVersionData, MapJobsGetResourceVersionResponse, MapJobsRefreshResourcesData, MapJobsRefreshResourcesResponse, MapJobsRenderExploredData, MapJobsRenderExploredResponse, MapJobsRenderFullData, MapJobsRenderFullResponse, MapSearchPlayersInAreaData, MapSearchPlayersInAreaError, MapSearchPlayersInAreaResponse, ModsGetData, ModsGetResponse, ModsPutData, ModsPutResponse, ModulesDisableData, ModulesDisableResponse, ModulesEnableData, ModulesEnableResponse, ModulesGetData, ModulesGetResponse, OnlineRewardsGetRecordsData, OnlineRewardsGetRecordsResponse, OnlineRewardsManualGrantData, OnlineRewardsManualGrantResponse, OnlineRewardsPutRuleData, OnlineRewardsPutRuleResponse, OverviewGetData, OverviewGetResponse, PanelUsersDeleteData, PanelUsersDeleteResponse, PanelUsersGetData, PanelUsersGetResponse, PanelUsersPostData, PanelUsersPostResponse, PanelUsersPutData, PanelUsersPutResponse, PanelUsersResetPasswordData, PanelUsersResetPasswordResponse, PlayerActionsClearInventoryData, PlayerActionsClearInventoryError, PlayerActionsClearInventoryResponse, PlayerActionsGetData, PlayerActionsGetError, PlayerActionsGetResponse, PlayerActionsGrantItemData, PlayerActionsGrantItemError, PlayerActionsGrantItemResponse, PlayerActionsRemoveItemData, PlayerActionsRemoveItemError, PlayerActionsRemoveItemResponse, PlayerActionsResetPlayerDataData, PlayerActionsResetPlayerDataError, PlayerActionsResetPlayerDataResponse, PlayerActionsResetSkillsData, PlayerActionsResetSkillsError, PlayerActionsResetSkillsResponse, PlayerEvidenceGetInventoryDiffsData, PlayerEvidenceGetInventoryDiffsError, PlayerEvidenceGetInventoryDiffsResponse, PlayerEvidenceGetInventorySnapshotsData, PlayerEvidenceGetInventorySnapshotsError, PlayerEvidenceGetInventorySnapshotsResponse, PlayerEvidenceGetProfileData, PlayerEvidenceGetProfileError, PlayerEvidenceGetProfileResponse, PlayerEvidenceGetSkillsData, PlayerEvidenceGetSkillsError, PlayerEvidenceGetSkillsResponse, PlayersGetData, PlayersGetError, PlayersGetHistoricalPlayerData, PlayersGetHistoricalPlayerError, PlayersGetHistoricalPlayerResponse, PlayersGetHistoricalPlayersData, PlayersGetHistoricalPlayersError, PlayersGetHistoricalPlayerSnapshotsData, PlayersGetHistoricalPlayerSnapshotsError, PlayersGetHistoricalPlayerSnapshotsResponse, PlayersGetHistoricalPlayersResponse, PlayersGetResponse, PlayersKickData, PlayersKickError, PlayersKickResponse, ReleaseChatMuteData, ReleaseChatMuteError, ReleaseChatMuteResponse, RestoreBackupData, RestoreBackupResponse, RewardsCompensateData, RewardsCompensateResponse, RewardsConfirmData, RewardsConfirmResponse, RewardsGetDailyPolicyData, RewardsGetDailyPolicyResponse, RewardsGetGrantData, RewardsGetGrantResponse, RewardsGetPackageData, RewardsGetPackageResponse, RewardsGetPendingGrantsData, RewardsGetPendingGrantsResponse, RewardsGrantData, RewardsGrantResponse, RewardsPutDailyPolicyData, RewardsPutDailyPolicyResponse, RewardsPutPackageData, RewardsPutPackageResponse, RewardsRefundData, RewardsRefundResponse, SendAnnouncementData, SendAnnouncementError, SendAnnouncementResponse, ServerConfigurationGetData, ServerConfigurationGetResponse, ServerConfigurationPutData, ServerConfigurationPutResponse, ServerOperationsRestartData, ServerOperationsRestartError, ServerOperationsRestartResponse, ServerOperationsShutdownData, ServerOperationsShutdownError, ServerOperationsShutdownResponse, UpdateChatMuteData, UpdateChatMuteError, UpdateChatMuteResponse, UpdateScheduleData, UpdateScheduleError, UpdateScheduleResponse, WorldGetBlockCatalogData, WorldGetBlockCatalogResponse, WorldGetContainersData, WorldGetContainersResponse, WorldGetDronesData, WorldGetDronesResponse, WorldGetEntityTypeCatalogData, WorldGetEntityTypeCatalogResponse, WorldGetLandClaimsData, WorldGetLandClaimsResponse, WorldGetPrefabCatalogData, WorldGetPrefabCatalogResponse, WorldGetSummaryData, WorldGetSummaryResponse, WorldGetVehiclesData, WorldGetVehiclesResponse, WorldOperationsCleanupEntitiesData, WorldOperationsCleanupEntitiesResponse, WorldOperationsClearRegionData, WorldOperationsClearRegionResponse, WorldOperationsCollectGarbageData, WorldOperationsCollectGarbageResponse, WorldOperationsCopyRegionData, WorldOperationsCopyRegionResponse, WorldOperationsDeleteEntityData, WorldOperationsDeleteEntityResponse, WorldOperationsDeleteLandClaimData, WorldOperationsDeleteLandClaimResponse, WorldOperationsFillRegionData, WorldOperationsFillRegionResponse, WorldOperationsGetData, WorldOperationsGetResponse, WorldOperationsMoveEntityData, WorldOperationsMoveEntityResponse, WorldOperationsMoveOnlinePlayerData, WorldOperationsMoveOnlinePlayerResponse, WorldOperationsPasteRegionData, WorldOperationsPasteRegionResponse, WorldOperationsPlacePrefabData, WorldOperationsPlacePrefabResponse, WorldOperationsReloadResourceData, WorldOperationsReloadResourceResponse, WorldOperationsRemovePrefabData, WorldOperationsRemovePrefabResponse, WorldOperationsSetBlockData, WorldOperationsSetBlockResponse, WorldOperationsSpawnEntityData, WorldOperationsSpawnEntityResponse, WorldOperationsUndoData, WorldOperationsUndoResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'path'> & {
@@ -96,6 +96,33 @@ export const accessListsPutWhitelistMutation = (options?: Partial<Options<Access
     })
 });
 
+export const achievementsPutDefinitionMutation = (options?: Partial<Options<AchievementsPutDefinitionData>>): UseMutationOptions<AchievementsPutDefinitionResponse, Options<AchievementsPutDefinitionData>, Error> => ({
+    mutation: async (vars) => await achievementsPutDefinition({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const achievementsGetRecordQueryKey = (options: Options<AchievementsGetRecordData>) => createQueryKey('achievementsGetRecord', options, ['Achievements']);
+
+export const achievementsGetRecordQuery = defineQueryOptions<Options<AchievementsGetRecordData>, AchievementsGetRecordResponse, Error>((options: Options<AchievementsGetRecordData>) => ({
+    key: achievementsGetRecordQueryKey(options),
+    query: async (context) => await achievementsGetRecord({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const sendAnnouncementMutation = (options?: Partial<Options<SendAnnouncementData>>): UseMutationOptions<SendAnnouncementResponse, Options<SendAnnouncementData>, SendAnnouncementError> => ({
+    mutation: async (vars) => await sendAnnouncement({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
 export const apiKeysGetQueryKey = (options?: Options<ApiKeysGetData>) => createQueryKey('apiKeysGet', options, ['ApiKeys']);
 
 export const apiKeysGetQuery = defineQueryOptions<Options<ApiKeysGetData>, ApiKeysGetResponse, ApiKeysGetError>((options?: Options<ApiKeysGetData>) => ({
@@ -123,6 +150,185 @@ export const apiKeysPostMutation = (options?: Partial<Options<ApiKeysPostData>>)
  */
 export const apiKeysDeleteMutation = (options?: Partial<Options<ApiKeysDeleteData>>): UseMutationOptions<ApiKeysDeleteResponse, Options<ApiKeysDeleteData>, ApiKeysDeleteError> => ({
     mutation: async (vars) => await apiKeysDelete({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const listAuditEntriesQueryKey = (options?: Options<ListAuditEntriesData>) => createQueryKey('listAuditEntries', options, ['Audit']);
+
+/**
+ * Returns the Owner-only unified audit summary projection without sensitive source payloads.
+ */
+export const listAuditEntriesQuery = defineQueryOptions<Options<ListAuditEntriesData>, ListAuditEntriesResponse, ListAuditEntriesError>((options?: Options<ListAuditEntriesData>) => ({
+    key: listAuditEntriesQueryKey(options),
+    query: async (context) => await listAuditEntries({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const automationsListQueryKey = (options?: Options<AutomationsListData>) => createQueryKey('automationsList', options, ['Automations']);
+
+export const automationsListQuery = defineQueryOptions<Options<AutomationsListData>, AutomationsListResponse, Error>((options?: Options<AutomationsListData>) => ({
+    key: automationsListQueryKey(options),
+    query: async (context) => await automationsList({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const automationsCreateMutation = (options?: Partial<Options<AutomationsCreateData>>): UseMutationOptions<AutomationsCreateResponse, Options<AutomationsCreateData>, Error> => ({
+    mutation: async (vars) => await automationsCreate({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const automationsDeleteMutation = (options?: Partial<Options<AutomationsDeleteData>>): UseMutationOptions<AutomationsDeleteResponse, Options<AutomationsDeleteData>, Error> => ({
+    mutation: async (vars) => await automationsDelete({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const automationsFindQueryKey = (options: Options<AutomationsFindData>) => createQueryKey('automationsFind', options, ['Automations']);
+
+export const automationsFindQuery = defineQueryOptions<Options<AutomationsFindData>, AutomationsFindResponse, Error>((options: Options<AutomationsFindData>) => ({
+    key: automationsFindQueryKey(options),
+    query: async (context) => await automationsFind({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const automationsUpdateMutation = (options?: Partial<Options<AutomationsUpdateData>>): UseMutationOptions<AutomationsUpdateResponse, Options<AutomationsUpdateData>, Error> => ({
+    mutation: async (vars) => await automationsUpdate({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const automationsValidateMutation = (options?: Partial<Options<AutomationsValidateData>>): UseMutationOptions<AutomationsValidateResponse, Options<AutomationsValidateData>, Error> => ({
+    mutation: async (vars) => await automationsValidate({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const automationsDryRunMutation = (options?: Partial<Options<AutomationsDryRunData>>): UseMutationOptions<AutomationsDryRunResponse, Options<AutomationsDryRunData>, Error> => ({
+    mutation: async (vars) => await automationsDryRun({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const automationsListExecutionsQueryKey = (options?: Options<AutomationsListExecutionsData>) => createQueryKey('automationsListExecutions', options, ['Automations']);
+
+export const automationsListExecutionsQuery = defineQueryOptions<Options<AutomationsListExecutionsData>, AutomationsListExecutionsResponse, Error>((options?: Options<AutomationsListExecutionsData>) => ({
+    key: automationsListExecutionsQueryKey(options),
+    query: async (context) => await automationsListExecutions({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const automationsFindExecutionQueryKey = (options: Options<AutomationsFindExecutionData>) => createQueryKey('automationsFindExecution', options, ['Automations']);
+
+export const automationsFindExecutionQuery = defineQueryOptions<Options<AutomationsFindExecutionData>, AutomationsFindExecutionResponse, Error>((options: Options<AutomationsFindExecutionData>) => ({
+    key: automationsFindExecutionQueryKey(options),
+    query: async (context) => await automationsFindExecution({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const backupPoliciesListQueryKey = (options?: Options<BackupPoliciesListData>) => createQueryKey('backupPoliciesList', options, ['BackupPolicies']);
+
+export const backupPoliciesListQuery = defineQueryOptions<Options<BackupPoliciesListData>, BackupPoliciesListResponse, Error>((options?: Options<BackupPoliciesListData>) => ({
+    key: backupPoliciesListQueryKey(options),
+    query: async (context) => await backupPoliciesList({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const backupPoliciesUpdateMutation = (options?: Partial<Options<BackupPoliciesUpdateData>>): UseMutationOptions<BackupPoliciesUpdateResponse, Options<BackupPoliciesUpdateData>, Error> => ({
+    mutation: async (vars) => await backupPoliciesUpdate({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const createWorldBackupMutation = (options?: Partial<Options<CreateWorldBackupData>>): UseMutationOptions<CreateWorldBackupResponse, Options<CreateWorldBackupData>, Error> => ({
+    mutation: async (vars) => await createWorldBackup({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const createPanelDatabaseBackupMutation = (options?: Partial<Options<CreatePanelDatabaseBackupData>>): UseMutationOptions<CreatePanelDatabaseBackupResponse, Options<CreatePanelDatabaseBackupData>, Error> => ({
+    mutation: async (vars) => await createPanelDatabaseBackup({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const createServerConfigurationBackupMutation = (options?: Partial<Options<CreateServerConfigurationBackupData>>): UseMutationOptions<CreateServerConfigurationBackupResponse, Options<CreateServerConfigurationBackupData>, Error> => ({
+    mutation: async (vars) => await createServerConfigurationBackup({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const listBackupsQueryKey = (options?: Options<ListBackupsData>) => createQueryKey('listBackups', options, ['Backups']);
+
+export const listBackupsQuery = defineQueryOptions<Options<ListBackupsData>, ListBackupsResponse, Error>((options?: Options<ListBackupsData>) => ({
+    key: listBackupsQueryKey(options),
+    query: async (context) => await listBackups({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const downloadBackupQueryKey = (options: Options<DownloadBackupData>) => createQueryKey('downloadBackup', options, ['Backups']);
+
+export const downloadBackupQuery = defineQueryOptions<Options<DownloadBackupData>, DownloadBackupResponse, Error>((options: Options<DownloadBackupData>) => ({
+    key: downloadBackupQueryKey(options),
+    query: async (context) => await downloadBackup({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const deleteBackupMutation = (options?: Partial<Options<DeleteBackupData>>): UseMutationOptions<DeleteBackupResponse, Options<DeleteBackupData>, Error> => ({
+    mutation: async (vars) => await deleteBackup({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const restoreBackupMutation = (options?: Partial<Options<RestoreBackupData>>): UseMutationOptions<RestoreBackupResponse, Options<RestoreBackupData>, Error> => ({
+    mutation: async (vars) => await restoreBackup({
         ...options,
         ...vars,
         throwOnError: true
@@ -251,6 +457,53 @@ export const chatUpdateColoredSettingsMutation = (options?: Partial<Options<Chat
     })
 });
 
+export const listChatMutesQueryKey = (options?: Options<ListChatMutesData>) => createQueryKey('listChatMutes', options, ['Chat']);
+
+/**
+ * Returns Owner-only active chat mutes using bounded keyset pagination.
+ */
+export const listChatMutesQuery = defineQueryOptions<Options<ListChatMutesData>, ListChatMutesResponse, ListChatMutesError>((options?: Options<ListChatMutesData>) => ({
+    key: listChatMutesQueryKey(options),
+    query: async (context) => await listChatMutes({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+/**
+ * Creates and applies an Owner-only permanent or temporary chat mute.
+ */
+export const createChatMuteMutation = (options?: Partial<Options<CreateChatMuteData>>): UseMutationOptions<CreateChatMuteResponse, Options<CreateChatMuteData>, CreateChatMuteError> => ({
+    mutation: async (vars) => await createChatMute({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Releases an existing Owner-only chat mute.
+ */
+export const releaseChatMuteMutation = (options?: Partial<Options<ReleaseChatMuteData>>): UseMutationOptions<ReleaseChatMuteResponse, Options<ReleaseChatMuteData>, ReleaseChatMuteError> => ({
+    mutation: async (vars) => await releaseChatMute({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Updates and applies an existing Owner-only chat mute.
+ */
+export const updateChatMuteMutation = (options?: Partial<Options<UpdateChatMuteData>>): UseMutationOptions<UpdateChatMuteResponse, Options<UpdateChatMuteData>, UpdateChatMuteError> => ({
+    mutation: async (vars) => await updateChatMute({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
 export const chatGetColoredProfilesQueryKey = (options?: Options<ChatGetColoredProfilesData>) => createQueryKey('chatGetColoredProfiles', options, ['Chat']);
 
 /**
@@ -298,6 +551,370 @@ export const chatUpdateColoredProfileMutation = (options?: Partial<Options<ChatU
     })
 });
 
+export const commerceGetAccountsQueryKey = (options?: Options<CommerceGetAccountsData>) => createQueryKey('commerceGetAccounts', options, ['Commerce']);
+
+export const commerceGetAccountsQuery = defineQueryOptions<Options<CommerceGetAccountsData>, CommerceGetAccountsResponse, Error>((options?: Options<CommerceGetAccountsData>) => ({
+    key: commerceGetAccountsQueryKey(options),
+    query: async (context) => await commerceGetAccounts({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const commerceGetLeaderboardQueryKey = (options?: Options<CommerceGetLeaderboardData>) => createQueryKey('commerceGetLeaderboard', options, ['Commerce']);
+
+export const commerceGetLeaderboardQuery = defineQueryOptions<Options<CommerceGetLeaderboardData>, CommerceGetLeaderboardResponse, Error>((options?: Options<CommerceGetLeaderboardData>) => ({
+    key: commerceGetLeaderboardQueryKey(options),
+    query: async (context) => await commerceGetLeaderboard({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const commerceGetTransactionsQueryKey = (options?: Options<CommerceGetTransactionsData>) => createQueryKey('commerceGetTransactions', options, ['Commerce']);
+
+export const commerceGetTransactionsQuery = defineQueryOptions<Options<CommerceGetTransactionsData>, CommerceGetTransactionsResponse, Error>((options?: Options<CommerceGetTransactionsData>) => ({
+    key: commerceGetTransactionsQueryKey(options),
+    query: async (context) => await commerceGetTransactions({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const commerceFreezeAccountMutation = (options?: Partial<Options<CommerceFreezeAccountData>>): UseMutationOptions<CommerceFreezeAccountResponse, Options<CommerceFreezeAccountData>, Error> => ({
+    mutation: async (vars) => await commerceFreezeAccount({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const commerceAdjustBalanceMutation = (options?: Partial<Options<CommerceAdjustBalanceData>>): UseMutationOptions<CommerceAdjustBalanceResponse, Options<CommerceAdjustBalanceData>, Error> => ({
+    mutation: async (vars) => await commerceAdjustBalance({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const commerceGetProductQueryKey = (options: Options<CommerceGetProductData>) => createQueryKey('commerceGetProduct', options, ['Commerce']);
+
+export const commerceGetProductQuery = defineQueryOptions<Options<CommerceGetProductData>, CommerceGetProductResponse, Error>((options: Options<CommerceGetProductData>) => ({
+    key: commerceGetProductQueryKey(options),
+    query: async (context) => await commerceGetProduct({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const commercePutProductMutation = (options?: Partial<Options<CommercePutProductData>>): UseMutationOptions<CommercePutProductResponse, Options<CommercePutProductData>, Error> => ({
+    mutation: async (vars) => await commercePutProduct({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const commerceGetPurchaseQueryKey = (options: Options<CommerceGetPurchaseData>) => createQueryKey('commerceGetPurchase', options, ['Commerce']);
+
+export const commerceGetPurchaseQuery = defineQueryOptions<Options<CommerceGetPurchaseData>, CommerceGetPurchaseResponse, Error>((options: Options<CommerceGetPurchaseData>) => ({
+    key: commerceGetPurchaseQueryKey(options),
+    query: async (context) => await commerceGetPurchase({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const commercePurchaseMutation = (options?: Partial<Options<CommercePurchaseData>>): UseMutationOptions<CommercePurchaseResponse, Options<CommercePurchaseData>, Error> => ({
+    mutation: async (vars) => await commercePurchase({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const commerceGetRedeemCodeQueryKey = (options: Options<CommerceGetRedeemCodeData>) => createQueryKey('commerceGetRedeemCode', options, ['Commerce']);
+
+export const commerceGetRedeemCodeQuery = defineQueryOptions<Options<CommerceGetRedeemCodeData>, CommerceGetRedeemCodeResponse, Error>((options: Options<CommerceGetRedeemCodeData>) => ({
+    key: commerceGetRedeemCodeQueryKey(options),
+    query: async (context) => await commerceGetRedeemCode({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const commerceCreateRedeemCodeMutation = (options?: Partial<Options<CommerceCreateRedeemCodeData>>): UseMutationOptions<CommerceCreateRedeemCodeResponse, Options<CommerceCreateRedeemCodeData>, Error> => ({
+    mutation: async (vars) => await commerceCreateRedeemCode({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const commerceRedeemMutation = (options?: Partial<Options<CommerceRedeemData>>): UseMutationOptions<CommerceRedeemResponse, Options<CommerceRedeemData>, Error> => ({
+    mutation: async (vars) => await commerceRedeem({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetTeleportSettingsQueryKey = (options?: Options<CommunityGetTeleportSettingsData>) => createQueryKey('communityGetTeleportSettings', options, ['Community']);
+
+export const communityGetTeleportSettingsQuery = defineQueryOptions<Options<CommunityGetTeleportSettingsData>, CommunityGetTeleportSettingsResponse, Error>((options?: Options<CommunityGetTeleportSettingsData>) => ({
+    key: communityGetTeleportSettingsQueryKey(options),
+    query: async (context) => await communityGetTeleportSettings({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityGetTeleportSettingQueryKey = (options: Options<CommunityGetTeleportSettingData>) => createQueryKey('communityGetTeleportSetting', options, ['Community']);
+
+export const communityGetTeleportSettingQuery = defineQueryOptions<Options<CommunityGetTeleportSettingData>, CommunityGetTeleportSettingResponse, Error>((options: Options<CommunityGetTeleportSettingData>) => ({
+    key: communityGetTeleportSettingQueryKey(options),
+    query: async (context) => await communityGetTeleportSetting({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityPutTeleportSettingMutation = (options?: Partial<Options<CommunityPutTeleportSettingData>>): UseMutationOptions<CommunityPutTeleportSettingResponse, Options<CommunityPutTeleportSettingData>, Error> => ({
+    mutation: async (vars) => await communityPutTeleportSetting({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetHomesQueryKey = (options?: Options<CommunityGetHomesData>) => createQueryKey('communityGetHomes', options, ['Community']);
+
+export const communityGetHomesQuery = defineQueryOptions<Options<CommunityGetHomesData>, CommunityGetHomesResponse, Error>((options?: Options<CommunityGetHomesData>) => ({
+    key: communityGetHomesQueryKey(options),
+    query: async (context) => await communityGetHomes({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityDeleteHomeMutation = (options?: Partial<Options<CommunityDeleteHomeData>>): UseMutationOptions<CommunityDeleteHomeResponse, Options<CommunityDeleteHomeData>, Error> => ({
+    mutation: async (vars) => await communityDeleteHome({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetHomeQueryKey = (options: Options<CommunityGetHomeData>) => createQueryKey('communityGetHome', options, ['Community']);
+
+export const communityGetHomeQuery = defineQueryOptions<Options<CommunityGetHomeData>, CommunityGetHomeResponse, Error>((options: Options<CommunityGetHomeData>) => ({
+    key: communityGetHomeQueryKey(options),
+    query: async (context) => await communityGetHome({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityGetCitiesQueryKey = (options?: Options<CommunityGetCitiesData>) => createQueryKey('communityGetCities', options, ['Community']);
+
+export const communityGetCitiesQuery = defineQueryOptions<Options<CommunityGetCitiesData>, CommunityGetCitiesResponse, Error>((options?: Options<CommunityGetCitiesData>) => ({
+    key: communityGetCitiesQueryKey(options),
+    query: async (context) => await communityGetCities({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityGetCityQueryKey = (options: Options<CommunityGetCityData>) => createQueryKey('communityGetCity', options, ['Community']);
+
+export const communityGetCityQuery = defineQueryOptions<Options<CommunityGetCityData>, CommunityGetCityResponse, Error>((options: Options<CommunityGetCityData>) => ({
+    key: communityGetCityQueryKey(options),
+    query: async (context) => await communityGetCity({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityPutCityMutation = (options?: Partial<Options<CommunityPutCityData>>): UseMutationOptions<CommunityPutCityResponse, Options<CommunityPutCityData>, Error> => ({
+    mutation: async (vars) => await communityPutCity({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetFriendshipQueryKey = (options?: Options<CommunityGetFriendshipData>) => createQueryKey('communityGetFriendship', options, ['Community']);
+
+export const communityGetFriendshipQuery = defineQueryOptions<Options<CommunityGetFriendshipData>, CommunityGetFriendshipResponse, Error>((options?: Options<CommunityGetFriendshipData>) => ({
+    key: communityGetFriendshipQueryKey(options),
+    query: async (context) => await communityGetFriendship({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityGetFriendshipRecordsQueryKey = (options?: Options<CommunityGetFriendshipRecordsData>) => createQueryKey('communityGetFriendshipRecords', options, ['Community']);
+
+export const communityGetFriendshipRecordsQuery = defineQueryOptions<Options<CommunityGetFriendshipRecordsData>, CommunityGetFriendshipRecordsResponse, Error>((options?: Options<CommunityGetFriendshipRecordsData>) => ({
+    key: communityGetFriendshipRecordsQueryKey(options),
+    query: async (context) => await communityGetFriendshipRecords({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityInviteFriendMutation = (options?: Partial<Options<CommunityInviteFriendData>>): UseMutationOptions<CommunityInviteFriendResponse, Options<CommunityInviteFriendData>, Error> => ({
+    mutation: async (vars) => await communityInviteFriend({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityRespondFriendMutation = (options?: Partial<Options<CommunityRespondFriendData>>): UseMutationOptions<CommunityRespondFriendResponse, Options<CommunityRespondFriendData>, Error> => ({
+    mutation: async (vars) => await communityRespondFriend({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityDeleteFriendshipMutation = (options?: Partial<Options<CommunityDeleteFriendshipData>>): UseMutationOptions<CommunityDeleteFriendshipResponse, Options<CommunityDeleteFriendshipData>, Error> => ({
+    mutation: async (vars) => await communityDeleteFriendship({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetTeleportOperationQueryKey = (options: Options<CommunityGetTeleportOperationData>) => createQueryKey('communityGetTeleportOperation', options, ['Community']);
+
+export const communityGetTeleportOperationQuery = defineQueryOptions<Options<CommunityGetTeleportOperationData>, CommunityGetTeleportOperationResponse, Error>((options: Options<CommunityGetTeleportOperationData>) => ({
+    key: communityGetTeleportOperationQueryKey(options),
+    query: async (context) => await communityGetTeleportOperation({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityGetTeleportOperationsQueryKey = (options?: Options<CommunityGetTeleportOperationsData>) => createQueryKey('communityGetTeleportOperations', options, ['Community']);
+
+export const communityGetTeleportOperationsQuery = defineQueryOptions<Options<CommunityGetTeleportOperationsData>, CommunityGetTeleportOperationsResponse, Error>((options?: Options<CommunityGetTeleportOperationsData>) => ({
+    key: communityGetTeleportOperationsQueryKey(options),
+    query: async (context) => await communityGetTeleportOperations({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityCreateTeleportOperationMutation = (options?: Partial<Options<CommunityCreateTeleportOperationData>>): UseMutationOptions<CommunityCreateTeleportOperationResponse, Options<CommunityCreateTeleportOperationData>, Error> => ({
+    mutation: async (vars) => await communityCreateTeleportOperation({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetVoteConfigurationsQueryKey = (options?: Options<CommunityGetVoteConfigurationsData>) => createQueryKey('communityGetVoteConfigurations', options, ['Community']);
+
+export const communityGetVoteConfigurationsQuery = defineQueryOptions<Options<CommunityGetVoteConfigurationsData>, CommunityGetVoteConfigurationsResponse, Error>((options?: Options<CommunityGetVoteConfigurationsData>) => ({
+    key: communityGetVoteConfigurationsQueryKey(options),
+    query: async (context) => await communityGetVoteConfigurations({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityGetVoteConfigurationQueryKey = (options: Options<CommunityGetVoteConfigurationData>) => createQueryKey('communityGetVoteConfiguration', options, ['Community']);
+
+export const communityGetVoteConfigurationQuery = defineQueryOptions<Options<CommunityGetVoteConfigurationData>, CommunityGetVoteConfigurationResponse, Error>((options: Options<CommunityGetVoteConfigurationData>) => ({
+    key: communityGetVoteConfigurationQueryKey(options),
+    query: async (context) => await communityGetVoteConfiguration({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityPutVoteConfigurationMutation = (options?: Partial<Options<CommunityPutVoteConfigurationData>>): UseMutationOptions<CommunityPutVoteConfigurationResponse, Options<CommunityPutVoteConfigurationData>, Error> => ({
+    mutation: async (vars) => await communityPutVoteConfiguration({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetVoteRoundsQueryKey = (options?: Options<CommunityGetVoteRoundsData>) => createQueryKey('communityGetVoteRounds', options, ['Community']);
+
+export const communityGetVoteRoundsQuery = defineQueryOptions<Options<CommunityGetVoteRoundsData>, CommunityGetVoteRoundsResponse, Error>((options?: Options<CommunityGetVoteRoundsData>) => ({
+    key: communityGetVoteRoundsQueryKey(options),
+    query: async (context) => await communityGetVoteRounds({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityStartVoteRoundMutation = (options?: Partial<Options<CommunityStartVoteRoundData>>): UseMutationOptions<CommunityStartVoteRoundResponse, Options<CommunityStartVoteRoundData>, Error> => ({
+    mutation: async (vars) => await communityStartVoteRound({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityGetVoteRoundQueryKey = (options: Options<CommunityGetVoteRoundData>) => createQueryKey('communityGetVoteRound', options, ['Community']);
+
+export const communityGetVoteRoundQuery = defineQueryOptions<Options<CommunityGetVoteRoundData>, CommunityGetVoteRoundResponse, Error>((options: Options<CommunityGetVoteRoundData>) => ({
+    key: communityGetVoteRoundQueryKey(options),
+    query: async (context) => await communityGetVoteRound({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const communityCastVoteMutation = (options?: Partial<Options<CommunityCastVoteData>>): UseMutationOptions<CommunityCastVoteResponse, Options<CommunityCastVoteData>, Error> => ({
+    mutation: async (vars) => await communityCastVote({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communitySettleVoteRoundMutation = (options?: Partial<Options<CommunitySettleVoteRoundData>>): UseMutationOptions<CommunitySettleVoteRoundResponse, Options<CommunitySettleVoteRoundData>, Error> => ({
+    mutation: async (vars) => await communitySettleVoteRound({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const communityDispatchVoteRoundMutation = (options?: Partial<Options<CommunityDispatchVoteRoundData>>): UseMutationOptions<CommunityDispatchVoteRoundResponse, Options<CommunityDispatchVoteRoundData>, Error> => ({
+    mutation: async (vars) => await communityDispatchVoteRound({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
 export const consoleCommandsGetCatalogQueryKey = (options?: Options<ConsoleCommandsGetCatalogData>) => createQueryKey('consoleCommandsGetCatalog', options, ['ConsoleCommandCatalog']);
 
 export const consoleCommandsGetCatalogQuery = defineQueryOptions<Options<ConsoleCommandsGetCatalogData>, ConsoleCommandsGetCatalogResponse, ConsoleCommandsGetCatalogError>((options?: Options<ConsoleCommandsGetCatalogData>) => ({
@@ -322,6 +939,112 @@ export const consoleLogsGetRecentQueryKey = (options?: Options<ConsoleLogsGetRec
 export const consoleLogsGetRecentQuery = defineQueryOptions<Options<ConsoleLogsGetRecentData>, ConsoleLogsGetRecentResponse, ConsoleLogsGetRecentError>((options?: Options<ConsoleLogsGetRecentData>) => ({
     key: consoleLogsGetRecentQueryKey(options),
     query: async (context) => await consoleLogsGetRecent({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const discordIntegrationGetConfigurationQueryKey = (options?: Options<DiscordIntegrationGetConfigurationData>) => createQueryKey('discordIntegrationGetConfiguration', options, ['DiscordIntegration']);
+
+export const discordIntegrationGetConfigurationQuery = defineQueryOptions<Options<DiscordIntegrationGetConfigurationData>, DiscordIntegrationGetConfigurationResponse, Error>((options?: Options<DiscordIntegrationGetConfigurationData>) => ({
+    key: discordIntegrationGetConfigurationQueryKey(options),
+    query: async (context) => await discordIntegrationGetConfiguration({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const discordIntegrationPutConfigurationMutation = (options?: Partial<Options<DiscordIntegrationPutConfigurationData>>): UseMutationOptions<DiscordIntegrationPutConfigurationResponse, Options<DiscordIntegrationPutConfigurationData>, Error> => ({
+    mutation: async (vars) => await discordIntegrationPutConfiguration({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const discordIntegrationTestMutation = (options?: Partial<Options<DiscordIntegrationTestData>>): UseMutationOptions<DiscordIntegrationTestResponse, Options<DiscordIntegrationTestData>, Error> => ({
+    mutation: async (vars) => await discordIntegrationTest({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const discordIntegrationGetDeliveriesQueryKey = (options?: Options<DiscordIntegrationGetDeliveriesData>) => createQueryKey('discordIntegrationGetDeliveries', options, ['DiscordIntegration']);
+
+export const discordIntegrationGetDeliveriesQuery = defineQueryOptions<Options<DiscordIntegrationGetDeliveriesData>, DiscordIntegrationGetDeliveriesResponse, Error>((options?: Options<DiscordIntegrationGetDeliveriesData>) => ({
+    key: discordIntegrationGetDeliveriesQueryKey(options),
+    query: async (context) => await discordIntegrationGetDeliveries({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const discordIntegrationRetryDeliveryMutation = (options?: Partial<Options<DiscordIntegrationRetryDeliveryData>>): UseMutationOptions<DiscordIntegrationRetryDeliveryResponse, Options<DiscordIntegrationRetryDeliveryData>, Error> => ({
+    mutation: async (vars) => await discordIntegrationRetryDelivery({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const discordIntegrationGetBindingsQueryKey = (options?: Options<DiscordIntegrationGetBindingsData>) => createQueryKey('discordIntegrationGetBindings', options, ['DiscordIntegration']);
+
+export const discordIntegrationGetBindingsQuery = defineQueryOptions<Options<DiscordIntegrationGetBindingsData>, DiscordIntegrationGetBindingsResponse, Error>((options?: Options<DiscordIntegrationGetBindingsData>) => ({
+    key: discordIntegrationGetBindingsQueryKey(options),
+    query: async (context) => await discordIntegrationGetBindings({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const discordIntegrationCreateBindingCodeMutation = (options?: Partial<Options<DiscordIntegrationCreateBindingCodeData>>): UseMutationOptions<DiscordIntegrationCreateBindingCodeResponse, Options<DiscordIntegrationCreateBindingCodeData>, Error> => ({
+    mutation: async (vars) => await discordIntegrationCreateBindingCode({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const discordIntegrationDeleteBindingMutation = (options?: Partial<Options<DiscordIntegrationDeleteBindingData>>): UseMutationOptions<DiscordIntegrationDeleteBindingResponse, Options<DiscordIntegrationDeleteBindingData>, Error> => ({
+    mutation: async (vars) => await discordIntegrationDeleteBinding({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const discordIntegrationGetCommandsQueryKey = (options?: Options<DiscordIntegrationGetCommandsData>) => createQueryKey('discordIntegrationGetCommands', options, ['DiscordIntegration']);
+
+export const discordIntegrationGetCommandsQuery = defineQueryOptions<Options<DiscordIntegrationGetCommandsData>, DiscordIntegrationGetCommandsResponse, Error>((options?: Options<DiscordIntegrationGetCommandsData>) => ({
+    key: discordIntegrationGetCommandsQueryKey(options),
+    query: async (context) => await discordIntegrationGetCommands({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const discordIntegrationPostInteractionMutation = (options?: Partial<Options<DiscordIntegrationPostInteractionData>>): UseMutationOptions<DiscordIntegrationPostInteractionResponse, Options<DiscordIntegrationPostInteractionData>, Error> => ({
+    mutation: async (vars) => await discordIntegrationPostInteraction({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const listGameEventsQueryKey = (options?: Options<ListGameEventsData>) => createQueryKey('listGameEvents', options, ['GameEvents']);
+
+/**
+ * Returns Owner-only game lifecycle events and separate evidence-gap metadata.
+ */
+export const listGameEventsQuery = defineQueryOptions<Options<ListGameEventsData>, ListGameEventsResponse, ListGameEventsError>((options?: Options<ListGameEventsData>) => ({
+    key: listGameEventsQueryKey(options),
+    query: async (context) => await listGameEvents({
         ...options,
         ...context,
         throwOnError: true
@@ -410,6 +1133,52 @@ export const gameResourcesGetIconQuery = defineQueryOptions<Options<GameResource
     })
 }));
 
+export const geoIpAccessPoliciesGetQueryKey = (options?: Options<GeoIpAccessPoliciesGetData>) => createQueryKey('geoIpAccessPoliciesGet', options, ['GeoIpAccessPolicies']);
+
+export const geoIpAccessPoliciesGetQuery = defineQueryOptions<Options<GeoIpAccessPoliciesGetData>, GeoIpAccessPoliciesGetResponse, Error>((options?: Options<GeoIpAccessPoliciesGetData>) => ({
+    key: geoIpAccessPoliciesGetQueryKey(options),
+    query: async (context) => await geoIpAccessPoliciesGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const geoIpAccessPoliciesPutMutation = (options?: Partial<Options<GeoIpAccessPoliciesPutData>>): UseMutationOptions<GeoIpAccessPoliciesPutResponse, Options<GeoIpAccessPoliciesPutData>, Error> => ({
+    mutation: async (vars) => await geoIpAccessPoliciesPut({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const geoIpAccessPoliciesPutCredentialsMutation = (options?: Partial<Options<GeoIpAccessPoliciesPutCredentialsData>>): UseMutationOptions<GeoIpAccessPoliciesPutCredentialsResponse, Options<GeoIpAccessPoliciesPutCredentialsData>, Error> => ({
+    mutation: async (vars) => await geoIpAccessPoliciesPutCredentials({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const geoIpAccessPoliciesTestMutation = (options?: Partial<Options<GeoIpAccessPoliciesTestData>>): UseMutationOptions<GeoIpAccessPoliciesTestResponse, Options<GeoIpAccessPoliciesTestData>, Error> => ({
+    mutation: async (vars) => await geoIpAccessPoliciesTest({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const geoIpAccessPoliciesGetDiagnosticsQueryKey = (options?: Options<GeoIpAccessPoliciesGetDiagnosticsData>) => createQueryKey('geoIpAccessPoliciesGetDiagnostics', options, ['GeoIpAccessPolicies']);
+
+export const geoIpAccessPoliciesGetDiagnosticsQuery = defineQueryOptions<Options<GeoIpAccessPoliciesGetDiagnosticsData>, GeoIpAccessPoliciesGetDiagnosticsResponse, Error>((options?: Options<GeoIpAccessPoliciesGetDiagnosticsData>) => ({
+    key: geoIpAccessPoliciesGetDiagnosticsQueryKey(options),
+    query: async (context) => await geoIpAccessPoliciesGetDiagnostics({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
 export const healthGetQueryKey = (options?: Options<HealthGetData>) => createQueryKey('healthGet', options, ['Health']);
 
 export const healthGetQuery = defineQueryOptions<Options<HealthGetData>, HealthGetResponse, Error>((options?: Options<HealthGetData>) => ({
@@ -431,6 +1200,36 @@ export const healthGet2Query = defineQueryOptions<Options<HealthGet2Data>, Healt
         throwOnError: true
     })
 }));
+
+export const listJobsQueryKey = (options?: Options<ListJobsData>) => createQueryKey('listJobs', options, ['Jobs']);
+
+export const listJobsQuery = defineQueryOptions<Options<ListJobsData>, ListJobsResponse, ListJobsError>((options?: Options<ListJobsData>) => ({
+    key: listJobsQueryKey(options),
+    query: async (context) => await listJobs({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const getJobQueryKey = (options: Options<GetJobData>) => createQueryKey('getJob', options, ['Jobs']);
+
+export const getJobQuery = defineQueryOptions<Options<GetJobData>, GetJobResponse, GetJobError>((options: Options<GetJobData>) => ({
+    key: getJobQueryKey(options),
+    query: async (context) => await getJob({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const cancelJobMutation = (options?: Partial<Options<CancelJobData>>): UseMutationOptions<CancelJobResponse, Options<CancelJobData>, CancelJobError> => ({
+    mutation: async (vars) => await cancelJob({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
 
 export const mapGetMetadataQueryKey = (options?: Options<MapGetMetadataData>) => createQueryKey('mapGetMetadata', options, ['Map']);
 
@@ -507,6 +1306,41 @@ export const mapSearchPlayersInAreaQuery = defineQueryOptions<Options<MapSearchP
     })
 }));
 
+export const mapJobsRefreshResourcesMutation = (options?: Partial<Options<MapJobsRefreshResourcesData>>): UseMutationOptions<MapJobsRefreshResourcesResponse, Options<MapJobsRefreshResourcesData>, Error> => ({
+    mutation: async (vars) => await mapJobsRefreshResources({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const mapJobsRenderExploredMutation = (options?: Partial<Options<MapJobsRenderExploredData>>): UseMutationOptions<MapJobsRenderExploredResponse, Options<MapJobsRenderExploredData>, Error> => ({
+    mutation: async (vars) => await mapJobsRenderExplored({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const mapJobsRenderFullMutation = (options?: Partial<Options<MapJobsRenderFullData>>): UseMutationOptions<MapJobsRenderFullResponse, Options<MapJobsRenderFullData>, Error> => ({
+    mutation: async (vars) => await mapJobsRenderFull({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const mapJobsGetResourceVersionQueryKey = (options?: Options<MapJobsGetResourceVersionData>) => createQueryKey('mapJobsGetResourceVersion', options, ['MapJobs']);
+
+export const mapJobsGetResourceVersionQuery = defineQueryOptions<Options<MapJobsGetResourceVersionData>, MapJobsGetResourceVersionResponse, Error>((options?: Options<MapJobsGetResourceVersionData>) => ({
+    key: mapJobsGetResourceVersionQueryKey(options),
+    query: async (context) => await mapJobsGetResourceVersion({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
 export const modsGetQueryKey = (options?: Options<ModsGetData>) => createQueryKey('modsGet', options, ['Mods']);
 
 export const modsGetQuery = defineQueryOptions<Options<ModsGetData>, ModsGetResponse, Error>((options?: Options<ModsGetData>) => ({
@@ -520,6 +1354,60 @@ export const modsGetQuery = defineQueryOptions<Options<ModsGetData>, ModsGetResp
 
 export const modsPutMutation = (options?: Partial<Options<ModsPutData>>): UseMutationOptions<ModsPutResponse, Options<ModsPutData>, Error> => ({
     mutation: async (vars) => await modsPut({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const modulesGetQueryKey = (options?: Options<ModulesGetData>) => createQueryKey('modulesGet', options, ['Modules']);
+
+export const modulesGetQuery = defineQueryOptions<Options<ModulesGetData>, ModulesGetResponse, Error>((options?: Options<ModulesGetData>) => ({
+    key: modulesGetQueryKey(options),
+    query: async (context) => await modulesGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const modulesEnableMutation = (options?: Partial<Options<ModulesEnableData>>): UseMutationOptions<ModulesEnableResponse, Options<ModulesEnableData>, Error> => ({
+    mutation: async (vars) => await modulesEnable({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const modulesDisableMutation = (options?: Partial<Options<ModulesDisableData>>): UseMutationOptions<ModulesDisableResponse, Options<ModulesDisableData>, Error> => ({
+    mutation: async (vars) => await modulesDisable({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const onlineRewardsPutRuleMutation = (options?: Partial<Options<OnlineRewardsPutRuleData>>): UseMutationOptions<OnlineRewardsPutRuleResponse, Options<OnlineRewardsPutRuleData>, Error> => ({
+    mutation: async (vars) => await onlineRewardsPutRule({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const onlineRewardsGetRecordsQueryKey = (options?: Options<OnlineRewardsGetRecordsData>) => createQueryKey('onlineRewardsGetRecords', options, ['OnlineRewards']);
+
+export const onlineRewardsGetRecordsQuery = defineQueryOptions<Options<OnlineRewardsGetRecordsData>, OnlineRewardsGetRecordsResponse, Error>((options?: Options<OnlineRewardsGetRecordsData>) => ({
+    key: onlineRewardsGetRecordsQueryKey(options),
+    query: async (context) => await onlineRewardsGetRecords({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const onlineRewardsManualGrantMutation = (options?: Partial<Options<OnlineRewardsManualGrantData>>): UseMutationOptions<OnlineRewardsManualGrantResponse, Options<OnlineRewardsManualGrantData>, Error> => ({
+    mutation: async (vars) => await onlineRewardsManualGrant({
         ...options,
         ...vars,
         throwOnError: true
@@ -579,6 +1467,131 @@ export const panelUsersResetPasswordMutation = (options?: Partial<Options<PanelU
         throwOnError: true
     })
 });
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsGrantItemMutation = (options?: Partial<Options<PlayerActionsGrantItemData>>): UseMutationOptions<PlayerActionsGrantItemResponse, Options<PlayerActionsGrantItemData>, PlayerActionsGrantItemError> => ({
+    mutation: async (vars) => await playerActionsGrantItem({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsRemoveItemMutation = (options?: Partial<Options<PlayerActionsRemoveItemData>>): UseMutationOptions<PlayerActionsRemoveItemResponse, Options<PlayerActionsRemoveItemData>, PlayerActionsRemoveItemError> => ({
+    mutation: async (vars) => await playerActionsRemoveItem({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsResetSkillsMutation = (options?: Partial<Options<PlayerActionsResetSkillsData>>): UseMutationOptions<PlayerActionsResetSkillsResponse, Options<PlayerActionsResetSkillsData>, PlayerActionsResetSkillsError> => ({
+    mutation: async (vars) => await playerActionsResetSkills({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsClearInventoryMutation = (options?: Partial<Options<PlayerActionsClearInventoryData>>): UseMutationOptions<PlayerActionsClearInventoryResponse, Options<PlayerActionsClearInventoryData>, PlayerActionsClearInventoryError> => ({
+    mutation: async (vars) => await playerActionsClearInventory({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+/**
+ * Submits one typed Owner-only player action. Operator and correlation identity are derived from the authenticated request; pending results use 202 and known terminal results use 200.
+ */
+export const playerActionsResetPlayerDataMutation = (options?: Partial<Options<PlayerActionsResetPlayerDataData>>): UseMutationOptions<PlayerActionsResetPlayerDataResponse, Options<PlayerActionsResetPlayerDataData>, PlayerActionsResetPlayerDataError> => ({
+    mutation: async (vars) => await playerActionsResetPlayerData({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const playerActionsGetQueryKey = (options: Options<PlayerActionsGetData>) => createQueryKey('playerActionsGet', options, ['PlayerActions']);
+
+/**
+ * Returns the fixed persisted result of one Owner-only player action operation.
+ */
+export const playerActionsGetQuery = defineQueryOptions<Options<PlayerActionsGetData>, PlayerActionsGetResponse, PlayerActionsGetError>((options: Options<PlayerActionsGetData>) => ({
+    key: playerActionsGetQueryKey(options),
+    query: async (context) => await playerActionsGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const playerEvidenceGetProfileQueryKey = (options: Options<PlayerEvidenceGetProfileData>) => createQueryKey('playerEvidenceGetProfile', options, ['PlayerEvidence']);
+
+/**
+ * Returns the Owner-only sectioned player profile with independent observation and gap metadata.
+ */
+export const playerEvidenceGetProfileQuery = defineQueryOptions<Options<PlayerEvidenceGetProfileData>, PlayerEvidenceGetProfileResponse, PlayerEvidenceGetProfileError>((options: Options<PlayerEvidenceGetProfileData>) => ({
+    key: playerEvidenceGetProfileQueryKey(options),
+    query: async (context) => await playerEvidenceGetProfile({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const playerEvidenceGetInventorySnapshotsQueryKey = (options: Options<PlayerEvidenceGetInventorySnapshotsData>) => createQueryKey('playerEvidenceGetInventorySnapshots', options, ['PlayerEvidence']);
+
+/**
+ * Returns Owner-only bounded player evidence using a player-bound opaque keyset cursor and explicit gap metadata.
+ */
+export const playerEvidenceGetInventorySnapshotsQuery = defineQueryOptions<Options<PlayerEvidenceGetInventorySnapshotsData>, PlayerEvidenceGetInventorySnapshotsResponse, PlayerEvidenceGetInventorySnapshotsError>((options: Options<PlayerEvidenceGetInventorySnapshotsData>) => ({
+    key: playerEvidenceGetInventorySnapshotsQueryKey(options),
+    query: async (context) => await playerEvidenceGetInventorySnapshots({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const playerEvidenceGetInventoryDiffsQueryKey = (options: Options<PlayerEvidenceGetInventoryDiffsData>) => createQueryKey('playerEvidenceGetInventoryDiffs', options, ['PlayerEvidence']);
+
+/**
+ * Returns Owner-only bounded player evidence using a player-bound opaque keyset cursor and explicit gap metadata.
+ */
+export const playerEvidenceGetInventoryDiffsQuery = defineQueryOptions<Options<PlayerEvidenceGetInventoryDiffsData>, PlayerEvidenceGetInventoryDiffsResponse, PlayerEvidenceGetInventoryDiffsError>((options: Options<PlayerEvidenceGetInventoryDiffsData>) => ({
+    key: playerEvidenceGetInventoryDiffsQueryKey(options),
+    query: async (context) => await playerEvidenceGetInventoryDiffs({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const playerEvidenceGetSkillsQueryKey = (options: Options<PlayerEvidenceGetSkillsData>) => createQueryKey('playerEvidenceGetSkills', options, ['PlayerEvidence']);
+
+/**
+ * Returns Owner-only bounded player evidence using a player-bound opaque keyset cursor and explicit gap metadata.
+ */
+export const playerEvidenceGetSkillsQuery = defineQueryOptions<Options<PlayerEvidenceGetSkillsData>, PlayerEvidenceGetSkillsResponse, PlayerEvidenceGetSkillsError>((options: Options<PlayerEvidenceGetSkillsData>) => ({
+    key: playerEvidenceGetSkillsQueryKey(options),
+    query: async (context) => await playerEvidenceGetSkills({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
 
 export const playersGetQueryKey = (options?: Options<PlayersGetData>) => createQueryKey('playersGet', options, ['Players']);
 
@@ -641,6 +1654,160 @@ export const playersKickMutation = (options?: Partial<Options<PlayersKickData>>)
     })
 });
 
+export const rewardsGetDailyPolicyQueryKey = (options: Options<RewardsGetDailyPolicyData>) => createQueryKey('rewardsGetDailyPolicy', options, ['Rewards']);
+
+export const rewardsGetDailyPolicyQuery = defineQueryOptions<Options<RewardsGetDailyPolicyData>, RewardsGetDailyPolicyResponse, Error>((options: Options<RewardsGetDailyPolicyData>) => ({
+    key: rewardsGetDailyPolicyQueryKey(options),
+    query: async (context) => await rewardsGetDailyPolicy({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const rewardsPutDailyPolicyMutation = (options?: Partial<Options<RewardsPutDailyPolicyData>>): UseMutationOptions<RewardsPutDailyPolicyResponse, Options<RewardsPutDailyPolicyData>, Error> => ({
+    mutation: async (vars) => await rewardsPutDailyPolicy({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const rewardsGetPackageQueryKey = (options: Options<RewardsGetPackageData>) => createQueryKey('rewardsGetPackage', options, ['Rewards']);
+
+export const rewardsGetPackageQuery = defineQueryOptions<Options<RewardsGetPackageData>, RewardsGetPackageResponse, Error>((options: Options<RewardsGetPackageData>) => ({
+    key: rewardsGetPackageQueryKey(options),
+    query: async (context) => await rewardsGetPackage({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const rewardsPutPackageMutation = (options?: Partial<Options<RewardsPutPackageData>>): UseMutationOptions<RewardsPutPackageResponse, Options<RewardsPutPackageData>, Error> => ({
+    mutation: async (vars) => await rewardsPutPackage({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const rewardsGetGrantQueryKey = (options: Options<RewardsGetGrantData>) => createQueryKey('rewardsGetGrant', options, ['Rewards']);
+
+export const rewardsGetGrantQuery = defineQueryOptions<Options<RewardsGetGrantData>, RewardsGetGrantResponse, Error>((options: Options<RewardsGetGrantData>) => ({
+    key: rewardsGetGrantQueryKey(options),
+    query: async (context) => await rewardsGetGrant({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const rewardsGetPendingGrantsQueryKey = (options?: Options<RewardsGetPendingGrantsData>) => createQueryKey('rewardsGetPendingGrants', options, ['Rewards']);
+
+export const rewardsGetPendingGrantsQuery = defineQueryOptions<Options<RewardsGetPendingGrantsData>, RewardsGetPendingGrantsResponse, Error>((options?: Options<RewardsGetPendingGrantsData>) => ({
+    key: rewardsGetPendingGrantsQueryKey(options),
+    query: async (context) => await rewardsGetPendingGrants({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const rewardsGrantMutation = (options?: Partial<Options<RewardsGrantData>>): UseMutationOptions<RewardsGrantResponse, Options<RewardsGrantData>, Error> => ({
+    mutation: async (vars) => await rewardsGrant({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const rewardsConfirmMutation = (options?: Partial<Options<RewardsConfirmData>>): UseMutationOptions<RewardsConfirmResponse, Options<RewardsConfirmData>, Error> => ({
+    mutation: async (vars) => await rewardsConfirm({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const rewardsRefundMutation = (options?: Partial<Options<RewardsRefundData>>): UseMutationOptions<RewardsRefundResponse, Options<RewardsRefundData>, Error> => ({
+    mutation: async (vars) => await rewardsRefund({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const rewardsCompensateMutation = (options?: Partial<Options<RewardsCompensateData>>): UseMutationOptions<RewardsCompensateResponse, Options<RewardsCompensateData>, Error> => ({
+    mutation: async (vars) => await rewardsCompensate({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const listSchedulesQueryKey = (options?: Options<ListSchedulesData>) => createQueryKey('listSchedules', options, ['Schedules']);
+
+export const listSchedulesQuery = defineQueryOptions<Options<ListSchedulesData>, ListSchedulesResponse, ListSchedulesError>((options?: Options<ListSchedulesData>) => ({
+    key: listSchedulesQueryKey(options),
+    query: async (context) => await listSchedules({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const createScheduleMutation = (options?: Partial<Options<CreateScheduleData>>): UseMutationOptions<CreateScheduleResponse, Options<CreateScheduleData>, CreateScheduleError> => ({
+    mutation: async (vars) => await createSchedule({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const deleteScheduleMutation = (options?: Partial<Options<DeleteScheduleData>>): UseMutationOptions<DeleteScheduleResponse, Options<DeleteScheduleData>, DeleteScheduleError> => ({
+    mutation: async (vars) => await deleteSchedule({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const getScheduleQueryKey = (options: Options<GetScheduleData>) => createQueryKey('getSchedule', options, ['Schedules']);
+
+export const getScheduleQuery = defineQueryOptions<Options<GetScheduleData>, GetScheduleResponse, GetScheduleError>((options: Options<GetScheduleData>) => ({
+    key: getScheduleQueryKey(options),
+    query: async (context) => await getSchedule({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const updateScheduleMutation = (options?: Partial<Options<UpdateScheduleData>>): UseMutationOptions<UpdateScheduleResponse, Options<UpdateScheduleData>, UpdateScheduleError> => ({
+    mutation: async (vars) => await updateSchedule({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const enableScheduleMutation = (options?: Partial<Options<EnableScheduleData>>): UseMutationOptions<EnableScheduleResponse, Options<EnableScheduleData>, EnableScheduleError> => ({
+    mutation: async (vars) => await enableSchedule({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const disableScheduleMutation = (options?: Partial<Options<DisableScheduleData>>): UseMutationOptions<DisableScheduleResponse, Options<DisableScheduleData>, DisableScheduleError> => ({
+    mutation: async (vars) => await disableSchedule({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
 export const serverConfigurationGetQueryKey = (options?: Options<ServerConfigurationGetData>) => createQueryKey('serverConfigurationGet', options, ['ServerConfiguration']);
 
 export const serverConfigurationGetQuery = defineQueryOptions<Options<ServerConfigurationGetData>, ServerConfigurationGetResponse, Error>((options?: Options<ServerConfigurationGetData>) => ({
@@ -675,6 +1842,233 @@ export const serverOperationsShutdownMutation = (options?: Partial<Options<Serve
         throwOnError: true
     })
 });
+
+export const worldGetSummaryQueryKey = (options?: Options<WorldGetSummaryData>) => createQueryKey('worldGetSummary', options, ['World']);
+
+export const worldGetSummaryQuery = defineQueryOptions<Options<WorldGetSummaryData>, WorldGetSummaryResponse, Error>((options?: Options<WorldGetSummaryData>) => ({
+    key: worldGetSummaryQueryKey(options),
+    query: async (context) => await worldGetSummary({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetLandClaimsQueryKey = (options?: Options<WorldGetLandClaimsData>) => createQueryKey('worldGetLandClaims', options, ['World']);
+
+export const worldGetLandClaimsQuery = defineQueryOptions<Options<WorldGetLandClaimsData>, WorldGetLandClaimsResponse, Error>((options?: Options<WorldGetLandClaimsData>) => ({
+    key: worldGetLandClaimsQueryKey(options),
+    query: async (context) => await worldGetLandClaims({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetVehiclesQueryKey = (options?: Options<WorldGetVehiclesData>) => createQueryKey('worldGetVehicles', options, ['World']);
+
+export const worldGetVehiclesQuery = defineQueryOptions<Options<WorldGetVehiclesData>, WorldGetVehiclesResponse, Error>((options?: Options<WorldGetVehiclesData>) => ({
+    key: worldGetVehiclesQueryKey(options),
+    query: async (context) => await worldGetVehicles({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetDronesQueryKey = (options?: Options<WorldGetDronesData>) => createQueryKey('worldGetDrones', options, ['World']);
+
+export const worldGetDronesQuery = defineQueryOptions<Options<WorldGetDronesData>, WorldGetDronesResponse, Error>((options?: Options<WorldGetDronesData>) => ({
+    key: worldGetDronesQueryKey(options),
+    query: async (context) => await worldGetDrones({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetContainersQueryKey = (options?: Options<WorldGetContainersData>) => createQueryKey('worldGetContainers', options, ['World']);
+
+export const worldGetContainersQuery = defineQueryOptions<Options<WorldGetContainersData>, WorldGetContainersResponse, Error>((options?: Options<WorldGetContainersData>) => ({
+    key: worldGetContainersQueryKey(options),
+    query: async (context) => await worldGetContainers({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetBlockCatalogQueryKey = (options?: Options<WorldGetBlockCatalogData>) => createQueryKey('worldGetBlockCatalog', options, ['World']);
+
+export const worldGetBlockCatalogQuery = defineQueryOptions<Options<WorldGetBlockCatalogData>, WorldGetBlockCatalogResponse, Error>((options?: Options<WorldGetBlockCatalogData>) => ({
+    key: worldGetBlockCatalogQueryKey(options),
+    query: async (context) => await worldGetBlockCatalog({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetPrefabCatalogQueryKey = (options?: Options<WorldGetPrefabCatalogData>) => createQueryKey('worldGetPrefabCatalog', options, ['World']);
+
+export const worldGetPrefabCatalogQuery = defineQueryOptions<Options<WorldGetPrefabCatalogData>, WorldGetPrefabCatalogResponse, Error>((options?: Options<WorldGetPrefabCatalogData>) => ({
+    key: worldGetPrefabCatalogQueryKey(options),
+    query: async (context) => await worldGetPrefabCatalog({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldGetEntityTypeCatalogQueryKey = (options?: Options<WorldGetEntityTypeCatalogData>) => createQueryKey('worldGetEntityTypeCatalog', options, ['World']);
+
+export const worldGetEntityTypeCatalogQuery = defineQueryOptions<Options<WorldGetEntityTypeCatalogData>, WorldGetEntityTypeCatalogResponse, Error>((options?: Options<WorldGetEntityTypeCatalogData>) => ({
+    key: worldGetEntityTypeCatalogQueryKey(options),
+    query: async (context) => await worldGetEntityTypeCatalog({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
+
+export const worldOperationsDeleteLandClaimMutation = (options?: Partial<Options<WorldOperationsDeleteLandClaimData>>): UseMutationOptions<WorldOperationsDeleteLandClaimResponse, Options<WorldOperationsDeleteLandClaimData>, Error> => ({
+    mutation: async (vars) => await worldOperationsDeleteLandClaim({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsMoveOnlinePlayerMutation = (options?: Partial<Options<WorldOperationsMoveOnlinePlayerData>>): UseMutationOptions<WorldOperationsMoveOnlinePlayerResponse, Options<WorldOperationsMoveOnlinePlayerData>, Error> => ({
+    mutation: async (vars) => await worldOperationsMoveOnlinePlayer({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsMoveEntityMutation = (options?: Partial<Options<WorldOperationsMoveEntityData>>): UseMutationOptions<WorldOperationsMoveEntityResponse, Options<WorldOperationsMoveEntityData>, Error> => ({
+    mutation: async (vars) => await worldOperationsMoveEntity({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsCopyRegionMutation = (options?: Partial<Options<WorldOperationsCopyRegionData>>): UseMutationOptions<WorldOperationsCopyRegionResponse, Options<WorldOperationsCopyRegionData>, Error> => ({
+    mutation: async (vars) => await worldOperationsCopyRegion({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsFillRegionMutation = (options?: Partial<Options<WorldOperationsFillRegionData>>): UseMutationOptions<WorldOperationsFillRegionResponse, Options<WorldOperationsFillRegionData>, Error> => ({
+    mutation: async (vars) => await worldOperationsFillRegion({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsClearRegionMutation = (options?: Partial<Options<WorldOperationsClearRegionData>>): UseMutationOptions<WorldOperationsClearRegionResponse, Options<WorldOperationsClearRegionData>, Error> => ({
+    mutation: async (vars) => await worldOperationsClearRegion({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsPasteRegionMutation = (options?: Partial<Options<WorldOperationsPasteRegionData>>): UseMutationOptions<WorldOperationsPasteRegionResponse, Options<WorldOperationsPasteRegionData>, Error> => ({
+    mutation: async (vars) => await worldOperationsPasteRegion({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsSetBlockMutation = (options?: Partial<Options<WorldOperationsSetBlockData>>): UseMutationOptions<WorldOperationsSetBlockResponse, Options<WorldOperationsSetBlockData>, Error> => ({
+    mutation: async (vars) => await worldOperationsSetBlock({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsPlacePrefabMutation = (options?: Partial<Options<WorldOperationsPlacePrefabData>>): UseMutationOptions<WorldOperationsPlacePrefabResponse, Options<WorldOperationsPlacePrefabData>, Error> => ({
+    mutation: async (vars) => await worldOperationsPlacePrefab({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsRemovePrefabMutation = (options?: Partial<Options<WorldOperationsRemovePrefabData>>): UseMutationOptions<WorldOperationsRemovePrefabResponse, Options<WorldOperationsRemovePrefabData>, Error> => ({
+    mutation: async (vars) => await worldOperationsRemovePrefab({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsSpawnEntityMutation = (options?: Partial<Options<WorldOperationsSpawnEntityData>>): UseMutationOptions<WorldOperationsSpawnEntityResponse, Options<WorldOperationsSpawnEntityData>, Error> => ({
+    mutation: async (vars) => await worldOperationsSpawnEntity({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsDeleteEntityMutation = (options?: Partial<Options<WorldOperationsDeleteEntityData>>): UseMutationOptions<WorldOperationsDeleteEntityResponse, Options<WorldOperationsDeleteEntityData>, Error> => ({
+    mutation: async (vars) => await worldOperationsDeleteEntity({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsCleanupEntitiesMutation = (options?: Partial<Options<WorldOperationsCleanupEntitiesData>>): UseMutationOptions<WorldOperationsCleanupEntitiesResponse, Options<WorldOperationsCleanupEntitiesData>, Error> => ({
+    mutation: async (vars) => await worldOperationsCleanupEntities({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsReloadResourceMutation = (options?: Partial<Options<WorldOperationsReloadResourceData>>): UseMutationOptions<WorldOperationsReloadResourceResponse, Options<WorldOperationsReloadResourceData>, Error> => ({
+    mutation: async (vars) => await worldOperationsReloadResource({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsCollectGarbageMutation = (options?: Partial<Options<WorldOperationsCollectGarbageData>>): UseMutationOptions<WorldOperationsCollectGarbageResponse, Options<WorldOperationsCollectGarbageData>, Error> => ({
+    mutation: async (vars) => await worldOperationsCollectGarbage({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsUndoMutation = (options?: Partial<Options<WorldOperationsUndoData>>): UseMutationOptions<WorldOperationsUndoResponse, Options<WorldOperationsUndoData>, Error> => ({
+    mutation: async (vars) => await worldOperationsUndo({
+        ...options,
+        ...vars,
+        throwOnError: true
+    })
+});
+
+export const worldOperationsGetQueryKey = (options: Options<WorldOperationsGetData>) => createQueryKey('worldOperationsGet', options, ['WorldOperations']);
+
+export const worldOperationsGetQuery = defineQueryOptions<Options<WorldOperationsGetData>, WorldOperationsGetResponse, Error>((options: Options<WorldOperationsGetData>) => ({
+    key: worldOperationsGetQueryKey(options),
+    query: async (context) => await worldOperationsGet({
+        ...options,
+        ...context,
+        throwOnError: true
+    })
+}));
 
 /**
  * Issues an access token.

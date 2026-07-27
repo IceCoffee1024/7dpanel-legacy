@@ -24,6 +24,10 @@ document_role: Target
 框架候选、目标目录和未验证链路不得用于声称当前前端已经实现。当所有持久结论均已提升、本文不再包含独立的
 未来设计时，应删除或缩减本蓝图。
 
+### 六波次提升状态
+
+六波次的备份/调度、玩家 Profile/动作、经济/奖励/商业、Community、Automation、Discord、GeoIP、世界工具和功能模块 Feature 与 Owner-only 页面已经形成当前代码；当前信息架构见[产品设计](../design.md#当前-admin-纵向切片)，代码边界见[系统架构](../architecture.md#六波次功能对齐当前代码状态)。本蓝图只继续拥有未完成的真实 OWIN/`390x844` 交互、外部服务、危险操作和发布责任；最终 Admin typecheck、聚焦测试、Playwright 与其他验证证据由[测试策略](../test.md#六波次功能对齐当前工作树证据)拥有，不再把已存在页面或 Feature 目录当作未来目标。
+
 ## 应用与部署边界
 
 | 边界 | 目标职责 | 部署单元 | 本蓝图是否详细定义 |
@@ -491,8 +495,8 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 - 构建 base path 由最终 OWIN 挂载位置决定，禁止写死开发主机、端口、绝对磁盘路径或公网域名。
 - JS、CSS 和媒体使用内容哈希并可长期缓存；HTML shell 使用可重新验证或短缓存策略，避免引用已经删除的资源。
 - API 和 SSE 响应不进入 Service Worker 离线缓存。首版不默认启用 PWA 或 Service Worker，防止管理状态过期。
-- 发布检查必须确认入口 HTML、全部引用资源，以及 Bootstrap、Application、Hosting、Web、SevenDays 和
-  Persistence 六个产品 DLL 齐全，且不包含源码、测试、开发服务器配置、Marketing 产物、`config.json`、
+- 发布检查必须确认入口 HTML、全部引用资源，以及 Bootstrap、Hosting、Application、Domain、Web、SevenDays、
+  Persistence 和 Local 八个产品 DLL 齐全，且不包含源码、测试、开发服务器配置、Marketing 产物、`config.json`、
   `data/` 或外部 CDN 依赖。
 - 前端与后端的兼容性至少由产品版本、API 契约测试和同一发布物 smoke 证明；不得只凭两边分别构建成功。
 
@@ -532,8 +536,9 @@ Nuxt UI、查询缓存、全局 Store、文件布局路由、图表或虚拟列�
 
 ## 尚需验证的证据缺口
 
+- 六波次最终 Admin typecheck、AppShell/router/i18n/Community 聚焦 Vitest 和 JSON key audit 已由主线程执行并通过；world-tools/modules/player-map 完整聚焦组合、定向 lint、全量门禁与真实浏览器证据仍未执行；
 - Admin 综合概览第一阶段的局部状态、`Loading`/`Fresh`/`Partial`/`Stale`/`Offline`、`RestartScriptStarted` 诚实文案、Owner 字段裁剪、独立危险确认、生成 Query/Mutation 和缓存清理已有实现与单元/组件证据，仍缺真实 OWIN 浏览器证据；
-- Admin 本次变更文件的定向 lint 已通过；全工程 lint 仍被既有综合概览 Vue 文件的 65 个格式错误和 122 个警告阻断，修复时需要单独审查自动格式化差异；
+- Admin 既有切片曾取得定向 lint 证据；六波次最终 lint 未执行，全工程 lint 的当前积压与处理结论以[测试策略](../test.md#已知缺口)为准；
 - Admin 的 Node.js `24+` CI 固定任务尚未纳入仓库自有 CI；本地工具链的精确兼容范围已由 `package.json` 和锁文件声明；
 - OWIN 中 Admin 的最终挂载路径、SPA fallback、压缩和缓存头；当前 Admin 文档 CSP 已有 Katana 自动化，仍需真实 OWIN 浏览器控制台验证；
 - 通用 REST 分页与查询游标仍待其他能力定义；控制台最近日志接口、Viewer 事件过滤、前端日志消费、显式缺口与动态命令目录已经实现并通过聚焦自动化，仍缺真实 OWIN 浏览器、当前 7DTD 注册目录和原生日志回显证据；

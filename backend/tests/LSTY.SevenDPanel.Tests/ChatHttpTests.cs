@@ -22,7 +22,7 @@ namespace LSTY.SevenDPanel.Tests
                 .Where(route => route != null)
                 .ToArray();
 
-            Assert.Equal(14, routes.Length);
+            Assert.Equal(18, routes.Length);
             Assert.Contains("messages/recent", routes);
             Assert.Contains("messages", routes);
             Assert.Contains("messages/global", routes);
@@ -31,6 +31,8 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("colored/settings", routes);
             Assert.Contains("colored/profiles", routes);
             Assert.Contains("colored/profiles/{crossplatformId}", routes);
+            Assert.Contains("mutes", routes);
+            Assert.Contains("mutes/{crossplatformId}", routes);
         }
 
         [Fact]
@@ -64,6 +66,13 @@ namespace LSTY.SevenDPanel.Tests
                 cursor,
                 ChatHistoryCursorFilters.Empty,
                 out _));
+        }
+
+        [Fact]
+        public void Mute_query_validation_rejects_model_binding_errors()
+        {
+            Assert.False(ChatController.IsMuteQueryValid(false, null, null));
+            Assert.True(ChatController.IsMuteQueryValid(true, null, null));
         }
     }
 }

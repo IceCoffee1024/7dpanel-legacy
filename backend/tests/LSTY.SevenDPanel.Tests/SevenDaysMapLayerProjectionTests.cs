@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Maps;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World;
 using LSTY.SevenDPanel.Application;
 using Xunit;
 
@@ -151,6 +152,44 @@ namespace LSTY.SevenDPanel.Tests
             var unavailable = Query(projection, MapLayerKind.Vehicles);
             Assert.Equal(AvailabilityState.Unavailable, unavailable.Availability);
             Assert.Empty(unavailable.Features);
+        }
+
+        [Fact]
+        public void Shared_world_snapshot_updates_real_layers_without_clearing_unrelated_sources()
+        {
+            var projection = new SevenDaysMapLayerProjection();
+            projection.Publish(new SevenDaysWorldScalarSnapshot(
+                new SevenDaysMapSample(null, null, metadataCaptureFailed: true, gameTimeCaptureFailed: true),
+                new SevenDaysWorldScalar(
+                    "world", "world:1", null, null, null, null, null,
+                    new MapExtent(-100, -100, 100, 100)),
+                Array.Empty<LandClaimSummary>(),
+                new[]
+                {
+                    new VehicleSummary(
+                        "10", "vehicle:10", "entity-resource-1", "EOS_owner",
+                        new MapLayerPosition(10, 11, 12), MapEntityLoadState.Loaded,
+                        isLocked: true, fuelPercentage: 50, quality: 6,
+                        new ContainerSummary(
+                            "container-10", "vehicle:10:storage", "vehicle:10",
+                            new MapLayerPosition(10, 11, 12), MapEntityLoadState.Loaded,
+                            isLocked: true, slotCount: 12, usedSlotCount: 4, items: null))
+                },
+                Array.Empty<DroneSummary>(),
+                Array.Empty<ContainerSummary>(),
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                landClaimsCaptureFailed: true), Utc(1));
+
+            var claims = Query(projection, MapLayerKind.LandClaims);
+            var vehicles = Query(projection, MapLayerKind.Vehicles);
+
+            Assert.Equal(AvailabilityState.Unavailable, claims.Availability);
+            var vehicle = Assert.IsType<VehicleMapFeature>(Assert.Single(vehicles.Features));
+            Assert.Equal("vehicle:10", vehicle.StableIdentity);
+            Assert.Equal(12, vehicle.Container!.SlotCount);
+            Assert.Equal(4, vehicle.Container.UsedSlotCount);
         }
 
         private static MapLayerFeature Single(

@@ -37,6 +37,8 @@ namespace LSTY.SevenDPanel.Tests
                 AssertMapContractSemantics(document);
                 AssertGameResourceContractSemantics(document);
                 AssertChatOperations(document);
+                AssertEvidenceFoundationOperations(document);
+                AssertPlayerEvidenceActionOperations(document);
                 NormalizeForAdminCodegen(document);
 
                 var snapshotPath = GetAdminOpenApiSnapshotPath();
@@ -404,6 +406,121 @@ namespace LSTY.SevenDPanel.Tests
                     Assert.NotNull(response!["content"]?["application/problem+json"]);
                 }
             }
+        }
+
+        private static void AssertEvidenceFoundationOperations(JObject document)
+        {
+            var expectations = new[]
+            {
+                new ChatOpenApiExpectation("/api/v1/audit", "get", "listAuditEntries", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/game-events", "get", "listGameEvents", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/mutes", "get", "listChatMutes", "200", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/mutes", "post", "createChatMute", "201", "400", "401", "403", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/mutes/{crossplatformId}", "put", "updateChatMute", "200", "400", "401", "403", "404", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/chat/mutes/{crossplatformId}", "delete", "releaseChatMute", "204", "400", "401", "403", "404", "500", "503")
+            };
+
+            foreach (var expectation in expectations)
+            {
+                var operation = (JObject?)document["paths"]?[expectation.Path]?[expectation.Method];
+                Assert.NotNull(operation);
+                Assert.Equal(expectation.OperationId, (string?)operation!["operationId"]);
+                Assert.NotNull(operation["responses"]?[expectation.SuccessStatusCode]);
+                Assert.Contains(operation["security"]!.Children(), requirement =>
+                    requirement["Bearer"] is JArray);
+                foreach (var statusCode in expectation.ProblemStatusCodes)
+                {
+                    var response = operation["responses"]?[statusCode];
+                    Assert.NotNull(response);
+                    Assert.NotNull(response!["content"]?["application/problem+json"]);
+                }
+            }
+        }
+
+        private static void AssertPlayerEvidenceActionOperations(JObject document)
+        {
+            var reads = new[]
+            {
+                new ChatOpenApiExpectation("/api/v1/players/{crossplatformId}/profile", "get", "PlayerEvidence_GetProfile", "200", "400", "401", "403", "404", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/players/{crossplatformId}/inventory-snapshots", "get", "PlayerEvidence_GetInventorySnapshots", "200", "400", "401", "403", "404", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/players/{crossplatformId}/inventory-diffs", "get", "PlayerEvidence_GetInventoryDiffs", "200", "400", "401", "403", "404", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/players/{crossplatformId}/skills", "get", "PlayerEvidence_GetSkills", "200", "400", "401", "403", "404", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/player-actions/{operationId}", "get", "PlayerActions_Get", "200", "400", "401", "403", "404", "500", "503")
+            };
+            var writes = new[]
+            {
+                new ChatOpenApiExpectation("/api/v1/player-actions/grant-item", "post", "PlayerActions_GrantItem", "202", "200", "400", "401", "403", "404", "409", "422", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/player-actions/remove-item", "post", "PlayerActions_RemoveItem", "202", "200", "400", "401", "403", "404", "409", "422", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/player-actions/reset-skills", "post", "PlayerActions_ResetSkills", "202", "200", "400", "401", "403", "404", "409", "422", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/player-actions/clear-inventory", "post", "PlayerActions_ClearInventory", "202", "200", "400", "401", "403", "404", "409", "422", "500", "503"),
+                new ChatOpenApiExpectation("/api/v1/player-actions/reset-player-data", "post", "PlayerActions_ResetPlayerData", "202", "200", "400", "401", "403", "404", "409", "422", "500", "503")
+            };
+
+            foreach (var expectation in reads.Concat(writes))
+            {
+                var operation = (JObject?)document["paths"]?[expectation.Path]?[expectation.Method];
+                Assert.NotNull(operation);
+                Assert.Equal(expectation.OperationId, (string?)operation!["operationId"]);
+                Assert.NotNull(operation["responses"]?[expectation.SuccessStatusCode]);
+                Assert.Contains(operation["security"]!.Children(), requirement =>
+                    requirement["Bearer"] is JArray);
+                foreach (var statusCode in expectation.ProblemStatusCodes)
+                {
+                    var response = operation["responses"]?[statusCode];
+                    Assert.NotNull(response);
+                    if (statusCode != "200")
+                        Assert.NotNull(response!["content"]?["application/problem+json"]);
+                }
+            }
+
+            foreach (var path in new[]
+            {
+                "/api/v1/players/{crossplatformId}/inventory-snapshots",
+                "/api/v1/players/{crossplatformId}/inventory-diffs",
+                "/api/v1/players/{crossplatformId}/skills"
+            })
+            {
+                var operation = (JObject)document["paths"]![path]!["get"]!;
+                Assert.Contains(operation["parameters"]!.Children<JObject>(), parameter =>
+                    string.Equals((string?)parameter["name"], "pageSize", StringComparison.Ordinal));
+                Assert.Contains(operation["parameters"]!.Children<JObject>(), parameter =>
+                    string.Equals((string?)parameter["name"], "cursor", StringComparison.Ordinal));
+            }
+
+            AssertActionBodySchema(document, "/api/v1/player-actions/grant-item", "GrantItemHttpRequest");
+            AssertActionBodySchema(document, "/api/v1/player-actions/remove-item", "RemoveItemHttpRequest");
+            AssertActionBodySchema(document, "/api/v1/player-actions/reset-skills", "ResetSkillsHttpRequest");
+            AssertActionBodySchema(document, "/api/v1/player-actions/clear-inventory", "ClearInventoryHttpRequest");
+            AssertActionBodySchema(document, "/api/v1/player-actions/reset-player-data", "ResetPlayerDataHttpRequest");
+
+            foreach (var schemaName in new[] { "GrantItemHttpRequest", "RemoveItemHttpRequest" })
+            {
+                var properties = GetSchema(document, schemaName)["properties"]!
+                    .Children<JProperty>()
+                    .Select(property => property.Name)
+                    .ToArray();
+                Assert.DoesNotContain(properties, name =>
+                    string.Equals(name, "internalName", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, "itemKind", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, "operatorId", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, "correlationId", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, "actionType", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, "payload", StringComparison.OrdinalIgnoreCase));
+                Assert.Contains("catalogVersion", properties);
+                Assert.Contains("resourceId", properties);
+            }
+        }
+
+        private static void AssertActionBodySchema(
+            JObject document,
+            string path,
+            string expectedSchema)
+        {
+            var bodySchema = document["paths"]![path]!["post"]!["requestBody"]!["content"]!
+                ["application/json"]!["schema"]!;
+            Assert.Equal(
+                "#/components/schemas/" + expectedSchema,
+                (string?)bodySchema["$ref"]);
         }
 
         private static string GetAdminOpenApiSnapshotPath()

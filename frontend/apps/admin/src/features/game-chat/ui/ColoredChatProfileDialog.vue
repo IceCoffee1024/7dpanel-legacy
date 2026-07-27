@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { ColoredChatProfile, ColoredChatProfileDraft } from '../model/gameChatManagement'
 
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { coloredChatTemplateVariables, normalizeChatColor, toChatColorPickerValue } from '../model/gameChatManagement'
 import ColoredChatPreview from './ColoredChatPreview.vue'
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   'submit': [profile: ColoredChatProfileDraft]
   'cancel': []
 }>()
+const { t } = useI18n()
 
 const draft = reactive({
   crossplatformId: '',
@@ -27,6 +29,7 @@ const draft = reactive({
   textColor: '',
   description: '',
 })
+const validationError = shallowRef<'crossplatformId' | 'color' | null>(null)
 
 const controlledOpen = computed({
   get: () => props.open,
@@ -59,11 +62,16 @@ function submit() {
   const crossplatformId = draft.crossplatformId.trim()
   const nameColor = normalizeChatColor(draft.nameColor)
   const textColor = normalizeChatColor(draft.textColor)
-  if (crossplatformId === '' || /\s/.test(crossplatformId))
+  if (crossplatformId === '' || /\s/.test(crossplatformId)) {
+    validationError.value = 'crossplatformId'
     return
-  if (nameColor === undefined || textColor === undefined)
+  }
+  if (nameColor === undefined || textColor === undefined) {
+    validationError.value = 'color'
     return
+  }
 
+  validationError.value = null
   emit('submit', {
     crossplatformId,
     customName: draft.customName.trim() || null,
@@ -77,15 +85,15 @@ function submit() {
 <template>
   <UModal
     v-model:open="controlledOpen"
-    :title="mode === 'create' ? '新增玩家 Profile' : '编辑玩家 Profile'"
-    description="Profile 使用稳定跨平台 ID；编辑时业务键不可修改。"
+    :title="mode === 'create' ? t('gameChat.colored.profileDialog.createTitle') : t('gameChat.colored.profileDialog.editTitle')"
+    :description="t('gameChat.colored.profileDialog.description')"
     :dismissible="!isSubmitting"
     :close="isSubmitting ? false : undefined"
     :ui="{ footer: 'justify-end' }"
   >
     <template #body>
       <UForm :state="draft" class="space-y-4" @submit="submit">
-        <UFormField label="跨平台 ID" name="crossplatformId" required>
+        <UFormField :label="t('gameChat.common.crossplatformId')" name="crossplatformId" required>
           <UInput
             v-model="draft.crossplatformId"
             data-testid="profile-id"
@@ -95,10 +103,10 @@ function submit() {
         </UFormField>
 
         <UFormField
-          label="名称模板"
+          :label="t('gameChat.colored.profileDialog.nameTemplate')"
           name="customName"
-          hint="可选"
-          description="只替换下列四个变量；未知变量保持普通文本。"
+          :hint="t('gameChat.common.optional')"
+          :description="t('gameChat.colored.profileDialog.nameTemplateDescription')"
         >
           <UInput v-model="draft.customName" data-testid="profile-custom-name" class="w-full" :disabled="isSubmitting" />
           <div class="mt-2 flex flex-wrap gap-2">
@@ -118,7 +126,7 @@ function submit() {
         </UFormField>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <UFormField label="名称颜色" name="nameColor" hint="可留空">
+          <UFormField :label="t('gameChat.colored.profiles.nameColor')" name="nameColor" :hint="t('gameChat.common.mayBeEmpty')">
             <div class="space-y-2">
               <UColorPicker :model-value="toChatColorPickerValue(draft.nameColor)" format="hex" :disabled="isSubmitting" @update:model-value="draft.nameColor = $event ?? ''" />
               <UInput
@@ -130,7 +138,7 @@ function submit() {
               />
             </div>
           </UFormField>
-          <UFormField label="正文颜色" name="textColor" hint="可留空">
+          <UFormField :label="t('gameChat.colored.profiles.textColor')" name="textColor" :hint="t('gameChat.common.mayBeEmpty')">
             <div class="space-y-2">
               <UColorPicker :model-value="toChatColorPickerValue(draft.textColor)" format="hex" :disabled="isSubmitting" @update:model-value="draft.textColor = $event ?? ''" />
               <UInput
@@ -144,7 +152,7 @@ function submit() {
           </UFormField>
         </div>
 
-        <UFormField label="运营备注" name="description" hint="只在面板显示">
+        <UFormField :label="t('gameChat.colored.profileDialog.notes')" name="description" :hint="t('gameChat.colored.profileDialog.notesHint')">
           <UTextarea v-model="draft.description" class="w-full" :rows="3" :disabled="isSubmitting" />
         </UFormField>
 
@@ -154,11 +162,15 @@ function submit() {
           :text-color="draft.textColor"
         />
 
-        <p v-if="feedbackMessage" role="status" class="text-sm text-error">
-          {{ feedbackMessage }}
+        <p v-if="validationError" role="alert" class="text-sm text-error">
+          {{ t(`gameChat.colored.profileDialog.validation.${validationError}`) }}
         </p>
 
-        <button class="sr-only" type="submit">提交 Profile</button>
+        <p v-if="feedbackMessage" role="status" class="text-sm text-error">
+          {{ t(feedbackMessage) }}
+        </p>
+
+        <button class="sr-only" type="submit">{{ t('gameChat.colored.profileDialog.submit') }}</button>
       </UForm>
     </template>
 
@@ -167,14 +179,14 @@ function submit() {
         type="button"
         color="neutral"
         variant="outline"
-        label="取消"
+        :label="t('gameChat.common.cancel')"
         :disabled="isSubmitting"
         @click="controlledOpen = false"
       />
       <UButton
         type="button"
         icon="i-lucide-save"
-        :label="mode === 'create' ? '创建 Profile' : '保存 Profile'"
+        :label="mode === 'create' ? t('gameChat.colored.profileDialog.create') : t('gameChat.colored.profileDialog.save')"
         :loading="isSubmitting"
         :disabled="isSubmitting"
         @click="submit"

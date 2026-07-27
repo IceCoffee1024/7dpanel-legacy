@@ -4,8 +4,17 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PlayerSnapshotDetails from './PlayerSnapshotDetails.vue'
 
-const props = defineProps<{ player: OnlinePlayer | null, unavailable: boolean, canKick: boolean }>()
-const emit = defineEmits<{ copyValue: [value: string], kickPlayer: [player: OnlinePlayer] }>()
+const props = defineProps<{
+  player: OnlinePlayer | null
+  unavailable: boolean
+  canKick: boolean
+  canOpenProfile: boolean
+}>()
+const emit = defineEmits<{
+  copyValue: [value: string]
+  kickPlayer: [player: OnlinePlayer]
+  openProfile: [crossplatformId: string]
+}>()
 const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
 const title = computed(() => props.player === null ? t('players.details.title') : `${props.player.name} · ${props.player.isDead ? t('players.fields.dead') : t('players.fields.alive')}`)
@@ -71,6 +80,13 @@ function copy(value: string | null) {
         :label="t('common.cancel')"
         variant="outline"
         @click="open = false"
+      /><UButton
+        v-if="canOpenProfile && player?.crossplatformIdentity && !unavailable"
+        color="neutral"
+        :label="t('players.profile.navigation')"
+        icon="i-lucide-contact-round"
+        variant="soft"
+        @click="emit('openProfile', player.crossplatformIdentity.combinedId)"
       /><UButton
         v-if="canKick && player && !unavailable"
         color="error"

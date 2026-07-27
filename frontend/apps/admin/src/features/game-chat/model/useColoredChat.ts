@@ -228,7 +228,7 @@ export function useColoredChat(options: UseColoredChatOptions = {}): ColoredChat
       if (error instanceof HttpError && error.code === 'aborted')
         return
       settingsState.value = forbidden(error) ? 'forbidden' : hadValue ? 'stale' : 'failed'
-      settingsFeedbackMessage.value = '彩色聊天设置加载失败。'
+      settingsFeedbackMessage.value = 'gameChat.feedback.coloredSettingsLoadFailed'
     }
     finally {
       if (settingsController === current)
@@ -263,7 +263,7 @@ export function useColoredChat(options: UseColoredChatOptions = {}): ColoredChat
       if (error instanceof HttpError && error.code === 'aborted')
         return
       profilesState.value = forbidden(error) ? 'forbidden' : profiles.value.length === 0 ? 'failed' : 'stale'
-      profileFeedbackMessage.value = '玩家 Profile 加载失败。'
+      profileFeedbackMessage.value = 'gameChat.feedback.profilesLoadFailed'
     }
     finally {
       if (profilesController === current)
@@ -297,7 +297,7 @@ export function useColoredChat(options: UseColoredChatOptions = {}): ColoredChat
     catch (error) {
       if (!(error instanceof HttpError && error.code === 'aborted')) {
         settingsState.value = forbidden(error) ? 'forbidden' : 'stale'
-        settingsFeedbackMessage.value = '彩色聊天设置未保存，请重试。'
+        settingsFeedbackMessage.value = 'gameChat.feedback.coloredSettingsSaveFailed'
       }
       return false
     }
@@ -333,7 +333,7 @@ export function useColoredChat(options: UseColoredChatOptions = {}): ColoredChat
       if (!(error instanceof HttpError && error.code === 'aborted')) {
         if (forbidden(error))
           profilesState.value = 'forbidden'
-        profileFeedbackMessage.value = '玩家 Profile 操作失败，列表未作乐观修改。'
+        profileFeedbackMessage.value = 'gameChat.feedback.profileOperationFailed'
       }
       return false
     }

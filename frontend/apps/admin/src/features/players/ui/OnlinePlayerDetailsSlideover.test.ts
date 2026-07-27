@@ -58,15 +58,16 @@ const slideoverStub = {
 
 const buttonStub = {
   inheritAttrs: false,
-  props: ['label'],
+  props: ['icon', 'label'],
   emits: ['click'],
-  template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot />{{ label }}</button>',
+  template: '<button v-bind="$attrs" :data-icon="icon" @click="$emit(\'click\')"><slot />{{ label }}</button>',
 }
 
 function mountSlideover(options: {
   player?: OnlinePlayer | null
   unavailable?: boolean
   canKick?: boolean
+  canOpenProfile?: boolean
 } = {}) {
   return mount(OnlinePlayerDetailsSlideover, {
     props: {
@@ -74,6 +75,7 @@ function mountSlideover(options: {
       'player': options.player === undefined ? player : options.player,
       'unavailable': options.unavailable ?? false,
       'canKick': options.canKick ?? true,
+      'canOpenProfile': options.canOpenProfile ?? true,
       'onUpdate:open': () => {},
     },
     global: {
@@ -162,6 +164,29 @@ it('emits the fixed observation only when kicking is allowed', async () => {
   await kickButton!.trigger('click')
 
   expect(wrapper.emitted('kickPlayer')).toEqual([[player]])
+})
+
+it('opens the profile only for an available stable cross-platform identity', async () => {
+  const wrapper = mountSlideover()
+  const profileButton = wrapper.find('[data-icon="i-lucide-contact-round"]')
+
+  expect(profileButton.exists()).toBe(true)
+  await profileButton.trigger('click')
+  expect(wrapper.emitted('openProfile')).toEqual([['EOS_12345678901234567']])
+
+  const unavailable = mountSlideover({ unavailable: true })
+  expect(unavailable.find('[data-icon="i-lucide-contact-round"]').exists()).toBe(false)
+
+  const unbound = mountSlideover({
+    player: { ...player, crossplatformIdentity: null },
+  })
+  expect(unbound.find('[data-icon="i-lucide-contact-round"]').exists()).toBe(false)
+})
+
+it('does not expose the owner profile entry when profile access is unavailable', () => {
+  const wrapper = mountSlideover({ canOpenProfile: false })
+
+  expect(wrapper.find('[data-icon="i-lucide-contact-round"]').exists()).toBe(false)
 })
 
 it('closes through the controlled open model', async () => {

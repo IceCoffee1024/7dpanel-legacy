@@ -26,6 +26,47 @@ export type WhitelistUpsertHttpRequest = {
     displayName?: string | null;
 };
 
+export type AchievementDefinitionHttpResponse = {
+    achievementId?: string;
+    name?: string;
+    description?: string;
+    statistic?: AchievementStatistic;
+    thresholdValue?: number;
+    rewardPackageId?: string;
+    enabled?: boolean;
+    sortOrder?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type AchievementStatistic = 0 | 1 | 2 | 3;
+
+export type AchievementDefinitionUpsertHttpRequest = {
+    name?: string | null;
+    description?: string | null;
+    statistic?: AchievementStatistic;
+    thresholdValue?: number;
+    rewardPackageId?: string | null;
+    enabled?: boolean;
+    sortOrder?: number;
+};
+
+export type AchievementRecordHttpResponse = {
+    achievementId?: string;
+    crossplatformId?: string;
+    currentValue?: number;
+    eligibilityKey?: string | null;
+    grantOperationId?: string | null;
+    completedAtUtc?: string | null;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type AnnouncementHttpRequest = {
+    messageText?: string | null;
+};
+
 export type ApiProblemDetails = {
     type: string;
     title: string;
@@ -39,6 +80,336 @@ export type ApiProblemDetails = {
 export type ApiKeyCreateRequest = {
     name?: string | null;
     expiresAtUtc?: string | null;
+};
+
+export type AuditPageHttpResponse = {
+    entries?: Array<AuditEntryHttpResponse>;
+    nextCursor?: string | null;
+    sourceGaps?: Array<AuditSourceGapHttpResponse>;
+};
+
+export type AuditEntryHttpResponse = {
+    sourceKind?: string;
+    sourceId?: string;
+    actorSubject?: string | null;
+    targetRef?: string | null;
+    action?: string;
+    occurredAtUtc?: string;
+    status?: string;
+    correlationId?: string | null;
+    hasDetails?: boolean;
+};
+
+export type AuditSourceGapHttpResponse = {
+    sourceKind?: string;
+    startedAtUtc?: string;
+    endedAtUtc?: string | null;
+    affectedCount?: number;
+    reason?: string;
+};
+
+export type AutomationRuleHttpResponse = {
+    id?: string;
+    version?: number;
+    name?: string;
+    isEnabled?: boolean;
+    trigger?: AutomationTriggerHttpModel;
+    condition?: AutomationConditionHttpModel;
+    actions?: Array<AutomationActionHttpModel>;
+    cooldownSeconds?: number;
+    cooldownScope?: string;
+    concurrencyPolicy?: string;
+    failurePolicy?: string;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+};
+
+export type AutomationTriggerHttpModel = AutomationStrictHttpModel & {
+    type?: string | null;
+};
+
+export type AutomationStrictHttpModel = {
+    [key: string]: never;
+};
+
+export type AutomationConditionHttpModel = AutomationStrictHttpModel & {
+    nodeId?: string | null;
+    kind?: string | null;
+    predicate?: AutomationConditionPredicateHttpModel | null;
+    children?: Array<AutomationConditionHttpModel> | null;
+};
+
+export type AutomationConditionPredicateHttpModel = AutomationStrictHttpModel & {
+    fieldKey?: string | null;
+    operator?: string | null;
+    scalarValue?: string | null;
+    minimumInclusive?: number | null;
+    maximumInclusive?: number | null;
+    setValues?: Array<string> | null;
+    window?: AutomationTimeWindowHttpModel | null;
+};
+
+export type AutomationTimeWindowHttpModel = AutomationStrictHttpModel & {
+    timeZoneId?: string | null;
+    startInclusive?: AutomationTimeOfDayHttpModel | null;
+    endInclusive?: AutomationTimeOfDayHttpModel | null;
+};
+
+export type AutomationTimeOfDayHttpModel = AutomationStrictHttpModel & {
+    hour?: number | null;
+    minute?: number | null;
+};
+
+export type AutomationActionHttpModel = AutomationStrictHttpModel & {
+    id?: string | null;
+    type?: string | null;
+    target?: AutomationTargetHttpModel | null;
+    broadcastMessage?: AutomationMessageActionHttpModel | null;
+    privateMessage?: AutomationMessageActionHttpModel | null;
+    announcement?: AutomationMessageActionHttpModel | null;
+    grantItem?: AutomationGrantItemActionHttpModel | null;
+    grantRewardPackage?: AutomationGrantRewardPackageActionHttpModel | null;
+    adjustEconomy?: AutomationAmountActionHttpModel | null;
+    kickPlayer?: AutomationReasonActionHttpModel | null;
+    mutePlayer?: AutomationMutePlayerActionHttpModel | null;
+    restrictedCommand?: AutomationRestrictedCommandActionHttpModel | null;
+    discordMessage?: AutomationMessageActionHttpModel | null;
+};
+
+export type AutomationTargetHttpModel = AutomationStrictHttpModel & {
+    kind?: string | null;
+    referenceId?: string | null;
+};
+
+export type AutomationMessageActionHttpModel = AutomationStrictHttpModel & {
+    message?: string | null;
+};
+
+export type AutomationGrantItemActionHttpModel = AutomationStrictHttpModel & {
+    resourceId?: string | null;
+    amount?: number | null;
+};
+
+export type AutomationGrantRewardPackageActionHttpModel = AutomationStrictHttpModel & {
+    rewardPackageId?: string | null;
+};
+
+export type AutomationAmountActionHttpModel = AutomationStrictHttpModel & {
+    amount?: number | null;
+};
+
+export type AutomationReasonActionHttpModel = AutomationStrictHttpModel & {
+    reason?: string | null;
+};
+
+export type AutomationMutePlayerActionHttpModel = AutomationStrictHttpModel & {
+    durationSeconds?: number | null;
+    reason?: string | null;
+};
+
+export type AutomationRestrictedCommandActionHttpModel = AutomationStrictHttpModel & {
+    commandCatalogKey?: string | null;
+};
+
+export type AutomationRuleHttpRequest = AutomationStrictHttpModel & {
+    id?: string | null;
+    expectedVersion?: number | null;
+    name?: string | null;
+    isEnabled?: boolean | null;
+    trigger?: AutomationTriggerHttpModel | null;
+    condition?: AutomationConditionHttpModel | null;
+    actions?: Array<AutomationActionHttpModel> | null;
+    cooldownSeconds?: number | null;
+    cooldownScope?: string | null;
+    concurrencyPolicy?: string | null;
+    failurePolicy?: string | null;
+};
+
+export type AutomationValidationHttpResponse = {
+    isValid?: boolean;
+    issues?: Array<AutomationValidationIssueHttpResponse>;
+};
+
+export type AutomationValidationIssueHttpResponse = {
+    code?: string;
+    path?: string;
+};
+
+export type AutomationDryRunHttpResponse = {
+    validation?: AutomationValidationHttpResponse;
+    evaluation?: AutomationConditionEvaluationHttpResponse | null;
+    plannedActions?: Array<AutomationPlannedActionHttpResponse>;
+};
+
+export type AutomationConditionEvaluationHttpResponse = {
+    truth?: string;
+    trace?: Array<AutomationConditionTraceHttpResponse>;
+};
+
+export type AutomationConditionTraceHttpResponse = {
+    nodeId?: string;
+    fieldKey?: string | null;
+    truth?: string;
+    isValueKnown?: boolean;
+};
+
+export type AutomationPlannedActionHttpResponse = {
+    ordinal?: number;
+    actionId?: string;
+    actionType?: string;
+    dependency?: AutomationDependencyHttpResponse;
+    target?: AutomationTargetResolutionHttpResponse;
+    wouldExecute?: boolean;
+};
+
+export type AutomationDependencyHttpResponse = {
+    status?: string;
+    errorCode?: string | null;
+};
+
+export type AutomationTargetResolutionHttpResponse = {
+    isResolved?: boolean;
+    errorCode?: string | null;
+};
+
+export type AutomationDryRunHttpRequest = AutomationStrictHttpModel & {
+    rule?: AutomationRuleHttpRequest | null;
+    snapshot?: AutomationTriggerSnapshotHttpModel | null;
+};
+
+export type AutomationTriggerSnapshotHttpModel = AutomationStrictHttpModel & {
+    triggerId?: string | null;
+    trigger?: AutomationTriggerHttpModel | null;
+    occurredAtUtc?: string | null;
+    actor?: AutomationTriggerActorHttpModel | null;
+    chat?: AutomationChatTriggerHttpModel | null;
+    cron?: AutomationCronTriggerHttpModel | null;
+    bloodMoon?: AutomationBloodMoonTriggerHttpModel | null;
+    gapIds?: Array<string> | null;
+};
+
+export type AutomationTriggerActorHttpModel = AutomationStrictHttpModel & {
+    crossplatformId?: string | null;
+    entityId?: number | null;
+    group?: string | null;
+    permissionLevel?: number | null;
+};
+
+export type AutomationChatTriggerHttpModel = AutomationStrictHttpModel & {
+    text?: string | null;
+};
+
+export type AutomationCronTriggerHttpModel = AutomationStrictHttpModel & {
+    scheduledForUtc?: string | null;
+};
+
+export type AutomationBloodMoonTriggerHttpModel = AutomationStrictHttpModel & {
+    phase?: string | null;
+};
+
+export type AutomationExecutionHttpResponse = {
+    executionId?: string;
+    ruleId?: string;
+    triggerId?: string;
+    status?: string;
+    correlationId?: string;
+    startedAtUtc?: string | null;
+    completedAtUtc?: string | null;
+    errorCode?: string | null;
+    conditions?: Array<AutomationConditionResultHttpResponse>;
+    actions?: Array<AutomationActionResultHttpResponse>;
+};
+
+export type AutomationConditionResultHttpResponse = {
+    nodeId?: string;
+    truth?: string;
+};
+
+export type AutomationActionResultHttpResponse = {
+    ordinal?: number;
+    actionType?: string;
+    status?: string;
+    errorCode?: string | null;
+    startedAtUtc?: string;
+    completedAtUtc?: string | null;
+};
+
+export type BackupPolicyHttpResponse = {
+    kind?: string;
+    enabled?: boolean;
+    cronExpression?: string;
+    timeZoneId?: string;
+    backupRootId?: string;
+    retentionCount?: number;
+    retentionDays?: number;
+    compressionEnabled?: boolean;
+    rowVersion?: number;
+};
+
+export type BackupPolicyWriteHttpRequest = {
+    enabled?: boolean;
+    cronExpression?: string | null;
+    timeZoneId?: string | null;
+    backupRootId?: string | null;
+    retentionCount?: number;
+    retentionDays?: number;
+    compressionEnabled?: boolean;
+    expectedRowVersion?: number;
+};
+
+export type JobHttpResponse = {
+    id?: string;
+    kind?: string;
+    status?: string;
+    actorSubject?: string | null;
+    sourceScheduleId?: string | null;
+    correlationId?: string | null;
+    createdAtUtc?: string;
+    startedAtUtc?: string | null;
+    completedAtUtc?: string | null;
+    progress?: JobProgressHttpResponse | null;
+    errorCode?: string | null;
+    rowVersion?: number;
+};
+
+export type JobProgressHttpResponse = {
+    current?: number | null;
+    total?: number | null;
+};
+
+export type CreateWorldBackupHttpRequest = {
+    worldName?: string | null;
+    idempotencyKey?: string | null;
+    correlationId?: string | null;
+};
+
+export type CreateBackupHttpRequest = {
+    idempotencyKey?: string | null;
+    correlationId?: string | null;
+};
+
+export type BackupPageHttpResponse = {
+    items?: Array<BackupHttpResponse>;
+    nextCursor?: string | null;
+};
+
+export type BackupHttpResponse = {
+    id?: string;
+    kind?: string;
+    sizeBytes?: number;
+    sha256?: string;
+    worldId?: string | null;
+    gameVersion?: string | null;
+    validationStatus?: string;
+    createdAtUtc?: string;
+    sourceJobId?: string;
+    manifestVersion?: number;
+};
+
+export type RestoreBackupHttpRequest = {
+    idempotencyKey?: string | null;
+    correlationId?: string | null;
+    restartAfterStage?: boolean;
 };
 
 export type RecentChatMessagesResponse = {
@@ -101,6 +472,34 @@ export type ColoredChatSettingsHttpModel = {
     playerColorTagPermission: string;
 };
 
+export type ChatMutePageHttpResponse = {
+    mutes?: Array<ChatMuteHttpResponse>;
+    nextCursorUpdatedAtUtc?: string | null;
+    nextCursorCrossplatformId?: string | null;
+};
+
+export type ChatMuteHttpResponse = {
+    crossplatformId?: string;
+    displayName?: string | null;
+    reason?: string;
+    mutedUntilUtc?: string | null;
+    createdBy?: string;
+    createdAtUtc?: string;
+    updatedBy?: string;
+    updatedAtUtc?: string;
+};
+
+export type CreateChatMuteRequest = ChatMuteWriteRequest & {
+    crossplatformId: string;
+};
+
+export type ChatMuteWriteRequest = {
+    displayName?: string | null;
+    reason: string;
+    mutedUntilUtc?: string | null;
+    correlationId?: string | null;
+};
+
 export type ColoredChatProfilesHttpResponse = {
     profiles?: Array<ColoredChatProfileHttpResponse>;
     nextCursor?: string | null;
@@ -125,6 +524,434 @@ export type ColoredChatProfileWriteRequest = {
     nameColor?: string | null;
     textColor?: string | null;
     description?: string | null;
+};
+
+export type EconomyAccountsPageHttpResponse = {
+    accounts?: Array<EconomyAccountHttpResponse>;
+    nextCursor?: string | null;
+};
+
+export type EconomyAccountHttpResponse = {
+    accountId?: string;
+    kind?: EconomyAccountKind;
+    crossplatformId?: string | null;
+    enabled?: boolean;
+    isFrozen?: boolean;
+    postedBalance?: number;
+    reservedDebit?: number;
+    availableBalance?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type EconomyAccountKind = 0 | 1;
+
+export type EconomyTransactionsPageHttpResponse = {
+    transactions?: Array<LedgerTransactionHttpResponse>;
+    nextCursor?: string | null;
+};
+
+export type LedgerTransactionHttpResponse = {
+    transactionId?: string;
+    type?: string;
+    occurredAtUtc?: string;
+    actorKind?: string;
+    actorId?: string;
+    relatedCrossplatformId?: string | null;
+    businessKind?: string | null;
+    businessId?: string | null;
+    correlationId?: string | null;
+    reason?: string | null;
+    status?: string;
+    entries?: Array<LedgerEntryHttpResponse>;
+};
+
+export type LedgerEntryHttpResponse = {
+    entryId?: string;
+    accountId?: string;
+    side?: LedgerSide;
+    amount?: number;
+    balanceAfter?: number;
+};
+
+export type LedgerSide = 0 | 1;
+
+export type FreezeAccountHttpRequest = {
+    isFrozen?: boolean;
+    expectedRowVersion?: number;
+};
+
+export type AdjustBalanceHttpRequest = {
+    playerSide?: LedgerSide;
+    amount?: number;
+    clientRequestKey?: string | null;
+    reason?: string | null;
+};
+
+export type ShopProductHttpResponse = {
+    productId?: string;
+    name?: string;
+    description?: string;
+    enabled?: boolean;
+    priceAmount?: number;
+    stockRemaining?: number | null;
+    perPlayerLimit?: number | null;
+    rewardPackageId?: string;
+    sortOrder?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type ShopProductUpsertHttpRequest = {
+    name?: string | null;
+    description?: string | null;
+    enabled?: boolean;
+    priceAmount?: number;
+    stockRemaining?: number | null;
+    perPlayerLimit?: number | null;
+    rewardPackageId?: string | null;
+    sortOrder?: number;
+};
+
+export type ShopPurchaseHttpResponse = {
+    purchaseId?: string;
+    productId?: string;
+    rewardPackageId?: string;
+    crossplatformId?: string;
+    quantity?: number;
+    unitPrice?: number;
+    totalAmount?: number;
+    state?: PurchaseState;
+    reservationId?: string | null;
+    capturedTransactionId?: string | null;
+    grantOperationId?: string | null;
+    correlationId?: string | null;
+    errorCode?: string | null;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    completedAtUtc?: string | null;
+    rowVersion?: number;
+};
+
+export type PurchaseState = 0 | 1 | 2 | 3 | 4 | 5;
+
+export type PurchaseProductHttpResponse = {
+    status?: PurchaseRequestStatus;
+    purchase?: ShopPurchaseHttpResponse | null;
+};
+
+export type PurchaseRequestStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+export type PurchaseProductHttpRequest = {
+    crossplatformId?: string | null;
+    expectedEntityId?: number;
+    expectedWorldId?: string | null;
+    quantity?: number;
+    clientRequestKey?: string | null;
+};
+
+export type RedeemCodeHttpResponse = {
+    codeId?: string;
+    maskedCode?: string;
+    rewardPackageId?: string;
+    enabled?: boolean;
+    validFromUtc?: string | null;
+    expiresAtUtc?: string | null;
+    maxRedemptions?: number | null;
+    perPlayerLimit?: number | null;
+    redemptionCount?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type GeneratedRedeemCodeHttpResponse = {
+    code?: string;
+    definition?: RedeemCodeHttpResponse;
+};
+
+export type CreateRedeemCodeHttpRequest = {
+    rewardPackageId?: string | null;
+    enabled?: boolean;
+    validFromUtc?: string | null;
+    expiresAtUtc?: string | null;
+    maxRedemptions?: number | null;
+    perPlayerLimit?: number | null;
+};
+
+export type RedeemHttpResponse = {
+    status?: RedeemRequestStatus;
+    attempt?: RedeemAttemptHttpResponse | null;
+};
+
+export type RedeemRequestStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+export type RedeemAttemptHttpResponse = {
+    attemptId?: string;
+    codeId?: string;
+    rewardPackageId?: string;
+    crossplatformId?: string;
+    state?: RedeemAttemptState;
+    resultCode?: string | null;
+    grantOperationId?: string | null;
+    correlationId?: string | null;
+    attemptedAtUtc?: string;
+};
+
+export type RedeemAttemptState = 0 | 1 | 2 | 3 | 4;
+
+export type RedeemHttpRequest = {
+    code?: string | null;
+    crossplatformId?: string | null;
+    expectedEntityId?: number;
+    expectedWorldId?: string | null;
+};
+
+export type TeleportSettingsHttpResponse = {
+    kind?: string;
+    enabled?: boolean;
+    maxHomes?: number | null;
+    cooldownMs?: number;
+    globalCooldownMs?: number;
+    denyDuringBloodMoon?: boolean;
+    feeAmount?: number;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type TeleportSettingsUpsertHttpRequest = {
+    enabled?: boolean;
+    maxHomes?: number | null;
+    cooldownMs?: number;
+    globalCooldownMs?: number;
+    denyDuringBloodMoon?: boolean;
+    feeAmount?: number;
+    expectedRowVersion?: number;
+};
+
+export type PlayerHomeHttpResponse = {
+    homeId?: string;
+    crossplatformId?: string;
+    name?: string;
+    position?: CommunityWorldPositionHttpModel;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type CommunityWorldPositionHttpModel = {
+    worldId?: string | null;
+    x?: number;
+    y?: number;
+    z?: number;
+    yaw?: number;
+};
+
+export type CityHttpResponse = {
+    cityId?: string;
+    name?: string;
+    description?: string;
+    enabled?: boolean;
+    position?: CommunityWorldPositionHttpModel;
+    sortOrder?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type CityUpsertHttpRequest = {
+    name?: string | null;
+    description?: string | null;
+    enabled?: boolean;
+    position?: CommunityWorldPositionHttpModel | null;
+    sortOrder?: number;
+};
+
+export type FriendshipStatusHttpResponse = {
+    firstCrossplatformId?: string;
+    secondCrossplatformId?: string;
+    areFriends?: boolean;
+};
+
+export type FriendshipHttpResponse = {
+    friendshipId?: string;
+    memberACrossplatformId?: string;
+    memberBCrossplatformId?: string;
+    createdByCrossplatformId?: string;
+    acceptedAtUtc?: string;
+};
+
+export type FriendRequestHttpResponse = {
+    requestId?: string;
+    requesterCrossplatformId?: string;
+    targetCrossplatformId?: string;
+    state?: string;
+    friendshipId?: string | null;
+    createdAtUtc?: string;
+    expiresAtUtc?: string;
+    respondedAtUtc?: string | null;
+    rowVersion?: number;
+};
+
+export type CreateFriendRequestHttpRequest = {
+    requestId?: string | null;
+    requesterCrossplatformId?: string | null;
+    targetCrossplatformId?: string | null;
+    expiresAtUtc?: string;
+};
+
+export type RespondFriendRequestHttpRequest = {
+    responderCrossplatformId?: string | null;
+    accept?: boolean;
+    friendshipId?: string | null;
+};
+
+export type TeleportOperationHttpResponse = {
+    operationId?: string;
+    kind?: string;
+    crossplatformId?: string;
+    targetCrossplatformId?: string | null;
+    destination?: CommunityWorldPositionHttpModel;
+    origin?: CommunityWorldPositionHttpModel | null;
+    state?: string;
+    errorCode?: string | null;
+    correlationId?: string | null;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    completedAtUtc?: string | null;
+    rowVersion?: number;
+};
+
+export type CreateTeleportOperationHttpRequest = {
+    operationId?: string | null;
+    idempotencyKey?: string | null;
+    kind?: string | null;
+    player?: TeleportPlayerHttpRequest | null;
+    target?: TeleportPlayerHttpRequest | null;
+    destinationName?: string | null;
+    destination?: CommunityWorldPositionHttpModel | null;
+    actorId?: string | null;
+    correlationId?: string | null;
+};
+
+export type TeleportPlayerHttpRequest = {
+    crossplatformId?: string | null;
+    entityId?: number;
+    position?: CommunityWorldPositionHttpModel | null;
+    isOnline?: boolean;
+    isAlive?: boolean;
+    isSpawned?: boolean;
+    isBloodMoon?: boolean;
+    allowsFriendTeleport?: boolean;
+    worldBounds?: CommunityWorldBoundsHttpRequest | null;
+};
+
+export type CommunityWorldBoundsHttpRequest = {
+    minimumX?: number;
+    maximumX?: number;
+    minimumZ?: number;
+    maximumZ?: number;
+};
+
+export type VoteConfigurationHttpResponse = {
+    configurationId?: string;
+    kind?: string;
+    enabled?: boolean;
+    durationMs?: number;
+    thresholdPercent?: number;
+    minimumParticipants?: number;
+    initiatorMinimumOnlineMs?: number;
+    participantMinimumOnlineMs?: number;
+    initiatorCooldownMs?: number;
+    targetCooldownMs?: number;
+    globalCooldownMs?: number;
+    mutualExclusionScope?: string;
+    allowVoteChange?: boolean;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type VoteConfigurationUpsertHttpRequest = {
+    enabled?: boolean;
+    durationMs?: number;
+    thresholdPercent?: number;
+    minimumParticipants?: number;
+    initiatorMinimumOnlineMs?: number;
+    participantMinimumOnlineMs?: number;
+    initiatorCooldownMs?: number;
+    targetCooldownMs?: number;
+    globalCooldownMs?: number;
+    mutualExclusionScope?: string | null;
+    allowVoteChange?: boolean;
+    expectedRowVersion?: number;
+};
+
+export type VoteRoundHttpResponse = {
+    roundId?: string;
+    configurationId?: string;
+    kind?: string;
+    state?: string;
+    initiatorCrossplatformId?: string;
+    targetCrossplatformId?: string | null;
+    scopeKey?: string;
+    eligibleCount?: number;
+    thresholdPercent?: number;
+    minimumParticipants?: number;
+    allowVoteChange?: boolean;
+    actionJobId?: string | null;
+    actionOperationId?: string | null;
+    correlationId?: string | null;
+    openedAtUtc?: string;
+    expiresAtUtc?: string;
+    settledAtUtc?: string | null;
+    actionCompletedAtUtc?: string | null;
+    rowVersion?: number;
+};
+
+export type VoteStartHttpResponse = {
+    status?: string;
+    round?: VoteRoundHttpResponse | null;
+};
+
+export type StartVoteRoundHttpRequest = {
+    roundId?: string | null;
+    kind?: string | null;
+    initiatorCrossplatformId?: string | null;
+    targetCrossplatformId?: string | null;
+    eligiblePlayers?: Array<VoteEligiblePlayerHttpRequest> | null;
+    idempotencyKey?: string | null;
+    correlationId?: string | null;
+};
+
+export type VoteEligiblePlayerHttpRequest = {
+    crossplatformId?: string | null;
+    onlineDurationMs?: number;
+};
+
+export type VoteCastHttpResponse = {
+    status?: string;
+    round?: VoteRoundHttpResponse | null;
+};
+
+export type CastVoteHttpRequest = {
+    crossplatformId?: string | null;
+    choice?: string | null;
+};
+
+export type VoteSettlementHttpResponse = {
+    status?: string;
+    round?: VoteRoundHttpResponse;
+    participantCount?: number;
+    yesCount?: number;
+    noCount?: number;
+    wasSettled?: boolean;
+};
+
+export type VoteActionDispatchHttpResponse = {
+    status?: string;
+    round?: VoteRoundHttpResponse;
 };
 
 export type ConsoleCommandCatalog = {
@@ -161,6 +988,126 @@ export type ConsoleLogEventData = {
     logType?: string;
     timestamp?: string;
     uptimeMilliseconds?: number;
+};
+
+export type DiscordConfigurationHttpResponse = {
+    version?: number;
+    isEnabled?: boolean;
+    mode?: string;
+    applicationId?: string | null;
+    guildId?: string | null;
+    publicChannelId?: string | null;
+    bridgeGameToDiscord?: boolean;
+    bridgeDiscordToGame?: boolean;
+    proxy?: DiscordProxyHttpResponse;
+    hasBotToken?: boolean;
+    targets?: Array<DiscordTargetHttpResponse>;
+    updatedAtUtc?: string | null;
+};
+
+export type DiscordProxyHttpResponse = {
+    isEnabled?: boolean;
+    endpoint?: string | null;
+    hasCredentials?: boolean;
+};
+
+export type DiscordTargetHttpResponse = {
+    targetKey?: string;
+    deliveryMode?: string;
+    channelId?: string | null;
+    isEnabled?: boolean;
+    hasCredential?: boolean;
+};
+
+export type DiscordConfigurationUpdateHttpRequest = {
+    expectedVersion?: number | null;
+    isEnabled?: boolean | null;
+    mode?: string | null;
+    applicationId?: string | null;
+    guildId?: string | null;
+    publicChannelId?: string | null;
+    bridgeGameToDiscord?: boolean | null;
+    bridgeDiscordToGame?: boolean | null;
+    proxyEnabled?: boolean | null;
+    proxyEndpoint?: string | null;
+    targets?: Array<DiscordTargetUpdateHttpRequest> | null;
+};
+
+export type DiscordTargetUpdateHttpRequest = {
+    targetKey?: string | null;
+    deliveryMode?: string | null;
+    channelId?: string | null;
+    isEnabled?: boolean | null;
+};
+
+export type DiscordDeliveryHttpResponse = {
+    deliveryId?: string;
+    businessKey?: string;
+    targetKey?: string;
+    status?: string;
+    nextAttemptAtUtc?: string | null;
+    retryCount?: number;
+    createdAtUtc?: string;
+    completedAtUtc?: string | null;
+};
+
+export type DiscordTestHttpRequest = {
+    targetKey?: string | null;
+};
+
+export type DiscordBindingHttpResponse = {
+    discordSubject?: string;
+    crossplatformId?: string;
+    isActive?: boolean;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+};
+
+export type DiscordBindingCodeHttpResponse = {
+    code?: string;
+    codePrefix?: string;
+    expiresAtUtc?: string;
+};
+
+export type DiscordBindingCodeCreateHttpRequest = {
+    crossplatformId?: string | null;
+};
+
+export type DiscordCommandHttpResponse = {
+    commandKey?: string;
+    isEnabled?: boolean;
+    remoteAllowed?: boolean;
+};
+
+export type GameEventPageHttpResponse = {
+    events?: Array<GameEventHttpResponse>;
+    gaps?: Array<GameEventGapHttpResponse>;
+    nextCursor?: string | null;
+};
+
+export type GameEventHttpResponse = {
+    eventId?: string;
+    eventType?: string;
+    occurredAtUtc?: string;
+    observedAtUtc?: string;
+    actor?: GameEventSubjectHttpResponse | null;
+    target?: GameEventSubjectHttpResponse | null;
+    gameShuttingDown?: boolean | null;
+};
+
+export type GameEventSubjectHttpResponse = {
+    crossplatformId?: string | null;
+    platformId?: string | null;
+    entityId?: number | null;
+    displayName?: string | null;
+};
+
+export type GameEventGapHttpResponse = {
+    gapId?: string;
+    reason?: string;
+    startedAtUtc?: string;
+    endedAtUtc?: string | null;
+    affectedCount?: number;
 };
 
 export type GameAdminHttpResponse = {
@@ -208,10 +1155,137 @@ export type GameResourceItemHttpResponse = {
     iconTintHex: string | null;
 };
 
+export type GeoIpPolicySummaryHttpResponse = {
+    version?: number;
+    isEnabled?: boolean;
+    provider?: string;
+    failureMode?: string;
+    bypassAdmins?: boolean;
+    rejectionMessage?: string;
+    networkRules?: Array<GeoIpNetworkRuleHttpResponse>;
+    countryRules?: Array<GeoIpCountryRuleHttpResponse>;
+    cacheHealth?: GeoIpCacheHealthHttpResponse;
+    providers?: Array<GeoIpProviderHttpResponse>;
+    recentDecisions?: Array<GeoIpDecisionHttpResponse>;
+};
+
+export type GeoIpNetworkRuleHttpResponse = {
+    ruleId?: string;
+    networkCidr?: string;
+    effect?: string;
+    ordinal?: number;
+};
+
+export type GeoIpCountryRuleHttpResponse = {
+    countryCode?: string;
+    effect?: string;
+};
+
+export type GeoIpCacheHealthHttpResponse = {
+    queueDepth?: number;
+    rejectedRefreshCount?: number;
+    lastCompletedAtUtc?: string | null;
+    lastLookupStatus?: string | null;
+    severity?: string;
+    statusCode?: string;
+};
+
+export type GeoIpProviderHttpResponse = {
+    provider?: string;
+    isExternal?: boolean;
+    dataVersion?: string | null;
+    buildEpoch?: string | null;
+};
+
+export type GeoIpDecisionHttpResponse = {
+    occurredAtUtc?: string;
+    maskedIp?: string;
+    decision?: string;
+    reasonCode?: string;
+    lookupStatus?: string;
+};
+
+export type GeoIpPolicyUpdateHttpResponse = {
+    version?: number;
+    state?: string;
+};
+
+export type GeoIpPolicyUpdateHttpRequest = {
+    expectedVersion?: number | null;
+    isEnabled?: boolean | null;
+    provider?: string | null;
+    failureMode?: string | null;
+    bypassAdmins?: boolean | null;
+    rejectionMessage?: string | null;
+    networkRules?: Array<GeoIpNetworkRuleHttpRequest> | null;
+    countryRules?: Array<GeoIpCountryRuleHttpRequest> | null;
+};
+
+export type GeoIpNetworkRuleHttpRequest = {
+    ruleId?: string | null;
+    networkCidr?: string | null;
+    effect?: string | null;
+    ordinal?: number | null;
+};
+
+export type GeoIpCountryRuleHttpRequest = {
+    countryCode?: string | null;
+    effect?: string | null;
+};
+
+export type GeoIpCredentialsUpdateHttpResponse = {
+    accountId?: GeoIpCredentialHttpResponse;
+    licenseKey?: GeoIpCredentialHttpResponse;
+};
+
+export type GeoIpCredentialHttpResponse = {
+    isSet?: boolean;
+    fingerprint?: string | null;
+    updatedAtUtc?: string | null;
+};
+
+export type GeoIpCredentialsUpdateHttpRequest = {
+    accountId?: GeoIpSecretUpdateHttpRequest | null;
+    licenseKey?: GeoIpSecretUpdateHttpRequest | null;
+};
+
+export type GeoIpSecretUpdateHttpRequest = {
+    operation?: string | null;
+    value?: string | null;
+};
+
+export type GeoIpTestHttpResponse = {
+    accepted?: boolean;
+    maskedIp?: string;
+    state?: string;
+};
+
+export type GeoIpTestHttpRequest = {
+    ipAddress?: string | null;
+};
+
+export type GeoIpDiagnosticsHttpResponse = {
+    isEnabled?: boolean;
+    failureMode?: string;
+    provider?: string;
+    severity?: string;
+    statusCode?: string;
+    queueDepth?: number;
+    rejectedRefreshCount?: number;
+    lastCompletedAtUtc?: string | null;
+    lastLookupStatus?: string | null;
+    providers?: Array<GeoIpProviderHttpResponse>;
+};
+
 export type HealthResponse = {
     status?: string;
     product?: string;
     version?: string;
+};
+
+export type JobPageHttpResponse = {
+    items?: Array<JobHttpResponse>;
+    nextCursor?: string | null;
 };
 
 export type MapMetadataHttpResponse = {
@@ -331,6 +1405,52 @@ export type PlayerMapPositionHttpResponse = {
     z: number;
 };
 
+export type WorldOperationReceiptHttpResponse = {
+    operationId?: string;
+    jobId?: string;
+    status?: string;
+    correlationId?: string;
+    createdAtUtc?: string;
+};
+
+export type RefreshMapResourcesJobHttpRequest = ConfirmedWorldHttpRequest & {
+    bounds?: WorldMapBoundsHttpRequest | null;
+};
+
+export type WorldMapBoundsHttpRequest = {
+    minimumX?: number | null;
+    minimumZ?: number | null;
+    maximumX?: number | null;
+    maximumZ?: number | null;
+};
+
+export type ConfirmedWorldHttpRequest = {
+    worldId?: string | null;
+    worldVersion?: string | null;
+    mapResourceVersion?: string | null;
+    confirmed?: boolean;
+};
+
+export type RenderExploredMapJobHttpRequest = ConfirmedWorldHttpRequest & {
+    bounds?: WorldMapBoundsHttpRequest | null;
+};
+
+export type RenderFullMapJobHttpRequest = StrongConfirmedWorldHttpRequest & {
+    bounds?: WorldMapBoundsHttpRequest | null;
+};
+
+export type StrongConfirmedWorldHttpRequest = ConfirmedWorldHttpRequest & {
+    strongConfirmed?: boolean;
+};
+
+export type MapResourceVersionHttpResponse = {
+    sourceState?: string;
+    worldId?: string | null;
+    worldVersion?: string | null;
+    mapResourceVersion?: string | null;
+    observedAtUtc?: string | null;
+};
+
 export type ModHttpResponse = {
     directoryId?: string;
     name?: string;
@@ -352,6 +1472,84 @@ export type ModStateHttpResponse = {
 
 export type SetModStateHttpRequest = {
     enabled?: boolean | null;
+};
+
+export type FeatureModuleHttpResponse = {
+    moduleId?: string;
+    isToggleable?: boolean;
+    dependencies?: Array<string>;
+    settingsSummaryFields?: Array<string>;
+    healthSource?: string;
+    disableMode?: string;
+    dataRetentionSummary?: string;
+    consumerIds?: Array<string>;
+    isEnabled?: boolean;
+    lifecycleState?: string;
+    updatedBy?: string;
+    correlationId?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type SetFeatureModuleStateHttpRequest = {
+    expectedRowVersion?: number;
+};
+
+export type OnlineRewardRuleHttpResponse = {
+    ruleId?: string;
+    name?: string;
+    requiredOnlineSeconds?: number;
+    repeatIntervalSeconds?: number | null;
+    gapPolicy?: EvidenceGapPolicy;
+    rewardPackageId?: string;
+    enabled?: boolean;
+    sortOrder?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type EvidenceGapPolicy = 0 | 1;
+
+export type OnlineRewardRuleUpsertHttpRequest = {
+    name?: string | null;
+    requiredOnlineSeconds?: number;
+    repeatIntervalSeconds?: number | null;
+    gapPolicy?: EvidenceGapPolicy;
+    rewardPackageId?: string | null;
+    enabled?: boolean;
+    sortOrder?: number;
+};
+
+export type OnlineRewardRecordsHttpResponse = {
+    records?: Array<OnlineRewardRecordHttpResponse>;
+};
+
+export type OnlineRewardRecordHttpResponse = {
+    eligibilityId?: string;
+    ruleKind?: string;
+    ruleId?: string;
+    rewardPackageId?: string;
+    crossplatformId?: string;
+    eligibilityKey?: string;
+    state?: RewardEligibilityState;
+    grantOperationId?: string | null;
+    correlationId?: string | null;
+    evidenceFromUtc?: string | null;
+    evidenceToUtc?: string | null;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type RewardEligibilityState = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export type ManualOnlineRewardGrantHttpRequest = {
+    ruleId?: string | null;
+    crossplatformId?: string | null;
+    expectedEntityId?: number;
+    expectedWorldId?: string | null;
+    clientRequestKey?: string | null;
 };
 
 export type OverviewHttpResponse = {
@@ -377,11 +1575,62 @@ export type GameOverviewHttpResponse = {
     language?: string | null;
     connectionAddress?: string | null;
     connectionPort?: number | null;
-    onlinePlayerCount?: number | null;
     maximumPlayerCount?: number | null;
-    historicalPlayerCount?: number | null;
-    framesPerSecond?: number | null;
-    gameTime?: string | null;
+    runtimeMetrics?: GameRuntimeMetricsHttpResponse | null;
+};
+
+export type GameRuntimeMetricsHttpResponse = {
+    gameDayTime?: ObservedMetricHttpResponseOfString;
+    isBloodMoon?: ObservedMetricHttpResponseOfNullableBoolean;
+    framesPerSecond?: ObservedMetricHttpResponseOfNullableDouble;
+    onlinePlayerCount?: ObservedMetricHttpResponseOfNullableInteger;
+    historicalPlayerCount?: ObservedMetricHttpResponseOfNullableInteger;
+    animalCount?: ObservedMetricHttpResponseOfNullableInteger;
+    hostileEntityCount?: ObservedMetricHttpResponseOfNullableInteger;
+    activeEntityCount?: ObservedMetricHttpResponseOfNullableInteger;
+    chunkCount?: ObservedMetricHttpResponseOfNullableInteger;
+    droppedItemCount?: ObservedMetricHttpResponseOfNullableInteger;
+    gameMemoryBytes?: ObservedMetricHttpResponseOfNullableLong;
+};
+
+export type ObservedMetricHttpResponseOfString = {
+    value?: string | null;
+    source?: string;
+    unit?: string;
+    observedAtUtc?: string;
+    warning?: string | null;
+};
+
+export type ObservedMetricHttpResponseOfNullableBoolean = {
+    value?: boolean | null;
+    source?: string;
+    unit?: string;
+    observedAtUtc?: string;
+    warning?: string | null;
+};
+
+export type ObservedMetricHttpResponseOfNullableDouble = {
+    value?: number | null;
+    source?: string;
+    unit?: string;
+    observedAtUtc?: string;
+    warning?: string | null;
+};
+
+export type ObservedMetricHttpResponseOfNullableInteger = {
+    value?: number | null;
+    source?: string;
+    unit?: string;
+    observedAtUtc?: string;
+    warning?: string | null;
+};
+
+export type ObservedMetricHttpResponseOfNullableLong = {
+    value?: number | null;
+    source?: string;
+    unit?: string;
+    observedAtUtc?: string;
+    warning?: string | null;
 };
 
 export type HostOverviewHttpResponse = {
@@ -486,6 +1735,387 @@ export type PanelUserUpdateRequest = {
 
 export type PanelUserPasswordRequest = {
     password?: string | null;
+};
+
+export type GrantItemHttpResponse = {
+    operationId?: string;
+    correlationId?: string;
+    status?: PlayerActionStatus;
+    failureCode?: string | null;
+    actualQuantity?: number | null;
+    beforeInventorySnapshotId?: number | null;
+    afterInventorySnapshotId?: number | null;
+    reused?: boolean;
+    terminalStatePersisted?: boolean;
+};
+
+export type PlayerActionStatus = 'Pending' | 'Succeeded' | 'Rejected' | 'Failed' | 'Cancelled' | 'ResultUnknown';
+
+export type GrantItemHttpRequest = {
+    target?: PlayerActionTargetHttpRequest;
+    catalogVersion?: string;
+    resourceId?: string;
+    quantity?: number;
+    quality?: number | null;
+    hiddenItemConfirmed?: boolean;
+    clientRequestKey?: string;
+};
+
+export type PlayerActionTargetHttpRequest = {
+    crossplatformId?: string;
+    entityId?: number;
+    onlineObservedAtUtc?: string;
+    worldId?: string;
+};
+
+export type RemoveItemHttpResponse = {
+    operationId?: string;
+    correlationId?: string;
+    status?: PlayerActionStatus;
+    failureCode?: string | null;
+    actualQuantity?: number | null;
+    beforeInventorySnapshotId?: number | null;
+    afterInventorySnapshotId?: number | null;
+    reused?: boolean;
+    terminalStatePersisted?: boolean;
+};
+
+export type RemoveItemHttpRequest = {
+    target?: PlayerActionTargetHttpRequest;
+    catalogVersion?: string;
+    resourceId?: string;
+    quantity?: number;
+    quality?: number | null;
+    removalScope?: PlayerItemRemovalScope;
+    removalMode?: PlayerItemRemovalMode;
+    clientRequestKey?: string;
+};
+
+export type PlayerItemRemovalScope = 'BagOnly';
+
+export type PlayerItemRemovalMode = 'Exact' | 'UpToAvailable';
+
+export type ResetSkillsHttpResponse = {
+    operationId?: string;
+    correlationId?: string;
+    status?: ResetSkillsOperationStatus;
+    failureCode?: string | null;
+    beforeSkillSnapshotId?: number | null;
+    afterSkillSnapshotId?: number | null;
+    terminalStatePersisted?: boolean;
+    confirmationSummary?: ResetSkillsConfirmationSummary | null;
+};
+
+export type ResetSkillsOperationStatus = 'Pending' | 'Succeeded' | 'Rejected' | 'Failed' | 'Cancelled' | 'ResultUnknown';
+
+export type ResetSkillsConfirmationSummary = {
+    targetCrossplatformId?: string;
+    entityId?: number;
+    worldId?: string;
+    scope?: string;
+    preservesIdentity?: boolean;
+    preservesPosition?: boolean;
+    preservesInventory?: boolean;
+};
+
+export type ResetSkillsHttpRequest = {
+    target?: PlayerActionTargetHttpRequest;
+    clientRequestKey?: string;
+    dangerConfirmed?: boolean;
+};
+
+export type ClearInventoryHttpResponse = {
+    operationId?: string;
+    correlationId?: string;
+    status?: ClearInventoryOperationStatus;
+    failureCode?: string | null;
+    beforeInventorySnapshotId?: number | null;
+    afterInventorySnapshotId?: number | null;
+    terminalStatePersisted?: boolean;
+    confirmationSummary?: ClearInventoryConfirmationSummary | null;
+};
+
+export type ClearInventoryOperationStatus = 'Pending' | 'Succeeded' | 'Rejected' | 'Failed' | 'Cancelled' | 'ResultUnknown';
+
+export type ClearInventoryConfirmationSummary = {
+    targetCrossplatformId?: string;
+    entityId?: number;
+    worldId?: string;
+    scope?: PlayerItemRemovalScope2;
+    preservesEquipment?: boolean;
+    preservesToolbelt?: boolean;
+    preservesOtherContainers?: boolean;
+};
+
+export type PlayerItemRemovalScope2 = 0;
+
+export type ClearInventoryHttpRequest = {
+    target?: PlayerActionTargetHttpRequest;
+    clientRequestKey?: string;
+    dangerConfirmed?: boolean;
+};
+
+export type ResetPlayerDataHttpResponse = {
+    operationId?: string;
+    correlationId?: string;
+    status?: ResetPlayerDataOperationStatus;
+    failureCode?: string | null;
+    beforeInventorySnapshotId?: number | null;
+    beforeSkillSnapshotId?: number | null;
+    terminalStatePersisted?: boolean;
+    confirmationSummary?: ResetPlayerDataConfirmationSummary | null;
+    manualVerificationRequired?: boolean;
+    manualVerificationCode?: string | null;
+};
+
+export type ResetPlayerDataOperationStatus = 'Pending' | 'Succeeded' | 'Rejected' | 'Failed' | 'Cancelled' | 'ResultUnknown';
+
+export type ResetPlayerDataConfirmationSummary = {
+    targetCrossplatformId?: string;
+    entityId?: number;
+    worldId?: string;
+    scope?: string;
+    requiresStrongConfirmation?: boolean;
+    preservesStableIdentity?: boolean;
+    preservesWorld?: boolean;
+};
+
+export type ResetPlayerDataHttpRequest = {
+    target?: PlayerActionTargetHttpRequest;
+    clientRequestKey?: string;
+    dangerConfirmed?: boolean;
+};
+
+export type PlayerActionOperationHttpResponse = {
+    operationId?: string;
+    correlationId?: string | null;
+    operationType?: string;
+    operatorId?: string;
+    target?: PlayerActionTargetHttpResponse;
+    status?: PlayerActionStatus;
+    createdAtUtc?: string;
+    startedAtUtc?: string | null;
+    completedAtUtc?: string | null;
+    failureCode?: string | null;
+    beforeInventorySnapshotId?: number | null;
+    afterInventorySnapshotId?: number | null;
+    beforeSkillSnapshotId?: number | null;
+    afterSkillSnapshotId?: number | null;
+};
+
+export type PlayerActionTargetHttpResponse = {
+    crossplatformId?: string;
+    entityId?: number;
+    onlineObservedAtUtc?: string;
+    worldId?: string;
+};
+
+export type PlayerProfileHttpResponse = {
+    crossplatformId?: string;
+    summary?: PlayerEvidenceSectionHttpResponseOfHistoricalPlayerSummaryHttpResponse;
+    sessions?: PlayerEvidenceSectionHttpResponseOfIReadOnlyListOfPlayerSessionHttpResponse;
+    activity?: PlayerEvidenceSectionHttpResponseOfIReadOnlyListOfPlayerActivityEventHttpResponse;
+    inventory?: PlayerEvidenceSectionHttpResponseOfPlayerInventorySnapshotHttpResponse;
+    skills?: PlayerEvidenceSectionHttpResponseOfPlayerSkillSnapshotHttpResponse;
+    dailyActivity?: PlayerEvidenceSectionHttpResponseOfIReadOnlyListOfPlayerDailyActivityHttpResponse;
+};
+
+export type PlayerEvidenceSectionHttpResponseOfHistoricalPlayerSummaryHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    value?: HistoricalPlayerSummaryHttpResponse | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerProfileSectionState = 'Available' | 'Partial' | 'Unavailable' | 'Forbidden';
+
+export type HistoricalPlayerSummaryHttpResponse = {
+    crossplatformId?: string;
+    latestName?: string;
+    firstObservedAtUtc?: string;
+    lastObservedAtUtc?: string;
+    totalObservationCount?: number;
+    retainedSnapshotCount?: number;
+    compactedSnapshotCount?: number;
+    hasGaps?: boolean;
+};
+
+export type PlayerEvidenceGapHttpResponse = {
+    gapId?: number;
+    crossplatformId?: string;
+    startedAtUtc?: string;
+    endedAtUtc?: string;
+    reason?: string;
+    estimatedLostCount?: number;
+};
+
+export type PlayerEvidenceSectionHttpResponseOfIReadOnlyListOfPlayerSessionHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    value?: Array<PlayerSessionHttpResponse> | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerSessionHttpResponse = {
+    sessionId?: number;
+    crossplatformId?: string;
+    serverId?: string;
+    worldId?: string;
+    startedAtUtc?: string;
+    endedAtUtc?: string | null;
+    endReason?: string | null;
+    lastPosition?: PlayerPositionHttpResponse | null;
+    completeness?: PlayerProfileSectionState;
+};
+
+export type PlayerPositionHttpResponse = {
+    x?: number;
+    y?: number;
+    z?: number;
+};
+
+export type PlayerEvidenceSectionHttpResponseOfIReadOnlyListOfPlayerActivityEventHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    value?: Array<PlayerActivityEventHttpResponse> | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerActivityEventHttpResponse = {
+    activityId?: number;
+    crossplatformId?: string;
+    serverId?: string;
+    worldId?: string;
+    kind?: string;
+    observedAtUtc?: string;
+    correlationId?: string | null;
+    completeness?: PlayerProfileSectionState;
+};
+
+export type PlayerEvidenceSectionHttpResponseOfPlayerInventorySnapshotHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    value?: PlayerInventorySnapshotHttpResponse | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerInventorySnapshotHttpResponse = {
+    snapshotId?: number;
+    crossplatformId?: string;
+    serverId?: string;
+    worldId?: string;
+    observedAtUtc?: string;
+    gameVersion?: string;
+    catalogVersion?: string | null;
+    catalogResolution?: CatalogResolutionState;
+    fingerprint?: string;
+    adminBoundary?: boolean;
+    items?: Array<InventoryItemScalarHttpResponse>;
+};
+
+export type CatalogResolutionState = 'Resolved' | 'Unavailable';
+
+export type InventoryItemScalarHttpResponse = {
+    container?: string;
+    slot?: number;
+    internalName?: string;
+    count?: number;
+    quality?: number | null;
+    useAmount?: number | null;
+    modInternalNames?: Array<string>;
+};
+
+export type PlayerEvidenceSectionHttpResponseOfPlayerSkillSnapshotHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    value?: PlayerSkillSnapshotHttpResponse | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerSkillSnapshotHttpResponse = {
+    snapshotId?: number;
+    crossplatformId?: string;
+    serverId?: string;
+    worldId?: string;
+    observedAtUtc?: string;
+    gameVersion?: string;
+    level?: number | null;
+    skillPoints?: number | null;
+    values?: Array<PlayerSkillValueHttpResponse>;
+};
+
+export type PlayerSkillValueHttpResponse = {
+    skillKey?: string;
+    state?: SkillValueState;
+    value?: number | null;
+    minimum?: number | null;
+    maximum?: number | null;
+    nextLevelCost?: number | null;
+    parentKey?: string | null;
+};
+
+export type SkillValueState = 'Known' | 'UnsupportedByVersion' | 'NotLoaded' | 'Unknown';
+
+export type PlayerEvidenceSectionHttpResponseOfIReadOnlyListOfPlayerDailyActivityHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    value?: Array<PlayerDailyActivityHttpResponse> | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerDailyActivityHttpResponse = {
+    localDate?: string;
+    sessionCount?: number | null;
+    loginCount?: number | null;
+    chatMessageCount?: number | null;
+    deathCount?: number | null;
+    killCount?: number | null;
+    inventoryObservationCount?: number | null;
+};
+
+export type PlayerInventorySnapshotsPageHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    snapshots?: Array<PlayerInventorySnapshotHttpResponse>;
+    nextCursor?: string | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerInventoryDiffsPageHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    diffs?: Array<PlayerInventoryDiffHttpResponse>;
+    nextCursor?: string | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
+};
+
+export type PlayerInventoryDiffHttpResponse = {
+    previousSnapshotId?: number | null;
+    currentSnapshotId?: number;
+    previousObservedAtUtc?: string | null;
+    currentObservedAtUtc?: string;
+    isComplete?: boolean;
+    changes?: Array<PlayerInventoryDiffEntryHttpResponse>;
+};
+
+export type PlayerInventoryDiffEntryHttpResponse = {
+    kind?: InventoryDiffKind;
+    previousItem?: InventoryItemScalarHttpResponse | null;
+    currentItem?: InventoryItemScalarHttpResponse | null;
+    evidenceLevel?: EvidenceLevel;
+    sourceOperationIds?: Array<string>;
+};
+
+export type InventoryDiffKind = 'Added' | 'Removed' | 'QuantityChanged' | 'Moved' | 'AttributesChanged' | 'Uncomparable';
+
+export type EvidenceLevel = 'Confirmed' | 'ObservedChange';
+
+export type PlayerSkillsPageHttpResponse = {
+    state?: PlayerProfileSectionState;
+    observedAtUtc?: string | null;
+    snapshots?: Array<PlayerSkillSnapshotHttpResponse>;
+    nextCursor?: string | null;
+    gapMetadata?: Array<PlayerEvidenceGapHttpResponse>;
 };
 
 export type OnlinePlayersResponse = {
@@ -655,6 +2285,165 @@ export type KickPlayerPlatformIdentityBody = {
     platform?: string | null;
 };
 
+export type DailyRewardPolicyHttpResponse = {
+    ruleId?: string;
+    rewardPackageId?: string;
+    enabled?: boolean;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type DailyRewardPolicyUpsertHttpRequest = {
+    rewardPackageId?: string | null;
+    enabled?: boolean;
+    expectedRowVersion?: number | null;
+};
+
+export type RewardPackageHttpResponse = {
+    packageId?: string;
+    name?: string;
+    description?: string;
+    enabled?: boolean;
+    sortOrder?: number;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+    entries?: Array<RewardPackageEntryHttpResponse>;
+};
+
+export type RewardPackageEntryHttpResponse = {
+    entryId?: string;
+    ordinal?: number;
+    kind?: RewardEntryKind;
+    itemInternalName?: string | null;
+    itemKind?: GameResourceKind | null;
+    quantity?: number | null;
+    minQuality?: number | null;
+    maxQuality?: number | null;
+    catalogVersion?: string | null;
+    currencyAmount?: number | null;
+    registeredAction?: string | null;
+};
+
+export type RewardEntryKind = 0 | 1 | 2;
+
+export type GameResourceKind = 0 | 1;
+
+export type RewardPackageUpsertHttpRequest = {
+    name?: string | null;
+    description?: string | null;
+    enabled?: boolean;
+    sortOrder?: number;
+    entries?: Array<RewardPackageEntryHttpRequest> | null;
+};
+
+export type RewardPackageEntryHttpRequest = {
+    entryId?: string | null;
+    kind?: RewardEntryKind;
+    itemInternalName?: string | null;
+    itemKind?: GameResourceKind | null;
+    quantity?: number | null;
+    minQuality?: number | null;
+    maxQuality?: number | null;
+    catalogVersion?: string | null;
+    currencyAmount?: number | null;
+    registeredAction?: string | null;
+};
+
+export type GrantOperationHttpResponse = {
+    operationId?: string;
+    packageId?: string;
+    crossplatformId?: string;
+    expectedEntityId?: number;
+    expectedWorldId?: string;
+    state?: GrantOperationState;
+    sourceKind?: string | null;
+    sourceId?: string | null;
+    actorKind?: string;
+    actorId?: string;
+    reservationId?: string | null;
+    compensatesOperationId?: string | null;
+    correlationId?: string | null;
+    errorCode?: string | null;
+    createdAtUtc?: string;
+    updatedAtUtc?: string;
+    completedAtUtc?: string | null;
+    reconciledAtUtc?: string | null;
+    reconciledBy?: string | null;
+    rowVersion?: number;
+    reused?: boolean | null;
+    entries?: Array<GrantOperationEntryHttpResponse>;
+};
+
+export type GrantOperationState = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export type GrantOperationEntryHttpResponse = {
+    operationEntryId?: string;
+    packageEntryId?: string;
+    ordinal?: number;
+    kind?: RewardEntryKind;
+    state?: GrantOperationState;
+    deliveryOperationId?: string | null;
+    ledgerTransactionId?: string | null;
+    errorCode?: string | null;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type GrantOperationsHttpResponse = {
+    operations?: Array<GrantOperationHttpResponse>;
+};
+
+export type GrantRewardHttpRequest = {
+    packageId?: string | null;
+    crossplatformId?: string | null;
+    expectedEntityId?: number;
+    expectedWorldId?: string | null;
+    clientRequestKey?: string | null;
+};
+
+export type RefundRewardGrantHttpRequest = {
+    clientRequestKey?: string | null;
+};
+
+export type CompensateRewardGrantHttpRequest = {
+    clientRequestKey?: string | null;
+};
+
+export type ScheduleHttpResponse = {
+    id?: string;
+    name?: string;
+    cronExpression?: string;
+    timeZoneId?: string;
+    enabled?: boolean;
+    concurrencyPolicy?: string;
+    kind?: string;
+    commandText?: string | null;
+    countdownSeconds?: number | null;
+    messageText?: string | null;
+    nextOccurrenceUtc?: string | null;
+    lastOccurrenceUtc?: string | null;
+    rowVersion?: number;
+};
+
+export type ScheduleWriteHttpRequest = {
+    name?: string | null;
+    cronExpression?: string | null;
+    timeZoneId?: string | null;
+    enabled?: boolean;
+    concurrencyPolicy?: string | null;
+    kind?: string | null;
+    commandText?: string | null;
+    countdownSeconds?: number | null;
+    messageText?: string | null;
+    rowVersion?: number;
+};
+
+export type ScheduleRowVersionHttpRequest = {
+    rowVersion?: number;
+};
+
 export type ServerConfigurationSnapshotResponse = {
     version?: string;
     readAtUtc?: string;
@@ -705,6 +2494,254 @@ export type ShutdownServerOperationHttpResponse = {
     requestedAtUtc?: string;
     acceptedAtUtc?: string;
     auditStatus?: string;
+};
+
+export type WorldSummaryHttpResponse = {
+    sourceState?: string;
+    worldId?: string | null;
+    worldVersion?: string | null;
+    seed?: string | null;
+    width?: number | null;
+    height?: number | null;
+    gameVersion?: string | null;
+    mapResourceVersion?: string | null;
+    availableExtent?: WorldExtentHttpResponse | null;
+    observedAtUtc?: string | null;
+};
+
+export type WorldExtentHttpResponse = {
+    minimumX?: number;
+    minimumZ?: number;
+    maximumX?: number;
+    maximumZ?: number;
+};
+
+export type WorldCollectionHttpResponseOfWorldLandClaimHttpResponse = {
+    sourceState?: string;
+    observedAtUtc?: string | null;
+    items?: Array<WorldLandClaimHttpResponse>;
+};
+
+export type WorldLandClaimHttpResponse = {
+    serverId?: string;
+    stableIdentity?: string;
+    position?: WorldPositionHttpResponse;
+    ownerStableIdentity?: string | null;
+    protectionRadius?: number | null;
+    isValid?: boolean | null;
+    ownerLastLoginUtc?: string | null;
+};
+
+export type WorldPositionHttpResponse = {
+    x?: number;
+    y?: number;
+    z?: number;
+};
+
+export type WorldCollectionHttpResponseOfWorldVehicleHttpResponse = {
+    sourceState?: string;
+    observedAtUtc?: string | null;
+    items?: Array<WorldVehicleHttpResponse>;
+};
+
+export type WorldVehicleHttpResponse = {
+    serverId?: string;
+    stableIdentity?: string;
+    entityTypeResourceId?: string | null;
+    ownerStableIdentity?: string | null;
+    position?: WorldPositionHttpResponse;
+    loadState?: string;
+    isLocked?: boolean | null;
+    fuelPercentage?: number | null;
+    quality?: number | null;
+    container?: WorldContainerHttpResponse | null;
+};
+
+export type WorldContainerHttpResponse = {
+    serverId?: string;
+    stableIdentity?: string;
+    parentStableIdentity?: string;
+    position?: WorldPositionHttpResponse;
+    loadState?: string;
+    isLocked?: boolean | null;
+    slotCount?: number | null;
+    usedSlotCount?: number | null;
+    items?: Array<ApprovedWorldItemHttpResponse> | null;
+};
+
+export type ApprovedWorldItemHttpResponse = {
+    resourceId?: string;
+    count?: number;
+    quality?: number | null;
+};
+
+export type WorldCollectionHttpResponseOfWorldDroneHttpResponse = {
+    sourceState?: string;
+    observedAtUtc?: string | null;
+    items?: Array<WorldDroneHttpResponse>;
+};
+
+export type WorldDroneHttpResponse = {
+    serverId?: string;
+    stableIdentity?: string;
+    entityTypeResourceId?: string | null;
+    ownerStableIdentity?: string | null;
+    position?: WorldPositionHttpResponse;
+    loadState?: string;
+    isLocked?: boolean | null;
+    quality?: number | null;
+    container?: WorldContainerHttpResponse | null;
+};
+
+export type WorldCollectionHttpResponseOfWorldContainerHttpResponse = {
+    sourceState?: string;
+    observedAtUtc?: string | null;
+    items?: Array<WorldContainerHttpResponse>;
+};
+
+export type WorldCatalogHttpResponse = {
+    sourceState?: string;
+    catalogVersion?: string | null;
+    observedAtUtc?: string | null;
+    items?: Array<string>;
+};
+
+export type DeleteLandClaimWorldOperationHttpRequest = ConfirmedWorldHttpRequest & {
+    claimId?: string | null;
+    ownerStableIdentity?: string | null;
+    center?: WorldCoordinateHttpRequest | null;
+    protectionRadius?: number | null;
+};
+
+export type WorldCoordinateHttpRequest = {
+    x?: number | null;
+    y?: number | null;
+    z?: number | null;
+};
+
+export type MoveOnlinePlayerWorldOperationHttpRequest = ConfirmedWorldHttpRequest & {
+    crossplatformId?: string | null;
+    entityId?: number | null;
+    onlineObservedAtUtc?: string | null;
+    destination?: WorldCoordinateHttpRequest | null;
+};
+
+export type MoveWorldEntityOperationHttpRequest = ConfirmedWorldHttpRequest & {
+    targetId?: string | null;
+    entityId?: number | null;
+    entityTypeResourceId?: string | null;
+    ownerStableIdentity?: string | null;
+    observedPosition?: WorldCoordinateHttpRequest | null;
+    destination?: WorldCoordinateHttpRequest | null;
+};
+
+export type CopyRegionWorldOperationHttpRequest = ConfirmedWorldHttpRequest & {
+    region?: WorldRegionHttpRequest | null;
+};
+
+export type WorldRegionHttpRequest = {
+    first?: WorldCoordinateHttpRequest | null;
+    second?: WorldCoordinateHttpRequest | null;
+};
+
+export type FillRegionWorldOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    region?: WorldRegionHttpRequest | null;
+    catalogVersion?: string | null;
+    blockInternalName?: string | null;
+};
+
+export type ClearRegionWorldOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    region?: WorldRegionHttpRequest | null;
+};
+
+export type PasteRegionWorldOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    region?: WorldRegionHttpRequest | null;
+    sourceChangeSetId?: string | null;
+};
+
+export type SetBlockWorldOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    catalogVersion?: string | null;
+    coordinate?: WorldCoordinateHttpRequest | null;
+    blockInternalName?: string | null;
+    rotation?: number | null;
+    shape?: string | null;
+};
+
+export type PlacePrefabWorldOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    catalogVersion?: string | null;
+    prefabResourceId?: string | null;
+    anchor?: WorldCoordinateHttpRequest | null;
+    rotation?: number | null;
+    knownBounds?: WorldRegionHttpRequest | null;
+};
+
+export type RemovePrefabWorldOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    catalogVersion?: string | null;
+    prefabResourceId?: string | null;
+    prefabInstanceId?: string | null;
+    anchor?: WorldCoordinateHttpRequest | null;
+    rotation?: number | null;
+    knownBounds?: WorldRegionHttpRequest | null;
+};
+
+export type SpawnWorldEntityOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    catalogVersion?: string | null;
+    entityTypeResourceId?: string | null;
+    quantity?: number | null;
+    center?: WorldCoordinateHttpRequest | null;
+    radius?: number | null;
+};
+
+export type DeleteWorldEntityOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    catalogVersion?: string | null;
+    targetId?: string | null;
+    entityId?: number | null;
+    entityTypeResourceId?: string | null;
+    ownerStableIdentity?: string | null;
+    observedPosition?: WorldCoordinateHttpRequest | null;
+};
+
+export type CleanupWorldEntitiesOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    category?: string | null;
+    center?: WorldCoordinateHttpRequest | null;
+    radius?: number | null;
+    maximumCount?: number | null;
+};
+
+export type ReloadWorldResourceOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    resourceKind?: string | null;
+};
+
+export type CollectGameGarbageOperationHttpRequest = ConfirmedWorldHttpRequest & {};
+
+export type UndoWorldChangeSetOperationHttpRequest = StrongConfirmedWorldHttpRequest & {
+    sourceOperationId?: string | null;
+    changeSetId?: string | null;
+    currentRegionHash?: string | null;
+};
+
+export type WorldOperationHttpResponse = {
+    operationId?: string;
+    jobId?: string;
+    kind?: string;
+    worldId?: string;
+    worldVersion?: string;
+    mapResourceVersion?: string | null;
+    correlationId?: string;
+    confirmationSummary?: string;
+    isReversible?: boolean;
+    changeSetId?: string | null;
+    status?: string;
+    progress?: WorldOperationProgressHttpResponse | null;
+    errorCode?: string | null;
+    createdAtUtc?: string;
+    startedAtUtc?: string | null;
+    completedAtUtc?: string | null;
+};
+
+export type WorldOperationProgressHttpResponse = {
+    current?: number | null;
+    total?: number | null;
 };
 
 export type AccessListsGetBansData = {
@@ -804,6 +2841,82 @@ export type AccessListsPutWhitelistResponses = {
 };
 
 export type AccessListsPutWhitelistResponse = AccessListsPutWhitelistResponses[keyof AccessListsPutWhitelistResponses];
+
+export type AchievementsPutDefinitionData = {
+    body?: AchievementDefinitionUpsertHttpRequest | null;
+    path: {
+        achievementId: string;
+    };
+    query?: never;
+    url: '/api/v1/achievements/definitions/{achievementId}';
+};
+
+export type AchievementsPutDefinitionResponses = {
+    200: AchievementDefinitionHttpResponse;
+};
+
+export type AchievementsPutDefinitionResponse = AchievementsPutDefinitionResponses[keyof AchievementsPutDefinitionResponses];
+
+export type AchievementsGetRecordData = {
+    body?: never;
+    path: {
+        achievementId: string;
+        crossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/achievements/records/{achievementId}/{crossplatformId}';
+};
+
+export type AchievementsGetRecordResponses = {
+    200: AchievementRecordHttpResponse;
+};
+
+export type AchievementsGetRecordResponse = AchievementsGetRecordResponses[keyof AchievementsGetRecordResponses];
+
+export type SendAnnouncementData = {
+    body?: AnnouncementHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/announcements';
+};
+
+export type SendAnnouncementErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type SendAnnouncementError = SendAnnouncementErrors[keyof SendAnnouncementErrors];
+
+export type SendAnnouncementResponses = {
+    /**
+     * The announcement was accepted.
+     */
+    202: unknown;
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type SendAnnouncementResponse = SendAnnouncementResponses[keyof SendAnnouncementResponses];
 
 export type ApiKeysGetData = {
     body?: never;
@@ -971,6 +3084,328 @@ export type ApiKeysDeleteResponses = {
 };
 
 export type ApiKeysDeleteResponse = ApiKeysDeleteResponses[keyof ApiKeysDeleteResponses];
+
+export type ListAuditEntriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        fromUtc?: string | null;
+        toUtc?: string | null;
+        actor?: string | null;
+        target?: string | null;
+        action?: string | null;
+        sourceKind?: string | null;
+        status?: string | null;
+        limit?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/audit';
+};
+
+export type ListAuditEntriesErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ListAuditEntriesError = ListAuditEntriesErrors[keyof ListAuditEntriesErrors];
+
+export type ListAuditEntriesResponses = {
+    200: AuditPageHttpResponse;
+};
+
+export type ListAuditEntriesResponse = ListAuditEntriesResponses[keyof ListAuditEntriesResponses];
+
+export type AutomationsListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations';
+};
+
+export type AutomationsListResponses = {
+    200: Array<AutomationRuleHttpResponse>;
+};
+
+export type AutomationsListResponse = AutomationsListResponses[keyof AutomationsListResponses];
+
+export type AutomationsCreateData = {
+    body?: AutomationRuleHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations';
+};
+
+export type AutomationsCreateResponses = {
+    200: AutomationRuleHttpResponse;
+};
+
+export type AutomationsCreateResponse = AutomationsCreateResponses[keyof AutomationsCreateResponses];
+
+export type AutomationsDeleteData = {
+    body?: never;
+    path: {
+        ruleId: string;
+    };
+    query?: {
+        expectedVersion?: number | null;
+    };
+    url: '/api/v1/automations/{ruleId}';
+};
+
+export type AutomationsDeleteResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type AutomationsDeleteResponse = AutomationsDeleteResponses[keyof AutomationsDeleteResponses];
+
+export type AutomationsFindData = {
+    body?: never;
+    path: {
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{ruleId}';
+};
+
+export type AutomationsFindResponses = {
+    200: AutomationRuleHttpResponse;
+};
+
+export type AutomationsFindResponse = AutomationsFindResponses[keyof AutomationsFindResponses];
+
+export type AutomationsUpdateData = {
+    body?: AutomationRuleHttpRequest | null;
+    path: {
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{ruleId}';
+};
+
+export type AutomationsUpdateResponses = {
+    200: AutomationRuleHttpResponse;
+};
+
+export type AutomationsUpdateResponse = AutomationsUpdateResponses[keyof AutomationsUpdateResponses];
+
+export type AutomationsValidateData = {
+    body?: AutomationRuleHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/validate';
+};
+
+export type AutomationsValidateResponses = {
+    200: AutomationValidationHttpResponse;
+};
+
+export type AutomationsValidateResponse = AutomationsValidateResponses[keyof AutomationsValidateResponses];
+
+export type AutomationsDryRunData = {
+    body?: AutomationDryRunHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/dry-run';
+};
+
+export type AutomationsDryRunResponses = {
+    200: AutomationDryRunHttpResponse;
+};
+
+export type AutomationsDryRunResponse = AutomationsDryRunResponses[keyof AutomationsDryRunResponses];
+
+export type AutomationsListExecutionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/executions';
+};
+
+export type AutomationsListExecutionsResponses = {
+    200: Array<AutomationExecutionHttpResponse>;
+};
+
+export type AutomationsListExecutionsResponse = AutomationsListExecutionsResponses[keyof AutomationsListExecutionsResponses];
+
+export type AutomationsFindExecutionData = {
+    body?: never;
+    path: {
+        executionId: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/executions/{executionId}';
+};
+
+export type AutomationsFindExecutionResponses = {
+    200: AutomationExecutionHttpResponse;
+};
+
+export type AutomationsFindExecutionResponse = AutomationsFindExecutionResponses[keyof AutomationsFindExecutionResponses];
+
+export type BackupPoliciesListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/backups/policies';
+};
+
+export type BackupPoliciesListResponses = {
+    200: Array<BackupPolicyHttpResponse>;
+};
+
+export type BackupPoliciesListResponse = BackupPoliciesListResponses[keyof BackupPoliciesListResponses];
+
+export type BackupPoliciesUpdateData = {
+    body?: BackupPolicyWriteHttpRequest | null;
+    path: {
+        kind: string;
+    };
+    query?: never;
+    url: '/api/v1/backups/policies/{kind}';
+};
+
+export type BackupPoliciesUpdateResponses = {
+    200: BackupPolicyHttpResponse;
+};
+
+export type BackupPoliciesUpdateResponse = BackupPoliciesUpdateResponses[keyof BackupPoliciesUpdateResponses];
+
+export type CreateWorldBackupData = {
+    body?: CreateWorldBackupHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/backups/world';
+};
+
+export type CreateWorldBackupResponses = {
+    /**
+     * The backup job was accepted.
+     */
+    202: JobHttpResponse;
+};
+
+export type CreateWorldBackupResponse = CreateWorldBackupResponses[keyof CreateWorldBackupResponses];
+
+export type CreatePanelDatabaseBackupData = {
+    body?: CreateBackupHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/backups/panel-database';
+};
+
+export type CreatePanelDatabaseBackupResponses = {
+    /**
+     * The backup job was accepted.
+     */
+    202: JobHttpResponse;
+};
+
+export type CreatePanelDatabaseBackupResponse = CreatePanelDatabaseBackupResponses[keyof CreatePanelDatabaseBackupResponses];
+
+export type CreateServerConfigurationBackupData = {
+    body?: CreateBackupHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/backups/server-configuration';
+};
+
+export type CreateServerConfigurationBackupResponses = {
+    /**
+     * The backup job was accepted.
+     */
+    202: JobHttpResponse;
+};
+
+export type CreateServerConfigurationBackupResponse = CreateServerConfigurationBackupResponses[keyof CreateServerConfigurationBackupResponses];
+
+export type ListBackupsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        pageSize?: number;
+        kind?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/backups';
+};
+
+export type ListBackupsResponses = {
+    200: BackupPageHttpResponse;
+};
+
+export type ListBackupsResponse = ListBackupsResponses[keyof ListBackupsResponses];
+
+export type DownloadBackupData = {
+    body?: never;
+    path: {
+        backupId: string;
+    };
+    query?: never;
+    url: '/api/v1/backups/{backupId}/download';
+};
+
+export type DownloadBackupResponses = {
+    200: Blob | File;
+};
+
+export type DownloadBackupResponse = DownloadBackupResponses[keyof DownloadBackupResponses];
+
+export type DeleteBackupData = {
+    body?: never;
+    path: {
+        backupId: string;
+    };
+    query?: never;
+    url: '/api/v1/backups/{backupId}';
+};
+
+export type DeleteBackupResponses = {
+    /**
+     * The backup was deleted.
+     */
+    204: void;
+};
+
+export type DeleteBackupResponse = DeleteBackupResponses[keyof DeleteBackupResponses];
+
+export type RestoreBackupData = {
+    body?: RestoreBackupHttpRequest | null;
+    path: {
+        backupId: string;
+    };
+    query?: never;
+    url: '/api/v1/backups/{backupId}/restore';
+};
+
+export type RestoreBackupResponses = {
+    /**
+     * The restore was staged.
+     */
+    202: JobHttpResponse;
+};
+
+export type RestoreBackupResponse = RestoreBackupResponses[keyof RestoreBackupResponses];
 
 export type ChatGetRecentMessagesData = {
     body?: never;
@@ -1400,6 +3835,182 @@ export type ChatUpdateColoredSettingsResponses = {
 
 export type ChatUpdateColoredSettingsResponse = ChatUpdateColoredSettingsResponses[keyof ChatUpdateColoredSettingsResponses];
 
+export type ListChatMutesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number | null;
+        cursorUpdatedAtUtc?: string | null;
+        cursorCrossplatformId?: string | null;
+    };
+    url: '/api/v1/chat/mutes';
+};
+
+export type ListChatMutesErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ListChatMutesError = ListChatMutesErrors[keyof ListChatMutesErrors];
+
+export type ListChatMutesResponses = {
+    200: ChatMutePageHttpResponse;
+};
+
+export type ListChatMutesResponse = ListChatMutesResponses[keyof ListChatMutesResponses];
+
+export type CreateChatMuteData = {
+    body?: CreateChatMuteRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chat/mutes';
+};
+
+export type CreateChatMuteErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type CreateChatMuteError = CreateChatMuteErrors[keyof CreateChatMuteErrors];
+
+export type CreateChatMuteResponses = {
+    /**
+     * The chat mute was created.
+     */
+    201: ChatMuteHttpResponse;
+};
+
+export type CreateChatMuteResponse = CreateChatMuteResponses[keyof CreateChatMuteResponses];
+
+export type ReleaseChatMuteData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query?: {
+        correlationId?: string | null;
+    };
+    url: '/api/v1/chat/mutes/{crossplatformId}';
+};
+
+export type ReleaseChatMuteErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ReleaseChatMuteError = ReleaseChatMuteErrors[keyof ReleaseChatMuteErrors];
+
+export type ReleaseChatMuteResponses = {
+    /**
+     * The chat mute was released.
+     */
+    204: void;
+};
+
+export type ReleaseChatMuteResponse = ReleaseChatMuteResponses[keyof ReleaseChatMuteResponses];
+
+export type UpdateChatMuteData = {
+    body?: ChatMuteWriteRequest | null;
+    path: {
+        crossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/chat/mutes/{crossplatformId}';
+};
+
+export type UpdateChatMuteErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type UpdateChatMuteError = UpdateChatMuteErrors[keyof UpdateChatMuteErrors];
+
+export type UpdateChatMuteResponses = {
+    200: ChatMuteHttpResponse;
+};
+
+export type UpdateChatMuteResponse = UpdateChatMuteResponses[keyof UpdateChatMuteResponses];
+
 export type ChatGetColoredProfilesData = {
     body?: never;
     path?: never;
@@ -1607,6 +4218,573 @@ export type ChatUpdateColoredProfileResponses = {
 
 export type ChatUpdateColoredProfileResponse = ChatUpdateColoredProfileResponses[keyof ChatUpdateColoredProfileResponses];
 
+export type CommerceGetAccountsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: string | null;
+        includeSystem?: string | null;
+        search?: string | null;
+        enabled?: string | null;
+        frozen?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/economy/accounts';
+};
+
+export type CommerceGetAccountsResponses = {
+    200: EconomyAccountsPageHttpResponse;
+};
+
+export type CommerceGetAccountsResponse = CommerceGetAccountsResponses[keyof CommerceGetAccountsResponses];
+
+export type CommerceGetLeaderboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/economy/leaderboard';
+};
+
+export type CommerceGetLeaderboardResponses = {
+    200: EconomyAccountsPageHttpResponse;
+};
+
+export type CommerceGetLeaderboardResponse = CommerceGetLeaderboardResponses[keyof CommerceGetLeaderboardResponses];
+
+export type CommerceGetTransactionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: string | null;
+        relatedCrossplatformId?: string | null;
+        accountId?: string | null;
+        type?: string | null;
+        businessKind?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/economy/transactions';
+};
+
+export type CommerceGetTransactionsResponses = {
+    200: EconomyTransactionsPageHttpResponse;
+};
+
+export type CommerceGetTransactionsResponse = CommerceGetTransactionsResponses[keyof CommerceGetTransactionsResponses];
+
+export type CommerceFreezeAccountData = {
+    body?: FreezeAccountHttpRequest | null;
+    path: {
+        accountId: string;
+    };
+    query?: never;
+    url: '/api/v1/economy/accounts/{accountId}/freeze';
+};
+
+export type CommerceFreezeAccountResponses = {
+    200: EconomyAccountHttpResponse;
+};
+
+export type CommerceFreezeAccountResponse = CommerceFreezeAccountResponses[keyof CommerceFreezeAccountResponses];
+
+export type CommerceAdjustBalanceData = {
+    body?: AdjustBalanceHttpRequest | null;
+    path: {
+        crossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/economy/accounts/{crossplatformId}/adjust';
+};
+
+export type CommerceAdjustBalanceResponses = {
+    200: LedgerTransactionHttpResponse;
+};
+
+export type CommerceAdjustBalanceResponse = CommerceAdjustBalanceResponses[keyof CommerceAdjustBalanceResponses];
+
+export type CommerceGetProductData = {
+    body?: never;
+    path: {
+        productId: string;
+    };
+    query?: never;
+    url: '/api/v1/shop/products/{productId}';
+};
+
+export type CommerceGetProductResponses = {
+    200: ShopProductHttpResponse;
+};
+
+export type CommerceGetProductResponse = CommerceGetProductResponses[keyof CommerceGetProductResponses];
+
+export type CommercePutProductData = {
+    body?: ShopProductUpsertHttpRequest | null;
+    path: {
+        productId: string;
+    };
+    query?: never;
+    url: '/api/v1/shop/products/{productId}';
+};
+
+export type CommercePutProductResponses = {
+    200: ShopProductHttpResponse;
+};
+
+export type CommercePutProductResponse = CommercePutProductResponses[keyof CommercePutProductResponses];
+
+export type CommerceGetPurchaseData = {
+    body?: never;
+    path: {
+        purchaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/shop/purchases/{purchaseId}';
+};
+
+export type CommerceGetPurchaseResponses = {
+    200: ShopPurchaseHttpResponse;
+};
+
+export type CommerceGetPurchaseResponse = CommerceGetPurchaseResponses[keyof CommerceGetPurchaseResponses];
+
+export type CommercePurchaseData = {
+    body?: PurchaseProductHttpRequest | null;
+    path: {
+        productId: string;
+    };
+    query?: never;
+    url: '/api/v1/shop/products/{productId}/purchases';
+};
+
+export type CommercePurchaseResponses = {
+    200: PurchaseProductHttpResponse;
+};
+
+export type CommercePurchaseResponse = CommercePurchaseResponses[keyof CommercePurchaseResponses];
+
+export type CommerceGetRedeemCodeData = {
+    body?: never;
+    path: {
+        codeId: string;
+    };
+    query?: never;
+    url: '/api/v1/redeem-codes/{codeId}';
+};
+
+export type CommerceGetRedeemCodeResponses = {
+    200: RedeemCodeHttpResponse;
+};
+
+export type CommerceGetRedeemCodeResponse = CommerceGetRedeemCodeResponses[keyof CommerceGetRedeemCodeResponses];
+
+export type CommerceCreateRedeemCodeData = {
+    body?: CreateRedeemCodeHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/redeem-codes';
+};
+
+export type CommerceCreateRedeemCodeResponses = {
+    200: GeneratedRedeemCodeHttpResponse;
+};
+
+export type CommerceCreateRedeemCodeResponse = CommerceCreateRedeemCodeResponses[keyof CommerceCreateRedeemCodeResponses];
+
+export type CommerceRedeemData = {
+    body?: RedeemHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/redemptions';
+};
+
+export type CommerceRedeemResponses = {
+    200: RedeemHttpResponse;
+};
+
+export type CommerceRedeemResponse = CommerceRedeemResponses[keyof CommerceRedeemResponses];
+
+export type CommunityGetTeleportSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/teleport-settings';
+};
+
+export type CommunityGetTeleportSettingsResponses = {
+    200: Array<TeleportSettingsHttpResponse>;
+};
+
+export type CommunityGetTeleportSettingsResponse = CommunityGetTeleportSettingsResponses[keyof CommunityGetTeleportSettingsResponses];
+
+export type CommunityGetTeleportSettingData = {
+    body?: never;
+    path: {
+        kind: string;
+    };
+    query?: never;
+    url: '/api/v1/community/teleport-settings/{kind}';
+};
+
+export type CommunityGetTeleportSettingResponses = {
+    200: TeleportSettingsHttpResponse;
+};
+
+export type CommunityGetTeleportSettingResponse = CommunityGetTeleportSettingResponses[keyof CommunityGetTeleportSettingResponses];
+
+export type CommunityPutTeleportSettingData = {
+    body?: TeleportSettingsUpsertHttpRequest | null;
+    path: {
+        kind: string;
+    };
+    query?: never;
+    url: '/api/v1/community/teleport-settings/{kind}';
+};
+
+export type CommunityPutTeleportSettingResponses = {
+    200: TeleportSettingsHttpResponse;
+};
+
+export type CommunityPutTeleportSettingResponse = CommunityPutTeleportSettingResponses[keyof CommunityPutTeleportSettingResponses];
+
+export type CommunityGetHomesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        crossplatformId?: string | null;
+    };
+    url: '/api/v1/community/homes';
+};
+
+export type CommunityGetHomesResponses = {
+    200: Array<PlayerHomeHttpResponse>;
+};
+
+export type CommunityGetHomesResponse = CommunityGetHomesResponses[keyof CommunityGetHomesResponses];
+
+export type CommunityDeleteHomeData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+        name: string;
+    };
+    query?: never;
+    url: '/api/v1/community/homes/{crossplatformId}/{name}';
+};
+
+export type CommunityDeleteHomeResponses = {
+    200: Blob | File;
+};
+
+export type CommunityDeleteHomeResponse = CommunityDeleteHomeResponses[keyof CommunityDeleteHomeResponses];
+
+export type CommunityGetHomeData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+        name: string;
+    };
+    query?: never;
+    url: '/api/v1/community/homes/{crossplatformId}/{name}';
+};
+
+export type CommunityGetHomeResponses = {
+    200: PlayerHomeHttpResponse;
+};
+
+export type CommunityGetHomeResponse = CommunityGetHomeResponses[keyof CommunityGetHomeResponses];
+
+export type CommunityGetCitiesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        enabledOnly?: boolean;
+    };
+    url: '/api/v1/community/cities';
+};
+
+export type CommunityGetCitiesResponses = {
+    200: Array<CityHttpResponse>;
+};
+
+export type CommunityGetCitiesResponse = CommunityGetCitiesResponses[keyof CommunityGetCitiesResponses];
+
+export type CommunityGetCityData = {
+    body?: never;
+    path: {
+        name: string;
+    };
+    query?: never;
+    url: '/api/v1/community/cities/{name}';
+};
+
+export type CommunityGetCityResponses = {
+    200: CityHttpResponse;
+};
+
+export type CommunityGetCityResponse = CommunityGetCityResponses[keyof CommunityGetCityResponses];
+
+export type CommunityPutCityData = {
+    body?: CityUpsertHttpRequest | null;
+    path: {
+        cityId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/cities/{cityId}';
+};
+
+export type CommunityPutCityResponses = {
+    200: CityHttpResponse;
+};
+
+export type CommunityPutCityResponse = CommunityPutCityResponses[keyof CommunityPutCityResponses];
+
+export type CommunityGetFriendshipData = {
+    body?: never;
+    path?: never;
+    query?: {
+        firstCrossplatformId?: string | null;
+        secondCrossplatformId?: string | null;
+    };
+    url: '/api/v1/community/friendships';
+};
+
+export type CommunityGetFriendshipResponses = {
+    200: FriendshipStatusHttpResponse;
+};
+
+export type CommunityGetFriendshipResponse = CommunityGetFriendshipResponses[keyof CommunityGetFriendshipResponses];
+
+export type CommunityGetFriendshipRecordsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/friendships/records';
+};
+
+export type CommunityGetFriendshipRecordsResponses = {
+    200: Array<FriendshipHttpResponse>;
+};
+
+export type CommunityGetFriendshipRecordsResponse = CommunityGetFriendshipRecordsResponses[keyof CommunityGetFriendshipRecordsResponses];
+
+export type CommunityInviteFriendData = {
+    body?: CreateFriendRequestHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/friendships/requests';
+};
+
+export type CommunityInviteFriendResponses = {
+    200: FriendRequestHttpResponse;
+};
+
+export type CommunityInviteFriendResponse = CommunityInviteFriendResponses[keyof CommunityInviteFriendResponses];
+
+export type CommunityRespondFriendData = {
+    body?: RespondFriendRequestHttpRequest | null;
+    path: {
+        requestId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/friendships/requests/{requestId}/responses';
+};
+
+export type CommunityRespondFriendResponses = {
+    200: FriendRequestHttpResponse;
+};
+
+export type CommunityRespondFriendResponse = CommunityRespondFriendResponses[keyof CommunityRespondFriendResponses];
+
+export type CommunityDeleteFriendshipData = {
+    body?: never;
+    path: {
+        firstCrossplatformId: string;
+        secondCrossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/friendships/{firstCrossplatformId}/{secondCrossplatformId}';
+};
+
+export type CommunityDeleteFriendshipResponses = {
+    200: Blob | File;
+};
+
+export type CommunityDeleteFriendshipResponse = CommunityDeleteFriendshipResponses[keyof CommunityDeleteFriendshipResponses];
+
+export type CommunityGetTeleportOperationData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/teleport-operations/{operationId}';
+};
+
+export type CommunityGetTeleportOperationResponses = {
+    200: TeleportOperationHttpResponse;
+};
+
+export type CommunityGetTeleportOperationResponse = CommunityGetTeleportOperationResponses[keyof CommunityGetTeleportOperationResponses];
+
+export type CommunityGetTeleportOperationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/teleport-operations';
+};
+
+export type CommunityGetTeleportOperationsResponses = {
+    200: Array<TeleportOperationHttpResponse>;
+};
+
+export type CommunityGetTeleportOperationsResponse = CommunityGetTeleportOperationsResponses[keyof CommunityGetTeleportOperationsResponses];
+
+export type CommunityCreateTeleportOperationData = {
+    body?: CreateTeleportOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/teleport-operations';
+};
+
+export type CommunityCreateTeleportOperationResponses = {
+    200: TeleportOperationHttpResponse;
+};
+
+export type CommunityCreateTeleportOperationResponse = CommunityCreateTeleportOperationResponses[keyof CommunityCreateTeleportOperationResponses];
+
+export type CommunityGetVoteConfigurationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/vote-configurations';
+};
+
+export type CommunityGetVoteConfigurationsResponses = {
+    200: Array<VoteConfigurationHttpResponse>;
+};
+
+export type CommunityGetVoteConfigurationsResponse = CommunityGetVoteConfigurationsResponses[keyof CommunityGetVoteConfigurationsResponses];
+
+export type CommunityGetVoteConfigurationData = {
+    body?: never;
+    path: {
+        kind: string;
+    };
+    query?: never;
+    url: '/api/v1/community/vote-configurations/{kind}';
+};
+
+export type CommunityGetVoteConfigurationResponses = {
+    200: VoteConfigurationHttpResponse;
+};
+
+export type CommunityGetVoteConfigurationResponse = CommunityGetVoteConfigurationResponses[keyof CommunityGetVoteConfigurationResponses];
+
+export type CommunityPutVoteConfigurationData = {
+    body?: VoteConfigurationUpsertHttpRequest | null;
+    path: {
+        kind: string;
+    };
+    query?: never;
+    url: '/api/v1/community/vote-configurations/{kind}';
+};
+
+export type CommunityPutVoteConfigurationResponses = {
+    200: VoteConfigurationHttpResponse;
+};
+
+export type CommunityPutVoteConfigurationResponse = CommunityPutVoteConfigurationResponses[keyof CommunityPutVoteConfigurationResponses];
+
+export type CommunityGetVoteRoundsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        actionQueuedOnly?: boolean;
+    };
+    url: '/api/v1/community/vote-rounds';
+};
+
+export type CommunityGetVoteRoundsResponses = {
+    200: Array<VoteRoundHttpResponse>;
+};
+
+export type CommunityGetVoteRoundsResponse = CommunityGetVoteRoundsResponses[keyof CommunityGetVoteRoundsResponses];
+
+export type CommunityStartVoteRoundData = {
+    body?: StartVoteRoundHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/vote-rounds';
+};
+
+export type CommunityStartVoteRoundResponses = {
+    200: VoteStartHttpResponse;
+};
+
+export type CommunityStartVoteRoundResponse = CommunityStartVoteRoundResponses[keyof CommunityStartVoteRoundResponses];
+
+export type CommunityGetVoteRoundData = {
+    body?: never;
+    path: {
+        roundId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/vote-rounds/{roundId}';
+};
+
+export type CommunityGetVoteRoundResponses = {
+    200: VoteRoundHttpResponse;
+};
+
+export type CommunityGetVoteRoundResponse = CommunityGetVoteRoundResponses[keyof CommunityGetVoteRoundResponses];
+
+export type CommunityCastVoteData = {
+    body?: CastVoteHttpRequest | null;
+    path: {
+        roundId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/vote-rounds/{roundId}/votes';
+};
+
+export type CommunityCastVoteResponses = {
+    200: VoteCastHttpResponse;
+};
+
+export type CommunityCastVoteResponse = CommunityCastVoteResponses[keyof CommunityCastVoteResponses];
+
+export type CommunitySettleVoteRoundData = {
+    body?: never;
+    path: {
+        roundId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/vote-rounds/{roundId}/settle';
+};
+
+export type CommunitySettleVoteRoundResponses = {
+    200: VoteSettlementHttpResponse;
+};
+
+export type CommunitySettleVoteRoundResponse = CommunitySettleVoteRoundResponses[keyof CommunitySettleVoteRoundResponses];
+
+export type CommunityDispatchVoteRoundData = {
+    body?: never;
+    path: {
+        roundId: string;
+    };
+    query?: never;
+    url: '/api/v1/community/vote-rounds/{roundId}/dispatch';
+};
+
+export type CommunityDispatchVoteRoundResponses = {
+    200: VoteActionDispatchHttpResponse;
+};
+
+export type CommunityDispatchVoteRoundResponse = CommunityDispatchVoteRoundResponses[keyof CommunityDispatchVoteRoundResponses];
+
 export type ConsoleCommandsGetCatalogData = {
     body?: never;
     path?: never;
@@ -1721,6 +4899,191 @@ export type ConsoleLogsGetRecentResponses = {
 };
 
 export type ConsoleLogsGetRecentResponse = ConsoleLogsGetRecentResponses[keyof ConsoleLogsGetRecentResponses];
+
+export type DiscordIntegrationGetConfigurationData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord';
+};
+
+export type DiscordIntegrationGetConfigurationResponses = {
+    200: DiscordConfigurationHttpResponse;
+};
+
+export type DiscordIntegrationGetConfigurationResponse = DiscordIntegrationGetConfigurationResponses[keyof DiscordIntegrationGetConfigurationResponses];
+
+export type DiscordIntegrationPutConfigurationData = {
+    body?: DiscordConfigurationUpdateHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord';
+};
+
+export type DiscordIntegrationPutConfigurationResponses = {
+    200: DiscordConfigurationHttpResponse;
+};
+
+export type DiscordIntegrationPutConfigurationResponse = DiscordIntegrationPutConfigurationResponses[keyof DiscordIntegrationPutConfigurationResponses];
+
+export type DiscordIntegrationTestData = {
+    body?: DiscordTestHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/test';
+};
+
+export type DiscordIntegrationTestResponses = {
+    200: DiscordDeliveryHttpResponse;
+};
+
+export type DiscordIntegrationTestResponse = DiscordIntegrationTestResponses[keyof DiscordIntegrationTestResponses];
+
+export type DiscordIntegrationGetDeliveriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/deliveries';
+};
+
+export type DiscordIntegrationGetDeliveriesResponses = {
+    200: Array<DiscordDeliveryHttpResponse>;
+};
+
+export type DiscordIntegrationGetDeliveriesResponse = DiscordIntegrationGetDeliveriesResponses[keyof DiscordIntegrationGetDeliveriesResponses];
+
+export type DiscordIntegrationRetryDeliveryData = {
+    body?: never;
+    path: {
+        deliveryId: string;
+    };
+    query?: never;
+    url: '/api/v1/integrations/discord/deliveries/{deliveryId}/retry';
+};
+
+export type DiscordIntegrationRetryDeliveryResponses = {
+    200: DiscordDeliveryHttpResponse;
+};
+
+export type DiscordIntegrationRetryDeliveryResponse = DiscordIntegrationRetryDeliveryResponses[keyof DiscordIntegrationRetryDeliveryResponses];
+
+export type DiscordIntegrationGetBindingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/bindings';
+};
+
+export type DiscordIntegrationGetBindingsResponses = {
+    200: Array<DiscordBindingHttpResponse>;
+};
+
+export type DiscordIntegrationGetBindingsResponse = DiscordIntegrationGetBindingsResponses[keyof DiscordIntegrationGetBindingsResponses];
+
+export type DiscordIntegrationCreateBindingCodeData = {
+    body?: DiscordBindingCodeCreateHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/binding-codes';
+};
+
+export type DiscordIntegrationCreateBindingCodeResponses = {
+    200: DiscordBindingCodeHttpResponse;
+};
+
+export type DiscordIntegrationCreateBindingCodeResponse = DiscordIntegrationCreateBindingCodeResponses[keyof DiscordIntegrationCreateBindingCodeResponses];
+
+export type DiscordIntegrationDeleteBindingData = {
+    body?: never;
+    path: {
+        discordSubject: string;
+    };
+    query?: never;
+    url: '/api/v1/integrations/discord/bindings/{discordSubject}';
+};
+
+export type DiscordIntegrationDeleteBindingResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type DiscordIntegrationDeleteBindingResponse = DiscordIntegrationDeleteBindingResponses[keyof DiscordIntegrationDeleteBindingResponses];
+
+export type DiscordIntegrationGetCommandsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/commands';
+};
+
+export type DiscordIntegrationGetCommandsResponses = {
+    200: Array<DiscordCommandHttpResponse>;
+};
+
+export type DiscordIntegrationGetCommandsResponse = DiscordIntegrationGetCommandsResponses[keyof DiscordIntegrationGetCommandsResponses];
+
+export type DiscordIntegrationPostInteractionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/interactions';
+};
+
+export type DiscordIntegrationPostInteractionResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type DiscordIntegrationPostInteractionResponse = DiscordIntegrationPostInteractionResponses[keyof DiscordIntegrationPostInteractionResponses];
+
+export type ListGameEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        fromUtc?: string | null;
+        toUtc?: string | null;
+        eventType?: string | null;
+        crossplatformId?: string | null;
+        limit?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/game-events';
+};
+
+export type ListGameEventsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ListGameEventsError = ListGameEventsErrors[keyof ListGameEventsErrors];
+
+export type ListGameEventsResponses = {
+    200: GameEventPageHttpResponse;
+};
+
+export type ListGameEventsResponse = ListGameEventsResponses[keyof ListGameEventsResponses];
 
 export type GamePermissionsGetAdminsData = {
     body?: never;
@@ -1925,6 +5288,71 @@ export type GameResourcesGetIconResponses = {
 
 export type GameResourcesGetIconResponse = GameResourcesGetIconResponses[keyof GameResourcesGetIconResponses];
 
+export type GeoIpAccessPoliciesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-policies/geoip';
+};
+
+export type GeoIpAccessPoliciesGetResponses = {
+    200: GeoIpPolicySummaryHttpResponse;
+};
+
+export type GeoIpAccessPoliciesGetResponse = GeoIpAccessPoliciesGetResponses[keyof GeoIpAccessPoliciesGetResponses];
+
+export type GeoIpAccessPoliciesPutData = {
+    body?: GeoIpPolicyUpdateHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-policies/geoip';
+};
+
+export type GeoIpAccessPoliciesPutResponses = {
+    200: GeoIpPolicyUpdateHttpResponse;
+};
+
+export type GeoIpAccessPoliciesPutResponse = GeoIpAccessPoliciesPutResponses[keyof GeoIpAccessPoliciesPutResponses];
+
+export type GeoIpAccessPoliciesPutCredentialsData = {
+    body?: GeoIpCredentialsUpdateHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-policies/geoip/credentials';
+};
+
+export type GeoIpAccessPoliciesPutCredentialsResponses = {
+    200: GeoIpCredentialsUpdateHttpResponse;
+};
+
+export type GeoIpAccessPoliciesPutCredentialsResponse = GeoIpAccessPoliciesPutCredentialsResponses[keyof GeoIpAccessPoliciesPutCredentialsResponses];
+
+export type GeoIpAccessPoliciesTestData = {
+    body?: GeoIpTestHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-policies/geoip/test';
+};
+
+export type GeoIpAccessPoliciesTestResponses = {
+    200: GeoIpTestHttpResponse;
+};
+
+export type GeoIpAccessPoliciesTestResponse = GeoIpAccessPoliciesTestResponses[keyof GeoIpAccessPoliciesTestResponses];
+
+export type GeoIpAccessPoliciesGetDiagnosticsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/access-policies/geoip/diagnostics';
+};
+
+export type GeoIpAccessPoliciesGetDiagnosticsResponses = {
+    200: GeoIpDiagnosticsHttpResponse;
+};
+
+export type GeoIpAccessPoliciesGetDiagnosticsResponse = GeoIpAccessPoliciesGetDiagnosticsResponses[keyof GeoIpAccessPoliciesGetDiagnosticsResponses];
+
 export type HealthGetData = {
     body?: never;
     path?: never;
@@ -1950,6 +5378,138 @@ export type HealthGet2Responses = {
 };
 
 export type HealthGet2Response = HealthGet2Responses[keyof HealthGet2Responses];
+
+export type ListJobsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        pageSize?: number;
+        kind?: string | null;
+        status?: string | null;
+        fromUtc?: string | null;
+        toUtc?: string | null;
+        cursor?: string | null;
+    };
+    url: '/api/v1/jobs';
+};
+
+export type ListJobsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ListJobsError = ListJobsErrors[keyof ListJobsErrors];
+
+export type ListJobsResponses = {
+    200: JobPageHttpResponse;
+};
+
+export type ListJobsResponse = ListJobsResponses[keyof ListJobsResponses];
+
+export type GetJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/jobs/{jobId}';
+};
+
+export type GetJobErrors = {
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type GetJobError = GetJobErrors[keyof GetJobErrors];
+
+export type GetJobResponses = {
+    200: JobHttpResponse;
+};
+
+export type GetJobResponse = GetJobResponses[keyof GetJobResponses];
+
+export type CancelJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/jobs/{jobId}/cancel';
+};
+
+export type CancelJobErrors = {
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type CancelJobError = CancelJobErrors[keyof CancelJobErrors];
+
+export type CancelJobResponses = {
+    /**
+     * The cancellation request was accepted.
+     */
+    202: JobHttpResponse;
+};
+
+export type CancelJobResponse = CancelJobResponses[keyof CancelJobResponses];
 
 export type MapGetMetadataData = {
     body?: never;
@@ -2206,6 +5766,58 @@ export type MapSearchPlayersInAreaResponses = {
 
 export type MapSearchPlayersInAreaResponse = MapSearchPlayersInAreaResponses[keyof MapSearchPlayersInAreaResponses];
 
+export type MapJobsRefreshResourcesData = {
+    body?: RefreshMapResourcesJobHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/map-jobs/refresh-resources';
+};
+
+export type MapJobsRefreshResourcesResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type MapJobsRefreshResourcesResponse = MapJobsRefreshResourcesResponses[keyof MapJobsRefreshResourcesResponses];
+
+export type MapJobsRenderExploredData = {
+    body?: RenderExploredMapJobHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/map-jobs/render-explored';
+};
+
+export type MapJobsRenderExploredResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type MapJobsRenderExploredResponse = MapJobsRenderExploredResponses[keyof MapJobsRenderExploredResponses];
+
+export type MapJobsRenderFullData = {
+    body?: RenderFullMapJobHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/map-jobs/render-full';
+};
+
+export type MapJobsRenderFullResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type MapJobsRenderFullResponse = MapJobsRenderFullResponses[keyof MapJobsRenderFullResponses];
+
+export type MapJobsGetResourceVersionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/map-jobs/resource-version';
+};
+
+export type MapJobsGetResourceVersionResponses = {
+    200: MapResourceVersionHttpResponse;
+};
+
+export type MapJobsGetResourceVersionResponse = MapJobsGetResourceVersionResponses[keyof MapJobsGetResourceVersionResponses];
+
 export type ModsGetData = {
     body?: never;
     path?: never;
@@ -2233,6 +5845,93 @@ export type ModsPutResponses = {
 };
 
 export type ModsPutResponse = ModsPutResponses[keyof ModsPutResponses];
+
+export type ModulesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/modules';
+};
+
+export type ModulesGetResponses = {
+    200: Array<FeatureModuleHttpResponse>;
+};
+
+export type ModulesGetResponse = ModulesGetResponses[keyof ModulesGetResponses];
+
+export type ModulesEnableData = {
+    body?: SetFeatureModuleStateHttpRequest | null;
+    path: {
+        moduleId: string;
+    };
+    query?: never;
+    url: '/api/v1/modules/{moduleId}/enable';
+};
+
+export type ModulesEnableResponses = {
+    200: FeatureModuleHttpResponse;
+};
+
+export type ModulesEnableResponse = ModulesEnableResponses[keyof ModulesEnableResponses];
+
+export type ModulesDisableData = {
+    body?: SetFeatureModuleStateHttpRequest | null;
+    path: {
+        moduleId: string;
+    };
+    query?: never;
+    url: '/api/v1/modules/{moduleId}/disable';
+};
+
+export type ModulesDisableResponses = {
+    200: FeatureModuleHttpResponse;
+};
+
+export type ModulesDisableResponse = ModulesDisableResponses[keyof ModulesDisableResponses];
+
+export type OnlineRewardsPutRuleData = {
+    body?: OnlineRewardRuleUpsertHttpRequest | null;
+    path: {
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/online-rewards/rules/{ruleId}';
+};
+
+export type OnlineRewardsPutRuleResponses = {
+    200: OnlineRewardRuleHttpResponse;
+};
+
+export type OnlineRewardsPutRuleResponse = OnlineRewardsPutRuleResponses[keyof OnlineRewardsPutRuleResponses];
+
+export type OnlineRewardsGetRecordsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        ruleId?: string | null;
+        crossplatformId?: string | null;
+    };
+    url: '/api/v1/online-rewards/records';
+};
+
+export type OnlineRewardsGetRecordsResponses = {
+    200: OnlineRewardRecordsHttpResponse;
+};
+
+export type OnlineRewardsGetRecordsResponse = OnlineRewardsGetRecordsResponses[keyof OnlineRewardsGetRecordsResponses];
+
+export type OnlineRewardsManualGrantData = {
+    body?: ManualOnlineRewardGrantHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/online-rewards/records/manual';
+};
+
+export type OnlineRewardsManualGrantResponses = {
+    200: OnlineRewardRecordHttpResponse;
+};
+
+export type OnlineRewardsManualGrantResponse = OnlineRewardsManualGrantResponses[keyof OnlineRewardsManualGrantResponses];
 
 export type OverviewGetData = {
     body?: never;
@@ -2323,6 +6022,523 @@ export type PanelUsersResetPasswordResponses = {
 };
 
 export type PanelUsersResetPasswordResponse = PanelUsersResetPasswordResponses[keyof PanelUsersResetPasswordResponses];
+
+export type PlayerActionsGrantItemData = {
+    body?: GrantItemHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/player-actions/grant-item';
+};
+
+export type PlayerActionsGrantItemErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    422: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerActionsGrantItemError = PlayerActionsGrantItemErrors[keyof PlayerActionsGrantItemErrors];
+
+export type PlayerActionsGrantItemResponses = {
+    200: GrantItemHttpResponse;
+    /**
+     * The player action is pending execution.
+     */
+    202: GrantItemHttpResponse;
+};
+
+export type PlayerActionsGrantItemResponse = PlayerActionsGrantItemResponses[keyof PlayerActionsGrantItemResponses];
+
+export type PlayerActionsRemoveItemData = {
+    body?: RemoveItemHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/player-actions/remove-item';
+};
+
+export type PlayerActionsRemoveItemErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    422: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerActionsRemoveItemError = PlayerActionsRemoveItemErrors[keyof PlayerActionsRemoveItemErrors];
+
+export type PlayerActionsRemoveItemResponses = {
+    200: RemoveItemHttpResponse;
+    /**
+     * The player action is pending execution.
+     */
+    202: RemoveItemHttpResponse;
+};
+
+export type PlayerActionsRemoveItemResponse = PlayerActionsRemoveItemResponses[keyof PlayerActionsRemoveItemResponses];
+
+export type PlayerActionsResetSkillsData = {
+    body?: ResetSkillsHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/player-actions/reset-skills';
+};
+
+export type PlayerActionsResetSkillsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    422: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerActionsResetSkillsError = PlayerActionsResetSkillsErrors[keyof PlayerActionsResetSkillsErrors];
+
+export type PlayerActionsResetSkillsResponses = {
+    200: ResetSkillsHttpResponse;
+    /**
+     * The player action is pending execution.
+     */
+    202: ResetSkillsHttpResponse;
+};
+
+export type PlayerActionsResetSkillsResponse = PlayerActionsResetSkillsResponses[keyof PlayerActionsResetSkillsResponses];
+
+export type PlayerActionsClearInventoryData = {
+    body?: ClearInventoryHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/player-actions/clear-inventory';
+};
+
+export type PlayerActionsClearInventoryErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    422: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerActionsClearInventoryError = PlayerActionsClearInventoryErrors[keyof PlayerActionsClearInventoryErrors];
+
+export type PlayerActionsClearInventoryResponses = {
+    200: ClearInventoryHttpResponse;
+    /**
+     * The player action is pending execution.
+     */
+    202: ClearInventoryHttpResponse;
+};
+
+export type PlayerActionsClearInventoryResponse = PlayerActionsClearInventoryResponses[keyof PlayerActionsClearInventoryResponses];
+
+export type PlayerActionsResetPlayerDataData = {
+    body?: ResetPlayerDataHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/player-actions/reset-player-data';
+};
+
+export type PlayerActionsResetPlayerDataErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    422: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerActionsResetPlayerDataError = PlayerActionsResetPlayerDataErrors[keyof PlayerActionsResetPlayerDataErrors];
+
+export type PlayerActionsResetPlayerDataResponses = {
+    200: ResetPlayerDataHttpResponse;
+    /**
+     * The player action is pending execution.
+     */
+    202: ResetPlayerDataHttpResponse;
+};
+
+export type PlayerActionsResetPlayerDataResponse = PlayerActionsResetPlayerDataResponses[keyof PlayerActionsResetPlayerDataResponses];
+
+export type PlayerActionsGetData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/player-actions/{operationId}';
+};
+
+export type PlayerActionsGetErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerActionsGetError = PlayerActionsGetErrors[keyof PlayerActionsGetErrors];
+
+export type PlayerActionsGetResponses = {
+    200: PlayerActionOperationHttpResponse;
+};
+
+export type PlayerActionsGetResponse = PlayerActionsGetResponses[keyof PlayerActionsGetResponses];
+
+export type PlayerEvidenceGetProfileData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query?: never;
+    url: '/api/v1/players/{crossplatformId}/profile';
+};
+
+export type PlayerEvidenceGetProfileErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerEvidenceGetProfileError = PlayerEvidenceGetProfileErrors[keyof PlayerEvidenceGetProfileErrors];
+
+export type PlayerEvidenceGetProfileResponses = {
+    200: PlayerProfileHttpResponse;
+};
+
+export type PlayerEvidenceGetProfileResponse = PlayerEvidenceGetProfileResponses[keyof PlayerEvidenceGetProfileResponses];
+
+export type PlayerEvidenceGetInventorySnapshotsData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query?: {
+        /**
+         * Page size from 1 through 200; defaults to 50.
+         */
+        pageSize?: number;
+        /**
+         * Opaque URL-safe cursor returned by the preceding page and bound to this cross-platform identity.
+         */
+        cursor?: string | null;
+    };
+    url: '/api/v1/players/{crossplatformId}/inventory-snapshots';
+};
+
+export type PlayerEvidenceGetInventorySnapshotsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerEvidenceGetInventorySnapshotsError = PlayerEvidenceGetInventorySnapshotsErrors[keyof PlayerEvidenceGetInventorySnapshotsErrors];
+
+export type PlayerEvidenceGetInventorySnapshotsResponses = {
+    200: PlayerInventorySnapshotsPageHttpResponse;
+};
+
+export type PlayerEvidenceGetInventorySnapshotsResponse = PlayerEvidenceGetInventorySnapshotsResponses[keyof PlayerEvidenceGetInventorySnapshotsResponses];
+
+export type PlayerEvidenceGetInventoryDiffsData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query?: {
+        /**
+         * Page size from 1 through 200; defaults to 50.
+         */
+        pageSize?: number;
+        /**
+         * Opaque URL-safe cursor returned by the preceding page and bound to this cross-platform identity.
+         */
+        cursor?: string | null;
+    };
+    url: '/api/v1/players/{crossplatformId}/inventory-diffs';
+};
+
+export type PlayerEvidenceGetInventoryDiffsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerEvidenceGetInventoryDiffsError = PlayerEvidenceGetInventoryDiffsErrors[keyof PlayerEvidenceGetInventoryDiffsErrors];
+
+export type PlayerEvidenceGetInventoryDiffsResponses = {
+    200: PlayerInventoryDiffsPageHttpResponse;
+};
+
+export type PlayerEvidenceGetInventoryDiffsResponse = PlayerEvidenceGetInventoryDiffsResponses[keyof PlayerEvidenceGetInventoryDiffsResponses];
+
+export type PlayerEvidenceGetSkillsData = {
+    body?: never;
+    path: {
+        crossplatformId: string;
+    };
+    query?: {
+        /**
+         * Page size from 1 through 200; defaults to 50.
+         */
+        pageSize?: number;
+        /**
+         * Opaque URL-safe cursor returned by the preceding page and bound to this cross-platform identity.
+         */
+        cursor?: string | null;
+    };
+    url: '/api/v1/players/{crossplatformId}/skills';
+};
+
+export type PlayerEvidenceGetSkillsErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type PlayerEvidenceGetSkillsError = PlayerEvidenceGetSkillsErrors[keyof PlayerEvidenceGetSkillsErrors];
+
+export type PlayerEvidenceGetSkillsResponses = {
+    200: PlayerSkillsPageHttpResponse;
+};
+
+export type PlayerEvidenceGetSkillsResponse = PlayerEvidenceGetSkillsResponses[keyof PlayerEvidenceGetSkillsResponses];
 
 export type PlayersGetData = {
     body?: never;
@@ -2538,6 +6754,494 @@ export type PlayersKickResponses = {
 
 export type PlayersKickResponse = PlayersKickResponses[keyof PlayersKickResponses];
 
+export type RewardsGetDailyPolicyData = {
+    body?: never;
+    path: {
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/daily-reward-rules/{ruleId}';
+};
+
+export type RewardsGetDailyPolicyResponses = {
+    200: DailyRewardPolicyHttpResponse;
+};
+
+export type RewardsGetDailyPolicyResponse = RewardsGetDailyPolicyResponses[keyof RewardsGetDailyPolicyResponses];
+
+export type RewardsPutDailyPolicyData = {
+    body?: DailyRewardPolicyUpsertHttpRequest | null;
+    path: {
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/daily-reward-rules/{ruleId}';
+};
+
+export type RewardsPutDailyPolicyResponses = {
+    200: DailyRewardPolicyHttpResponse;
+};
+
+export type RewardsPutDailyPolicyResponse = RewardsPutDailyPolicyResponses[keyof RewardsPutDailyPolicyResponses];
+
+export type RewardsGetPackageData = {
+    body?: never;
+    path: {
+        packageId: string;
+    };
+    query?: never;
+    url: '/api/v1/reward-packages/{packageId}';
+};
+
+export type RewardsGetPackageResponses = {
+    200: RewardPackageHttpResponse;
+};
+
+export type RewardsGetPackageResponse = RewardsGetPackageResponses[keyof RewardsGetPackageResponses];
+
+export type RewardsPutPackageData = {
+    body?: RewardPackageUpsertHttpRequest | null;
+    path: {
+        packageId: string;
+    };
+    query?: never;
+    url: '/api/v1/reward-packages/{packageId}';
+};
+
+export type RewardsPutPackageResponses = {
+    200: RewardPackageHttpResponse;
+};
+
+export type RewardsPutPackageResponse = RewardsPutPackageResponses[keyof RewardsPutPackageResponses];
+
+export type RewardsGetGrantData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/grant-operations/{operationId}';
+};
+
+export type RewardsGetGrantResponses = {
+    200: GrantOperationHttpResponse;
+};
+
+export type RewardsGetGrantResponse = RewardsGetGrantResponses[keyof RewardsGetGrantResponses];
+
+export type RewardsGetPendingGrantsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        take?: string | null;
+    };
+    url: '/api/v1/grant-operations';
+};
+
+export type RewardsGetPendingGrantsResponses = {
+    200: GrantOperationsHttpResponse;
+};
+
+export type RewardsGetPendingGrantsResponse = RewardsGetPendingGrantsResponses[keyof RewardsGetPendingGrantsResponses];
+
+export type RewardsGrantData = {
+    body?: GrantRewardHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/grant-operations';
+};
+
+export type RewardsGrantResponses = {
+    200: GrantOperationHttpResponse;
+};
+
+export type RewardsGrantResponse = RewardsGrantResponses[keyof RewardsGrantResponses];
+
+export type RewardsConfirmData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/grant-operations/{operationId}/confirm';
+};
+
+export type RewardsConfirmResponses = {
+    200: GrantOperationHttpResponse;
+};
+
+export type RewardsConfirmResponse = RewardsConfirmResponses[keyof RewardsConfirmResponses];
+
+export type RewardsRefundData = {
+    body?: RefundRewardGrantHttpRequest | null;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/grant-operations/{operationId}/refund';
+};
+
+export type RewardsRefundResponses = {
+    200: GrantOperationHttpResponse;
+};
+
+export type RewardsRefundResponse = RewardsRefundResponses[keyof RewardsRefundResponses];
+
+export type RewardsCompensateData = {
+    body?: CompensateRewardGrantHttpRequest | null;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/grant-operations/{operationId}/compensate';
+};
+
+export type RewardsCompensateResponses = {
+    200: GrantOperationHttpResponse;
+};
+
+export type RewardsCompensateResponse = RewardsCompensateResponses[keyof RewardsCompensateResponses];
+
+export type ListSchedulesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/schedules';
+};
+
+export type ListSchedulesErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type ListSchedulesError = ListSchedulesErrors[keyof ListSchedulesErrors];
+
+export type ListSchedulesResponses = {
+    200: Array<ScheduleHttpResponse>;
+};
+
+export type ListSchedulesResponse = ListSchedulesResponses[keyof ListSchedulesResponses];
+
+export type CreateScheduleData = {
+    body?: ScheduleWriteHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/schedules';
+};
+
+export type CreateScheduleErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type CreateScheduleError = CreateScheduleErrors[keyof CreateScheduleErrors];
+
+export type CreateScheduleResponses = {
+    /**
+     * The schedule was created.
+     */
+    201: ScheduleHttpResponse;
+};
+
+export type CreateScheduleResponse = CreateScheduleResponses[keyof CreateScheduleResponses];
+
+export type DeleteScheduleData = {
+    body?: never;
+    path: {
+        scheduleId: string;
+    };
+    query: {
+        rowVersion: number;
+    };
+    url: '/api/v1/schedules/{scheduleId}';
+};
+
+export type DeleteScheduleErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type DeleteScheduleError = DeleteScheduleErrors[keyof DeleteScheduleErrors];
+
+export type DeleteScheduleResponses = {
+    /**
+     * The schedule was deleted.
+     */
+    204: void;
+};
+
+export type DeleteScheduleResponse = DeleteScheduleResponses[keyof DeleteScheduleResponses];
+
+export type GetScheduleData = {
+    body?: never;
+    path: {
+        scheduleId: string;
+    };
+    query?: never;
+    url: '/api/v1/schedules/{scheduleId}';
+};
+
+export type GetScheduleErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type GetScheduleError = GetScheduleErrors[keyof GetScheduleErrors];
+
+export type GetScheduleResponses = {
+    200: ScheduleHttpResponse;
+};
+
+export type GetScheduleResponse = GetScheduleResponses[keyof GetScheduleResponses];
+
+export type UpdateScheduleData = {
+    body?: ScheduleWriteHttpRequest | null;
+    path: {
+        scheduleId: string;
+    };
+    query?: never;
+    url: '/api/v1/schedules/{scheduleId}';
+};
+
+export type UpdateScheduleErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type UpdateScheduleError = UpdateScheduleErrors[keyof UpdateScheduleErrors];
+
+export type UpdateScheduleResponses = {
+    200: ScheduleHttpResponse;
+};
+
+export type UpdateScheduleResponse = UpdateScheduleResponses[keyof UpdateScheduleResponses];
+
+export type EnableScheduleData = {
+    body?: ScheduleRowVersionHttpRequest | null;
+    path: {
+        scheduleId: string;
+    };
+    query?: never;
+    url: '/api/v1/schedules/{scheduleId}/enable';
+};
+
+export type EnableScheduleErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type EnableScheduleError = EnableScheduleErrors[keyof EnableScheduleErrors];
+
+export type EnableScheduleResponses = {
+    200: ScheduleHttpResponse;
+};
+
+export type EnableScheduleResponse = EnableScheduleResponses[keyof EnableScheduleResponses];
+
+export type DisableScheduleData = {
+    body?: ScheduleRowVersionHttpRequest | null;
+    path: {
+        scheduleId: string;
+    };
+    query?: never;
+    url: '/api/v1/schedules/{scheduleId}/disable';
+};
+
+export type DisableScheduleErrors = {
+    /**
+     * Problem Details error response.
+     */
+    400: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    401: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    403: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    404: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    409: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    500: ApiProblemDetails;
+    /**
+     * Problem Details error response.
+     */
+    503: ApiProblemDetails;
+};
+
+export type DisableScheduleError = DisableScheduleErrors[keyof DisableScheduleErrors];
+
+export type DisableScheduleResponses = {
+    200: ScheduleHttpResponse;
+};
+
+export type DisableScheduleResponse = DisableScheduleResponses[keyof DisableScheduleResponses];
+
 export type ServerConfigurationGetData = {
     body?: never;
     path?: never;
@@ -2699,6 +7403,333 @@ export type ServerOperationsShutdownResponses = {
 };
 
 export type ServerOperationsShutdownResponse = ServerOperationsShutdownResponses[keyof ServerOperationsShutdownResponses];
+
+export type WorldGetSummaryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/summary';
+};
+
+export type WorldGetSummaryResponses = {
+    200: WorldSummaryHttpResponse;
+};
+
+export type WorldGetSummaryResponse = WorldGetSummaryResponses[keyof WorldGetSummaryResponses];
+
+export type WorldGetLandClaimsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/land-claims';
+};
+
+export type WorldGetLandClaimsResponses = {
+    200: WorldCollectionHttpResponseOfWorldLandClaimHttpResponse;
+};
+
+export type WorldGetLandClaimsResponse = WorldGetLandClaimsResponses[keyof WorldGetLandClaimsResponses];
+
+export type WorldGetVehiclesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/vehicles';
+};
+
+export type WorldGetVehiclesResponses = {
+    200: WorldCollectionHttpResponseOfWorldVehicleHttpResponse;
+};
+
+export type WorldGetVehiclesResponse = WorldGetVehiclesResponses[keyof WorldGetVehiclesResponses];
+
+export type WorldGetDronesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/drones';
+};
+
+export type WorldGetDronesResponses = {
+    200: WorldCollectionHttpResponseOfWorldDroneHttpResponse;
+};
+
+export type WorldGetDronesResponse = WorldGetDronesResponses[keyof WorldGetDronesResponses];
+
+export type WorldGetContainersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/containers';
+};
+
+export type WorldGetContainersResponses = {
+    200: WorldCollectionHttpResponseOfWorldContainerHttpResponse;
+};
+
+export type WorldGetContainersResponse = WorldGetContainersResponses[keyof WorldGetContainersResponses];
+
+export type WorldGetBlockCatalogData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/catalogs/blocks';
+};
+
+export type WorldGetBlockCatalogResponses = {
+    200: WorldCatalogHttpResponse;
+};
+
+export type WorldGetBlockCatalogResponse = WorldGetBlockCatalogResponses[keyof WorldGetBlockCatalogResponses];
+
+export type WorldGetPrefabCatalogData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/catalogs/prefabs';
+};
+
+export type WorldGetPrefabCatalogResponses = {
+    200: WorldCatalogHttpResponse;
+};
+
+export type WorldGetPrefabCatalogResponse = WorldGetPrefabCatalogResponses[keyof WorldGetPrefabCatalogResponses];
+
+export type WorldGetEntityTypeCatalogData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world/catalogs/entity-types';
+};
+
+export type WorldGetEntityTypeCatalogResponses = {
+    200: WorldCatalogHttpResponse;
+};
+
+export type WorldGetEntityTypeCatalogResponse = WorldGetEntityTypeCatalogResponses[keyof WorldGetEntityTypeCatalogResponses];
+
+export type WorldOperationsDeleteLandClaimData = {
+    body?: DeleteLandClaimWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/land-claims/delete';
+};
+
+export type WorldOperationsDeleteLandClaimResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsDeleteLandClaimResponse = WorldOperationsDeleteLandClaimResponses[keyof WorldOperationsDeleteLandClaimResponses];
+
+export type WorldOperationsMoveOnlinePlayerData = {
+    body?: MoveOnlinePlayerWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/players/move';
+};
+
+export type WorldOperationsMoveOnlinePlayerResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsMoveOnlinePlayerResponse = WorldOperationsMoveOnlinePlayerResponses[keyof WorldOperationsMoveOnlinePlayerResponses];
+
+export type WorldOperationsMoveEntityData = {
+    body?: MoveWorldEntityOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/entities/move';
+};
+
+export type WorldOperationsMoveEntityResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsMoveEntityResponse = WorldOperationsMoveEntityResponses[keyof WorldOperationsMoveEntityResponses];
+
+export type WorldOperationsCopyRegionData = {
+    body?: CopyRegionWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/regions/copy';
+};
+
+export type WorldOperationsCopyRegionResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsCopyRegionResponse = WorldOperationsCopyRegionResponses[keyof WorldOperationsCopyRegionResponses];
+
+export type WorldOperationsFillRegionData = {
+    body?: FillRegionWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/regions/fill';
+};
+
+export type WorldOperationsFillRegionResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsFillRegionResponse = WorldOperationsFillRegionResponses[keyof WorldOperationsFillRegionResponses];
+
+export type WorldOperationsClearRegionData = {
+    body?: ClearRegionWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/regions/clear';
+};
+
+export type WorldOperationsClearRegionResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsClearRegionResponse = WorldOperationsClearRegionResponses[keyof WorldOperationsClearRegionResponses];
+
+export type WorldOperationsPasteRegionData = {
+    body?: PasteRegionWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/regions/paste';
+};
+
+export type WorldOperationsPasteRegionResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsPasteRegionResponse = WorldOperationsPasteRegionResponses[keyof WorldOperationsPasteRegionResponses];
+
+export type WorldOperationsSetBlockData = {
+    body?: SetBlockWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/blocks/set';
+};
+
+export type WorldOperationsSetBlockResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsSetBlockResponse = WorldOperationsSetBlockResponses[keyof WorldOperationsSetBlockResponses];
+
+export type WorldOperationsPlacePrefabData = {
+    body?: PlacePrefabWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/prefabs/place';
+};
+
+export type WorldOperationsPlacePrefabResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsPlacePrefabResponse = WorldOperationsPlacePrefabResponses[keyof WorldOperationsPlacePrefabResponses];
+
+export type WorldOperationsRemovePrefabData = {
+    body?: RemovePrefabWorldOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/prefabs/remove';
+};
+
+export type WorldOperationsRemovePrefabResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsRemovePrefabResponse = WorldOperationsRemovePrefabResponses[keyof WorldOperationsRemovePrefabResponses];
+
+export type WorldOperationsSpawnEntityData = {
+    body?: SpawnWorldEntityOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/entities/spawn';
+};
+
+export type WorldOperationsSpawnEntityResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsSpawnEntityResponse = WorldOperationsSpawnEntityResponses[keyof WorldOperationsSpawnEntityResponses];
+
+export type WorldOperationsDeleteEntityData = {
+    body?: DeleteWorldEntityOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/entities/delete';
+};
+
+export type WorldOperationsDeleteEntityResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsDeleteEntityResponse = WorldOperationsDeleteEntityResponses[keyof WorldOperationsDeleteEntityResponses];
+
+export type WorldOperationsCleanupEntitiesData = {
+    body?: CleanupWorldEntitiesOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/entities/cleanup';
+};
+
+export type WorldOperationsCleanupEntitiesResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsCleanupEntitiesResponse = WorldOperationsCleanupEntitiesResponses[keyof WorldOperationsCleanupEntitiesResponses];
+
+export type WorldOperationsReloadResourceData = {
+    body?: ReloadWorldResourceOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/xml/reload';
+};
+
+export type WorldOperationsReloadResourceResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsReloadResourceResponse = WorldOperationsReloadResourceResponses[keyof WorldOperationsReloadResourceResponses];
+
+export type WorldOperationsCollectGarbageData = {
+    body?: CollectGameGarbageOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/gc';
+};
+
+export type WorldOperationsCollectGarbageResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsCollectGarbageResponse = WorldOperationsCollectGarbageResponses[keyof WorldOperationsCollectGarbageResponses];
+
+export type WorldOperationsUndoData = {
+    body?: UndoWorldChangeSetOperationHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/world-operations/undo';
+};
+
+export type WorldOperationsUndoResponses = {
+    200: WorldOperationReceiptHttpResponse;
+};
+
+export type WorldOperationsUndoResponse = WorldOperationsUndoResponses[keyof WorldOperationsUndoResponses];
+
+export type WorldOperationsGetData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/world-operations/{operationId}';
+};
+
+export type WorldOperationsGetResponses = {
+    200: WorldOperationHttpResponse;
+};
+
+export type WorldOperationsGetResponse = WorldOperationsGetResponses[keyof WorldOperationsGetResponses];
 
 export type IssueAccessTokenData = {
     /**

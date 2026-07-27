@@ -51,6 +51,7 @@ namespace LSTY.SevenDPanel.Configuration
                 var authentication = CreateAuthenticationOptions(config.Authentication, log);
                 var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(configPath))!, "data");
                 var overview = CreateOverviewOptions(config.Overview, log);
+                var playerEvidence = CreatePlayerEvidenceOptions(config.PlayerEvidence, log);
                 var restart = CreateRestartScriptOptions(config.Restart, dataDirectory, log);
                 var configDirectory = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
                 var serverConfigurationPath = Path.GetFullPath(Path.Combine(
@@ -65,7 +66,8 @@ namespace LSTY.SevenDPanel.Configuration
                     authentication,
                     overview,
                     restart,
-                    serverConfigurationPath);
+                    serverConfigurationPath,
+                    playerEvidence);
             }
             catch (Exception ex)
             {
@@ -83,6 +85,24 @@ namespace LSTY.SevenDPanel.Configuration
                 PanelHostOptions.DefaultScheme,
                 restart: RestartScriptOptions.CreateDefault(dataDirectory),
                 serverConfigurationPath: Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"));
+        }
+
+        private static PanelPlayerEvidenceOptions CreatePlayerEvidenceOptions(
+            PanelPlayerEvidenceConfig? config,
+            Action<string>? log)
+        {
+            config ??= PanelPlayerEvidenceConfig.CreateDefault();
+            try
+            {
+                return PanelPlayerEvidenceOptions.FromBinding(
+                    config.ServerId,
+                    config.TimeZoneId);
+            }
+            catch (InvalidDataException ex)
+            {
+                log?.Invoke("Invalid 7DPanel player evidence configuration; using safe defaults: " + ex.Message);
+                return PanelPlayerEvidenceOptions.Default;
+            }
         }
 
         private static PanelOverviewOptions CreateOverviewOptions(PanelOverviewConfig? config, Action<string>? log)

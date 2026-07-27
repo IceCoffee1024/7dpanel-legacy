@@ -24,6 +24,10 @@ document_role: Target
 当目标决策已经实现并验证后，将持久的当前事实提升到 `docs/architecture.md`；不得从本文推断实现证据。
 当本文不再包含超出当前架构的有意义目标设计时，应删除本蓝图。
 
+### 六波次提升状态
+
+旧版本功能对齐六波次的主要项目边界、migration `008` 至 `013`、生产组合根和 runtime 已形成当前代码，并已提升到[系统架构](../architecture.md#六波次功能对齐当前代码状态)。与这些 Current 事实重复的目录和链路不再具有 Target 权威；下文只在解释未完成目标时保留必要上下文。后续目标包括 Community 缺失持久合同与部分原子版本写入、Discord Gateway/interaction transport、奖励证据生产观察源，以及真实恢复/玩家/世界副作用和外部服务边界；发布与跨平台进程证据由[测试策略](../test.md#六波次功能对齐当前工作树证据)拥有。
+
 ## 架构定位
 
 后端使用 Explicit Architecture 作为组织方法。它结合 Ports and Adapters 的调用方向、Clean Architecture 的依赖规则，
@@ -121,14 +125,14 @@ Adapter 项目按外部边界命名：`Web`、`SevenDays`、`Persistence.Sqlite`
 | 本地 SQLite 与原生运行时 | Persistence Adapter / Bootstrap | `Microsoft.Data.Sqlite`、`SQLitePCLRaw.bundle_e_sqlite3`/`e_sqlite3` | 认证数据库和标准 Batteries 已采用并通过 Windows 真实进程；Linux 待验证 | 首个审计、作业持久化或平台支持变化 | `<ModDirectory>/data/7dpanel.db` 的创建与权限、五个 Framework64 宿主兼容程序集、Windows/Linux x64 原生资产、WAL、并发写入、发布边界和正常关服 |
 | 业务 SQL | Persistence Adapter | `Dapper` | 已采用 | 首个新增持久能力或 Dapper 版本变化 | 参数绑定、事务所有权、连接生命周期、并发写入和目标 Mono 加载；不得承担 schema 迁移 |
 | 数据库迁移 | Persistence Adapter | `DbUp`（`dbup-core`、`dbup-sqlite`） | 已采用 | 新 migration、升级/恢复策略或 DbUp 版本变化 | 嵌入脚本顺序、事务失败、重复运行、升级和恢复路径；不得承载运行时业务查询 |
-| 有界后台队列 | Local Adapter / Runtime | `System.Threading.Channels` | 已批准 | 首个后台 consumer 或持久作业 | 容量、背压、公平性、异常传播、排空和 Mono 兼容性 |
-| Admin 综合概览第一阶段 | Application / Hosting / SevenDays / Persistence / Web | 复用当前 `net48` BCL、Web/OWIN、SQLite 与既有 Adapter 边界；不新增 NuGet 包 | 已批准，尚未实现 | 已批准的综合快照、主机采样、近期活动或服务器操作切片进入真实运行时 | Application 聚合与分区失败、Windows/Linux 平台采样、游戏主线程复制、SQLite 活动/操作审计、角色裁剪、脚本启动与固定关服；实际包清单仍以项目文件为准 |
+| 有界后台队列 | Local Adapter / Runtime | `System.Threading.Channels` | 已采用 | 容量、消费者或关服顺序变化 | 容量、背压、公平性、异常传播、排空和 Mono 兼容性；当前边界见[系统架构](../architecture.md) |
+| Admin 综合概览第一阶段 | Application / Hosting / SevenDays / Persistence / Web | 复用当前 `net48` BCL、Web/OWIN、SQLite 与既有 Adapter 边界；不新增 NuGet 包 | 已采用 | 综合快照、主机采样、近期活动或服务器操作边界变化 | 当前实现见[系统架构](../architecture.md#admin-综合概览第一阶段)；真实平台与进程证据仍见[测试策略](../test.md#综合概览第一阶段) |
 | 组合根依赖注入 | Bootstrap / Composition | `Microsoft.Extensions.DependencyInjection`、Abstractions | 已采用；当前版本线已通过 Windows Mono 复验 | 目标游戏 Mono、`Microsoft.Bcl.AsyncInterfaces`、`System.Runtime.CompilerServices.Unsafe` 或对象生命周期边界变化 | Bootstrap 唯一根 Provider、显式注册、`ValidateOnBuild`/`ValidateScopes`、OWIN 单请求 scope、Web API non-owning bridge、先停运行时再释放 Provider、发布体积和关服行为；当前实现证据见[系统架构](../architecture.md#owinweb-api-与静态资源) |
 | Mod 运行日志 | Bootstrap / SevenDays Adapter | 7DTD 提供的 `LogLibrary`（`Log.Out`、`Log.Warning`、`Log.Error`、`Log.Exception`） | 已采用 | 7DTD 日志 API 或目标版本发生变化 | 目标程序集加载、输出行为、异常记录和关服生命周期 |
 | 控制台日志采集 | SevenDays Adapter / ConsoleLogs | `LogLibrary.LogCallbacksExtended` + `System.Threading.Channels` 有界队列 | 已采用 | 7DTD 日志 API、游戏版本或当前容量基线变化 | 回调耗时、顺序、订阅与取消订阅、过载丢弃计数、Mono 兼容性和版本差异；当前实现证据见[系统架构](../architecture.md#7dtd-控制台日志采集边界) |
 | 密码摘要 | Persistence Adapter / Identity | BCL PBKDF2-HMAC-SHA256 | 引导 `Owner` 已采用 | 摘要参数、凭据迁移或平台支持变化 | 游戏 Mono 支持的 API、参数版本化、随机盐、耗时上限和升级策略 |
-| 备份压缩与校验 | Local Adapter / Backups | 优先使用 BCL；第三方库待证据驱动选择 | 预留 | BCL 无法满足流式处理、格式、性能或恢复兼容要求 | 内存峰值、大文件、损坏检测、路径穿越、许可证、维护状态和跨平台行为 |
-| 定时任务 | Local Adapter / Scheduling | 内部 hosted scheduler，不引入通用调度框架 | 默认不采用 | 出现持久日历、时区、错过触发补偿或分布式调度等真实需求 | 与持久作业状态的职责边界、关服排空、恢复语义和依赖成本 |
+| 备份压缩与校验 | Local Adapter / Backups | BCL `System.IO.Compression` 与 SHA-256 | 已采用 | 格式、性能或恢复兼容要求变化 | 内存峰值、大文件、损坏检测、路径穿越和跨平台行为；真实恢复仍由测试策略保留 |
+| 定时任务 | Local Adapter / Scheduling | 内部 `BackgroundScheduler` + Cronos，不引入通用调度框架 | 已采用 | 持久日历、时区、错过触发补偿或并发策略变化 | 与持久作业状态的职责边界、关服排空、恢复语义和依赖成本 |
 | 用例分派与对象映射 | Application / Adapters | 显式 dispatcher 和手工映射为默认；`Mapster` 作为稳定边界映射重复出现后的候选 | 候选 | 首个真实 DTO/Domain/View 映射切片形成多个稳定映射对，且重复代码维护成本有测试证据 | 优先评估代码生成或显式配置；映射配置启动期校验；验证隐式控制流、反射、调试成本、性能、AOT/Mono 限制、发布体积和边界泄漏 |
 | 映射表达式编译优化 | Application / Adapters / Bootstrap | `FastExpressionCompiler` 仅作为 `Mapster` 运行时表达式编译的可选优化，不单独引入 | 预留 | 已采用 `Mapster` 且代表性基准证明 `Expression.Compile` 成为实际瓶颈 | 验证 `CompileFast` 等价性、目标 Unity Mono、动态代码/AOT 限制、启动与分配成本、失败回退和游戏主线程首次编译行为 |
 
@@ -430,11 +434,11 @@ region 网格由前端根据元数据生成。区域玩家反查复用 `player_h
 
 完整只读边界见[玩家坐标地图设计规格](../superpowers/specs/2026-07-26-player-coordinate-map-design.md)。浏览器端重新加载 tile source 是纯只读行为，不调用服务端作业。删除领地、玩家传送和服务端瓦片资源刷新/渲染使用独立类型化用例：游戏变更经有界主线程 dispatcher，地图作业经独立有界后台队列和持久 operation 状态；浏览器不能提供命令或路径，排队不等于成功。完整动作边界见[地图管理操作设计规格](../superpowers/specs/2026-07-26-map-management-actions-design.md)。
 
-只读地图的合同、SQLite 查询、Owner-only Web API、不可变投影边界与定向自动化证据已提升至[系统架构](../architecture.md)和[测试策略](../test.md)。本节继续拥有尚未实现的真实瓦片发布根、`mapResourceVersion` 生成，以及商人、领地、载具、无人机、动物和敌对实体在目标游戏版本中的真实字段复制约束；当前生产实现对这些缺失来源明确返回 unavailable，不把 Target 描述当作实现证据。
+只读地图合同、SQLite 查询、Owner-only Web API、不可变投影、受控瓦片发布/`mapResourceVersion`、世界与短生命周期实体复制，以及地图作业的当前代码边界已提升至[系统架构](../architecture.md)和[测试策略](../test.md)。本节只继续约束真实 `v3.0.1-b4` 字段兼容、瓦片生成输入和领地/传送/地图副作用；在取得真实环境证据前，不得把代码路径表述为真实世界操作成功。
 
 ### 综合概览与服务器操作（第一阶段）
 
-本节是 `CAP-01`、`CAP-05` 与 `NFR-02` 的未来后端边界，不代表当前已经存在 Overview 路由、平台采样、近期活动或服务器操作实现。当前规范来源仍是[系统架构](../architecture.md)。
+本节所述 `CAP-01`、`CAP-05` 与 `NFR-02` 边界已经采用；Overview 路由、平台采样、近期活动和服务器操作的当前事实以[系统架构](../architecture.md#admin-综合概览第一阶段)为准。以下内容只保留不随实现变化的边界约束，不构成第二份 Current 说明。
 
 ```text
 authenticated overview request
@@ -860,11 +864,11 @@ backend/
 
 目标设计仍需要以下真实实现和进程证据：
 
-- Admin 综合概览第一阶段的 Application 聚合、Windows/Linux 平台采样、SevenDays 主线程快照复制、SQLite 近期活动/服务器操作审计、Web 角色裁剪、脚本进程创建和固定关服；目前没有对应当前实现或真实进程证据；
+- Admin 综合概览第一阶段已有当前代码与自动化边界；仍缺当前候选发布物中的 Windows/Linux 平台采样、SevenDays 指标字段、脚本进程创建和固定关服真实进程证据；
 - 用于在线玩家快照和类型化玩家动作的稳定 `v3.0.1-b4` API；
 - `GameThreadDispatcher` 的排队取消、启动超时、执行异常和 Windows `version` 主线程往返已有当前证据；仍缺状态变更动作的关服竞态、多个生产 Gateway 的背压基线和 Linux 证据；
 - 控制台日志真实容量饱和与 Linux Unity Mono 行为；Windows `v3.0.1-b4` 的 `Log.LogCallbacksExtended`、`System.Threading.Channels`、正常负载和关服排空已有当前证据；
-- `Admin`/`Viewer` 用户管理、可调用的 Token 撤销入口、审计和最终移除配置引导仍需实现；产品不采用 Cookie、CSRF Token 或 refresh token；
+- `Admin`/`Viewer` 面板用户管理已经采用；可调用的 Token 撤销入口、相关真实浏览器/进程证据和最终移除配置引导仍需完成；产品不采用 Cookie、CSRF Token 或 refresh token；
 - 引导 `Owner`、持久 Token 和 SSE 周期复验已有自动化；当前标准 Batteries/SQLitePCLRaw `2.1.12`、`Microsoft.Bcl.AsyncInterfaces` 和 `System.Runtime.CompilerServices.Unsafe` 发布物已有 Windows 7DTD 进程证据，但仍缺 Linux 证据；
 - 游戏 `0_TFP_Harmony 2.13.0.0` 的 `Assembly.Location` 补丁已有编译、源码顺序、发布排除和 Windows 真实进程证据，但仍缺 Linux 证据；
 - 迁移失败时不启动 OWIN 且不终止 7DTD 进程的真实宿主行为；

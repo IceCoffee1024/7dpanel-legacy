@@ -10,19 +10,35 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Hosting;
+using LSTY.SevenDPanel.Adapters.Local.Discord;
+using LSTY.SevenDPanel.Adapters.Local.MapTiles;
+using LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Modules;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
+using LSTY.SevenDPanel.Adapters.Persistence.Sqlite.WorldOperations;
 using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity;
+using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat;
+using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.GameEvents;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Rewards;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GameResources;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Overview;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
+using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.GameEvents;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
 using LSTY.SevenDPanel.Application;
+using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Application.ConsoleCommands;
+using LSTY.SevenDPanel.Application.Discord;
+using LSTY.SevenDPanel.Application.GameEvents;
+using LSTY.SevenDPanel.Application.Modules;
+using LSTY.SevenDPanel.Application.Rewards;
+using LSTY.SevenDPanel.Application.WorldOperations;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
@@ -245,6 +261,30 @@ namespace LSTY.SevenDPanel.Tests
             Assert.NotNull(provider.GetRequiredService<ConsoleCommandAuditService>());
             Assert.NotNull(provider.GetRequiredService<ConsoleCommandRuntime>());
             Assert.NotNull(provider.GetRequiredService<ExecuteConsoleCommandUseCase>());
+            var discordStore = provider.GetRequiredService<SqliteDiscordIntegrationStore>();
+            Assert.Same(discordStore, provider.GetRequiredService<IDiscordIntegrationStore>());
+            var discordInbound = provider.GetRequiredService<DiscordInboundRuntime>();
+            Assert.Same(discordInbound, provider.GetRequiredService<IDiscordInboundTransportSink>());
+            Assert.NotNull(provider.GetRequiredService<DiscordRuntime>());
+            var gameEventStore = provider.GetRequiredService<SqliteGameEventStore>();
+            Assert.Same(gameEventStore, provider.GetRequiredService<IGameEventStore>());
+            Assert.NotNull(provider.GetRequiredService<GameEventWriteService>());
+            Assert.NotNull(provider.GetRequiredService<SevenDaysGameEventAdapter>());
+            Assert.NotNull(provider.GetRequiredService<SevenDaysGameEventRuntime>());
+            var auditQuery = provider.GetRequiredService<SqliteUnifiedAuditQuery>();
+            Assert.Same(auditQuery, provider.GetRequiredService<IUnifiedAuditQuery>());
+            var muteStore = provider.GetRequiredService<SqliteChatMuteStore>();
+            Assert.Same(muteStore, provider.GetRequiredService<IChatMuteStore>());
+            Assert.Same(muteStore, provider.GetRequiredService<IChatMuteExpirationStore>());
+            var chatRuntimeState = provider.GetRequiredService<ChatRuntimeState>();
+            Assert.Same(chatRuntimeState, provider.GetRequiredService<IChatMuteRuntimeConfiguration>());
+            Assert.NotNull(provider.GetRequiredService<ChatMuteUseCases>());
+            Assert.NotNull(provider.GetRequiredService<ChatMuteExpiryService>());
+            Assert.NotNull(provider.GetRequiredService<SevenDaysGameChatCommandReplySender>());
+            Assert.Equal(
+                new[] { "help" },
+                provider.GetRequiredService<GameChatCommandCatalog>()
+                    .Commands.Select(command => command.Name));
             var onlinePlayerQuery = provider.GetRequiredService<SevenDaysOnlinePlayerProjection>();
             Assert.Same(
                 onlinePlayerQuery,
@@ -255,8 +295,17 @@ namespace LSTY.SevenDPanel.Tests
                 provider.GetRequiredService<IGameResourceCatalog>());
             Assert.NotNull(provider.GetRequiredService<QueryGameResourcesUseCase>());
             Assert.NotNull(provider.GetRequiredService<GetGameResourceIconUseCase>());
-            Assert.IsType<GameResourceCatalogRuntime>(
+            Assert.IsType<WorldOperationRuntime>(
                 provider.GetRequiredService<IModRuntime>());
+            Assert.NotNull(provider.GetRequiredService<QueryWorldUseCase>());
+            Assert.NotNull(provider.GetRequiredService<QueryWorldToolCatalogUseCase>());
+            Assert.NotNull(provider.GetRequiredService<IWorldOperationJobBridge>());
+            Assert.NotNull(provider.GetRequiredService<IWorldOperationJobHandler>());
+            Assert.NotNull(provider.GetRequiredService<WorldOperationRuntime>());
+            Assert.NotNull(provider.GetRequiredService<LocalMapResourcePublisher>());
+            Assert.NotNull(provider.GetRequiredService<SqliteWorldOperationStore>());
+            Assert.NotNull(provider.GetRequiredService<SqliteFeatureModuleStateStore>());
+            Assert.NotNull(provider.GetRequiredService<FeatureModuleGate>());
             Assert.NotNull(provider.GetRequiredService<PlayerHistoryRuntime>());
             Assert.NotNull(provider.GetRequiredService<GetOnlinePlayersUseCase>());
             Assert.NotNull(provider.GetRequiredService<IPlayerHistoryStore>());
@@ -264,6 +313,57 @@ namespace LSTY.SevenDPanel.Tests
             Assert.NotNull(provider.GetRequiredService<GetHistoricalPlayersUseCase>());
             Assert.NotNull(provider.GetRequiredService<GetHistoricalPlayerUseCase>());
             Assert.NotNull(provider.GetRequiredService<GetPlayerHistorySnapshotsUseCase>());
+            var playerEvidenceStore = provider.GetRequiredService<SqlitePlayerEvidenceStore>();
+            Assert.Same(playerEvidenceStore, provider.GetRequiredService<IPlayerEvidenceStore>());
+            Assert.NotNull(provider.GetRequiredService<GetPlayerProfileUseCase>());
+            Assert.NotNull(provider.GetRequiredService<GetInventorySnapshotsUseCase>());
+            Assert.NotNull(provider.GetRequiredService<GetInventoryDiffsUseCase>());
+            Assert.NotNull(provider.GetRequiredService<GetPlayerSkillsUseCase>());
+            Assert.NotNull(provider.GetRequiredService<PlayerInventoryDiffService>());
+            Assert.NotNull(provider.GetRequiredService<SevenDaysPlayerEvidenceSnapshotReader>());
+            Assert.NotNull(provider.GetRequiredService<PlayerEvidenceWriteService>());
+            Assert.NotNull(provider.GetRequiredService<SevenDaysPlayerEvidenceProjection>());
+
+            var grantStore = provider.GetRequiredService<SqliteGrantItemOperationStoreAdapter>();
+            Assert.Same(grantStore, provider.GetRequiredService<IGrantItemOperationStore>());
+            var removeStore = provider.GetRequiredService<SqliteRemoveItemOperationStoreAdapter>();
+            Assert.Same(removeStore, provider.GetRequiredService<IRemoveItemOperationStore>());
+            var resetSkillsStore = provider.GetRequiredService<SqliteResetSkillsOperationStoreAdapter>();
+            Assert.Same(resetSkillsStore, provider.GetRequiredService<IResetSkillsOperationStore>());
+            var clearInventoryStore = provider.GetRequiredService<SqliteClearInventoryOperationStoreAdapter>();
+            Assert.Same(clearInventoryStore, provider.GetRequiredService<IClearInventoryOperationStore>());
+            var resetPlayerDataStore = provider.GetRequiredService<SqliteResetPlayerDataOperationStoreAdapter>();
+            Assert.Same(resetPlayerDataStore, provider.GetRequiredService<IResetPlayerDataOperationStore>());
+
+            var grantGateway = provider.GetRequiredService<SevenDaysGrantItemGateway>();
+            Assert.Same(grantGateway, provider.GetRequiredService<IGrantItemGateway>());
+            var removeGateway = provider.GetRequiredService<SevenDaysRemoveItemGateway>();
+            Assert.Same(removeGateway, provider.GetRequiredService<IRemoveItemGateway>());
+            var resetSkillsGateway = provider.GetRequiredService<SevenDaysResetSkillsGateway>();
+            Assert.Same(resetSkillsGateway, provider.GetRequiredService<IResetSkillsGateway>());
+            var clearInventoryGateway = provider.GetRequiredService<SevenDaysClearInventoryGateway>();
+            Assert.Same(clearInventoryGateway, provider.GetRequiredService<IClearInventoryGateway>());
+            var resetPlayerDataGateway = provider.GetRequiredService<SevenDaysResetPlayerDataGateway>();
+            Assert.Same(resetPlayerDataGateway, provider.GetRequiredService<IResetPlayerDataGateway>());
+
+            Assert.NotNull(provider.GetRequiredService<GrantItemUseCase>());
+            Assert.NotNull(provider.GetRequiredService<RemoveItemUseCase>());
+            Assert.NotNull(provider.GetRequiredService<ResetSkillsUseCase>());
+            Assert.NotNull(provider.GetRequiredService<ClearInventoryUseCase>());
+            Assert.NotNull(provider.GetRequiredService<ResetPlayerDataUseCase>());
+            Assert.NotNull(provider.GetRequiredService<IPlayerActionOperationQuery>());
+            Assert.NotNull(provider.GetRequiredService<PlayerActionRecoveryService>());
+            Assert.NotNull(provider.GetRequiredService<PlayerActionRecoveryRuntime>());
+            Assert.NotNull(provider.GetRequiredService<PlayerEvidenceRuntime>());
+            Assert.NotNull(provider.GetRequiredService<ObserveAchievementUseCase>());
+            Assert.NotNull(provider.GetRequiredService<EvaluateOnlineRewardsUseCase>());
+            var rewardEvidenceRuntime = provider.GetRequiredService<RewardEvidenceRuntime>();
+            var catalogRuntime = provider.GetRequiredService<GameResourceCatalogRuntime>();
+            var catalogInner = typeof(GameResourceCatalogRuntime).GetField(
+                "inner",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(catalogInner);
+            Assert.Same(rewardEvidenceRuntime, catalogInner.GetValue(catalogRuntime));
             var playerActionAuditTrail = provider.GetRequiredService<SqlitePlayerActionAuditTrail>();
             Assert.Same(
                 playerActionAuditTrail,
@@ -287,6 +387,96 @@ namespace LSTY.SevenDPanel.Tests
             finally
             {
                 try { runtime.Dispose(); } catch { }
+                factory.Dispose();
+                if (Directory.Exists(dataDirectory))
+                    Directory.Delete(dataDirectory, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void Typed_player_action_store_adapters_preserve_fixed_catalog_identity_and_support_recovery()
+        {
+            var dataDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-di-tests",
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dataDirectory);
+            var factory = new SqliteConnectionFactory(Path.Combine(dataDirectory, "panel.db"));
+
+            try
+            {
+                new SqliteDatabaseBootstrapper(factory).Upgrade();
+                var grantStore = new SqliteGrantItemOperationStoreAdapter(
+                    new SqliteGrantItemOperationStore(factory),
+                    factory);
+                var removeStore = new SqliteRemoveItemOperationStoreAdapter(
+                    new SqliteRemoveItemOperationStore(factory),
+                    factory);
+                var observedAtUtc = new DateTimeOffset(2026, 7, 27, 1, 0, 0, TimeSpan.Zero);
+                var target = new PlayerTargetStamp("EOS_1", 17, observedAtUtc, "Navezgane");
+
+                grantStore.CreatePending(new GrantItemPendingIntent(
+                    "grant-1",
+                    "owner",
+                    target,
+                    "grant-request",
+                    "correlation-1",
+                    observedAtUtc.AddSeconds(1),
+                    "catalog-7",
+                    "item:resource-42",
+                    "V2.4",
+                    42,
+                    "resourceRockSmall",
+                    GameResourceKind.Item,
+                    3,
+                    4,
+                    false));
+                removeStore.CreatePending(new RemoveItemPendingIntent(
+                    "remove-1",
+                    "owner",
+                    target,
+                    "remove-request",
+                    "correlation-2",
+                    observedAtUtc.AddSeconds(2),
+                    "catalog-7",
+                    "item:resource-42",
+                    "resourceRockSmall",
+                    GameResourceKind.Item,
+                    1,
+                    4,
+                    PlayerItemRemovalScope.BagOnly,
+                    PlayerItemRemovalMode.Exact));
+
+                using (var connection = factory.Open())
+                {
+                    using var grantCommand = connection.CreateCommand();
+                    grantCommand.CommandText =
+                        "SELECT resource_id || ':' || game_version || ':' || numeric_id " +
+                        "FROM player_grant_item_operations WHERE operation_id = 'grant-1';";
+                    Assert.Equal("item:resource-42:V2.4:42", grantCommand.ExecuteScalar());
+
+                    using var removeCommand = connection.CreateCommand();
+                    removeCommand.CommandText =
+                        "SELECT resource_id FROM player_remove_item_operations " +
+                        "WHERE operation_id = 'remove-1';";
+                    Assert.Equal("item:resource-42", removeCommand.ExecuteScalar());
+                }
+
+                var recovery = Assert.IsAssignableFrom<IPlayerActionRecoveryStore>(grantStore);
+                Assert.Equal("grant-1", Assert.Single(recovery.ReadRecoverable()).Operation.OperationId);
+                Assert.True(recovery.TryComplete(new PlayerActionRecoveryCompletion(
+                    "grant-1",
+                    PlayerActionStatus.Cancelled,
+                    observedAtUtc.AddMinutes(10),
+                    "stale_pending_not_started",
+                    null,
+                    null,
+                    null,
+                    null)));
+                Assert.Empty(recovery.ReadRecoverable());
+            }
+            finally
+            {
                 factory.Dispose();
                 if (Directory.Exists(dataDirectory))
                     Directory.Delete(dataDirectory, recursive: true);

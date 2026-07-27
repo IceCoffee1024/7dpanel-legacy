@@ -9,8 +9,10 @@ namespace LSTY.SevenDPanel.Configuration
         public string? Scheme { get; set; }
         public PanelAuthenticationConfig? Authentication { get; set; }
         public PanelOverviewConfig? Overview { get; set; }
+        public PanelPlayerEvidenceConfig? PlayerEvidence { get; set; }
         public RestartScriptConfig? Restart { get; set; }
         public string? ServerConfigurationPath { get; set; }
+        public string? GeoIpDatabasePath { get; set; }
 
         public static PanelHostConfig CreateDefault()
         {
@@ -21,8 +23,25 @@ namespace LSTY.SevenDPanel.Configuration
                 Scheme = PanelHostOptions.DefaultScheme,
                 Authentication = PanelAuthenticationConfig.CreateDefault(),
                 Overview = PanelOverviewConfig.CreateDefault(),
+                PlayerEvidence = PanelPlayerEvidenceConfig.CreateDefault(),
                 Restart = RestartScriptConfig.CreateDefault(),
-                ServerConfigurationPath = "../../serverconfig.xml"
+                ServerConfigurationPath = "../../serverconfig.xml",
+                GeoIpDatabasePath = PanelHostOptions.DefaultGeoIpDatabaseRelativePath
+            };
+        }
+    }
+
+    public sealed class PanelPlayerEvidenceConfig
+    {
+        public string? ServerId { get; set; }
+        public string? TimeZoneId { get; set; }
+
+        public static PanelPlayerEvidenceConfig CreateDefault()
+        {
+            return new PanelPlayerEvidenceConfig
+            {
+                ServerId = PanelPlayerEvidenceOptions.DefaultServerId,
+                TimeZoneId = PanelPlayerEvidenceOptions.DefaultTimeZoneId
             };
         }
     }

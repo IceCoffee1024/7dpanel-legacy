@@ -17,6 +17,8 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(options.Authentication.Enabled);
             Assert.Equal(string.Empty, options.Authentication.Username);
             Assert.Equal(string.Empty, options.Authentication.Password);
+            Assert.Equal(PanelPlayerEvidenceOptions.DefaultServerId, options.PlayerEvidence.ServerId);
+            Assert.Equal(PanelPlayerEvidenceOptions.DefaultTimeZoneId, options.PlayerEvidence.TimeZone.Id);
         }
 
         [Theory]
@@ -45,6 +47,8 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal("password", options.Authentication.Password);
                 Assert.Equal(TimeSpan.FromHours(8), options.Authentication.AccessTokenLifetime);
                 Assert.True(options.Authentication.AllowInsecureHttp);
+                Assert.Equal("local", options.PlayerEvidence.ServerId);
+                Assert.Equal("UTC", options.PlayerEvidence.TimeZone.Id);
                 Assert.True(File.Exists(path));
             }
             finally
@@ -151,6 +155,52 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(defaults.Restart.WindowsScript, example.Restart.WindowsScript);
             Assert.Equal(defaults.Restart.LinuxScript, example.Restart.LinuxScript);
             Assert.Equal(defaults.Restart.WorkingDirectory, example.Restart.WorkingDirectory);
+            Assert.NotNull(example.PlayerEvidence);
+            Assert.NotNull(defaults.PlayerEvidence);
+            Assert.Equal(defaults.PlayerEvidence.ServerId, example.PlayerEvidence.ServerId);
+            Assert.Equal(defaults.PlayerEvidence.TimeZoneId, example.PlayerEvidence.TimeZoneId);
+            Assert.Equal("local", defaults.PlayerEvidence.ServerId);
+            Assert.Equal("UTC", defaults.PlayerEvidence.TimeZoneId);
+        }
+
+        [Fact]
+        public void Invalid_player_evidence_time_zone_falls_back_only_that_section()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path,
+                "{\"Port\":19096,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{\"Enabled\":true,\"Username\":\"admin\",\"Password\":\"password\",\"AccessTokenLifetimeMinutes\":30,\"AllowInsecureHttp\":true}," +
+                "\"PlayerEvidence\":{\"ServerId\":\"remote-a\",\"TimeZoneId\":\"not/a-real-time-zone\"}}");
+            string? message = null;
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path, value => message = value);
+
+                Assert.Equal("http://127.0.0.1:19096/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.Equal("local", options.PlayerEvidence.ServerId);
+                Assert.Equal("UTC", options.PlayerEvidence.TimeZone.Id);
+                Assert.Contains("player evidence", message, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("not/a-real-time-zone", message ?? string.Empty, StringComparison.Ordinal);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Player_evidence_binding_trims_server_and_resolves_installed_time_zone()
+        {
+            var timeZone = TimeZoneInfo.Local;
+            var options = PanelPlayerEvidenceOptions.FromBinding(" remote-a ", timeZone.Id);
+
+            Assert.Equal("remote-a", options.ServerId);
+            Assert.Equal(timeZone.Id, options.TimeZone.Id);
+            Assert.Equal(PanelPlayerEvidenceOptions.DefaultQueueCapacity, options.QueueCapacity);
+            Assert.Equal(PanelPlayerEvidenceOptions.DefaultDrainTimeout, options.DrainTimeout);
+            Assert.Equal(PanelPlayerEvidenceOptions.DefaultRetention, options.Retention);
         }
 
         [Fact]

@@ -4,7 +4,22 @@ namespace LSTY.SevenDPanel.Application
 {
     public sealed class GameOverviewSnapshot
     {
-        public GameOverviewSnapshot(AvailabilityState availability, DateTimeOffset? sampledAtUtc, string? gameTitle, string? saveGameName, string? worldName, long? worldSessionUptimeSeconds, string? version, string? gameMode, string? difficulty, string? region, string? language, string? connectionAddress, int? connectionPort, int? onlinePlayerCount, int? maximumPlayerCount, int? historicalPlayerCount, double? framesPerSecond, string? gameTime)
+        public GameOverviewSnapshot(
+            AvailabilityState availability,
+            DateTimeOffset? sampledAtUtc,
+            string? gameTitle,
+            string? saveGameName,
+            string? worldName,
+            long? worldSessionUptimeSeconds,
+            string? version,
+            string? gameMode,
+            string? difficulty,
+            string? region,
+            string? language,
+            string? connectionAddress,
+            int? connectionPort,
+            int? maximumPlayerCount,
+            GameRuntimeMetrics? runtimeMetrics)
         {
             Availability = availability;
             SampledAtUtc = sampledAtUtc;
@@ -19,11 +34,8 @@ namespace LSTY.SevenDPanel.Application
             Language = language;
             ConnectionAddress = connectionAddress;
             ConnectionPort = connectionPort;
-            OnlinePlayerCount = onlinePlayerCount;
             MaximumPlayerCount = maximumPlayerCount;
-            HistoricalPlayerCount = historicalPlayerCount;
-            FramesPerSecond = framesPerSecond;
-            GameTime = gameTime;
+            RuntimeMetrics = runtimeMetrics;
         }
 
         public AvailabilityState Availability { get; }
@@ -39,12 +51,25 @@ namespace LSTY.SevenDPanel.Application
         public string? Language { get; }
         public string? ConnectionAddress { get; }
         public int? ConnectionPort { get; }
-        public int? OnlinePlayerCount { get; }
         public int? MaximumPlayerCount { get; }
-        public int? HistoricalPlayerCount { get; }
-        public double? FramesPerSecond { get; }
-        public string? GameTime { get; }
+        public GameRuntimeMetrics? RuntimeMetrics { get; }
 
-        public static GameOverviewSnapshot Unavailable() => new GameOverviewSnapshot(AvailabilityState.Unavailable, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        public static GameOverviewSnapshot Unavailable() =>
+            new GameOverviewSnapshot(
+                AvailabilityState.Unavailable,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 }

@@ -1,9 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
+import { createAdminI18n } from '../../../app/i18n'
 import {
+  chatSourceOptions,
+  chatTypeOptions,
   createEmptyHistoryFilters,
   normalizeChatColor,
+  playerColorTagPermissionOptions,
   renderColoredChatName,
 } from '../model/gameChatManagement'
 import ChatHistoryView from './ChatHistoryView.vue'
@@ -170,6 +174,12 @@ const profile = {
 }
 
 describe('game chat management model', () => {
+  it('keeps translatable option labels out of the domain model', () => {
+    expect(chatTypeOptions).toEqual(['Global', 'Friends', 'Party', 'Whisper', 'Unknown'])
+    expect(chatSourceOptions).toEqual(['Player', 'Administrator', 'System'])
+    expect(playerColorTagPermissionOptions).toEqual(['None', 'AdminOnly', 'All'])
+  })
+
   it('normalizes optional six-digit RGB values and rejects other input', () => {
     expect(normalizeChatColor(' #a0B1c2 ')).toBe('A0B1C2')
     expect(normalizeChatColor('')).toBeNull()
@@ -201,8 +211,8 @@ describe('ChatHistoryView', () => {
     expect(wrapper.text()).toContain('Ada')
     expect(wrapper.text()).toContain('EOS_abc123')
     expect(wrapper.text()).toContain('42')
-    expect(wrapper.text()).toContain('Global')
-    expect(wrapper.text()).toContain('Player')
+    expect(wrapper.text()).toContain('全局')
+    expect(wrapper.text()).toContain('玩家')
     expect(wrapper.text()).toContain('<img src=x onerror=alert(1)> hello')
     expect(wrapper.find('img').exists()).toBe(false)
   })
@@ -258,6 +268,12 @@ describe('ChatSettingsView', () => {
     await wrapper.get('[data-testid="history-retention-days"]').setValue('3651')
     await wrapper.get('form').trigger('submit')
     expect(wrapper.emitted('save')).toBeUndefined()
+    expect(wrapper.text()).toContain('历史保留天数必须是 0 到 3650 之间的整数')
+
+    await wrapper.get('[data-testid="history-retention-days"]').setValue('30')
+    await wrapper.get('[data-testid="command-prefixes"]').setValue('/,long')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.text()).toContain('每个命令前缀必须是一个非空白字符')
 
     await wrapper.get('[data-testid="reset-chat-settings"]').trigger('click')
     expect(wrapper.emitted('reset')).toHaveLength(1)
@@ -390,5 +406,63 @@ describe('ColoredChatView', () => {
 
     expect(wrapper.emitted('deleteProfile')).toEqual([['EOS_player_1']])
     expect(wrapper.text()).toContain('EOS_player_1')
+  })
+})
+
+describe('game chat locale coverage', () => {
+  it('renders all management pages in English without falling back to Chinese', () => {
+    const runtime = createAdminI18n({
+      repository: {
+        restore: () => 'en',
+        save: () => true,
+        subscribe: () => () => {},
+      },
+      documentElement: { lang: '' },
+    })
+    const global = { plugins: [runtime.i18n], stubs: commonStubs }
+
+    const history = mount(ChatHistoryView, {
+      props: {
+        state: 'ready',
+        messages: [historyMessage],
+        filters: createEmptyHistoryFilters(),
+        nextCursor: null,
+        isLoadingMore: false,
+      },
+      global,
+    })
+    const settings = mount(ChatSettingsView, {
+      props: {
+        settings: chatSettings,
+        isSaving: false,
+        isResetting: false,
+        feedbackMessage: 'gameChat.feedback.settingsOperationFailed',
+      },
+      global,
+    })
+    const colored = mount(ColoredChatView, {
+      props: {
+        profiles: [profile],
+        profilesState: 'ready',
+        profileFilter: '',
+        nextCursor: null,
+        settings: coloredSettings,
+        isSavingSettings: false,
+        isResettingSettings: false,
+        isMutatingProfile: false,
+      },
+      global,
+    })
+
+    expect(history.text()).toContain('Chat history')
+    expect(history.text()).toContain('Apply filters')
+    expect(settings.text()).toContain('Chat settings')
+    expect(settings.text()).toContain('Failed to update chat settings. Try again.')
+    expect(settings.text()).toContain('Save chat settings')
+    expect(colored.text()).toContain('Colored chat')
+    expect(colored.text()).toContain('Player profiles')
+    expect(colored.text()).toContain('Default settings')
+    expect(`${history.text()}${settings.text()}${colored.text()}`).not.toMatch(/[\u3400-\u9FFF]/)
+    runtime.dispose()
   })
 })

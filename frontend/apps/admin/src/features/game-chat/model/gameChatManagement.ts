@@ -63,25 +63,11 @@ export interface ColoredChatPreviewContext {
   chatType: ChatType
 }
 
-export const chatTypeOptions: ReadonlyArray<{ label: string, value: ChatType }> = [
-  { label: '全局', value: 'Global' },
-  { label: '好友', value: 'Friends' },
-  { label: '队伍', value: 'Party' },
-  { label: '私聊', value: 'Whisper' },
-  { label: '未知', value: 'Unknown' },
-]
+export const chatTypeOptions: readonly ChatType[] = ['Global', 'Friends', 'Party', 'Whisper', 'Unknown']
 
-export const chatSourceOptions: ReadonlyArray<{ label: string, value: ChatSourceKind }> = [
-  { label: '玩家', value: 'Player' },
-  { label: '管理员', value: 'Administrator' },
-  { label: '系统', value: 'System' },
-]
+export const chatSourceOptions: readonly ChatSourceKind[] = ['Player', 'Administrator', 'System']
 
-export const playerColorTagPermissionOptions: ReadonlyArray<{ label: string, value: PlayerColorTagPermission }> = [
-  { label: '禁止', value: 'None' },
-  { label: '仅管理员', value: 'AdminOnly' },
-  { label: '全部玩家', value: 'All' },
-]
+export const playerColorTagPermissionOptions: readonly PlayerColorTagPermission[] = ['None', 'AdminOnly', 'All']
 
 export const coloredChatTemplateVariables = ['playerName', 'playerId', 'entityId', 'chatType'] as const
 

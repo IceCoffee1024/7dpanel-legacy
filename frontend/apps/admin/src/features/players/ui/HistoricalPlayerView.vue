@@ -15,6 +15,9 @@ const crossplatformId = computed(() => {
   const value = routeParams.crossplatformId
   return typeof value === 'string' ? value : ''
 })
+const profilePath = computed(() => crossplatformId.value === ''
+  ? null
+  : `/players/profile/${encodeURIComponent(crossplatformId.value)}`)
 const controller = useHistoricalPlayer({ crossplatformId })
 const selectedSnapshot = shallowRef<typeof controller.snapshots.value[number] | null>(null)
 const detailsOpen = computed({ get: () => selectedSnapshot.value !== null, set: (open) => {
@@ -37,14 +40,23 @@ function selectSnapshot(snapshot: typeof controller.snapshots.value[number]) {
             </h1><p class="break-all text-xs text-muted">
               {{ crossplatformId }}
             </p>
-          </div><UButton
-            color="neutral"
-            icon="i-lucide-refresh-cw"
-            :label="t('common.reload')"
-            :loading="controller.isRefreshing.value"
-            variant="outline"
-            @click="controller.refresh"
-          />
+          </div><div class="flex flex-wrap gap-2">
+            <UButton
+              v-if="profilePath"
+              color="neutral"
+              icon="i-lucide-contact-round"
+              :label="t('players.profile.viewReadOnly')"
+              :to="profilePath"
+              variant="soft"
+            /><UButton
+              color="neutral"
+              icon="i-lucide-refresh-cw"
+              :label="t('common.reload')"
+              :loading="controller.isRefreshing.value"
+              variant="outline"
+              @click="controller.refresh"
+            />
+          </div>
         </div>
       </div>
     </template>

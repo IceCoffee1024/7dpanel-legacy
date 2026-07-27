@@ -81,6 +81,49 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Persisted_subscription_publishes_only_successful_appends_and_can_be_cancelled()
+        {
+            var store = new BlockingFailFirstAppendStore();
+            using var service = CreateService(store);
+            var publishedNames = new List<string>();
+            var published = new ManualResetEventSlim();
+            var producerThread = Environment.CurrentManagedThreadId;
+            var publisherThread = producerThread;
+            var subscription = service.SubscribePersisted(snapshot =>
+            {
+                lock (publishedNames) publishedNames.Add(snapshot.Name);
+                publisherThread = Environment.CurrentManagedThreadId;
+                published.Set();
+            });
+
+            service.Start();
+            try
+            {
+                Assert.True(service.TryRecord(CreateSnapshot("Failed")));
+                Assert.True(store.FirstAppendStarted.Wait(TestTimeout));
+                lock (publishedNames) Assert.Empty(publishedNames);
+
+                store.ReleaseFirstAppend.Set();
+                Assert.True(store.FirstAppendFailed.Wait(TestTimeout));
+                Assert.True(service.TryRecord(CreateSnapshot("Persisted")));
+                Assert.True(published.Wait(TestTimeout));
+
+                subscription.Dispose();
+                Assert.True(service.TryRecord(CreateSnapshot("After cancellation")));
+                service.Stop();
+
+                lock (publishedNames) Assert.Equal(new[] { "Persisted" }, publishedNames);
+                Assert.NotEqual(producerThread, publisherThread);
+            }
+            finally
+            {
+                store.ReleaseFirstAppend.Set();
+                subscription.Dispose();
+                service.Stop();
+            }
+        }
+
+        [Fact]
         public void All_pending_gap_reasons_are_persisted_before_the_recovered_snapshot()
         {
             var store = new StoreFailureThenQueueFullStore();
@@ -280,6 +323,31 @@ namespace LSTY.SevenDPanel.Tests
             public override void AppendGap(PlayerHistoryGap gap)
             {
                 Events.Add("gap:" + gap.Reason);
+            }
+        }
+
+        private sealed class BlockingFailFirstAppendStore : RecordingStore
+        {
+            private int appendCount;
+
+            public ManualResetEventSlim FirstAppendStarted { get; } = new ManualResetEventSlim();
+
+            public ManualResetEventSlim ReleaseFirstAppend { get; } = new ManualResetEventSlim();
+
+            public ManualResetEventSlim FirstAppendFailed { get; } = new ManualResetEventSlim();
+
+            public override void Append(PlayerSnapshot snapshot)
+            {
+                if (Interlocked.Increment(ref appendCount) == 1)
+                {
+                    FirstAppendStarted.Set();
+                    if (!ReleaseFirstAppend.Wait(TestTimeout))
+                        throw new TimeoutException("The test did not release the first append.");
+                    FirstAppendFailed.Set();
+                    throw new InvalidOperationException("history unavailable");
+                }
+
+                base.Append(snapshot);
             }
         }
 

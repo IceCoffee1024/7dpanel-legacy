@@ -15,7 +15,7 @@ using LSTY.SevenDPanel.Hosting.ServerEvents;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
-    [Authorize(Roles = "Owner")]
+    [OwnerAuthorize]
     [RoutePrefix("api/v1/chat")]
     public sealed class ChatController : ApiController
     {
@@ -34,6 +34,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         private readonly DeleteColoredChatProfileUseCase deleteProfile;
         private readonly SendGlobalChatMessageUseCase sendGlobal;
         private readonly SendPrivateChatMessageUseCase sendPrivate;
+        private readonly ChatMuteUseCases? chatMutes;
 
         public ChatController(
             IRecentChatMessageQuery recentMessages,
@@ -50,7 +51,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             UpdateColoredChatProfileUseCase updateProfile,
             DeleteColoredChatProfileUseCase deleteProfile,
             SendGlobalChatMessageUseCase sendGlobal,
-            SendPrivateChatMessageUseCase sendPrivate)
+            SendPrivateChatMessageUseCase sendPrivate,
+            ChatMuteUseCases? chatMutes = null)
         {
             this.recentMessages = recentMessages ?? throw new ArgumentNullException(nameof(recentMessages));
             this.runtimeStatus = runtimeStatus ?? throw new ArgumentNullException(nameof(runtimeStatus));
@@ -67,6 +69,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             this.deleteProfile = deleteProfile ?? throw new ArgumentNullException(nameof(deleteProfile));
             this.sendGlobal = sendGlobal ?? throw new ArgumentNullException(nameof(sendGlobal));
             this.sendPrivate = sendPrivate ?? throw new ArgumentNullException(nameof(sendPrivate));
+            this.chatMutes = chatMutes;
         }
 
         [HttpGet, Route("messages/recent"), ResponseType(typeof(RecentChatMessagesResponse))]
@@ -162,6 +165,74 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             () => new ColoredChatSettingsHttpModel(resetColoredSettings.Execute(RequireActor())),
             "invalid_colored_chat_settings", "The colored chat settings are invalid.",
             "colored_chat_settings_unavailable", "Colored chat settings could not be reset.");
+
+        [HttpGet, Route("mutes"), ResponseType(typeof(ChatMutePageHttpResponse))]
+        public HttpResponseMessage GetMutes(int? limit = null, string? cursorUpdatedAtUtc = null, string? cursorCrossplatformId = null)
+        {
+            if (!IsMuteQueryValid(ModelState.IsValid, cursorUpdatedAtUtc, cursorCrossplatformId) ||
+                !TryUtc(cursorUpdatedAtUtc, out var updatedAtUtc))
+                return InvalidQuery("invalid_chat_mute_query", "The chat mute query is invalid.");
+            try
+            {
+                var cursor = updatedAtUtc.HasValue ? new ChatMuteCursor(updatedAtUtc.Value, cursorCrossplatformId!) : null;
+                return Request.CreateResponse(HttpStatusCode.OK, new ChatMutePageHttpResponse(RequireChatMutes().GetPage(limit ?? 50, cursor)));
+            }
+            catch (ArgumentException) { return InvalidQuery("invalid_chat_mute_query", "The chat mute query is invalid."); }
+            catch { return Problem(HttpStatusCode.ServiceUnavailable, "chat_mutes_unavailable", "Chat mutes are unavailable."); }
+        }
+
+        internal static bool IsMuteQueryValid(
+            bool modelStateIsValid,
+            string? cursorUpdatedAtUtc,
+            string? cursorCrossplatformId)
+        {
+            if (!modelStateIsValid || !TryUtc(cursorUpdatedAtUtc, out var updatedAtUtc))
+                return false;
+            return updatedAtUtc.HasValue == !string.IsNullOrWhiteSpace(cursorCrossplatformId);
+        }
+
+        [HttpPost, Route("mutes"), ResponseType(typeof(ChatMuteHttpResponse))]
+        public HttpResponseMessage PostMute(CreateChatMuteRequest? body)
+        {
+            if (!ModelState.IsValid || body == null) return InvalidBody();
+            try
+            {
+                var record = RequireChatMutes().Create(RequireActor(), body.CrossplatformId ?? string.Empty, body.DisplayName, body.Reason ?? string.Empty, body.ToMutedUntilUtc(), body.CorrelationId);
+                return Request.CreateResponse(HttpStatusCode.Created, new ChatMuteHttpResponse(record));
+            }
+            catch (ArgumentException) { return InvalidQuery("invalid_chat_mute", "The chat mute is invalid."); }
+            catch (UnauthorizedAccessException) { return AuthenticationRequired(); }
+            catch { return Problem(HttpStatusCode.ServiceUnavailable, "chat_mute_create_failed", "The chat mute could not be created."); }
+        }
+
+        [HttpPut, Route("mutes/{crossplatformId}"), ResponseType(typeof(ChatMuteHttpResponse))]
+        public HttpResponseMessage PutMute(string crossplatformId, ChatMuteWriteRequest? body)
+        {
+            if (!ModelState.IsValid || body == null) return InvalidBody();
+            try
+            {
+                var record = RequireChatMutes().Update(RequireActor(), crossplatformId, body.DisplayName, body.Reason ?? string.Empty, body.ToMutedUntilUtc(), body.CorrelationId);
+                return Request.CreateResponse(HttpStatusCode.OK, new ChatMuteHttpResponse(record));
+            }
+            catch (ChatMuteNotFoundException) { return Problem(HttpStatusCode.NotFound, "chat_mute_not_found", "The chat mute does not exist."); }
+            catch (ArgumentException) { return InvalidQuery("invalid_chat_mute", "The chat mute is invalid."); }
+            catch (UnauthorizedAccessException) { return AuthenticationRequired(); }
+            catch { return Problem(HttpStatusCode.ServiceUnavailable, "chat_mute_update_failed", "The chat mute could not be updated."); }
+        }
+
+        [HttpDelete, Route("mutes/{crossplatformId}")]
+        public HttpResponseMessage DeleteMute(string crossplatformId, string? correlationId = null)
+        {
+            try
+            {
+                RequireChatMutes().Release(RequireActor(), crossplatformId, correlationId);
+                return Request.CreateResponse(HttpStatusCode.NoContent);
+            }
+            catch (ChatMuteNotFoundException) { return Problem(HttpStatusCode.NotFound, "chat_mute_not_found", "The chat mute does not exist."); }
+            catch (ArgumentException) { return InvalidQuery("invalid_chat_mute", "The chat mute is invalid."); }
+            catch (UnauthorizedAccessException) { return AuthenticationRequired(); }
+            catch { return Problem(HttpStatusCode.ServiceUnavailable, "chat_mute_release_failed", "The chat mute could not be released."); }
+        }
 
         [HttpGet, Route("colored/profiles"), ResponseType(typeof(ColoredChatProfilesHttpResponse))]
         public HttpResponseMessage GetColoredProfiles(
@@ -383,6 +454,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             if (string.IsNullOrWhiteSpace(actor)) throw new UnauthorizedAccessException();
             return actor!;
         }
+
+        private ChatMuteUseCases RequireChatMutes() => chatMutes ??
+            throw new InvalidOperationException("Chat mute services are not configured.");
 
         private HttpResponseMessage InvalidBody() =>
             ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);

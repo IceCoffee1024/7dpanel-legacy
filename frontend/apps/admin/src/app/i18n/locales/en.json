@@ -4,10 +4,11 @@
     "reload": "Reload",
     "backToOverview": "Back to overview",
     "yes": "Yes",
-    "no": "No"
-    ,"edit": "Edit"
-    ,"save": "Save"
-    ,"confirm": "Confirm"
+    "no": "No",
+    "edit": "Edit",
+    "save": "Save",
+    "confirm": "Confirm",
+    "unknown": "Unknown"
   },
   "locale": {
     "label": "Language",
@@ -59,6 +60,43 @@
       "worldSession": "World session uptime",
       "process": "Process uptime",
       "gameTime": "Game time"
+    },
+    "runtimeMetrics": {
+      "title": "Game runtime metrics",
+      "unavailableTitle": "Runtime metrics are unavailable",
+      "unavailableDescription": "The current snapshot has no game runtime metrics to display.",
+      "staleTitle": "Showing the last successful sample",
+      "staleDescription": "The latest refresh failed, so these metrics may be stale.",
+      "source": "Source",
+      "observedAt": "Observed at",
+      "metrics": {
+        "gameDayTime": "Game day and time",
+        "isBloodMoon": "Blood moon",
+        "framesPerSecond": "Frame rate",
+        "onlinePlayerCount": "Online players",
+        "historicalPlayerCount": "Historical players",
+        "animalCount": "Animals",
+        "hostileEntityCount": "Hostile entities",
+        "activeEntityCount": "Active entities",
+        "chunkCount": "Chunks",
+        "droppedItemCount": "Dropped items",
+        "gameMemoryBytes": "Game memory"
+      },
+      "units": {
+        "gameClock": "game clock",
+        "boolean": "boolean",
+        "framesPerSecond": "frames/second",
+        "count": "count",
+        "bytes": "bytes"
+      },
+      "boolean": {
+        "true": "Yes",
+        "false": "No"
+      },
+      "warning": {
+        "readFailed": "Read failed",
+        "unsupported": "Unsupported by this version"
+      }
     },
     "duration": {
       "day": "{count}d",
@@ -165,10 +203,193 @@
   "shell": {
     "navigation": "Navigation",
     "playersAndWorld": "Players and world",
+    "auditAndEvents": "Audit and events",
+    "muteManagement": "Mute management",
+    "operations": "Server operations",
+    "worldTools": "World tools",
+    "modules": "Feature modules",
+    "automation": "Event automation",
+    "economyAndRewards": "Economy and rewards",
+    "economyAccounts": "Economy accounts",
+    "economyTransactions": "Ledger transactions",
+    "rewardPackages": "Reward packages",
+    "dailyReward": "Daily reward",
+    "rewardOperations": "Reward delivery",
+    "shop": "Shop products",
+    "redeemCodes": "Redeem codes",
+    "achievementsAndOnlineRewards": "Achievements and online rewards",
+    "community": "Teleport and voting",
+    "teleportSettings": "Teleport settings",
+    "cities": "City management",
+    "votes": "Community voting",
+    "integrations": "Integrations and access policies",
+    "discord": "Discord integration",
+    "geoIp": "GeoIP access policy",
     "search": "Search",
     "searchPages": "Search pages",
     "account": "{name} account",
     "signOut": "Sign out"
+  },
+  "backups": {
+    "title": "Backups and restore",
+    "kind": {
+      "World": "World",
+      "PanelDatabase": "Panel database",
+      "ServerConfiguration": "Server configuration"
+    },
+    "create": {
+      "title": "Create backup",
+      "description": "Server-side jobs create backups; this page only displays persisted progress and results.",
+      "worldName": "World name",
+      "worldNamePlaceholder": "Enter the current world name",
+      "world": "Back up world",
+      "panelDatabase": "Back up Panel database",
+      "panelDatabaseDescription": "Create a restorable archive of the Panel SQLite database.",
+      "serverConfiguration": "Back up server configuration",
+      "serverConfigurationDescription": "Archive the fixed files under the approved configuration root."
+    },
+    "job": {
+      "title": "Current job",
+      "createdAt": "Created {time}",
+      "status": {
+        "Queued": "Queued",
+        "Running": "Running",
+        "PendingRestart": "Pending restart",
+        "Succeeded": "Succeeded",
+        "Failed": "Failed",
+        "Cancelled": "Cancelled",
+        "Interrupted": "Interrupted",
+        "ResultUnknown": "Result unknown"
+      }
+    },
+    "table": {
+      "title": "Backup catalog",
+      "kind": "Kind",
+      "createdAt": "Created",
+      "size": "Size",
+      "validation": "Validation",
+      "actions": "Actions"
+    },
+    "action": {
+      "download": "Download",
+      "restore": "Restore",
+      "delete": "Delete"
+    },
+    "state": {
+      "empty": "No backup archives yet",
+      "forbidden": "You cannot manage backups",
+      "failed": "The backup catalog is unavailable",
+      "protocolError": "The server returned an unsupported backup protocol",
+      "stale": "Refresh failed; showing the last successful result",
+      "operationFailed": "The backup operation did not complete"
+    },
+    "restore": {
+      "title": "Confirm backup restore",
+      "description": "The server validates and stages the restore; the page never reports optimistic success.",
+      "warning": "This is a dangerous operation",
+      "nextStart": "Staged content is applied before the world opens on the next start. The server rejects world restore when timing evidence is unavailable.",
+      "panelDatabaseReceipt": "Panel database history may be reconciled from a restore receipt after restart.",
+      "restartAfterStage": "Request restart after staging",
+      "confirm": "Stage restore"
+    },
+    "delete": {
+      "confirm": "Delete this {kind} backup? The server rejects deletion while an archive is referenced by restore."
+    },
+    "policies": {
+      "title": "Backup policies",
+      "description": "Each policy saves with its current server version.",
+      "refresh": "Refresh policy data",
+      "version": "Draft version {version}",
+      "state": {
+        "loading": "Loading backup policies.",
+        "forbidden": "You cannot manage backup policies.",
+        "failed": "Backup policies are unavailable.",
+        "protocolError": "The server returned an unsupported backup policy response.",
+        "stale": "Policy data may be stale. Refresh before resolving a conflict."
+      },
+      "error": {
+        "conflictTitle": "This policy changed on the server.",
+        "conflictDescription": "Your draft was kept. Refresh policy data, review the current server values, then retry.",
+        "invalidTitle": "The backup policy is invalid.",
+        "invalidDescription": "Review the cron expression, time zone, backup root, and retention values.",
+        "unavailableTitle": "The policy was not saved.",
+        "unavailableDescription": "The server could not confirm this change. Your draft was kept."
+      },
+      "field": {
+        "enabled": "Enabled",
+        "cronExpression": "Cron expression",
+        "timeZoneId": "Time zone ID",
+        "backupRootId": "Backup root ID",
+        "retentionCount": "Retention count",
+        "retentionDays": "Retention days",
+        "compressionEnabled": "Compress archive"
+      },
+      "save": "Save policy"
+    }
+  },
+  "schedules": {
+    "title": "Announcements and schedules",
+    "announcement": {
+      "title": "Immediate announcement",
+      "description": "Send a plain-text announcement containing 1 to 500 characters.",
+      "message": "Message",
+      "placeholder": "Enter the announcement for players",
+      "send": "Send announcement"
+    },
+    "catalog": {
+      "title": "Schedules",
+      "description": "Cron, time zone, concurrency policy, and next occurrence come from the server contract."
+    },
+    "kind": {
+      "ScheduledConsoleCommand": "Scheduled console command",
+      "ScheduledRestart": "Scheduled restart",
+      "ScheduledAnnouncement": "Scheduled announcement"
+    },
+    "policy": {
+      "SkipIfRunning": "Skip while running",
+      "QueueOne": "Queue at most one"
+    },
+    "form": {
+      "create": "New schedule",
+      "edit": "Edit schedule",
+      "description": "Saves use the current row version; conflicts never overwrite server state.",
+      "name": "Name",
+      "kind": "Kind",
+      "cron": "Cron expression",
+      "timeZone": "Time zone ID",
+      "policy": "Concurrency policy",
+      "enabled": "Enabled",
+      "command": "Console command",
+      "countdown": "Countdown seconds",
+      "message": "Announcement message"
+    },
+    "table": {
+      "name": "Name",
+      "kind": "Kind",
+      "schedule": "Schedule",
+      "next": "Next occurrence",
+      "status": "Status",
+      "actions": "Actions",
+      "none": "None",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "action": {
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete"
+    },
+    "delete": {
+      "confirm": "Delete schedule “{name}”? Terminal job history is retained."
+    },
+    "state": {
+      "empty": "No schedules yet",
+      "forbidden": "You cannot manage schedules",
+      "failed": "Schedules are unavailable",
+      "protocolError": "The server returned an unsupported schedule protocol",
+      "stale": "Refresh failed; showing the last successful result",
+      "operationFailed": "The schedule operation did not complete"
+    }
   },
   "gameResources": {
     "title": "Game resources",
@@ -388,6 +609,117 @@
         "unknown": "Result could not be confirmed."
       }
     },
+    "profile": {
+      "title": "Player profile",
+      "navigation": "Player profiles and evidence",
+      "viewReadOnly": "View read-only profile",
+      "readOnlyNotice": "This profile is read-only",
+      "state": {
+        "forbiddenTitle": "You cannot view this player profile",
+        "failedTitle": "The player profile is unavailable",
+        "staleTitle": "Refresh failed; showing the last result"
+      },
+      "section": {
+        "loading": "Loading",
+        "available": "Data available",
+        "partial": "Data is incomplete",
+        "stale": "Data may be stale",
+        "unavailable": "Data unavailable",
+        "forbidden": "You cannot view this section"
+      },
+      "evidence": {
+        "confirmed": "Confirmed",
+        "observedChange": "Observed change",
+        "gap": "Evidence gap",
+        "incompleteDescription": "Some observations may be missing. The interface does not infer missing data as actual game state.",
+        "gapDescription": "This profile contains {count} evidence-gap records."
+      },
+      "summary": {
+        "title": "Profile summary"
+      },
+      "inventory": {
+        "title": "Inventory",
+        "item": "Item",
+        "container": "Container",
+        "quantity": "Quantity",
+        "quality": "Quality",
+        "catalogUnavailable": "Resource catalog version unavailable",
+        "changes": "Inventory changes",
+        "uncomparable": "Cannot compare"
+      },
+      "skills": {
+        "title": "Skills and progression",
+        "skill": "Skill",
+        "value": "Value",
+        "unknown": "Unknown",
+        "notLoaded": "Not loaded",
+        "unsupportedByVersion": "Unsupported by this game version"
+      },
+      "activity": {
+        "title": "Activity",
+        "sessions": "Game sessions",
+        "openSession": "Still online",
+        "events": "Activity events",
+        "date": "Date",
+        "logins": "Logins",
+        "inventoryObservations": "Inventory observations"
+      },
+      "actions": {
+        "title": "Player actions",
+        "freshTarget": "Live target confirmed",
+        "freshRequired": "Dangerous actions require a currently online target with confirmed identity, world, and observation time.",
+        "world": "World",
+        "targetInvalidTitle": "The target is no longer valid",
+        "targetInvalidDescription": "The player's online identity or world state changed. Close this dialog, refresh, and try again.",
+        "resultUnknownDescription": "The server could not confirm the final result. Check the audit trail and player state using operation ID {operationId}; do not retry blindly.",
+        "resourceId": "Resource ID",
+        "catalogVersion": "Resource catalog version: {version}",
+        "dangerConfirm": "I understand that this action changes player data",
+        "status": {
+          "pending": "Action pending",
+          "succeeded": "Action succeeded",
+          "failed": "Action failed",
+          "resultUnknown": "Action result unknown"
+        },
+        "grant": {
+          "title": "Grant item",
+          "description": "Grant a resource to the confirmed online player's bag.",
+          "confirm": "Grant item",
+          "hiddenConfirm": "I confirmed that this resource may not appear in the normal resource list"
+        },
+        "remove": {
+          "title": "Remove item",
+          "description": "Remove a resource from the confirmed online player's bag.",
+          "confirm": "Remove item",
+          "mode": "Removal mode",
+          "exact": "Require the exact quantity",
+          "upToAvailable": "Remove up to the available quantity",
+          "bagOnly": "This action checks only the player's bag and does not modify other containers."
+        },
+        "resetSkills": {
+          "title": "Reset skills",
+          "description": "Reset the player's skills and related progression.",
+          "impact": "This action permanently changes the player's skill data.",
+          "confirm": "Reset skills"
+        },
+        "resetPartial": {
+          "title": "Clear inventory",
+          "description": "Clear items from the player's bag and toolbelt.",
+          "impact": "This action permanently removes items in the target scope.",
+          "scope": "It does not automatically clear world containers or other data outside the stated scope.",
+          "confirm": "Clear inventory"
+        },
+        "resetFull": {
+          "title": "Reset all player data",
+          "description": "Delete and rebuild the player's complete persistent data.",
+          "impact": "This is a high-risk action that cannot be directly undone.",
+          "recoveryWarning": "Confirm that a usable backup exists or explicitly accept that recovery may be impossible.",
+          "typeIdentity": "Enter the cross-platform ID to confirm",
+          "disposableConfirm": "I confirm that this player's data may be permanently reset",
+          "confirm": "Reset all player data"
+        }
+      }
+    },
     "history": {
       "title": "Player history",
       "navigation": "History",
@@ -479,10 +811,128 @@
       }
     }
   },
+  "audit": {
+    "title": "Unified audit",
+    "tabs": {
+      "audit": "Audit entries",
+      "gameEvents": "Game events"
+    },
+    "filters": {
+      "source": "Source",
+      "status": "Status",
+      "subject": "Subject",
+      "startUtc": "Start time (UTC)",
+      "endUtc": "End time (UTC)",
+      "apply": "Apply filters"
+    },
+    "state": {
+      "loading": "Loading audit entries",
+      "empty": "No audit entries match the filters",
+      "failed": "Audit entries are unavailable",
+      "forbidden": "You cannot view the unified audit",
+      "stale": "Showing the last successful result"
+    }
+  },
+  "gameEvents": {
+    "title": "Game events",
+    "gap": "Some game events may be missing",
+    "loadMore": "Load more events",
+    "state": {
+      "loading": "Loading game events",
+      "empty": "No game events match the filters",
+      "failed": "Game events are unavailable",
+      "forbidden": "You cannot view game events"
+    }
+  },
+  "chatMutes": {
+    "title": "Chat mutes",
+    "create": "Create mute",
+    "edit": "Edit mute",
+    "release": "Release mute",
+    "permanent": "Permanent",
+    "state": {
+      "loading": "Loading chat mutes",
+      "empty": "There are no chat mutes",
+      "failed": "Chat mutes are unavailable",
+      "forbidden": "You cannot manage chat mutes",
+      "stale": "Showing the last successful result"
+    },
+    "dialog": {
+      "releaseTitle": "Confirm mute release",
+      "releaseDescription": "The target player can resume public chat immediately after release.",
+      "releaseConfirm": "Release mute"
+    }
+  },
   "gameChat": {
     "title": "Game chat",
+    "common": {
+      "retry": "Retry",
+      "loadMore": "Load more",
+      "staleTitle": "Showing the last successful result",
+      "crossplatformId": "Cross-platform ID",
+      "entityId": "Entity ID",
+      "entityIdValue": "entity {id}",
+      "optional": "Optional",
+      "mayBeEmpty": "May be empty",
+      "defaultValue": "Default",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "resetDefaults": "Restore defaults"
+    },
+    "channels": {
+      "All": "All",
+      "Global": "Global",
+      "Friends": "Friends",
+      "Party": "Party",
+      "Whisper": "Whisper",
+      "Unknown": "Unknown"
+    },
+    "sources": {
+      "Player": "Player",
+      "Administrator": "Administrator",
+      "System": "System"
+    },
+    "permissions": {
+      "None": "Disabled",
+      "AdminOnly": "Administrators only",
+      "All": "All players"
+    },
+    "connection": {
+      "connecting": "Connecting",
+      "live": "Live",
+      "reconnecting": "Reconnecting",
+      "stopped": "Offline"
+    },
+    "feedback": {
+      "settingsOperationFailed": "Failed to update chat settings. Try again.",
+      "coloredSettingsLoadFailed": "Failed to load colored-chat settings.",
+      "profilesLoadFailed": "Failed to load player profiles.",
+      "coloredSettingsSaveFailed": "Colored-chat settings were not saved. Try again.",
+      "profileOperationFailed": "The player-profile operation failed. The list was not changed optimistically."
+    },
     "live": {
       "title": "Live chat",
+      "onlinePlayers": "Online players",
+      "onlinePlayersCount": "Online players ({count})",
+      "loadingRecent": "Loading recent messages…",
+      "buffered": "{count} buffered",
+      "gap": "Some live messages may be missing",
+      "channelAria": "Chat channel",
+      "messagesAria": "Live chat messages",
+      "playersEmpty": "No players are online.",
+      "privateUnavailable": "Private messaging unavailable",
+      "messagesEmpty": "No chat messages yet.",
+      "backToLatest": "Back to latest ({count})",
+      "composer": {
+        "global": "Global chat",
+        "private": "Private message",
+        "clearTarget": "Clear private target",
+        "messageAria": "Chat message",
+        "placeholder": "Type a message…",
+        "send": "Send",
+        "keyboardHelp": "Enter to send · Shift+Enter for a new line"
+      },
       "sendFeedback": {
         "session_expired": "Your session has expired. Sign in again.",
         "forbidden": "You do not have permission to send chat messages.",
@@ -494,17 +944,1078 @@
         "unknown": "Failed to send the message. Your input was kept."
       }
     },
-    "history": { "title": "Chat history" },
+    "history": {
+      "title": "Chat history",
+      "description": "Filter history by stable identity, channel, source, and UTC time range.",
+      "filters": {
+        "senderName": "Sender name",
+        "channel": "Channel",
+        "allChannels": "All channels",
+        "source": "Source",
+        "allSources": "All sources",
+        "startUtc": "Start time (UTC)",
+        "endUtc": "End time (UTC)",
+        "apply": "Apply filters"
+      },
+      "table": {
+        "occurredAtUtc": "Time (UTC)",
+        "senderName": "Sender",
+        "channel": "Channel",
+        "source": "Source",
+        "message": "Message"
+      },
+      "state": {
+        "loading": "Loading chat history",
+        "empty": "No chat messages match the filters",
+        "failed": "Chat history is unavailable",
+        "forbidden": "You cannot view chat history",
+        "staleDescription": "The latest refresh failed; these filtered results may be stale."
+      }
+    },
     "settings": {
       "title": "Chat settings",
       "loading": "Loading chat settings",
       "forbidden": "You cannot manage chat settings",
-      "failed": "Chat settings are unavailable"
+      "failed": "Chat settings are unavailable",
+      "description": "Disabling chat does not delete existing history. Capture and panel sending resume only after chat is enabled again.",
+      "sections": {
+        "featureTitle": "Feature and sender names",
+        "featureDescription": "Control capture and panel sending, and configure server display names.",
+        "commandTitle": "Commands and history",
+        "commandDescription": "Each command prefix must be one non-whitespace character; 0 disables automatic cleanup."
+      },
+      "fields": {
+        "enabled": "Enable chat",
+        "enabledDescription": "Capture chat and allow the panel to send messages",
+        "globalServerName": "Global-message server name",
+        "whisperServerName": "Private-message server name",
+        "commandPrefixes": "Command prefixes",
+        "commandPrefixesDescription": "Enter one or more single-character prefixes.",
+        "excludeCommands": "Exclude command history",
+        "excludeCommandsDescription": "Do not write command messages to chat history",
+        "retentionDays": "History retention days",
+        "retentionDaysDescription": "Range 0..3650; 0 disables automatic cleanup."
+      },
+      "validation": {
+        "commandPrefixes": "Each command prefix must be one non-whitespace character",
+        "historyRetentionDays": "History retention days must be an integer from 0 to 3650"
+      },
+      "save": "Save chat settings"
     },
     "colored": {
       "title": "Colored chat",
       "forbidden": "You cannot manage colored chat",
-      "settingsFailed": "Colored chat settings are unavailable"
+      "settingsFailed": "Colored chat settings are unavailable",
+      "description": "Manage player-specific profiles and six default colors. Every browser preview is plain text.",
+      "tabs": {
+        "profiles": "Player profiles",
+        "defaults": "Default settings"
+      },
+      "profiles": {
+        "filterLabel": "Filter profiles",
+        "filterPlaceholder": "Cross-platform ID or custom name",
+        "filter": "Filter",
+        "create": "Add profile",
+        "loading": "Loading player profiles",
+        "failed": "Player profiles are unavailable",
+        "empty": "No player profiles",
+        "nameColor": "Name color",
+        "textColor": "Message color",
+        "updated": "Updated"
+      },
+      "defaults": {
+        "enabled": "Enable colored chat",
+        "enabledDescription": "Apply colors to eligible messages",
+        "permission": "Player color-tag permission",
+        "globalColor": "Global default color",
+        "whisperColor": "Whisper default color",
+        "friendsColor": "Friends default color",
+        "partyColor": "Party default color",
+        "adminColor": "Administrator default color",
+        "systemColor": "System default color",
+        "save": "Save default settings"
+      },
+      "preview": {
+        "aria": "Colored-chat plain-text preview",
+        "title": "Safe preview (plain text)",
+        "playerName": "Player",
+        "message": "This is a plain-text chat preview."
+      },
+      "profileDialog": {
+        "createTitle": "Add player profile",
+        "editTitle": "Edit player profile",
+        "description": "Profiles use a stable cross-platform ID. The business key cannot be changed while editing.",
+        "nameTemplate": "Name template",
+        "nameTemplateDescription": "Only the four variables below are replaced; unknown variables remain plain text.",
+        "notes": "Operator notes",
+        "notesHint": "Visible only in the panel",
+        "submit": "Submit profile",
+        "create": "Create profile",
+        "save": "Save profile",
+        "validation": {
+          "crossplatformId": "The cross-platform ID is required and cannot contain whitespace",
+          "color": "A color must be empty or a six-digit RGB hexadecimal value"
+        }
+      },
+      "dialog": {
+        "deleteTitle": "Delete player profile",
+        "deleteDescription": "The player immediately falls back to the default colored-chat rules after deletion.",
+        "deleteConfirm": "Delete profile"
+      }
+    }
+  },
+  "economy": {
+    "common": {
+      "refresh": "Refresh",
+      "search": "Search",
+      "loadMore": "Load more",
+      "operationIncomplete": "Operation incomplete"
+    },
+    "accounts": {
+      "title": "Economy accounts",
+      "state": {
+        "stale": "Showing the last successful data",
+        "forbidden": "You cannot manage economy accounts",
+        "unavailable": "Economy accounts are unavailable",
+        "empty": "No economy accounts match your search."
+      },
+      "search": {
+        "label": "Account or player ID",
+        "placeholder": "Enter an accountId or crossplatformId",
+        "includeSystem": "Include system accounts"
+      },
+      "status": {
+        "disabled": "Disabled",
+        "frozen": "Frozen",
+        "normal": "Normal"
+      },
+      "balance": {
+        "posted": "Posted balance",
+        "reservedDebit": "Reserved debits",
+        "available": "Available balance"
+      },
+      "action": {
+        "freeze": "Freeze account",
+        "unfreeze": "Unfreeze account"
+      },
+      "adjustment": {
+        "title": "Manual balance adjustment",
+        "description": "The account refreshes only after the server commits the ledger entry; this page does not change the balance optimistically.",
+        "playerId": "Player crossplatformId",
+        "direction": "Direction",
+        "credit": "Increase balance (Credit)",
+        "debit": "Decrease balance (Debit)",
+        "amount": "Amount",
+        "reason": "Reason",
+        "submit": "Submit adjustment"
+      }
+    },
+    "transactions": {
+      "title": "Economy transactions",
+      "state": {
+        "stale": "Transaction refresh failed; showing the last successful data",
+        "forbidden": "You cannot view economy transactions",
+        "unavailable": "Economy transactions are unavailable",
+        "empty": "No economy transactions match your search."
+      },
+      "playerId": "Player ID",
+      "accountId": "Account ID",
+      "type": "Type",
+      "businessKind": "Business type",
+      "balanceAfter": "Balance: {amount}"
+    }
+  },
+  "rewards": {
+    "common": {
+      "load": "Load",
+      "refresh": "Refresh"
+    },
+    "packages": {
+      "title": "Reward packages",
+      "state": {
+        "stale": "Save or load failed; showing the last successful data",
+        "forbidden": "You cannot manage reward packages",
+        "unavailable": "Reward packages are unavailable"
+      },
+      "packageId": "Reward package ID",
+      "createWithId": "Create with this ID",
+      "saveNotice": "The server configuration does not change until you save.",
+      "name": "Name",
+      "sortOrder": "Sort order",
+      "description": "Description",
+      "enabled": "Enable reward package",
+      "entries": {
+        "title": "Reward entries",
+        "addItem": "Add item",
+        "addCurrency": "Add currency",
+        "internalName": "Internal name (internalName)",
+        "catalogVersion": "Catalog version",
+        "quantity": "Quantity",
+        "currencyAmount": "Currency amount"
+      },
+      "save": "Save reward package"
+    },
+    "operations": {
+      "title": "Reward grants and exceptions",
+      "reconciliation": {
+        "title": "PendingReconciliation / ResultUnknown is not retried automatically",
+        "description": "Confirm the actual in-game result manually, or issue a refund or compensation; avoid duplicate grants."
+      },
+      "operationIncomplete": "Reward operation incomplete",
+      "manualGrant": {
+        "title": "Manual grant",
+        "description": "The operation is added to the list only after the server returns an authoritative result.",
+        "packageId": "Reward package ID",
+        "playerId": "Player ID",
+        "entityId": "Entity ID",
+        "worldId": "World ID",
+        "submit": "Submit grant"
+      },
+      "empty": "There are no reward grant exceptions to process.",
+      "action": {
+        "confirmCompleted": "Confirm completed",
+        "refund": "Refund",
+        "compensate": "Issue compensation"
+      }
+    }
+  },
+  "commerce": {
+    "common": {
+      "load": "Load",
+      "createWithId": "Create with this ID",
+      "name": "Name",
+      "description": "Description",
+      "rewardPackageId": "Reward package ID",
+      "perPlayerLimit": "Per-player limit",
+      "sortOrder": "Sort order",
+      "playerId": "Player ID",
+      "entityId": "Entity ID",
+      "worldId": "World ID",
+      "quantity": "Quantity",
+      "operationIncomplete": "Operation incomplete"
+    },
+    "shop": {
+      "title": "Shop",
+      "operationIncomplete": "Shop operation incomplete",
+      "reconciliation": {
+        "title": "PendingReconciliation / ResultUnknown",
+        "description": "The charge or grant result is unknown. Do not repeat the purchase; continue in reward grant exception handling."
+      },
+      "productId": "Product ID",
+      "price": "Price",
+      "stock": "Stock (blank means unlimited)",
+      "enabled": "Enable product",
+      "save": "Save product",
+      "purchase": {
+        "title": "Controlled purchase",
+        "priceNotice": "Current price: {price}. The server result is authoritative.",
+        "submit": "Submit purchase"
+      }
+    },
+    "redeemCodes": {
+      "title": "Redeem codes",
+      "operationIncomplete": "Redeem-code operation incomplete",
+      "plaintext": {
+        "title": "The plaintext redeem code is shown only once",
+        "description": "Copy and deliver it securely now. After closing it, the panel retains only the masked code.",
+        "close": "Hide plaintext"
+      },
+      "recordId": "Redeem-code record ID",
+      "loadMasked": "Load masked record",
+      "redemptionCount": "{packageId} · Redeemed {count} times",
+      "generate": {
+        "title": "Generate redeem code",
+        "validFromUtc": "Valid from (UTC, optional)",
+        "expiresAtUtc": "Expires at (UTC, optional)",
+        "maxRedemptions": "Total redemption limit",
+        "enabled": "Enable after creation",
+        "submit": "Generate redeem code"
+      }
+    },
+    "achievementOnline": {
+      "title": "Achievements and online rewards",
+      "reconciliation": {
+        "title": "PendingReconciliation / ResultUnknown is not compensated automatically",
+        "description": "Evidence gaps and unknown game results retain their state. Confirm the actual result before handling them manually.",
+        "statusLabel": "Manual reconciliation: PendingReconciliation / ResultUnknown"
+      },
+      "achievement": {
+        "title": "Achievement definition",
+        "description": "Definitions and player progress are stored separately.",
+        "id": "Achievement ID",
+        "statistic": "Statistic",
+        "threshold": "Threshold",
+        "enabled": "Enable achievement",
+        "loadProgress": "Load player progress",
+        "save": "Save achievement",
+        "currentValue": "Current value: {value} · {state}",
+        "completed": "Completed",
+        "incomplete": "Incomplete"
+      },
+      "rule": {
+        "title": "Online reward rule",
+        "description": "The server evaluates continuous-online evidence and the evidence-gap policy.",
+        "id": "Rule ID",
+        "requiredOnlineSeconds": "Required online seconds",
+        "repeatIntervalSeconds": "Repeat interval in seconds",
+        "gapPolicy": "Evidence-gap policy",
+        "enabled": "Enable rule",
+        "loadRecords": "Load records",
+        "manualGrant": "Manual grant",
+        "save": "Save rule"
+      },
+      "statistic": {
+        "Level": "Level",
+        "ZombieKills": "Zombie kills",
+        "PlayerKills": "Player kills",
+        "Deaths": "Deaths"
+      },
+      "gapPolicy": {
+        "Paused": "Pause accumulation (Paused)",
+        "Incomplete": "Mark evidence incomplete (Incomplete)"
+      }
+    }
+  },
+  "automation": {
+    "title": "Event automation",
+    "common": {
+      "refresh": "Refresh",
+      "retry": "Retry",
+      "save": "Save",
+      "delete": "Delete"
+    },
+    "state": {
+      "forbidden": "Only Owners can manage automation rules",
+      "unavailable": "Automation rules are temporarily unavailable",
+      "stale": "Refresh failed; showing the last successfully loaded data",
+      "operationIncomplete": "Operation incomplete"
+    },
+    "execution": {
+      "unavailableTitle": "Execution evidence queries are unavailable",
+      "unavailableDescription": "The backend does not currently expose an execution query contract. Rule editing, validation, and dry runs remain available.",
+      "actionResults": "Action results"
+    },
+    "condition": {
+      "kind": {
+        "All": "All"
+      },
+      "addChild": "Add condition"
+    },
+    "actions": {
+      "moveDown": "Move down"
+    },
+    "rules": {
+      "title": "Rules",
+      "create": "New",
+      "empty": "No rules"
+    },
+    "editor": {
+      "compositeTitle": "This rule uses a composite condition tree",
+      "compositeDescription": "The minimal editor will not downgrade or overwrite a composite tree. Create a simple rule or wait for the full tree editor.",
+      "title": "Rule editor",
+      "description": "Uses fixed trigger, condition, and action structures; JSON, scripts, and arbitrary commands are not accepted.",
+      "ruleId": "Rule ID",
+      "name": "Name",
+      "trigger": "Trigger",
+      "enabled": "Enabled",
+      "conditionField": "Condition field",
+      "conditionOperator": "Condition operator",
+      "conditionValue": "Condition value",
+      "action": "Action",
+      "target": "Target",
+      "targetReference": "Target reference",
+      "actionValue": "Action value",
+      "amount": "Amount",
+      "muteSeconds": "Mute duration in seconds",
+      "cooldownSeconds": "Cooldown in seconds",
+      "validate": "Validate"
+    },
+    "validation": {
+      "valid": "Validation passed",
+      "invalid": "Validation failed",
+      "noIssues": "No issues found"
+    },
+    "dryRun": {
+      "title": "Dry run",
+      "description": "Enter a structured snapshot. This does not persist the trigger or execution and causes no business side effects.",
+      "triggerId": "Trigger ID",
+      "occurredAtUtc": "Occurred at (UTC)",
+      "crossplatformId": "Player cross-platform ID",
+      "chatText": "Chat text",
+      "scheduledForUtc": "Scheduled for (UTC)",
+      "bloodMoonPhase": "Blood moon phase",
+      "gapIds": "Gap IDs (comma-separated)",
+      "run": "Run dry run",
+      "notEvaluated": "Not evaluated",
+      "result": "Condition result: {result}",
+      "plannedActions": "{count} planned actions",
+      "traceTitle": "Evaluation trace"
+    },
+    "confirmDelete": "Delete rule “{name}”?",
+    "enums": {
+      "trigger": {
+        "PlayerJoined": "Player joined",
+        "PlayerLeft": "Player left",
+        "ChatMessage": "Chat message",
+        "Cron": "Cron schedule",
+        "BloodMoonPhaseEntered": "Blood moon phase entered"
+      },
+      "operator": {
+        "Equals": "Equals",
+        "NotEquals": "Does not equal",
+        "InSet": "In set",
+        "NumberRange": "Number range",
+        "TimeWindow": "Time window",
+        "PlayerGroup": "Player group",
+        "Permission": "Permission",
+        "Cooldown": "Cooldown"
+      },
+      "action": {
+        "BroadcastMessage": "Broadcast message",
+        "PrivateMessage": "Private message",
+        "Announcement": "Announcement",
+        "GrantItem": "Grant item",
+        "GrantRewardPackage": "Grant reward package",
+        "AdjustEconomy": "Adjust economy balance",
+        "KickPlayer": "Kick player",
+        "MutePlayer": "Mute player",
+        "RestrictedCommand": "Restricted command",
+        "DiscordMessage": "Discord message"
+      },
+      "target": {
+        "Global": "Global",
+        "TriggerPlayer": "Triggering player",
+        "StablePlayer": "Specified stable player",
+        "DiscordTarget": "Discord target"
+      }
+    }
+  },
+  "discord": {
+    "title": "Discord integration",
+    "common": {
+      "refresh": "Refresh",
+      "retry": "Retry",
+      "loading": "Loading…",
+      "configured": "Configured",
+      "notConfigured": "Not configured"
+    },
+    "state": {
+      "forbidden": "Only Owners can manage the Discord integration",
+      "unavailable": "Discord configuration is unavailable",
+      "stale": "Refresh failed; showing the last successfully loaded data",
+      "operationIncomplete": "Operation incomplete"
+    },
+    "mode": {
+      "Webhook": "Webhook",
+      "Bot": "Bot"
+    },
+    "configuration": {
+      "title": "Redacted configuration",
+      "description": "The page shows only whether credentials exist. It does not read or reveal tokens, Webhook URLs, secrets, or message bodies.",
+      "enabled": "Enabled",
+      "mode": "Mode",
+      "applicationId": "Application ID",
+      "guildId": "Guild ID",
+      "publicChannelId": "Public channel ID",
+      "botCredential": "Bot credential",
+      "gameToDiscord": "Game → Discord",
+      "discordToGame": "Discord → game",
+      "proxyEnabled": "Use proxy",
+      "proxyEndpoint": "Proxy endpoint",
+      "save": "Save configuration"
+    },
+    "targets": {
+      "title": "Delivery targets",
+      "add": "Add target",
+      "keyPlaceholder": "Target key",
+      "channelPlaceholder": "Channel ID",
+      "credentialConfigured": "Credential configured",
+      "noCredential": "No credential"
+    },
+    "testDelivery": {
+      "title": "Test delivery",
+      "description": "Success means only that the request was queued; it does not mean Discord received it.",
+      "selectTarget": "Select target",
+      "send": "Send fixed test message",
+      "accepted": "Delivery accepted: {status}"
+    },
+    "delivery": {
+      "title": "Deliveries",
+      "unavailableTitle": "Delivery history is unavailable",
+      "unavailableDescription": "The backend management query contract is unavailable. Configuration and test delivery are unaffected.",
+      "empty": "No delivery records",
+      "retryCount": "{deliveryId} · {count} retries",
+      "mobileSummary": "Mobile summary"
+    },
+    "secrets": {
+      "botToken": "Bot token",
+      "keep": "Keep current value",
+      "replace": "Replace",
+      "clear": "Clear",
+      "clearConfirm": "Clear this secret?",
+      "apply": "Apply secret change",
+      "submissionOnly": "Values are submitted once and are never shown again."
+    },
+    "inbound": {
+      "title": "Inbound interactions",
+      "transportDescription": "Gateway is dedicated to the Discord-to-game chat bridge. Interactions arrive as signed HTTP requests.",
+      "endpoint": "Interaction Endpoint",
+      "endpointHelp": "Expose this exact path through public HTTPS, then configure it in the Discord Developer Portal.",
+      "publicKey": "Interaction public key",
+      "replacePublicKey": "Replace public key"
+    },
+    "health": {
+      "title": "Transport diagnostics",
+      "unavailable": "Transport diagnostics are unavailable",
+      "gateway": "Gateway",
+      "inbound": "Inbound"
+    },
+    "binding": {
+      "title": "Account bindings",
+      "unavailable": "The binding list is unavailable",
+      "empty": "No bindings",
+      "subject": "Discord {discordSubject}",
+      "remove": "Unbind",
+      "playerPlaceholder": "Player cross-platform ID",
+      "createCode": "Create one-time binding code",
+      "codeOnce": "The binding code is shown only once",
+      "expiresAt": "Expires: {time}",
+      "hide": "Hide",
+      "confirmRemove": "Remove Discord binding {discordSubject}?"
+    },
+    "commands": {
+      "title": "Fixed command catalog",
+      "unavailable": "The command catalog is unavailable",
+      "empty": "No commands",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "remoteAllowed": "Remote allowed",
+      "bindingOnly": "Binding use only"
+    }
+  },
+  "geoIp": {
+    "title": "GeoIP access policy",
+    "common": {
+      "refresh": "Refresh",
+      "retry": "Retry",
+      "loading": "Loading…",
+      "add": "Add",
+      "remove": "Remove",
+      "none": "None",
+      "unknown": "Unknown"
+    },
+    "currentFailureMode": "Current failure mode: {mode}",
+    "state": {
+      "forbidden": "Only Owners can manage the GeoIP policy",
+      "unavailable": "The GeoIP policy is unavailable",
+      "stale": "Refresh failed; showing the last successfully loaded data",
+      "operationIncomplete": "Operation incomplete"
+    },
+    "provider": {
+      "LocalMmdb": "Local MMDB (LocalMmdb)",
+      "MaxMindWebService": "MaxMind Web Service"
+    },
+    "failureMode": {
+      "FailOpen": "Allow on failure (FailOpen)",
+      "FailClosed": "Deny on failure (FailClosed)",
+      "failOpenDescription": "Allow joins when lookups or the cache are unavailable; continue monitoring diagnostic alerts.",
+      "failClosedDescription": "Reject joins when lookups or the cache are unavailable; confirm that the data source works before enabling this mode."
+    },
+    "effect": {
+      "Allow": "Allow",
+      "Deny": "Deny"
+    },
+    "policy": {
+      "title": "Policy settings",
+      "description": "The browser selects only approved providers; it does not read MMDB paths, MaxMind credentials, or raw provider errors.",
+      "enabled": "Enabled",
+      "bypassAdmins": "Allow administrators to bypass",
+      "provider": "Provider",
+      "failureMode": "Failure mode",
+      "rejectionMessage": "Rejection message",
+      "save": "Save policy"
+    },
+    "networkRules": {
+      "title": "IP / CIDR rules",
+      "description": "Deny takes precedence over Allow. Saving generates ordinal values from the current order.",
+      "empty": "No network rules",
+      "ruleIdPlaceholder": "Rule ID"
+    },
+    "countryRules": {
+      "title": "Country rules",
+      "description": "Use two-letter ISO country codes.",
+      "empty": "No country rules"
+    },
+    "test": {
+      "title": "Test lookup",
+      "description": "Only public IP addresses are accepted. Responses and the page show only masked IPs. Acceptance means the refresh was queued.",
+      "submit": "Test"
+    },
+    "diagnostics": {
+      "title": "Diagnostics",
+      "unavailableTitle": "GeoIP diagnostics are unavailable",
+      "unavailableDescription": "Policy loading and editing remain available; the page does not display raw provider errors.",
+      "status": "Status",
+      "persistentFailure": "Persistent failure",
+      "cacheHealth": "Cache health",
+      "dataVersion": "Data version",
+      "queueDepth": "Refresh queue",
+      "rejectedRefreshes": "Rejected refreshes",
+      "lastLookup": "Latest lookup",
+      "externalService": "External service",
+      "localData": "Local data",
+      "providerVersion": "Data version: {dataVersion} · Build: {buildEpoch}"
+    },
+    "decisions": {
+      "title": "Recent decisions",
+      "empty": "No decisions"
+    },
+    "credentials": {
+      "title": "MaxMind credentials",
+      "description": "Only credential status, fingerprint, and update time are shown. Replacement values are cleared from this form as soon as it is submitted.",
+      "unavailableTitle": "GeoIP credentials are unavailable",
+      "unavailableDescription": "Credential status could not be confirmed. Refresh the page before making another change.",
+      "action": "Action",
+      "operation": {
+        "Keep": "Keep current value",
+        "Replace": "Replace",
+        "Clear": "Clear"
+      },
+      "set": "Set",
+      "notSet": "Not set",
+      "status": "Status: {status}",
+      "fingerprint": "Fingerprint: {fingerprint}",
+      "updatedAt": "Updated: {updatedAt}",
+      "accountId": {
+        "title": "Account ID",
+        "value": "Replacement account ID"
+      },
+      "licenseKey": {
+        "title": "License key",
+        "value": "Replacement license key"
+      },
+      "save": "Save credentials"
+    },
+    "secrets": {
+      "maxMindLicenseKey": "MaxMind license key",
+      "clearConfirm": "Clear the MaxMind credentials?"
+    }
+  },
+  "community": {
+    "common": {
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "coordinates": "X {x} / Y {y} / Z {z}",
+    "disabled": "Disabled",
+    "edit": "Edit",
+      "enabled": "Enabled",
+      "query": "Query",
+      "restoreServerValue": "Restore server value",
+      "retry": "Retry",
+      "saveAndConfirm": "Save and wait for confirmation"
+    },
+    "state": {
+      "forbiddenTitle": "You cannot access {subject}",
+      "forbiddenDescription": "The current session does not have permission to read or modify this operations configuration.",
+      "unavailableTitle": "{subject} is unavailable",
+      "unavailableDescription": "No verifiable server response was received. The page will not fill the contract with a cached draft.",
+      "staleTitle": "Failed to refresh {subject}",
+      "staleDescription": "The last server-confirmed data is retained and may not represent the latest state."
+    },
+    "mutation": {
+      "confirmedTitle": "Confirmed by the server",
+      "confirmedDescription": "The page state was updated with authoritative data from this response.",
+      "forbiddenTitle": "Write operation rejected",
+      "forbiddenDescription": "The current session does not have permission to perform this operation. Page data was not changed.",
+      "unavailableTitle": "Server confirmation unavailable",
+      "unavailableDescription": "The write result cannot be confirmed. The page will not show success or retry automatically. Refresh to verify the result.",
+      "failedTitle": "Write operation incomplete",
+      "failedDescription": "The server rejected the current input or detected a state conflict. Refresh the authoritative data and try again."
+    },
+    "voteRound": {
+      "actionResultUnknown": "Action result unknown",
+      "actionResultUnknownDescription": "Vote settlement and the subsequent action result are independent. Verify the actual game state; the page will not show action success or retry automatically.",
+      "initiator": "Initiator",
+      "target": "Target",
+      "noFixedTarget": "No fixed target",
+      "eligibleCount": "Eligible players",
+      "threshold": "Threshold",
+      "thresholdValue": "{percent}% / at least {count} participants",
+      "openedAt": "Opened at",
+      "expiresAt": "Expires at",
+      "settlementConfirmation": "The server determines whether the round has expired and guarantees that settlement takes effect once. Request settlement for this fixed round?",
+      "confirmSettlement": "Confirm settlement request",
+      "requestSettlement": "Request server settlement"
+    },
+  "votes": {
+    "title": "Community Votes",
+    "refresh": "Refresh configuration and round lists",
+      "configurationTitle": "Vote configuration",
+      "configurationDescription": "Kick and Restart are configured independently. Writes include rowVersion and wait for server confirmation.",
+    "configurationSubject": "Vote configuration",
+    "configurationEmpty": "The server returned no vote configuration.",
+    "historyTitle": "All vote rounds",
+    "historyDescription": "This is the general vote-round history. Pending action work remains in a separate list.",
+    "historySubject": "Vote-round history",
+    "historyEmpty": "The server returned no vote rounds.",
+    "queuedTitle": "Pending-action rounds",
+    "queuedDescription": "These rounds have queued actions that require operational attention.",
+      "queuedSubject": "Pending-action rounds",
+      "queuedEmpty": "There are currently no ActionQueued rounds.",
+      "queryTitle": "Round query and settlement",
+      "queryDescription": "Settlement changes only the vote round. A passed vote does not mean the subsequent kick or restart action succeeded.",
+      "roundId": "Round ID",
+      "queryRound": "Query fixed round",
+      "roundSubject": "Vote round",
+      "settlementCompleted": "The server completed this settlement",
+      "alreadySettled": "The server confirmed this round was already settled",
+      "settlementCounts": "Participants {participantCount} · Yes {yesCount} · No {noCount}"
+    },
+    "voteConfiguration": {
+      "version": "Version {version}",
+      "durationMs": "Duration (milliseconds)",
+      "thresholdPercent": "Pass threshold (%)",
+      "minimumParticipants": "Minimum participants",
+      "initiatorMinimumOnlineMs": "Initiator minimum online time (milliseconds)",
+      "participantMinimumOnlineMs": "Participant minimum online time (milliseconds)",
+      "initiatorCooldownMs": "Initiator cooldown (milliseconds)",
+      "targetCooldownMs": "Target cooldown (milliseconds)",
+      "globalCooldownMs": "Global cooldown (milliseconds)",
+      "mutualExclusionScope": "Mutual-exclusion scope",
+      "voteSelection": "Vote selection",
+      "allowVoteChange": "Allow one change before the deadline"
+    },
+  "teleport": {
+    "title": "Teleport Settings and Queries",
+    "refresh": "Refresh settings and history",
+    "verifiedDataTitle": "Only server-verifiable data is shown",
+    "verifiedDataDescription": "Homes are queried by player identity. Friendship records and teleport-operation history come from server-confirmed lists.",
+      "settingsSubject": "Teleport settings",
+      "rulesTitle": "Rule configuration",
+      "rulesDescription": "Home, City, Friend, Return, and Admin are saved independently. A rowVersion conflict will not overwrite a newer version.",
+      "settingsEmpty": "The server returned no teleport settings.",
+    "friendshipRecordsTitle": "Friendship records",
+    "friendshipRecordsDescription": "All server-confirmed friendship records are shown here.",
+    "friendshipRecordsSubject": "Friendship records",
+    "friendshipRecordsEmpty": "The server returned no friendship records.",
+    "friendshipMemberA": "Member A",
+    "friendshipMemberB": "Member B",
+    "friendshipCreatedBy": "Created by",
+    "friendshipAcceptedAt": "Accepted at",
+    "operationsTitle": "Teleport-operation history",
+    "operationsDescription": "All server-confirmed teleport operations are shown here.",
+    "operationsSubject": "Teleport-operation history",
+    "operationsEmpty": "The server returned no teleport operations.",
+    "targetPlayer": "Target player",
+    "noTargetPlayer": "No target player",
+    "queriesTitle": "Direct lookups",
+    "queriesDescription": "Use these lookups for one player, friendship pair, or operation ID.",
+      "homesTitle": "Player homes",
+      "friendshipTitle": "Friendship",
+      "playerIdentity": "Player identity (crossplatformId)",
+      "playerA": "Player A",
+      "playerB": "Player B",
+      "operationTitle": "Teleport operation",
+      "operationId": "Operation ID",
+      "homesSubject": "Player homes",
+      "homesEmpty": "This player has no available homes.",
+      "friendshipSubject": "Friendship",
+      "areFriends": "The server confirms that the players are friends",
+      "areNotFriends": "The server confirms that the players are not friends",
+      "operationSubject": "Teleport operation",
+      "pendingReconciliation": "Awaiting manual verification",
+      "pendingReconciliationTitle": "Result unknown; awaiting manual verification",
+      "pendingReconciliationDescription": "The server cannot prove whether the teleport completed. Do not submit it again or treat HTTP acceptance as teleport success.",
+      "player": "Player",
+      "updatedAt": "Status updated at",
+      "destinationWorld": "Destination world",
+      "destinationCoordinates": "Destination coordinates"
+    },
+    "teleportSetting": {
+      "version": "Version {version}",
+      "maxHomes": "Maximum homes per player",
+      "cooldownMs": "Individual cooldown (milliseconds)",
+      "globalCooldownMs": "Global cooldown (milliseconds)",
+      "feeAmount": "Fee (smallest unit)",
+      "bloodMoonRestriction": "Blood Moon restriction",
+      "denyDuringBloodMoon": "Reject during Blood Moon"
+    },
+  "cityForm": {
+      "createTitle": "Create a city or overwrite one by ID",
+      "editTitle": "Edit {name}",
+    "description": "Only the server response is used after saving. Disabled cities remain visible in the full city list.",
+      "cityId": "City ID",
+      "name": "Name",
+      "descriptionField": "Description",
+      "worldId": "World ID",
+      "yaw": "Yaw",
+      "sortOrder": "Sort order",
+      "availability": "Availability",
+      "playerSelectable": "Players can select this city"
+    },
+  "cities": {
+    "title": "City Management",
+    "refresh": "Refresh city lists",
+    "listSubject": "City list",
+    "listTitle": "All cities",
+    "listDescription": "Enabled and disabled cities are shown. Select an entry to edit it; the server has no delete contract.",
+    "create": "Create city",
+    "listEmpty": "The server returned no cities.",
+      "noDescription": "No description",
+      "sortOrder": "Sort order {value}"
+    }
+  },
+  "worldTools": {
+    "title": "World Tools",
+    "tabs": {
+      "resources": "World resources",
+      "operations": "Operations"
+    },
+    "view": {
+      "worldChanged": "The world identity or version changed during confirmation. Review the operation again.",
+      "notSubmitted": "Operation was not submitted"
+    },
+    "common": {
+      "refresh": "Refresh",
+      "clear": "Clear",
+      "cancel": "Cancel",
+      "yes": "Yes",
+      "no": "No",
+      "errorCode": "Error: {code}"
+    },
+    "read": {
+      "observed": "Observed {time}",
+      "position": "Position {x}, {y}, {z}",
+      "summary": {
+        "title": "World summary",
+        "unavailable": "World summary unavailable",
+        "worldId": "World ID",
+        "worldVersion": "World version",
+        "mapResourceVersion": "Map resource version",
+        "gameVersion": "Game version",
+        "seed": "Seed",
+        "width": "Width",
+        "height": "Height",
+        "availableExtent": "Available extent",
+        "availableExtentValue": "X {minimumX}…{maximumX}; Z {minimumZ}…{maximumZ}"
+      },
+      "landClaims": {
+        "title": "Land claims",
+        "unavailable": "Land claims unavailable",
+        "owner": "Owner {owner}",
+        "position": "Position {x}, {y}, {z} · radius {radius}",
+        "ownerDetails": "Owner last login {lastLogin} · server ID {serverId}",
+        "empty": "No land claims were returned."
+      },
+      "vehicles": {
+        "title": "Vehicles",
+        "unavailable": "Vehicles unavailable",
+        "typeAndOwner": "{type} · owner {owner}",
+        "details": "Locked {locked} · fuel {fuel} · quality {quality} · container {container}",
+        "empty": "No vehicles were returned."
+      },
+      "drones": {
+        "title": "Drones",
+        "unavailable": "Drones unavailable",
+        "typeAndOwner": "{type} · owner {owner}",
+        "details": "Locked {locked} · quality {quality} · container {container}",
+        "empty": "No drones were returned."
+      },
+      "containers": {
+        "title": "Containers",
+        "unavailable": "Containers unavailable",
+        "parentAndPosition": "Parent {parent} · position {x}, {y}, {z}",
+        "details": "Locked {locked} · slots {used} / {total}",
+        "item": "{resourceId} × {count} · quality {quality}",
+        "itemDetailsUnavailable": "Item details are unavailable.",
+        "empty": "No containers were returned."
+      },
+      "catalogs": {
+        "title": "Approved operation catalogs",
+        "blocks": "Blocks",
+        "prefabs": "Prefabs",
+        "entityTypes": "Entity types",
+        "versionObserved": "Version {version} · observed {time}",
+        "approvedIdentifiers": "{count} approved identifiers"
+      }
+    },
+    "operations": {
+      "title": "World operations",
+      "description": "Every action uses a fixed request shape and is revalidated before side effects.",
+      "ownerRequiredTitle": "Owner access is required",
+      "ownerRequiredDescription": "World mutation controls are not rendered for Admin or Viewer sessions.",
+      "snapshotRequiredTitle": "A current world snapshot is required",
+      "snapshotRequiredDescription": "Stale or unavailable world identity cannot be used to prepare a mutation.",
+      "catalogUnavailable": "Approved catalog unavailable",
+      "cannotReview": "Operation cannot be reviewed",
+      "review": "Review operation",
+      "feedback": {
+        "snapshotRequired": "A current world snapshot is required.",
+        "catalogUnavailable": "The required approved resource catalog is unavailable.",
+        "invalidForm": "The operation form is invalid."
+      },
+      "types": {
+        "deleteLandClaim": "Delete land claim",
+        "moveOnlinePlayer": "Move online player",
+        "moveEntity": "Move entity",
+        "copyRegion": "Copy region",
+        "fillRegion": "Fill region",
+        "clearRegion": "Clear region",
+        "pasteRegion": "Paste region",
+        "setBlock": "Set block",
+        "placePrefab": "Place prefab",
+        "removePrefab": "Remove prefab",
+        "spawnEntity": "Spawn entity",
+        "deleteEntity": "Delete entity",
+        "cleanupEntities": "Clean up entities",
+        "reloadResource": "Reload game resource",
+        "collectGarbage": "Collect game garbage",
+        "undoChangeSet": "Undo change set",
+        "refreshMapResources": "Refresh map resources",
+        "renderExploredMap": "Render explored map",
+        "renderFullMap": "Render full map"
+      },
+      "fields": {
+        "operation": "Operation",
+        "crossplatformId": "Cross-platform ID",
+        "targetId": "Target ID",
+        "entityId": "Entity ID",
+        "ownerStableIdentity": "Owner stable identity",
+        "onlineObservedAtUtc": "Online observed at UTC",
+        "entityTypeResourceId": "Entity type resource ID",
+        "center": "Center",
+        "coordinate": "Coordinate",
+        "anchor": "Anchor",
+        "observedPosition": "Observed position",
+        "destination": "Destination",
+        "boundedRegion": "Bounded region",
+        "firstX": "First X",
+        "firstY": "First Y",
+        "firstZ": "First Z",
+        "secondX": "Second X",
+        "secondY": "Second Y",
+        "secondZ": "Second Z",
+        "blockInternalName": "Block internal name",
+        "rotation": "Rotation",
+        "shape": "Shape",
+        "prefabResourceId": "Prefab resource ID",
+        "prefabInstanceId": "Prefab instance ID",
+        "quantity": "Quantity",
+        "radius": "Radius",
+        "maximumCount": "Maximum count",
+        "entityCategory": "Entity category",
+        "resourceCategory": "Resource category",
+        "sourceChangeSetId": "Source change set ID",
+        "sourceOperationId": "Source operation ID",
+        "changeSetId": "Change set ID",
+        "currentRegionHash": "Current region hash",
+        "mapScope": "Map scope",
+        "limitBounds": "Limit to explicit X/Z bounds",
+        "minimumX": "Minimum X",
+        "minimumZ": "Minimum Z",
+        "maximumX": "Maximum X",
+        "maximumZ": "Maximum Z"
+      }
+    },
+    "history": {
+      "title": "Tracked operation",
+      "description": "The operation ID in the URL restores this record after a refresh.",
+      "refreshStatus": "Refresh status",
+      "acceptedTitle": "Operation accepted for processing",
+      "acceptedDescription": "Receipt {operationId} is not a successful terminal result.",
+      "resultUnknownTitle": "The operation result is unknown",
+      "resultUnknownDescription": "Do not retry or assume success. Inspect the operation and audit evidence before taking another action.",
+      "rollbackFailedTitle": "The operation rollback failed",
+      "rollbackFailedDescription": "The world may be partially changed. Stop further mutations and inspect recovery evidence.",
+      "statusUnavailable": "Operation status is unavailable",
+      "empty": "No operation is currently tracked.",
+      "operationId": "Operation ID",
+      "progress": "Progress",
+      "error": "Error",
+      "table": {
+        "operation": "Operation",
+        "status": "Status",
+        "worldVersion": "World version",
+        "created": "Created"
+      }
+    },
+    "confirm": {
+      "title": "Review world operation",
+      "description": "The server will revalidate the fixed target and versions before starting side effects.",
+      "dangerTitle": "Dangerous world operation",
+      "dangerDescription": "A 202 receipt means accepted for processing, not completed successfully.",
+      "target": "Target",
+      "world": "World",
+      "scope": "Scope",
+      "worldVersion": "World version",
+      "mapResourceVersion": "Map resource version",
+      "catalogVersion": "Catalog version",
+      "expectedImpact": "Expected impact",
+      "reversibility": "Reversibility",
+      "reversible": "Reversible through a verified change set",
+      "notReversible": "Not reversible",
+      "strongConfirmation": "Strong confirmation",
+      "strongConfirmationDescription": "Type CONFIRM exactly to acknowledge the elevated impact.",
+      "confirmOperation": "Confirm operation"
+    }
+  },
+  "modules": {
+    "title": "Feature Modules",
+    "common": {
+      "refresh": "Refresh",
+      "cancel": "Cancel",
+      "none": "None",
+      "errorCode": "Error: {code}"
+    },
+    "healthUnknownTitle": "Module health is unknown",
+    "healthUnknownDescription": "The current API reports each health source but does not report a health value. No health state is inferred.",
+    "stateUnavailable": "Feature module state is unavailable",
+    "table": {
+      "module": "Module",
+      "lifecycle": "Lifecycle",
+      "health": "Health",
+      "details": "Configuration and retention"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "unknown": "Unknown"
+    },
+    "fields": {
+      "disableMode": "Disable mode",
+      "healthSource": "Source",
+      "dependencies": "Dependencies",
+      "settingsSummary": "Settings summary",
+      "dataRetention": "Data retention",
+      "consumers": "Consumers",
+      "updated": "Updated",
+      "updatedBy": "{time} by {operator}",
+      "rowVersion": "Row version"
+    },
+    "actions": {
+      "enable": "Enable",
+      "disable": "Disable"
+    },
+    "unavailableTitle": "Feature modules unavailable",
+    "unavailableDescription": "The fixed 17-module contract could not be loaded.",
+    "enableDialog": {
+      "title": "Enable feature module",
+      "description": "Confirm the exact module and row version before enabling it.",
+      "dependencyRevalidation": "Dependency state will be revalidated",
+      "module": "Module",
+      "expectedRowVersion": "Expected row version",
+      "dependencies": "Dependencies",
+      "confirm": "Enable module"
+    },
+    "disableDialog": {
+      "title": "Disable feature module",
+      "description": "Confirm the module lifecycle impact before disabling it.",
+      "dangerTitle": "Dangerous module state change",
+      "dangerDescription": "Disable mode: {disableMode}. Active consumers and dependencies will be revalidated.",
+      "module": "Module",
+      "expectedRowVersion": "Expected row version",
+      "dataRetention": "Data retention",
+      "confirm": "Disable module"
     }
   },
   "console": {
@@ -542,6 +2053,44 @@
   "forbidden": {
     "title": "You cannot access this page",
     "description": "Your current identity does not have permission to access this feature."
+  },
+  "dailyReward": {
+    "title": "Daily reward",
+    "refresh": "Refresh daily reward",
+    "ruleId": "daily",
+    "explanationTitle": "One daily rule, one managed reward package",
+    "explanationDescription": "Players use the no-argument daily command. This page changes the package binding and enabled state only; it never replays an existing claim.",
+    "version": "Server version {version}",
+    "save": "Save daily reward",
+    "form": {
+      "title": "Daily reward rule",
+      "description": "The server applies this binding to new UTC daily claims after it confirms the save.",
+      "ruleId": "Rule ID",
+      "ruleIdDescription": "The no-argument game command always uses this rule.",
+      "rewardPackageId": "Reward package ID",
+      "rewardPackageIdDescription": "Enter the ID of an existing reward package. The server validates it again when saving.",
+      "rewardPackageIdPlaceholder": "For example: starter-pack",
+      "enabled": "Enabled",
+      "enabledDescription": "Disabled rules reject daily claims without creating a grant."
+    },
+    "state": {
+      "notConfiguredTitle": "Daily reward is not configured",
+      "notConfiguredDescription": "Choose an existing reward package before players can claim their daily reward.",
+      "staleTitle": "Showing the last confirmed policy",
+      "staleDescription": "The latest request failed. Your draft was kept; refresh before resolving a conflict.",
+      "forbiddenTitle": "You cannot manage the daily reward",
+      "forbiddenDescription": "Only the Owner can read or change this policy.",
+      "failedTitle": "Daily reward policy is unavailable",
+      "failedDescription": "The server did not return a verifiable policy."
+    },
+    "error": {
+      "title": "Daily reward was not saved",
+      "conflict": "The policy changed on the server. Your draft was kept; refresh and retry.",
+      "invalid": "Check that the reward package ID exists and the draft is valid.",
+      "unavailable": "The server could not confirm this change. Your draft was kept.",
+      "forbidden": "Your current session cannot change this policy.",
+      "session_expired": "Your session expired. Sign in again before saving."
+    }
   },
   "apiKeys": {
     "title": "API Keys",

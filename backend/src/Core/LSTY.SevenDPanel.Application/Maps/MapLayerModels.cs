@@ -64,14 +64,23 @@ namespace LSTY.SevenDPanel.Application
     public abstract class MapLayerFeature
     {
         protected MapLayerFeature(string id, MapLayerPosition position)
+            : this(id, id, position)
+        {
+        }
+
+        protected MapLayerFeature(string id, string stableIdentity, MapLayerPosition position)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("A map feature identifier is required.", nameof(id));
+            if (string.IsNullOrWhiteSpace(stableIdentity))
+                throw new ArgumentException("A stable map feature identity is required.", nameof(stableIdentity));
             Id = id;
+            StableIdentity = stableIdentity;
             Position = position;
         }
 
         public string Id { get; }
+        public string StableIdentity { get; }
         public MapLayerPosition Position { get; }
     }
 
@@ -121,7 +130,26 @@ namespace LSTY.SevenDPanel.Application
             double? protectionRadius,
             bool? isValid,
             DateTimeOffset? ownerLastLoginUtc)
-            : base(id, position)
+            : this(
+                id,
+                id,
+                position,
+                ownerCrossplatformId,
+                protectionRadius,
+                isValid,
+                ownerLastLoginUtc)
+        {
+        }
+
+        public LandClaimMapFeature(
+            string id,
+            string stableIdentity,
+            MapLayerPosition position,
+            string? ownerCrossplatformId,
+            double? protectionRadius,
+            bool? isValid,
+            DateTimeOffset? ownerLastLoginUtc)
+            : base(id, stableIdentity, position)
         {
             TraderMapFeature.ValidateOptionalText(ownerCrossplatformId, nameof(ownerCrossplatformId));
             TraderMapFeature.ValidateOptionalNonNegativeFinite(protectionRadius, nameof(protectionRadius));
@@ -151,10 +179,42 @@ namespace LSTY.SevenDPanel.Application
             int? quality,
             bool? isLocked,
             int? storageItemCount)
-            : base(id, position)
+            : this(
+                id,
+                id,
+                position,
+                vehicleType,
+                null,
+                ownerCrossplatformId,
+                loadState,
+                fuelPercentage,
+                quality,
+                isLocked,
+                storageItemCount,
+                null)
+        {
+        }
+
+        public VehicleMapFeature(
+            string id,
+            string stableIdentity,
+            MapLayerPosition position,
+            string? vehicleType,
+            string? entityTypeResourceId,
+            string? ownerCrossplatformId,
+            MapEntityLoadState loadState,
+            double? fuelPercentage,
+            int? quality,
+            bool? isLocked,
+            int? storageItemCount,
+            ContainerSummary? container)
+            : base(id, stableIdentity, position)
         {
             TraderMapFeature.ValidateOptionalText(vehicleType, nameof(vehicleType));
+            TraderMapFeature.ValidateOptionalText(entityTypeResourceId, nameof(entityTypeResourceId));
             TraderMapFeature.ValidateOptionalText(ownerCrossplatformId, nameof(ownerCrossplatformId));
+            if (!Enum.IsDefined(typeof(MapEntityLoadState), loadState))
+                throw new ArgumentOutOfRangeException(nameof(loadState));
             if (fuelPercentage.HasValue &&
                 (!MapLayerPosition.IsFinite(fuelPercentage.Value) || fuelPercentage.Value < 0 || fuelPercentage.Value > 100))
                 throw new ArgumentOutOfRangeException(nameof(fuelPercentage));
@@ -162,21 +222,25 @@ namespace LSTY.SevenDPanel.Application
             if (storageItemCount.HasValue && storageItemCount.Value < 0)
                 throw new ArgumentOutOfRangeException(nameof(storageItemCount));
             VehicleType = vehicleType;
+            EntityTypeResourceId = entityTypeResourceId;
             OwnerCrossplatformId = ownerCrossplatformId;
             LoadState = loadState;
             FuelPercentage = fuelPercentage;
             Quality = quality;
             IsLocked = isLocked;
             StorageItemCount = storageItemCount;
+            Container = container;
         }
 
         public string? VehicleType { get; }
+        public string? EntityTypeResourceId { get; }
         public string? OwnerCrossplatformId { get; }
         public MapEntityLoadState LoadState { get; }
         public double? FuelPercentage { get; }
         public int? Quality { get; }
         public bool? IsLocked { get; }
         public int? StorageItemCount { get; }
+        public ContainerSummary? Container { get; }
     }
 
     public sealed class DroneMapFeature : MapLayerFeature
@@ -186,15 +250,41 @@ namespace LSTY.SevenDPanel.Application
             MapLayerPosition position,
             string? ownerCrossplatformId,
             MapEntityLoadState loadState)
-            : base(id, position)
+            : this(id, id, position, null, ownerCrossplatformId, loadState, null, null, null)
         {
-            TraderMapFeature.ValidateOptionalText(ownerCrossplatformId, nameof(ownerCrossplatformId));
-            OwnerCrossplatformId = ownerCrossplatformId;
-            LoadState = loadState;
         }
 
+        public DroneMapFeature(
+            string id,
+            string stableIdentity,
+            MapLayerPosition position,
+            string? entityTypeResourceId,
+            string? ownerCrossplatformId,
+            MapEntityLoadState loadState,
+            bool? isLocked,
+            int? quality,
+            ContainerSummary? container)
+            : base(id, stableIdentity, position)
+        {
+            TraderMapFeature.ValidateOptionalText(entityTypeResourceId, nameof(entityTypeResourceId));
+            TraderMapFeature.ValidateOptionalText(ownerCrossplatformId, nameof(ownerCrossplatformId));
+            if (!Enum.IsDefined(typeof(MapEntityLoadState), loadState))
+                throw new ArgumentOutOfRangeException(nameof(loadState));
+            if (quality.HasValue && quality.Value < 0) throw new ArgumentOutOfRangeException(nameof(quality));
+            EntityTypeResourceId = entityTypeResourceId;
+            OwnerCrossplatformId = ownerCrossplatformId;
+            LoadState = loadState;
+            IsLocked = isLocked;
+            Quality = quality;
+            Container = container;
+        }
+
+        public string? EntityTypeResourceId { get; }
         public string? OwnerCrossplatformId { get; }
         public MapEntityLoadState LoadState { get; }
+        public bool? IsLocked { get; }
+        public int? Quality { get; }
+        public ContainerSummary? Container { get; }
     }
 
     public sealed class MapLayerLimitExceededException : InvalidOperationException

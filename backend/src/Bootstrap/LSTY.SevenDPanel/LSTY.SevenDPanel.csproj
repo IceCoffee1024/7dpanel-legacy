@@ -10,7 +10,9 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <ProjectReference Include="..\..\Core\LSTY.SevenDPanel.Application\LSTY.SevenDPanel.Application.csproj" />
+    <ProjectReference Include="..\..\Core\LSTY.SevenDPanel.Domain\LSTY.SevenDPanel.Domain.csproj" />
     <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
+    <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Local\LSTY.SevenDPanel.Adapters.Local.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Persistence.Sqlite\LSTY.SevenDPanel.Adapters.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.Web\LSTY.SevenDPanel.Adapters.Web.csproj" />
     <ProjectReference Include="..\..\Adapters\LSTY.SevenDPanel.Adapters.SevenDays\LSTY.SevenDPanel.Adapters.SevenDays.csproj" />

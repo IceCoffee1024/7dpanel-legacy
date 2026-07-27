@@ -7,7 +7,8 @@ import type {
   PlayerColorTagPermission,
 } from '../model/gameChatManagement'
 
-import { reactive, shallowRef, watch } from 'vue'
+import { computed, reactive, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import {
   normalizeChatColor,
@@ -41,12 +42,16 @@ const emit = defineEmits<{
   resetSettings: []
   settingsDirtyChange: [dirty: boolean]
 }>()
+const { t } = useI18n()
 
-const tabs = [
-  { label: '玩家 Profile', value: 'profiles', slot: 'profiles' as const, icon: 'i-lucide-users' },
-  { label: '默认设置', value: 'defaults', slot: 'defaults' as const, icon: 'i-lucide-palette' },
-]
-const playerColorTagPermissionSelectItems = [...playerColorTagPermissionOptions]
+const tabs = computed(() => [
+  { label: t('gameChat.colored.tabs.profiles'), value: 'profiles', slot: 'profiles' as const, icon: 'i-lucide-users' },
+  { label: t('gameChat.colored.tabs.defaults'), value: 'defaults', slot: 'defaults' as const, icon: 'i-lucide-palette' },
+])
+const playerColorTagPermissionSelectItems = computed(() => playerColorTagPermissionOptions.map(value => ({
+  label: t(`gameChat.permissions.${value}`),
+  value,
+})))
 const activeTab = shallowRef('profiles')
 const filterDraft = shallowRef('')
 const profileDialogOpen = shallowRef(false)
@@ -153,10 +158,10 @@ function confirmDeleteProfile() {
   <section class="space-y-4" aria-labelledby="colored-chat-title">
     <header>
       <h1 id="colored-chat-title" class="text-lg font-semibold text-highlighted">
-        彩色聊天
+        {{ t('gameChat.colored.title') }}
       </h1>
       <p class="text-sm text-muted">
-        管理玩家专属 Profile 与六类默认颜色。所有网页预览均为纯文本。
+        {{ t('gameChat.colored.description') }}
       </p>
     </header>
 
@@ -164,39 +169,39 @@ function confirmDeleteProfile() {
       <template #profiles>
         <div class="space-y-4 pt-4">
           <div class="flex flex-wrap items-end justify-between gap-3">
-            <UFormField label="筛选 Profile" name="profileFilter" class="min-w-64 flex-1">
+            <UFormField :label="t('gameChat.colored.profiles.filterLabel')" name="profileFilter" class="min-w-64 flex-1">
               <div class="flex gap-2">
-                <UInput v-model="filterDraft" data-testid="profile-filter" class="w-full" placeholder="跨平台 ID 或自定义名称" />
+                <UInput v-model="filterDraft" data-testid="profile-filter" class="w-full" :placeholder="t('gameChat.colored.profiles.filterPlaceholder')" />
                 <UButton
                   data-testid="apply-profile-filter"
                   color="neutral"
                   variant="outline"
                   icon="i-lucide-search"
-                  label="筛选"
+                  :label="t('gameChat.colored.profiles.filter')"
                   @click="emit('filterProfiles', filterDraft.trim())"
                 />
               </div>
             </UFormField>
-            <UButton data-testid="create-profile" icon="i-lucide-plus" label="新增 Profile" @click="openCreateProfile" />
+            <UButton data-testid="create-profile" icon="i-lucide-plus" :label="t('gameChat.colored.profiles.create')" @click="openCreateProfile" />
           </div>
 
-          <div v-if="profilesState === 'loading'" class="space-y-3" aria-label="正在加载玩家 Profile">
+          <div v-if="profilesState === 'loading'" class="space-y-3" :aria-label="t('gameChat.colored.profiles.loading')">
             <USkeleton v-for="row in 4" :key="row" class="h-20 w-full" />
           </div>
           <UAlert
             v-else-if="profilesState === 'failed' || profilesState === 'forbidden'"
             :color="profilesState === 'forbidden' ? 'warning' : 'error'"
-            :title="profilesState === 'forbidden' ? '无权管理彩色聊天' : '玩家 Profile 加载失败'"
+            :title="profilesState === 'forbidden' ? t('gameChat.colored.forbidden') : t('gameChat.colored.profiles.failed')"
           >
             <template #actions>
-              <UButton v-if="profilesState === 'failed'" label="重试" color="neutral" variant="outline" @click="emit('retryProfiles')" />
+              <UButton v-if="profilesState === 'failed'" :label="t('gameChat.common.retry')" color="neutral" variant="outline" @click="emit('retryProfiles')" />
             </template>
           </UAlert>
           <div v-else-if="profilesState === 'empty'" class="rounded-lg border border-dashed border-default py-12 text-center text-sm text-muted">
-            暂无玩家 Profile
+            {{ t('gameChat.colored.profiles.empty') }}
           </div>
           <template v-else>
-            <UAlert v-if="profilesState === 'stale'" color="warning" title="当前显示上次成功结果" />
+            <UAlert v-if="profilesState === 'stale'" color="warning" :title="t('gameChat.common.staleTitle')" />
             <ul class="divide-y divide-default rounded-lg border border-default px-4">
               <li v-for="profile in profiles" :key="profile.crossplatformId" class="flex flex-wrap items-start justify-between gap-4 py-4">
                 <div class="min-w-0 flex-1 space-y-2">
@@ -204,9 +209,9 @@ function confirmDeleteProfile() {
                   <p class="whitespace-pre-wrap wrap-break-word text-sm">{{ profile.customName ?? '{playerName}' }}</p>
                   <p v-if="profile.description" class="whitespace-pre-wrap wrap-break-word text-xs text-muted">{{ profile.description }}</p>
                   <div class="flex flex-wrap gap-2 text-xs text-muted">
-                    <span>名称色：{{ profile.nameColor ?? '默认' }}</span>
-                    <span>正文色：{{ profile.textColor ?? '默认' }}</span>
-                    <span>更新：{{ profile.updatedAtUtc }}</span>
+                    <span>{{ t('gameChat.colored.profiles.nameColor') }}：{{ profile.nameColor ?? t('gameChat.common.defaultValue') }}</span>
+                    <span>{{ t('gameChat.colored.profiles.textColor') }}：{{ profile.textColor ?? t('gameChat.common.defaultValue') }}</span>
+                    <span>{{ t('gameChat.colored.profiles.updated') }}：{{ profile.updatedAtUtc }}</span>
                   </div>
                 </div>
                 <div class="flex shrink-0 gap-2">
@@ -215,7 +220,7 @@ function confirmDeleteProfile() {
                     color="neutral"
                     variant="outline"
                     icon="i-lucide-pencil"
-                    label="编辑"
+                    :label="t('gameChat.common.edit')"
                     @click="openEditProfile(profile)"
                   />
                   <UButton
@@ -223,7 +228,7 @@ function confirmDeleteProfile() {
                     color="error"
                     variant="outline"
                     icon="i-lucide-trash-2"
-                    label="删除"
+                    :label="t('gameChat.common.delete')"
                     @click="deleteTarget = profile"
                   />
                 </div>
@@ -235,7 +240,7 @@ function confirmDeleteProfile() {
                 color="neutral"
                 variant="outline"
                 icon="i-lucide-chevron-down"
-                label="继续加载"
+                :label="t('gameChat.common.loadMore')"
                 :disabled="isMutatingProfile"
                 @click="emit('loadMoreProfiles')"
               />
@@ -252,10 +257,10 @@ function confirmDeleteProfile() {
           @submit="saveSettings"
         >
           <section class="space-y-4 rounded-lg border border-default p-4">
-            <UFormField label="启用彩色聊天" name="isEnabled">
-              <USwitch v-model="settingsDraft.isEnabled" label="对符合条件的消息应用颜色" :disabled="isSavingSettings || isResettingSettings" />
+            <UFormField :label="t('gameChat.colored.defaults.enabled')" name="isEnabled">
+              <USwitch v-model="settingsDraft.isEnabled" :label="t('gameChat.colored.defaults.enabledDescription')" :disabled="isSavingSettings || isResettingSettings" />
             </UFormField>
-            <UFormField label="玩家颜色标签权限" name="playerColorTagPermission">
+            <UFormField :label="t('gameChat.colored.defaults.permission')" name="playerColorTagPermission">
               <USelect
                 v-model="settingsDraft.playerColorTagPermission"
                 :items="playerColorTagPermissionSelectItems"
@@ -266,22 +271,22 @@ function confirmDeleteProfile() {
           </section>
 
           <section class="grid gap-4 rounded-lg border border-default p-4 md:grid-cols-2 xl:grid-cols-3">
-            <UFormField label="全局默认颜色" name="globalDefaultColor" hint="可留空">
+            <UFormField :label="t('gameChat.colored.defaults.globalColor')" name="globalDefaultColor" :hint="t('gameChat.common.mayBeEmpty')">
               <div class="space-y-2"><UColorPicker :model-value="toChatColorPickerValue(settingsDraft.globalDefaultColor)" format="hex" @update:model-value="settingsDraft.globalDefaultColor = $event ?? ''" /><UInput v-model="settingsDraft.globalDefaultColor" data-testid="global-default-color-input" class="w-full font-mono" placeholder="RRGGBB" /></div>
             </UFormField>
-            <UFormField label="私聊默认颜色" name="whisperDefaultColor" hint="可留空">
+            <UFormField :label="t('gameChat.colored.defaults.whisperColor')" name="whisperDefaultColor" :hint="t('gameChat.common.mayBeEmpty')">
               <div class="space-y-2"><UColorPicker :model-value="toChatColorPickerValue(settingsDraft.whisperDefaultColor)" format="hex" @update:model-value="settingsDraft.whisperDefaultColor = $event ?? ''" /><UInput v-model="settingsDraft.whisperDefaultColor" class="w-full font-mono" placeholder="RRGGBB" /></div>
             </UFormField>
-            <UFormField label="好友默认颜色" name="friendsDefaultColor" hint="可留空">
+            <UFormField :label="t('gameChat.colored.defaults.friendsColor')" name="friendsDefaultColor" :hint="t('gameChat.common.mayBeEmpty')">
               <div class="space-y-2"><UColorPicker :model-value="toChatColorPickerValue(settingsDraft.friendsDefaultColor)" format="hex" @update:model-value="settingsDraft.friendsDefaultColor = $event ?? ''" /><UInput v-model="settingsDraft.friendsDefaultColor" class="w-full font-mono" placeholder="RRGGBB" /></div>
             </UFormField>
-            <UFormField label="队伍默认颜色" name="partyDefaultColor" hint="可留空">
+            <UFormField :label="t('gameChat.colored.defaults.partyColor')" name="partyDefaultColor" :hint="t('gameChat.common.mayBeEmpty')">
               <div class="space-y-2"><UColorPicker :model-value="toChatColorPickerValue(settingsDraft.partyDefaultColor)" format="hex" @update:model-value="settingsDraft.partyDefaultColor = $event ?? ''" /><UInput v-model="settingsDraft.partyDefaultColor" class="w-full font-mono" placeholder="RRGGBB" /></div>
             </UFormField>
-            <UFormField label="管理员默认颜色" name="adminDefaultColor" hint="可留空">
+            <UFormField :label="t('gameChat.colored.defaults.adminColor')" name="adminDefaultColor" :hint="t('gameChat.common.mayBeEmpty')">
               <div class="space-y-2"><UColorPicker :model-value="toChatColorPickerValue(settingsDraft.adminDefaultColor)" format="hex" @update:model-value="settingsDraft.adminDefaultColor = $event ?? ''" /><UInput v-model="settingsDraft.adminDefaultColor" class="w-full font-mono" placeholder="RRGGBB" /></div>
             </UFormField>
-            <UFormField label="系统默认颜色" name="systemDefaultColor" hint="可留空">
+            <UFormField :label="t('gameChat.colored.defaults.systemColor')" name="systemDefaultColor" :hint="t('gameChat.common.mayBeEmpty')">
               <div class="space-y-2"><UColorPicker :model-value="toChatColorPickerValue(settingsDraft.systemDefaultColor)" format="hex" @update:model-value="settingsDraft.systemDefaultColor = $event ?? ''" /><UInput v-model="settingsDraft.systemDefaultColor" class="w-full font-mono" placeholder="RRGGBB" /></div>
             </UFormField>
           </section>
@@ -290,13 +295,13 @@ function confirmDeleteProfile() {
             :name-color="settingsDraft.globalDefaultColor"
             :text-color="settingsDraft.globalDefaultColor"
           />
-          <p v-if="settingsFeedbackMessage" role="status" class="text-sm text-error">{{ settingsFeedbackMessage }}</p>
+          <p v-if="settingsFeedbackMessage" role="status" class="text-sm text-error">{{ t(settingsFeedbackMessage) }}</p>
           <div class="flex justify-end gap-2">
             <UButton
               type="button"
               color="neutral"
               variant="outline"
-              label="恢复默认值"
+              :label="t('gameChat.common.resetDefaults')"
               :loading="isResettingSettings"
               :disabled="isSavingSettings || isResettingSettings"
               @click="emit('resetSettings')"
@@ -304,7 +309,7 @@ function confirmDeleteProfile() {
             <UButton
               type="submit"
               icon="i-lucide-save"
-              label="保存默认设置"
+              :label="t('gameChat.colored.defaults.save')"
               :loading="isSavingSettings"
               :disabled="isSavingSettings || isResettingSettings"
             />
@@ -324,8 +329,8 @@ function confirmDeleteProfile() {
 
     <UModal
       :open="deleteTarget !== null"
-      title="删除玩家 Profile"
-      description="删除后该玩家将立即回退到默认彩色聊天规则。"
+      :title="t('gameChat.colored.dialog.deleteTitle')"
+      :description="t('gameChat.colored.dialog.deleteDescription')"
       :dismissible="!isMutatingProfile"
       :close="isMutatingProfile ? false : undefined"
       @update:open="open => { if (!open && !isMutatingProfile) deleteTarget = null }"
@@ -334,13 +339,13 @@ function confirmDeleteProfile() {
         <p class="break-all text-sm text-default">{{ deleteTarget?.crossplatformId }}</p>
       </template>
       <template #footer>
-        <UButton type="button" color="neutral" variant="outline" label="取消" :disabled="isMutatingProfile" @click="deleteTarget = null" />
+        <UButton type="button" color="neutral" variant="outline" :label="t('gameChat.common.cancel')" :disabled="isMutatingProfile" @click="deleteTarget = null" />
         <UButton
           data-testid="confirm-delete-profile"
           type="button"
           color="error"
           icon="i-lucide-trash-2"
-          label="确认删除"
+          :label="t('gameChat.colored.dialog.deleteConfirm')"
           :loading="isMutatingProfile"
           :disabled="isMutatingProfile"
           @click="confirmDeleteProfile"

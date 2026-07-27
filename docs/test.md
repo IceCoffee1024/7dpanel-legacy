@@ -1,27 +1,50 @@
 ---
 state: Current
-last_updated: "2026-07-26"
+last_updated: "2026-07-27"
 ---
 
 # 7DPanel 测试策略
 
 ## 范围与可追踪性
 
-本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含六个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-26 服务器治理实现稳定后，Release 构建通过，后端聚合 xUnit `598/598` 通过；服务器配置、访问名单、面板用户、游戏权限、模组、Controller、依赖规则和 OpenAPI 均包含聚焦自动化。Admin `pnpm test` 为 `60` 个文件、`499/499` 项通过，typecheck、Vite 8 生产构建、OpenAPI 快照刷新和生成客户端均通过。随后服务器配置目录扩展到当前官方 68 字段并加入高级编辑时，聚焦后端 `14/14`、聚焦 Admin `7/7`、Admin typecheck、OpenAPI 快照和客户端生成通过；没有为该小改动重复全量测试。全量 lint 未重跑；Playwright、发布、真实 7DTD 与 Windows/Linux smoke 按本次精简边界未执行。Vitest 输出仍包含已知 happy-dom teardown `AbortError` 噪声，但以成功状态结束。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、服务器治理原生动作、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
+本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-26 服务器治理实现稳定后，Release 构建通过，后端聚合 xUnit `598/598` 通过；服务器配置、访问名单、面板用户、游戏权限、模组、Controller、依赖规则和 OpenAPI 均包含聚焦自动化。Admin `pnpm test` 为 `60` 个文件、`499/499` 项通过，typecheck、Vite 8 生产构建、OpenAPI 快照刷新和生成客户端均通过。随后服务器配置目录扩展到当前官方 68 字段并加入高级编辑时，聚焦后端 `14/14`、聚焦 Admin `7/7`、Admin typecheck、OpenAPI 快照和客户端生成通过；没有为该小改动重复全量测试。全量 lint 未重跑；Playwright、发布、真实 7DTD 与 Windows/Linux smoke 按本次精简边界未执行。Vitest 输出仍包含已知 happy-dom teardown `AbortError` 噪声，但以成功状态结束。当前认证版本的事件投影真实 Join/Save/Disconnect、Owner 踢出、服务器治理原生动作、浏览器持久会话、自动归档和 Linux 真实进程仍未验证。以下未落地内容仍是目标测试策略和发布门槛，不代表测试已经通过。
 
 2026-07-26 游戏资源目录第一切片完成后，后端 `GameResource` 聚焦过滤 `55/55`、组合根 `12/12`、OpenAPI 快照语义与刷新后复验 `1/1` 通过；Admin 游戏资源、导航、路由和 i18n 共 `12` 个文件、`99/99` 项断言通过，修正请求生命周期后又以 `2` 个文件、`8/8` 项完成干净定向复验。Admin typecheck、聚焦 ESLint、Vite 生产构建和 Hey API 客户端生成通过。没有重复后端全量、Admin 全量、Playwright、publish、真实 7DTD 或跨平台 smoke。
+
+### 六波次功能对齐当前工作树证据
+
+2026-07-26 按获批六波次规格并发实现后，当前工作树取得以下精简证据。表中只记录实际执行过的命令；测试文件或页面代码存在不等于对应命令已经运行。
+
+| 边界 | 本轮或并发支线记录 | 能证明 | 不能证明 |
+|---|---:|---|---|
+| Bootstrap 生产对象图 | Release build `0 warning / 0 error` | 八个产品项目及新增 DI/runtime 可编译 | 真实 Mod 加载、关服和外部服务 |
+| Community 游戏命令与 DI | `23/23` | 固定 handler、参数安全、真实消费者与组合根解析 | 真实玩家私发、传送、投票或经济副作用 |
+| Commerce/Rewards HTTP | `14/14` | 经济、奖励、商业管理合同的聚焦 HTTP 行为 | 并发全矩阵、真实发物品和补偿 |
+| Automation HTTP | `11/11` | 规则 CRUD、validate、dry-run 与 execution 路由 | 真实游戏 trigger 和动作副作用 |
+| Discord HTTP | `15/15` | 脱敏设置、投递、绑定和命令管理合同 | Gateway WebSocket 和 interaction 签名的 sandbox 或真实环境往返 |
+| Discord Gateway/interaction 收口 | 持久 Slash `/status` 私密 follow-up 回归 `1/1` | 运行时组装后的持久交互使用原 interaction token 发出私密回执 | Discord Gateway WebSocket、Ed25519 请求和投递限流在 sandbox 或真实环境的往返 |
+| Admin Automation/Discord/GeoIP parser | `3/3` | 严格响应解析与敏感字段拒绝 | 最终整站 typecheck、浏览器交互和外部服务 |
+| Admin World Tools API/composable | `51` 项通过 | 世界工具 API/composable 的局部状态与请求合同 | 最终页面整合、危险世界动作和恢复 |
+| OpenAPI | snapshot `1/1`；`pnpm api:gen` 成功 | 当前运行时合同与生成 SDK 来自同一 snapshot | 干净 Git 基线上的 `api:check` |
+| Admin 最终静态与聚焦组合 | typecheck 通过；`6` 个文件、`74/74`；i18n 单文件复验 `6/6` | AppShell、Owner-only 路由、双语资源合同、Community 页面与当前 TypeScript 边界 | world-tools/modules/player-map 完整聚焦组合、lint、浏览器与发布 |
+| 第四波 Daily/Community 收口 | 后端受影响过滤 `32/32`；Admin Daily/Community/i18n 聚焦 `7` 个文件、`37/37`；Admin typecheck 通过；`pnpm api:schema` `1/1` 与 `pnpm api:gen` 成功 | 每日规则绑定和领取资格、奖励观察、Community 全量查询/原子版本、Owner HTTP 边界、Admin 全量列表和生成合同 | 真实奖励发放、传送/投票副作用、浏览器 E2E、真实 7DTD、发布与跨平台 smoke |
+| Admin locale 静态审计 | `zh-CN`/`en` 各 `1570` 个叶子键；`1295` 个静态调用缺键 `0` | 两种 locale 键同构、无空值/HTML、插值参数一致、当前静态调用可解析 | 动态 key、真实语言切换、日期数字格式和窄屏视觉 |
+
+本轮最终 Admin typecheck、AppShell/router/i18n/Community 聚焦 Vitest 和 JSON key audit 已在页面与双语文案稳定后各执行一次；Daily/Community 收口后又以明确文件过滤完成 `37/37`，Vitest 以退出码 `0` 结束。2026-07-27 收口后，Admin 完整 Vitest 为 `128/128` 个文件、`874/874` 项通过、退出码 `0`，typecheck 与 Vite 生产构建也通过；但仍保留 Happy DOM `AbortError`、外网图标请求超时和 9 个 fork worker 超时终止噪声，因此不能将其作为稳定发布门禁。后端已运行 Release 聚合测试但未通过，具体失败记录见[已知缺口](#已知缺口)。publish、真实 `v3.0.1-b4`、备份恢复、玩家/世界副作用、真实 Discord、MaxMind、Windows/Linux smoke 均未执行。危险世界 smoke 还没有确认测试实例、可用备份和回滚目标，因此不得启动。
+
+当前仍有验证合同缺口：Discord Gateway 生命周期、interaction Ed25519 transport 和持久私密回执均已有代码，仍缺 Discord sandbox/真实环境往返；同时还缺真实游戏、外部服务和发布环境证据。奖励/成就/在线奖励观察源、Community 全量城市/好友/传送操作/投票轮次、原子 `expectedRowVersion` 与 `daily`/`shop`/`tpa` 专用持久合同已具备代码和上述聚焦自动化；它们仍不等同于真实游戏或候选发布验收。
 
 ### 产品需求追踪
 
 | 需求 | 关键场景 | 主要测试层级 | 必须保留的证据 |
 |---|---|---|---|
-| `CAP-01` | Mod 内嵌宿主启动；自动识别当前服务端；状态采样时间与新鲜度；离线、不可用和过期状态不得显示为正常 | 单元、OWIN/API 集成、真实进程 smoke、浏览器 E2E | API 响应、页面断言、服务端日志和测试报告 |
+| `CAP-01` | Mod 内嵌宿主启动；自动识别当前服务端；十一项运行指标的值、来源、单位、观察时间与 warning；离线、不可用和过期状态不得显示为正常 | 单元、OWIN/API 集成、真实进程 smoke、浏览器 E2E | API 响应、指标来源与零值/未知断言、页面状态、服务端日志和测试报告 |
 | `CAP-02` | 在线玩家 31 字段同次观察、逐玩家时间、主表与详情抽屉；按 EOS 跨平台身份归档的历史摘要、只读快照、分级降采样和缺口；Owner-only OpenLayers 坐标地图、游戏时间、本地背景、认证瓦片、在线/历史最后位置、单玩家分段轨迹、独立业务图层与区域反查；地图领地删除、传送和渲染操作；动态内置/第三方控制台命令；有界队列、状态诚实与审计 | 单元、SQLite 集成、OWIN/API 集成、真实进程、E2E、安全 | 游戏内结果、API 结果、详情状态、投影/瓦片/坐标顺序、内部断段且普通界面不暴露缺口、空间查询边界、队列顺序和对应审计记录 |
 | `CAP-03` | 手动与计划备份状态机；保存提交完成后快照；校验失败、损坏归档、磁盘空间不足；重启恢复；中断后回滚 | 单元、SQLite 集成、真实进程、故障注入、恢复演练 | 备份清单与校验和、状态迁移、恢复后存档验证和回滚证据 |
 | `CAP-04` | 即时公告；进服欢迎、周期提醒和血月提醒；同一触发只执行一次；重启后的调度恢复；失败可见 | 单元、SQLite 集成、真实进程、E2E | 游戏内公告、任务执行记录和审计记录 |
-| `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；password grant、Header-only Token/API Key 和 SSE 复验；面板用户管理保留至少一个启用 Owner；面板角色与 7DTD 游戏管理员/命令权限分离；名单只读/可写矩阵与审计 | 单元、SQLite 集成、OWIN/API 集成、聚焦 Admin 测试、安全 | Store 原子结果、Authorization Header、Token/API Key 生命周期、权限矩阵、原生权限快照和审计记录 |
+| `CAP-05` | 配置凭据按固定 `Subject=owner` 同步唯一持久 `Owner`；password grant、Header-only Token/API Key 和 SSE 复验；面板用户管理保留至少一个启用 Owner；面板角色与 7DTD 游戏管理员/命令权限分离；统一审计与游戏事件 Owner-only 查询；名单只读/可写矩阵与审计 | 单元、SQLite 集成、OWIN/API 集成、聚焦 Admin 测试、安全 | Store 原子结果、Authorization Header、Token/API Key 生命周期、权限矩阵、专用审计与统一投影一致性、事件/gap 分离和页面状态 |
 | `CAP-06` | 当前官方配置字段完整性、类型化控件、未知非敏感现有字段高级编辑、敏感字段隐藏、禁止新增属性、文件版本冲突、原子替换和重启提示；模组安全目录、元数据、当前/下次启动状态、受保护模组和路径拒绝 | 单元、临时文件系统集成、OWIN/API 集成、聚焦 Admin 测试、安全 | 官方字段清单对照、配置前后文件、冲突结果、敏感值扫描、模组状态快照、路径拒绝和审计记录 |
-| `CAP-07` | Owner-only 实时/历史聊天、全局与私聊发送、聊天设置、彩色默认规则、玩家 Profile、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、游戏内消息、权限矩阵、审计和纯文本断言 |
+| `CAP-07` | Owner-only 实时/历史聊天、全局与私聊发送、聊天禁言及到期、聊天设置、彩色默认规则、玩家 Profile、类型化 `help`、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、禁言状态与操作事务、游戏内消息/私发、权限矩阵、审计和纯文本断言 |
 | `CAP-08` | 玩家 Profile、会话、活动、位置、背包、技能和每日摘要；背包比较、物品来源、补偿；版本化物品/方块/本地化/图标目录；类型化物品与重置动作 | 字段映射、Application/SevenDays 单元、SQLite、OWIN/API、Admin 组件、按需真实进程 | 当前版本字段来源与单位、不可变快照、数据缺口、路径拒绝、API/页面状态、动作与专用审计 |
 | `CAP-09` | 原子经济账本、冻结、调整、转账、商店库存与购买、奖励包、兑换码、成就、在线奖励、幂等发放与补偿 | Domain/Application 单元、SQLite 并发/故障集成、OWIN/API、Admin 组件、按需游戏命令 | 账本事务、并发兑换、发放幂等键、恢复/补偿结果、权限与页面断言 |
 | `CAP-10` | 家/城市/好友/返回点和管理员传送；冷却、血月、费用与目标重验；投票踢人和重启的资格、阈值、互斥和单次结算 | Domain/Application 单元、SQLite、游戏 Adapter、OWIN/API、Admin 组件、聚焦真实进程 | 规则矩阵、扣费/动作关联、稳定目标、投票唯一性、类型化动作与结果记录 |
@@ -63,6 +86,28 @@ last_updated: "2026-07-26"
 - OpenAPI snapshot 已在受控环境变量下刷新，清除变量后同一测试再次通过；`pnpm api:gen` 随后生成并由 `/game-resources` 的真实 Feature adapter 消费，生成目录没有手工修改。
 - 本切片没有 SQLite migration、状态变更或玩家动作，因此未运行数据库 migration、审计、真实玩家、副作用恢复或发布验证。完整 `api:check` 仍需在用户授权提交后的干净生成基线上执行。
 
+#### 证据基础第一波当前实现证据
+
+2026-07-26 已取得以下当前工作树定向执行证据。它们证明第一波受影响边界，不等于后端 Release 聚合、Admin 全量 ESLint、稳定退出的全量 Vitest、真实 7DTD 或浏览器发布门禁已经通过：
+
+| 聚焦边界 | 新鲜执行结果 | 当前证明范围 |
+|---|---:|---|
+| 类型化游戏事件、gap 与 SQLite `008` 事件 schema | `25/25` | 事件合同、非等待 writer、三类 gap、迁移与查询边界 |
+| 统一审计投影与查询 | `20/20` | 五类专用来源的只读摘要、过滤、keyset、source gap 与敏感详情边界 |
+| 禁言、到期清理与类型化 `help` | `12/12` | 状态/操作同事务、提交后快照、每轮 100 条到期、固定命令目录和私发结果 |
+| DI、生命周期、OWIN 与运行时 OpenAPI | `107/107` | 组合根解析、启停顺序、真实 request scope、Owner 授权、operationId 与生成合同 |
+| 聊天 HTTP 聚焦 | `6/6` | 禁言 HTTP 模型、参数与错误映射 |
+| 游戏内命令聚焦 | `2/2` | `help` handled 与未知命令 unhandled 边界 |
+| `ChatMuteHttpAuthorizationTests` Web API 路由与授权过滤器矩阵 | `12/12` | 通过内存 `HttpServer(HttpConfiguration)` 和测试 Handler 注入的 `OwinContext`/principal 验证未认证、非 Owner 与 Owner 的禁言读写授权；不构成完整 OWIN 认证中间件或 request-scope 证据 |
+| Admin 游戏聊天与运行指标 | `14` 个文件，`95/95` | 十一项指标呈现、禁言 API/状态/组件和既有聊天回归 |
+| Admin 审计、游戏事件、禁言与路由 | `10` 个文件，`68/68` | 严格 parser、loading/empty/failed/stale/forbidden、gap 分离、导航与深链接权限 |
+| Admin typecheck | 通过 | Vue 与 TypeScript 当前静态类型边界 |
+| Admin production build | 通过；Vite `8.1.5`，`1497` modules，`5.73s` | 当前 Admin 可生成生产静态资源 |
+
+本切片继续采用[变更风险分级验证](#变更风险分级验证)：迭代证据聚焦新增 schema、原子状态、事件/gap、授权、协议 parser 和页面状态；共享合同稳定后仍应执行一次后端 Release 聚合与 Admin 既有聚合门禁。当前全局 ESLint 存在 `337 errors`、`312 warnings` 的既有积压；2026-07-27 全量 Vitest 以退出码 `0` 结束（`128/128` 个文件、`874/874` 项通过），但 Happy DOM/Nuxt UI 外部资源请求和 fork worker 退出仍不稳定。上述定向 Vitest、typecheck 与生产构建成功，但不能据此宣称全局 ESLint 或稳定的全量 Vitest 发布门禁已经通过，也不改变[发布门槛](#发布门槛)。
+
+本轮没有运行真实 `v3.0.1-b4`、Playwright 或人工浏览器验收。自动化仍不能证明十一项指标在真实服中的来源兼容、四类游戏事件的真实字段、禁言阻止与到期提示、`help` 私发、第三方聊天 Mod 顺序，或 `/audit`、`/game-chat/mutes` 在桌面与窄屏浏览器中的交互和双语表现。
+
 ### 综合概览第一阶段
 
 以下条目同时记录当前自动化边界与仍需真实环境补齐的证据；单元或进程内集成通过不能替代 Windows/Linux 真实进程和浏览器证据。
@@ -102,7 +147,7 @@ last_updated: "2026-07-26"
 | 游戏与 Mod 的 JSON 程序集冲突 | 在官方 `v3.0.1-b4` 进程内确认实际加载游戏提供的 `Newtonsoft.Json 13.0.2`，完成序列化与 Web API 路由 smoke test，并确保发布物不包含另一份同名程序集。 |
 | 内存加载的 Mod 程序集缺少物理位置 | 源码规则必须证明 Bootstrap 保存当前 `ModInstance` 后，只通过游戏 `0_TFP_Harmony` 应用 `AssemblyLocationPatch`，验证自身 `Assembly.Location` 非空后才组合 SQLite/OWIN；补丁不得覆盖已有位置或其他 Mod 的程序集。发布物不得包含 `0Harmony.dll`，真实进程日志必须在 migration 前出现补丁成功记录，并由后续标准 Batteries 建库证明依赖解析可用。 |
 | 参考资料越界进入产品发布物 | 验证发布组装输入和最终清单不包含 `7dtd-reference/`、反编译源码、共享参考 assets 或未声明的 runtime 文件；构建阶段若读取参考程序集，必须有单独的输入记录。 |
-| 多项目依赖或发布边界漂移 | `DependencyRulesTests` 校验项目引用白名单、Inbound/Outbound 不得交叉引用，以及只有 Bootstrap 可以实现 `IModApi`；发布检查确认 Bootstrap、Application、Hosting、Web、SevenDays 和 Persistence 六个产品 DLL 齐全。 |
+| 多项目依赖或发布边界漂移 | `DependencyRulesTests` 校验项目引用白名单、Inbound/Outbound 不得交叉引用，以及只有 Bootstrap 可以实现 `IModApi`；发布检查必须随当前解决方案验证 Bootstrap、Hosting、Application、Domain、Web、SevenDays、Persistence 和 Local 八个产品 DLL 齐全。 |
 | 运行时 API 文档漂移或扩散依赖 | 真实 Katana Host 必须验证公开 `/swagger` 与 `/swagger/v1/swagger.json`、全部 Controller/OWIN token 路由、唯一 Bearer scheme、API Key 管理、SSE、Problem Details、SPA fallback 隔离和无业务端口副作用。依赖规则只允许 Web Adapter 直接引用 `NSwag.AspNet.Owin 14.7.1`，禁止 `NSwag.Annotations` 和其他产品层直接引用 NSwag/NJsonSchema/Namotion；发布门禁必须要求实际运行时闭包并继续排除游戏提供的 `Newtonsoft.Json.dll`。 |
 | 产品版本来源漂移 | 健康端点必须返回 `ProductInfo.Version`；测试校验该值与 Bootstrap 的 `ModInfo.xml` 一致，不允许从 Adapter 当前执行程序集推断产品版本。 |
 | OWIN 生命周期泄漏 | 在同一测试主机上重复启动、正常关服和再次启动服务端；确认端口可重新绑定、后台线程和计时器退出、请求在 draining 后被拒绝。 |
@@ -287,9 +332,9 @@ OWIN 启动、精确健康响应、正常关服、端口释放和再次启动成
 
 - 玩家动作审计已具备自动化锁竞争与启动恢复证据；仍需验证迁移失败、真实关服期间动作终态，以及自动化真实游戏事件和控制台日志突发。只读 `version` 的 Windows 主线程往返已经通过。
 - 动态控制台命令、容量 32 HTTP FIFO、最终执行点 Harmony observation 和容量 256 fail-open SQLite 命令审计已有单元、SQLite、Katana、生命周期与发布物自动化证据；`a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 进一步验证内置/第三方命令、HTTP/非 HTTP 来源审计、完整原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 故障告警/gap 恢复、关服排空和重复启停。仍需自动归档该流程、补充真实容量饱和与 Linux 进程门禁，并在当前认证二进制上执行适用 smoke。
-- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，覆盖 8 小时 Token、API Key 创建/一次性显示/复制/使用/撤销与 Basic 401，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；本轮完整 Admin 单元/组件测试、typecheck、定向变更 lint 和 Vite 8 生产构建已经通过，全量 lint 仍需先修复既有综合概览 Vue 格式问题。还需解决 happy-dom teardown 与外部连接噪声，再将该套件视为稳定的发布门禁。
+- 在受控真实 OWIN Owner 环境执行现有 Playwright suite，覆盖 8 小时 Token、API Key 创建/一次性显示/复制/使用/撤销与 Basic 401，并增加桌面/移动踢出确认、提交锁定、稳定反馈和成功刷新；此前受控 Admin 切片已有单元/组件、typecheck、定向 lint 和 Vite 8 生产构建证据，六波次最终 typecheck 与 AppShell/router/i18n/Community 聚焦测试也已通过。world-tools/modules/player-map 完整聚焦组合、全量 lint 和浏览器门禁仍未闭合，还需解决 happy-dom teardown 与外部连接噪声，再将该套件视为稳定的发布门禁。
 - 在 Windows `v3.0.1-b4` 受控玩家上执行真实踢出，保存玩家收到的批准原因、原生 API 返回后约 0.5 秒断开、在线列表更新和 `player_action_audit` 对应终态；在此之前不得把自动化 `Succeeded` 解释为真实玩家已经离线。
-- 自动化 Windows/Linux 发布物组装、六个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite、NSwag/NJsonSchema/Namotion/System.Text.Json 和双平台 SQLite Native RID；当前 Windows 发布脚本已在隔离临时目录校验六个产品 DLL、Admin `wwwroot`、所需托管依赖、11 个 OpenAPI 运行时程序集、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，并移除 `Newtonsoft.Json.dll`。项目引用、SQLite provider、Harmony 应用顺序、DI/NSwag 包归属和 Adapter 方向已有本地测试门禁。
+- 自动化 Windows/Linux 发布物组装、当前八个产品 DLL 与内容校验，尤其检查游戏 Harmony/JSON/LogLibrary/Unity 排除、旧 System.Data.SQLite/SQLite.Interop 禁止项、标准 SQLitePCLRaw Batteries 及配置、五个 Framework64 宿主兼容程序集、固定新版 Bcl/Unsafe、Microsoft DI/Channels/OAuth、Dapper/DbUp/Microsoft.Data.Sqlite、NSwag/NJsonSchema/Namotion/System.Text.Json 和双平台 SQLite Native RID；既有 Windows 发布脚本证据只校验了当时六个产品 DLL、Admin `wwwroot`、所需托管依赖、11 个 OpenAPI 运行时程序集、Windows/Linux x64 native、`0Harmony.dll` 与 Mod 根目录禁止项和其他禁止资产，并移除 `Newtonsoft.Json.dll`，不能替代当前 Domain/Local DLL 与六波次静态资源的 publish 验证。项目引用、SQLite provider、Harmony 应用顺序、DI/NSwag 包归属和 Adapter 方向已有本地测试门禁。
 - 在 CI 中复用发布物路径和清单校验，确认 `7dtd-reference/` 不会被复制或打包。
 - 将 Windows `v3.0.1-b4` 真实进程 smoke 自动化并归档服务端日志，同时建立 Linux x64 对应基线。
 
@@ -321,10 +366,13 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | 游戏聊天真实 7DTD 与浏览器验收未执行 | 当前代码和聚焦自动化不能证明 `v3.0.1-b4` 的原始字段、六类颜色、命令绕过、全局/私聊广播、Profile、关闭彩色恢复原版、异常 fail-open、第三方聊天 Mod 顺序，以及 Owner/非 Owner 桌面和 `390x844` 浏览器流程；按设计只执行一次集中人工验收并保留日志、网络 trace 和冲突观察。 |
 | 游戏聊天聚合门禁部分闭环 | 后端聊天、统一事件、SSE 和 OpenAPI 聚焦过滤共 `73/73` 通过；Admin 游戏聊天、SSE、导航和路由聚焦测试共 `66/66` 通过，Admin typecheck 通过；SQLite 历史 gap 单项另有 `6/6` 通过证据。运行时 OpenAPI 快照和 Hey API 生成成功；`api:check` 因其 Git 基线检查会把本轮尚未提交的受控生成变更视为漂移而按预期返回非零。全量 lint/unit/build、Playwright、真实 7DTD 和提交后的 Git 基线漂移门禁仍待执行。 |
 | 游戏聊天组件双语尚未闭环 | 页面壳、导航和 locale 文件已经接线，但 `LiveChatView`、历史、设置和彩色聊天组件仍有直接写入的中文或英文可见文案；在迁移到 `app/i18n` 并补充双语断言前，不得把任务 10 的本地化条目或 `NFR-03` 视为完成。 |
+| 证据基础第一波真实环境门禁未闭环 | 定向后端、Admin、typecheck 和生产构建已有上节所列新鲜证据；后端 Release 聚合的当前失败记录见本表“后端 Release 聚合门禁未闭环”。真实 `v3.0.1-b4`、Playwright 与人工浏览器验收仍未执行；不得据此宣称真实指标来源、事件字段、禁言/到期、`help` 私发、响应式布局或双语已经通过。按既有分级策略在共享合同稳定或候选发布时补齐，不提前扩大每次迭代。 |
+| Admin 全局 ESLint 仍有既有积压 | 2026-07-26 当前全局结果为 `337 errors`、`312 warnings`；第一波定向测试、typecheck 和构建通过不覆盖这些问题。发布门槛不变，修复积压后仍需重新取得全局 lint 通过证据。 |
 | Windows 动态命令闭环 smoke 尚未自动归档 | `a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；但流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行，当前认证二进制也尚未复验。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；2026-07-24 远程浏览器只验证了详情展示，未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
 | 当前浏览器持久会话、双语、详情与踢出真实门禁未执行 | Playwright 已定义默认标签页会话、显式浏览器会话、身份显示、登出/到期/损坏记录清理、API Key/玩家合同、浏览器语言首选/回退、登录前后切换、刷新与登出保留、技术身份稳定、英文窄屏及合成 25 字段详情抽屉场景，但没有 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 的受控 OWIN 环境，只有测试发现证据。2026-07-24 的远程人工查看仅确认当前详情抽屉可显示，不能证明 `390x844`/320 布局、焦点、遮罩关闭锁定、同身份刷新、unavailable、真实踢出、CSP 控制台或成功刷新。 |
-| Admin Vitest teardown 存在未定位噪声 | `pnpm test` 的 `45` 个文件、`442/442` 项断言通过，但输出仍出现 happy-dom `AbortError` 和外部连接拒绝日志。当前未能确认噪声来源；在根因和稳定修复完成前，它不构成干净的 CI 或发布证据。 |
+| Admin 全量 Vitest 噪声仍待治理 | 2026-07-27 全量结果为 `128/128` 个文件、`874/874` 项通过、退出码 `0`，但仍出现 Happy DOM `AbortError`、外网图标请求超时和 9 个 fork worker 超时终止。结果可证明当前套件无断言失败，不能作为稳定发布门禁；应在不改变产品行为的前提下隔离外部资源和解决 teardown/worker 生命周期后重新取得干净结果。 |
+| 后端 Release 聚合门禁未闭环 | 2026-07-27 执行 `dotnet test ... --configuration Release --no-build`，结果为 `29` 失败、`1748` 通过、共 `1777`；失败涉及 SSE heartbeat、Discord 限流/投递、GeoIP 停止、玩家证据/历史 gap、运行时单飞/生命周期、SQLite 玩家动作与迁移、OpenAPI schema、Community 命令/投票。当前聚焦测试和编译不能替代此门禁，按失败域分批修复后必须重新运行完整 Release 聚合测试。 |
 | 历史玩家真实进程与浏览器门禁未执行 | 历史玩家已通过 parser、页面状态、组件、路由、Application/SQLite/Channel 和 Web 合同的定向自动化；本轮未运行真实 7DTD、Playwright，且本机 .NET Framework `HttpListener` 不支持直接执行新增 OWIN 历史路由用例。因此 Save 来源、排空、Owner 浏览器列表/详情与窄屏不构成已验证证据。 |
 | 当前认证版本尚无 Swagger Unity Mono 复验证据 | 公开 JSON/UI、路由、安全、SSE、Problem Details、无业务副作用、依赖所有权和隔离发布布局已通过 Windows Katana/本地门禁；`a98ad6b` 已在 Windows `v3.0.1-b4` Unity Mono 加载 NSwag/NJsonSchema/Namotion 并访问 `/swagger`，但本轮未在当前认证发布物复验。Linux 支持仍需对应 Linux smoke。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |

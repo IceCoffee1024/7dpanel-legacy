@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>LSTY.SevenDPanel.Domain</AssemblyName>
+    <RootNamespace>LSTY.SevenDPanel.Domain</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.13.0" />
+  </ItemGroup>
+</Project>

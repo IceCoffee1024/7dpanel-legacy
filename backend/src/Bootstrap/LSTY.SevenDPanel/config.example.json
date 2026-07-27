@@ -17,7 +17,12 @@
       "detectionEndpoint": null
     }
   },
+  "playerEvidence": {
+    "serverId": "local",
+    "timeZoneId": "UTC"
+  },
   "serverConfigurationPath": "../../serverconfig.xml",
+  "geoIpDatabasePath": "data/GeoLite2-Country.mmdb",
   "restart": {
     "windowsScript": "scripts/restart-server.cmd",
     "linuxScript": "scripts/restart-server.sh",

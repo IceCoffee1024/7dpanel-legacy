@@ -127,9 +127,9 @@ namespace LSTY.SevenDPanel.Application
         private static string ValidatePlayerId(string playerId)
         {
             var normalized = playerId?.Trim();
-            if (string.IsNullOrWhiteSpace(normalized) || normalized.Length > 160)
+            if (string.IsNullOrWhiteSpace(normalized) || normalized!.Length > 160)
                 throw new ArgumentException("A valid player id is required.", nameof(playerId));
-            return normalized;
+            return normalized!;
         }
 
         private static string NormalizeDisplayName(string displayName)

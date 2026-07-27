@@ -4,10 +4,11 @@
     "reload": "重新加载",
     "backToOverview": "返回概览",
     "yes": "是",
-    "no": "否"
-    ,"edit": "编辑"
-    ,"save": "保存"
-    ,"confirm": "确认"
+    "no": "否",
+    "edit": "编辑",
+    "save": "保存",
+    "confirm": "确认",
+    "unknown": "未知"
   },
   "locale": {
     "label": "语言",
@@ -59,6 +60,43 @@
       "worldSession": "世界会话时长",
       "process": "进程时长",
       "gameTime": "游戏时间"
+    },
+    "runtimeMetrics": {
+      "title": "游戏运行指标",
+      "unavailableTitle": "运行指标不可用",
+      "unavailableDescription": "当前快照没有可显示的游戏运行指标。",
+      "staleTitle": "正在显示上次成功采样",
+      "staleDescription": "最新刷新失败，以下指标可能已过期。",
+      "source": "来源",
+      "observedAt": "采样时间",
+      "metrics": {
+        "gameDayTime": "游戏日期与时间",
+        "isBloodMoon": "血月状态",
+        "framesPerSecond": "帧率",
+        "onlinePlayerCount": "在线玩家数",
+        "historicalPlayerCount": "历史玩家数",
+        "animalCount": "动物数",
+        "hostileEntityCount": "敌对实体数",
+        "activeEntityCount": "活动实体数",
+        "chunkCount": "区块数",
+        "droppedItemCount": "掉落物数",
+        "gameMemoryBytes": "游戏内存"
+      },
+      "units": {
+        "gameClock": "游戏时钟",
+        "boolean": "布尔值",
+        "framesPerSecond": "帧/秒",
+        "count": "项",
+        "bytes": "字节"
+      },
+      "boolean": {
+        "true": "是",
+        "false": "否"
+      },
+      "warning": {
+        "readFailed": "读取失败",
+        "unsupported": "当前版本不支持"
+      }
     },
     "duration": {
       "day": "{count}天",
@@ -165,10 +203,193 @@
   "shell": {
     "navigation": "导航",
     "playersAndWorld": "玩家与世界",
+    "auditAndEvents": "审计与事件",
+    "muteManagement": "禁言管理",
+    "operations": "服务器运维",
+    "worldTools": "世界工具",
+    "modules": "功能模块",
+    "automation": "事件自动化",
+    "economyAndRewards": "经济与奖励",
+    "economyAccounts": "经济账户",
+    "economyTransactions": "账本流水",
+    "rewardPackages": "奖励包",
+    "dailyReward": "每日奖励",
+    "rewardOperations": "奖励发放",
+    "shop": "商店商品",
+    "redeemCodes": "兑换码",
+    "achievementsAndOnlineRewards": "成就与在线奖励",
+    "community": "传送与投票",
+    "teleportSettings": "传送设置",
+    "cities": "城市管理",
+    "votes": "社区投票",
+    "integrations": "集成与访问策略",
+    "discord": "Discord 集成",
+    "geoIp": "GeoIP 访问策略",
     "search": "搜索",
     "searchPages": "搜索页面",
     "account": "{name} 账号",
     "signOut": "退出登录"
+  },
+  "backups": {
+    "title": "备份与恢复",
+    "kind": {
+      "World": "世界",
+      "PanelDatabase": "Panel 数据库",
+      "ServerConfiguration": "服务器配置"
+    },
+    "create": {
+      "title": "创建备份",
+      "description": "备份由服务端作业执行；页面只展示已持久化的进度和结果。",
+      "worldName": "世界名称",
+      "worldNamePlaceholder": "输入当前世界名称",
+      "world": "备份世界",
+      "panelDatabase": "备份 Panel 数据库",
+      "panelDatabaseDescription": "保存 Panel SQLite 数据库的可恢复归档。",
+      "serverConfiguration": "备份服务器配置",
+      "serverConfigurationDescription": "保存批准配置根中的固定文件。"
+    },
+    "job": {
+      "title": "当前作业",
+      "createdAt": "创建于 {time}",
+      "status": {
+        "Queued": "排队中",
+        "Running": "执行中",
+        "PendingRestart": "等待重启",
+        "Succeeded": "成功",
+        "Failed": "失败",
+        "Cancelled": "已取消",
+        "Interrupted": "已中断",
+        "ResultUnknown": "结果未知"
+      }
+    },
+    "table": {
+      "title": "备份目录",
+      "kind": "类型",
+      "createdAt": "创建时间",
+      "size": "大小",
+      "validation": "校验",
+      "actions": "操作"
+    },
+    "action": {
+      "download": "下载",
+      "restore": "恢复",
+      "delete": "删除"
+    },
+    "state": {
+      "empty": "暂无备份归档",
+      "forbidden": "当前身份不能管理备份",
+      "failed": "备份目录不可用",
+      "protocolError": "服务端返回了不受支持的备份协议",
+      "stale": "刷新失败，正在显示上一次成功结果",
+      "operationFailed": "备份操作未完成"
+    },
+    "restore": {
+      "title": "确认恢复备份",
+      "description": "恢复会先由服务端校验并 stage，不会在页面中乐观标记成功。",
+      "warning": "这是危险操作",
+      "nextStart": "已 stage 的内容会在下一次游戏世界打开前应用；时序证据不足时服务端将拒绝世界恢复。",
+      "panelDatabaseReceipt": "Panel 数据库历史可能在重启后由 restore receipt 归并。",
+      "restartAfterStage": "stage 完成后请求重启",
+      "confirm": "确认 stage 恢复"
+    },
+    "delete": {
+      "confirm": "确认删除这个{kind}备份？被恢复流程引用的归档会由服务端拒绝删除。"
+    },
+    "policies": {
+      "title": "备份策略",
+      "description": "每项策略都以当前服务端版本保存。",
+      "refresh": "刷新策略数据",
+      "version": "草稿版本 {version}",
+      "state": {
+        "loading": "正在加载备份策略。",
+        "forbidden": "当前身份不能管理备份策略。",
+        "failed": "备份策略暂不可用。",
+        "protocolError": "服务端返回了不受支持的备份策略响应。",
+        "stale": "策略数据可能已过期。请先刷新再处理冲突。"
+      },
+      "error": {
+        "conflictTitle": "该策略已在服务端变更。",
+        "conflictDescription": "已保留你的草稿。请刷新策略数据、核对当前服务端值后重试。",
+        "invalidTitle": "备份策略无效。",
+        "invalidDescription": "请检查 Cron 表达式、时区、备份根和保留值。",
+        "unavailableTitle": "策略未保存。",
+        "unavailableDescription": "服务端无法确认本次变更，已保留你的草稿。"
+      },
+      "field": {
+        "enabled": "启用",
+        "cronExpression": "Cron 表达式",
+        "timeZoneId": "时区 ID",
+        "backupRootId": "备份根 ID",
+        "retentionCount": "保留数量",
+        "retentionDays": "保留天数",
+        "compressionEnabled": "压缩归档"
+      },
+      "save": "保存策略"
+    }
+  },
+  "schedules": {
+    "title": "公告与调度",
+    "announcement": {
+      "title": "即时公告",
+      "description": "向游戏发送 1 至 500 个字符的纯文本公告。",
+      "message": "公告内容",
+      "placeholder": "输入要发送给玩家的公告",
+      "send": "发送公告"
+    },
+    "catalog": {
+      "title": "计划任务",
+      "description": "Cron、时区、并发策略与下次触发时间均来自服务端合同。"
+    },
+    "kind": {
+      "ScheduledConsoleCommand": "计划控制台命令",
+      "ScheduledRestart": "计划重启",
+      "ScheduledAnnouncement": "计划公告"
+    },
+    "policy": {
+      "SkipIfRunning": "运行中则跳过",
+      "QueueOne": "最多排队一个"
+    },
+    "form": {
+      "create": "新建计划",
+      "edit": "编辑计划",
+      "description": "保存时使用当前 row version；冲突不会覆盖服务端状态。",
+      "name": "名称",
+      "kind": "类型",
+      "cron": "Cron 表达式",
+      "timeZone": "时区 ID",
+      "policy": "并发策略",
+      "enabled": "启用",
+      "command": "控制台命令",
+      "countdown": "倒计时秒数",
+      "message": "公告内容"
+    },
+    "table": {
+      "name": "名称",
+      "kind": "类型",
+      "schedule": "调度",
+      "next": "下次触发",
+      "status": "状态",
+      "actions": "操作",
+      "none": "无",
+      "enabled": "已启用",
+      "disabled": "已停用"
+    },
+    "action": {
+      "enable": "启用",
+      "disable": "停用",
+      "delete": "删除"
+    },
+    "delete": {
+      "confirm": "确认删除计划“{name}”？已终态的历史作业不会被删除。"
+    },
+    "state": {
+      "empty": "暂无计划任务",
+      "forbidden": "当前身份不能管理调度",
+      "failed": "计划任务不可用",
+      "protocolError": "服务端返回了不受支持的调度协议",
+      "stale": "刷新失败，正在显示上一次成功结果",
+      "operationFailed": "调度操作未完成"
+    }
   },
   "gameResources": {
     "title": "游戏资源",
@@ -388,6 +609,117 @@
         "unknown": "结果尚无法确认"
       }
     },
+    "profile": {
+      "title": "玩家档案",
+      "navigation": "玩家档案与证据",
+      "viewReadOnly": "查看只读档案",
+      "readOnlyNotice": "当前为只读档案",
+      "state": {
+        "forbiddenTitle": "无权查看玩家档案",
+        "failedTitle": "无法加载玩家档案",
+        "staleTitle": "刷新失败，正在显示上次结果"
+      },
+      "section": {
+        "loading": "正在加载",
+        "available": "数据可用",
+        "partial": "数据不完整",
+        "stale": "数据可能已过期",
+        "unavailable": "数据不可用",
+        "forbidden": "无权查看"
+      },
+      "evidence": {
+        "confirmed": "已确认",
+        "observedChange": "观察到变化",
+        "gap": "证据存在缺口",
+        "incompleteDescription": "部分观察可能缺失；界面不会把缺失数据推断为真实游戏状态。",
+        "gapDescription": "该档案包含 {count} 条证据缺口记录。"
+      },
+      "summary": {
+        "title": "档案摘要"
+      },
+      "inventory": {
+        "title": "物品栏",
+        "item": "物品",
+        "container": "容器",
+        "quantity": "数量",
+        "quality": "品质",
+        "catalogUnavailable": "资源目录版本不可用",
+        "changes": "物品变化",
+        "uncomparable": "无法比较"
+      },
+      "skills": {
+        "title": "技能与进度",
+        "skill": "技能",
+        "value": "值",
+        "unknown": "未知",
+        "notLoaded": "尚未加载",
+        "unsupportedByVersion": "当前游戏版本不支持"
+      },
+      "activity": {
+        "title": "活动记录",
+        "sessions": "游戏会话",
+        "openSession": "仍在线",
+        "events": "活动事件",
+        "date": "日期",
+        "logins": "登录次数",
+        "inventoryObservations": "物品栏观察次数"
+      },
+      "actions": {
+        "title": "玩家操作",
+        "freshTarget": "实时目标已确认",
+        "freshRequired": "危险操作仅对当前在线且身份、世界和观察时间均已确认的目标开放。",
+        "world": "世界",
+        "targetInvalidTitle": "目标已失效",
+        "targetInvalidDescription": "玩家在线身份或世界状态已变化，请关闭窗口并刷新后重试。",
+        "resultUnknownDescription": "服务器无法确认最终结果。请使用操作 ID {operationId} 核对审计和玩家状态，勿直接重试。",
+        "resourceId": "资源 ID",
+        "catalogVersion": "资源目录版本：{version}",
+        "dangerConfirm": "我已确认此操作会修改玩家数据",
+        "status": {
+          "pending": "操作等待执行",
+          "succeeded": "操作成功",
+          "failed": "操作失败",
+          "resultUnknown": "操作结果未知"
+        },
+        "grant": {
+          "title": "发放物品",
+          "description": "向已确认的在线玩家背包发放指定资源。",
+          "confirm": "确认发放",
+          "hiddenConfirm": "我已确认该资源可能不会出现在普通资源列表中"
+        },
+        "remove": {
+          "title": "移除物品",
+          "description": "从已确认的在线玩家背包中移除指定资源。",
+          "confirm": "确认移除",
+          "mode": "移除方式",
+          "exact": "必须移除指定数量",
+          "upToAvailable": "最多移除现有数量",
+          "bagOnly": "当前操作只检查玩家背包，不会修改其他容器。"
+        },
+        "resetSkills": {
+          "title": "重置技能",
+          "description": "重置玩家技能和相关进度。",
+          "impact": "该操作会永久修改玩家技能数据。",
+          "confirm": "确认重置技能"
+        },
+        "resetPartial": {
+          "title": "清空物品栏",
+          "description": "清空玩家背包和工具栏中的物品。",
+          "impact": "该操作会永久删除目标范围内的物品。",
+          "scope": "不会自动清理世界容器或其他未列入范围的数据。",
+          "confirm": "确认清空物品栏"
+        },
+        "resetFull": {
+          "title": "重置完整玩家数据",
+          "description": "删除并重建该玩家的完整持久化数据。",
+          "impact": "这是高风险且不可直接撤销的操作。",
+          "recoveryWarning": "请先确认已有可用备份或明确接受无法恢复的结果。",
+          "typeIdentity": "输入跨平台 ID 以确认",
+          "disposableConfirm": "我已确认该玩家数据可以被永久重置",
+          "confirm": "确认重置完整数据"
+        }
+      }
+    },
     "history": {
       "title": "历史玩家",
       "navigation": "历史",
@@ -479,10 +811,128 @@
       }
     }
   },
+  "audit": {
+    "title": "统一审计",
+    "tabs": {
+      "audit": "审计记录",
+      "gameEvents": "游戏事件"
+    },
+    "filters": {
+      "source": "来源",
+      "status": "状态",
+      "subject": "主体",
+      "startUtc": "开始时间（UTC）",
+      "endUtc": "结束时间（UTC）",
+      "apply": "应用筛选"
+    },
+    "state": {
+      "loading": "正在加载审计记录",
+      "empty": "没有符合条件的审计记录",
+      "failed": "审计记录加载失败",
+      "forbidden": "无权查看统一审计",
+      "stale": "当前显示上次成功结果"
+    }
+  },
+  "gameEvents": {
+    "title": "游戏事件",
+    "gap": "部分游戏事件可能缺失",
+    "loadMore": "继续加载事件",
+    "state": {
+      "loading": "正在加载游戏事件",
+      "empty": "没有符合条件的游戏事件",
+      "failed": "游戏事件加载失败",
+      "forbidden": "无权查看游戏事件"
+    }
+  },
+  "chatMutes": {
+    "title": "聊天禁言",
+    "create": "创建禁言",
+    "edit": "编辑禁言",
+    "release": "解除禁言",
+    "permanent": "永久",
+    "state": {
+      "loading": "正在加载禁言记录",
+      "empty": "当前没有禁言记录",
+      "failed": "禁言记录加载失败",
+      "forbidden": "无权管理聊天禁言",
+      "stale": "当前显示上次成功结果"
+    },
+    "dialog": {
+      "releaseTitle": "确认解除禁言",
+      "releaseDescription": "解除后目标玩家可以立即恢复公开聊天。",
+      "releaseConfirm": "确认解除"
+    }
+  },
   "gameChat": {
     "title": "游戏聊天",
+    "common": {
+      "retry": "重试",
+      "loadMore": "继续加载",
+      "staleTitle": "当前显示上次成功结果",
+      "crossplatformId": "跨平台 ID",
+      "entityId": "实体 ID",
+      "entityIdValue": "实体 {id}",
+      "optional": "可选",
+      "mayBeEmpty": "可留空",
+      "defaultValue": "默认",
+      "edit": "编辑",
+      "delete": "删除",
+      "cancel": "取消",
+      "resetDefaults": "恢复默认值"
+    },
+    "channels": {
+      "All": "全部",
+      "Global": "全局",
+      "Friends": "好友",
+      "Party": "队伍",
+      "Whisper": "私聊",
+      "Unknown": "未知"
+    },
+    "sources": {
+      "Player": "玩家",
+      "Administrator": "管理员",
+      "System": "系统"
+    },
+    "permissions": {
+      "None": "禁止",
+      "AdminOnly": "仅管理员",
+      "All": "全部玩家"
+    },
+    "connection": {
+      "connecting": "连接中",
+      "live": "实时",
+      "reconnecting": "正在重连",
+      "stopped": "已离线"
+    },
+    "feedback": {
+      "settingsOperationFailed": "聊天设置操作失败，请重试。",
+      "coloredSettingsLoadFailed": "彩色聊天设置加载失败。",
+      "profilesLoadFailed": "玩家 Profile 加载失败。",
+      "coloredSettingsSaveFailed": "彩色聊天设置未保存，请重试。",
+      "profileOperationFailed": "玩家 Profile 操作失败，列表未作乐观修改。"
+    },
     "live": {
       "title": "实时聊天",
+      "onlinePlayers": "在线玩家",
+      "onlinePlayersCount": "在线玩家（{count}）",
+      "loadingRecent": "正在加载最近消息…",
+      "buffered": "已缓冲 {count} 条",
+      "gap": "部分实时消息可能缺失",
+      "channelAria": "聊天频道",
+      "messagesAria": "实时聊天消息",
+      "playersEmpty": "当前没有在线玩家。",
+      "privateUnavailable": "无法发送私聊",
+      "messagesEmpty": "暂无聊天消息。",
+      "backToLatest": "回到最新（{count}）",
+      "composer": {
+        "global": "全局聊天",
+        "private": "私聊消息",
+        "clearTarget": "清除私聊目标",
+        "messageAria": "聊天消息",
+        "placeholder": "输入消息…",
+        "send": "发送",
+        "keyboardHelp": "Enter 发送 · Shift+Enter 换行"
+      },
       "sendFeedback": {
         "session_expired": "会话已失效，请重新登录",
         "forbidden": "当前身份无权发送聊天消息",
@@ -494,17 +944,1078 @@
         "unknown": "消息发送失败，输入已保留"
       }
     },
-    "history": { "title": "历史聊天" },
+    "history": {
+      "title": "历史聊天",
+      "description": "按稳定身份、频道、来源和 UTC 时间范围筛选历史记录。",
+      "filters": {
+        "senderName": "发送者名称",
+        "channel": "频道",
+        "allChannels": "全部频道",
+        "source": "来源",
+        "allSources": "全部来源",
+        "startUtc": "开始时间（UTC）",
+        "endUtc": "结束时间（UTC）",
+        "apply": "应用筛选"
+      },
+      "table": {
+        "occurredAtUtc": "时间（UTC）",
+        "senderName": "发送者",
+        "channel": "频道",
+        "source": "来源",
+        "message": "正文"
+      },
+      "state": {
+        "loading": "正在加载历史聊天",
+        "empty": "没有符合条件的聊天记录",
+        "failed": "聊天历史加载失败",
+        "forbidden": "无权查看聊天历史",
+        "staleDescription": "最新刷新失败；筛选结果可能已过期。"
+      }
+    },
     "settings": {
       "title": "聊天设置",
       "loading": "正在加载聊天设置",
       "forbidden": "无权管理聊天设置",
-      "failed": "聊天设置加载失败"
+      "failed": "聊天设置加载失败",
+      "description": "关闭聊天功能不会删除已有历史；重新启用后才继续捕获和允许面板发送。",
+      "sections": {
+        "featureTitle": "功能与发送名称",
+        "featureDescription": "控制捕获和面板发送，并设置服务端显示名称。",
+        "commandTitle": "命令与历史",
+        "commandDescription": "每个命令前缀必须是一个非空白字符；0 表示不自动清理。"
+      },
+      "fields": {
+        "enabled": "启用聊天功能",
+        "enabledDescription": "允许捕获聊天和从面板发送消息",
+        "globalServerName": "全局消息服务端名称",
+        "whisperServerName": "私聊消息服务端名称",
+        "commandPrefixes": "命令前缀",
+        "commandPrefixesDescription": "输入一个或多个单字符前缀。",
+        "excludeCommands": "排除命令历史",
+        "excludeCommandsDescription": "命令消息不写入历史记录",
+        "retentionDays": "历史保留天数",
+        "retentionDaysDescription": "范围 0..3650；0 表示不自动清理。"
+      },
+      "validation": {
+        "commandPrefixes": "每个命令前缀必须是一个非空白字符",
+        "historyRetentionDays": "历史保留天数必须是 0 到 3650 之间的整数"
+      },
+      "save": "保存聊天设置"
     },
     "colored": {
       "title": "彩色聊天",
       "forbidden": "无权管理彩色聊天",
-      "settingsFailed": "彩色聊天设置加载失败"
+      "settingsFailed": "彩色聊天设置加载失败",
+      "description": "管理玩家专属 Profile 与六类默认颜色。所有网页预览均为纯文本。",
+      "tabs": {
+        "profiles": "玩家 Profile",
+        "defaults": "默认设置"
+      },
+      "profiles": {
+        "filterLabel": "筛选 Profile",
+        "filterPlaceholder": "跨平台 ID 或自定义名称",
+        "filter": "筛选",
+        "create": "新增 Profile",
+        "loading": "正在加载玩家 Profile",
+        "failed": "玩家 Profile 加载失败",
+        "empty": "暂无玩家 Profile",
+        "nameColor": "名称颜色",
+        "textColor": "正文颜色",
+        "updated": "更新时间"
+      },
+      "defaults": {
+        "enabled": "启用彩色聊天",
+        "enabledDescription": "对符合条件的消息应用颜色",
+        "permission": "玩家颜色标签权限",
+        "globalColor": "全局默认颜色",
+        "whisperColor": "私聊默认颜色",
+        "friendsColor": "好友默认颜色",
+        "partyColor": "队伍默认颜色",
+        "adminColor": "管理员默认颜色",
+        "systemColor": "系统默认颜色",
+        "save": "保存默认设置"
+      },
+      "preview": {
+        "aria": "彩色聊天纯文本预览",
+        "title": "安全预览（纯文本）",
+        "playerName": "玩家",
+        "message": "这是一条纯文本聊天预览。"
+      },
+      "profileDialog": {
+        "createTitle": "新增玩家 Profile",
+        "editTitle": "编辑玩家 Profile",
+        "description": "Profile 使用稳定跨平台 ID；编辑时业务键不可修改。",
+        "nameTemplate": "名称模板",
+        "nameTemplateDescription": "只替换下列四个变量；未知变量保持普通文本。",
+        "notes": "运营备注",
+        "notesHint": "只在面板显示",
+        "submit": "提交 Profile",
+        "create": "创建 Profile",
+        "save": "保存 Profile",
+        "validation": {
+          "crossplatformId": "跨平台 ID 不能为空或包含空白字符",
+          "color": "颜色必须为空或六位 RGB 十六进制值"
+        }
+      },
+      "dialog": {
+        "deleteTitle": "删除玩家 Profile",
+        "deleteDescription": "删除后该玩家将立即回退到默认彩色聊天规则。",
+        "deleteConfirm": "确认删除"
+      }
+    }
+  },
+  "economy": {
+    "common": {
+      "refresh": "刷新",
+      "search": "查询",
+      "loadMore": "加载更多",
+      "operationIncomplete": "操作未完成"
+    },
+    "accounts": {
+      "title": "经济账户",
+      "state": {
+        "stale": "当前显示上次成功数据",
+        "forbidden": "当前身份不能管理经济账户",
+        "unavailable": "经济账户暂不可用",
+        "empty": "没有匹配的经济账户。"
+      },
+      "search": {
+        "label": "账户、玩家 ID",
+        "placeholder": "输入 accountId 或 crossplatformId",
+        "includeSystem": "包含系统账户"
+      },
+      "status": {
+        "disabled": "已停用",
+        "frozen": "已冻结",
+        "normal": "正常"
+      },
+      "balance": {
+        "posted": "账面余额",
+        "reservedDebit": "预留扣款",
+        "available": "可用余额"
+      },
+      "action": {
+        "freeze": "冻结账户",
+        "unfreeze": "解除冻结"
+      },
+      "adjustment": {
+        "title": "人工余额调整",
+        "description": "服务端记账成功后才会刷新账户，页面不会提前修改余额。",
+        "playerId": "玩家 crossplatformId",
+        "direction": "方向",
+        "credit": "增加余额（Credit）",
+        "debit": "减少余额（Debit）",
+        "amount": "金额",
+        "reason": "原因",
+        "submit": "提交调整"
+      }
+    },
+    "transactions": {
+      "title": "经济流水",
+      "state": {
+        "stale": "流水刷新失败，正在显示上次成功数据",
+        "forbidden": "当前身份不能查看经济流水",
+        "unavailable": "经济流水暂不可用",
+        "empty": "没有匹配的经济流水。"
+      },
+      "playerId": "玩家 ID",
+      "accountId": "账户 ID",
+      "type": "类型",
+      "businessKind": "业务类型",
+      "balanceAfter": "余额：{amount}"
+    }
+  },
+  "rewards": {
+    "common": {
+      "load": "读取",
+      "refresh": "刷新"
+    },
+    "packages": {
+      "title": "奖励包",
+      "state": {
+        "stale": "保存或读取失败，正在显示上次成功数据",
+        "forbidden": "当前身份不能管理奖励包",
+        "unavailable": "奖励包暂不可用"
+      },
+      "packageId": "奖励包 ID",
+      "createWithId": "按此 ID 新建",
+      "saveNotice": "保存前不会改变服务端配置。",
+      "name": "名称",
+      "sortOrder": "排序",
+      "description": "描述",
+      "enabled": "启用奖励包",
+      "entries": {
+        "title": "奖励条目",
+        "addItem": "添加物品",
+        "addCurrency": "添加货币",
+        "internalName": "内部名称（internalName）",
+        "catalogVersion": "目录版本",
+        "quantity": "数量",
+        "currencyAmount": "货币金额"
+      },
+      "save": "保存奖励包"
+    },
+    "operations": {
+      "title": "奖励发放与异常",
+      "reconciliation": {
+        "title": "PendingReconciliation / ResultUnknown 不会自动重发",
+        "description": "必须根据真实游戏结果人工确认，或执行退款/补偿；避免重复发放。"
+      },
+      "operationIncomplete": "奖励操作未完成",
+      "manualGrant": {
+        "title": "人工发放",
+        "description": "收到服务端权威结果后才加入列表。",
+        "packageId": "奖励包 ID",
+        "playerId": "玩家 ID",
+        "entityId": "实体 ID",
+        "worldId": "世界 ID",
+        "submit": "提交发放"
+      },
+      "empty": "没有待处理的奖励发放异常。",
+      "action": {
+        "confirmCompleted": "确认已完成",
+        "refund": "退款",
+        "compensate": "补偿发放"
+      }
+    }
+  },
+  "commerce": {
+    "common": {
+      "load": "读取",
+      "createWithId": "按此 ID 新建",
+      "name": "名称",
+      "description": "描述",
+      "rewardPackageId": "奖励包 ID",
+      "perPlayerLimit": "单玩家限制",
+      "sortOrder": "排序",
+      "playerId": "玩家 ID",
+      "entityId": "实体 ID",
+      "worldId": "世界 ID",
+      "quantity": "数量",
+      "operationIncomplete": "操作未完成"
+    },
+    "shop": {
+      "title": "商店",
+      "operationIncomplete": "商店操作未完成",
+      "reconciliation": {
+        "title": "PendingReconciliation / ResultUnknown",
+        "description": "扣款或发放结果未知，不要重复购买；请转到奖励发放异常处理。"
+      },
+      "productId": "商品 ID",
+      "price": "价格",
+      "stock": "库存（空为无限）",
+      "enabled": "启用商品",
+      "save": "保存商品",
+      "purchase": {
+        "title": "受控购买",
+        "priceNotice": "当前价格 {price}，以服务端结果为准。",
+        "submit": "提交购买"
+      }
+    },
+    "redeemCodes": {
+      "title": "兑换码",
+      "operationIncomplete": "兑换码操作未完成",
+      "plaintext": {
+        "title": "明文兑换码仅显示一次",
+        "description": "立即复制并安全交付；关闭后面板只保留掩码。",
+        "close": "关闭明文"
+      },
+      "recordId": "兑换码记录 ID",
+      "loadMasked": "读取掩码记录",
+      "redemptionCount": "{packageId} · 已兑换 {count}",
+      "generate": {
+        "title": "生成兑换码",
+        "validFromUtc": "生效时间（UTC，可空）",
+        "expiresAtUtc": "过期时间（UTC，可空）",
+        "maxRedemptions": "总次数限制",
+        "enabled": "创建后启用",
+        "submit": "生成兑换码"
+      }
+    },
+    "achievementOnline": {
+      "title": "成就与在线奖励",
+      "reconciliation": {
+        "title": "PendingReconciliation / ResultUnknown 不会自动补发",
+        "description": "证据缺口和游戏结果未知会保留状态；确认真实结果后再人工处理。",
+        "statusLabel": "待人工对账：PendingReconciliation / ResultUnknown"
+      },
+      "achievement": {
+        "title": "成就定义",
+        "description": "定义与玩家进度分开保存。",
+        "id": "成就 ID",
+        "statistic": "统计量",
+        "threshold": "阈值",
+        "enabled": "启用成就",
+        "loadProgress": "查询玩家进度",
+        "save": "保存成就",
+        "currentValue": "当前值 {value} · {state}",
+        "completed": "已完成",
+        "incomplete": "未完成"
+      },
+      "rule": {
+        "title": "在线奖励规则",
+        "description": "连续在线证据和证据缺口策略由服务端判定。",
+        "id": "规则 ID",
+        "requiredOnlineSeconds": "在线秒数",
+        "repeatIntervalSeconds": "重复间隔秒数",
+        "gapPolicy": "证据缺口策略",
+        "enabled": "启用规则",
+        "loadRecords": "查询记录",
+        "manualGrant": "人工发放",
+        "save": "保存规则"
+      },
+      "statistic": {
+        "Level": "等级",
+        "ZombieKills": "僵尸击杀数",
+        "PlayerKills": "玩家击杀数",
+        "Deaths": "死亡次数"
+      },
+      "gapPolicy": {
+        "Paused": "暂停累计（Paused）",
+        "Incomplete": "证据不完整（Incomplete）"
+      }
+    }
+  },
+  "automation": {
+    "title": "事件自动化",
+    "common": {
+      "refresh": "刷新",
+      "retry": "重试",
+      "save": "保存",
+      "delete": "删除"
+    },
+    "state": {
+      "forbidden": "仅 Owner 可以管理自动化规则",
+      "unavailable": "自动化规则暂时不可用",
+      "stale": "刷新失败，当前显示上次成功读取的数据",
+      "operationIncomplete": "操作未完成"
+    },
+    "execution": {
+      "unavailableTitle": "执行证据查询暂不可用",
+      "unavailableDescription": "后端当前没有 execution 查询合同；规则编辑、验证和 dry-run 仍可使用。",
+      "actionResults": "动作结果"
+    },
+    "condition": {
+      "kind": {
+        "All": "全部匹配"
+      },
+      "addChild": "添加条件"
+    },
+    "actions": {
+      "moveDown": "下移"
+    },
+    "rules": {
+      "title": "规则",
+      "create": "新建",
+      "empty": "暂无规则"
+    },
+    "editor": {
+      "compositeTitle": "此规则使用复合条件树",
+      "compositeDescription": "当前最小编辑器不会降级或覆盖复合树；请新建简单规则，或等待完整树编辑器接入。",
+      "title": "规则编辑",
+      "description": "固定 trigger、condition 与 action，不接受 JSON、脚本或任意命令。",
+      "ruleId": "规则 ID",
+      "name": "名称",
+      "trigger": "Trigger",
+      "enabled": "启用",
+      "conditionField": "条件字段",
+      "conditionOperator": "条件操作",
+      "conditionValue": "条件值",
+      "action": "动作",
+      "target": "目标",
+      "targetReference": "目标引用",
+      "actionValue": "动作值",
+      "amount": "数量",
+      "muteSeconds": "禁言秒数",
+      "cooldownSeconds": "冷却秒数",
+      "validate": "验证"
+    },
+    "validation": {
+      "valid": "验证通过",
+      "invalid": "验证未通过",
+      "noIssues": "没有发现问题"
+    },
+    "dryRun": {
+      "title": "Dry run",
+      "description": "输入结构化快照；不会保存 trigger、execution 或业务副作用。",
+      "triggerId": "Trigger ID",
+      "occurredAtUtc": "发生时间 UTC",
+      "crossplatformId": "玩家 Crossplatform ID",
+      "chatText": "聊天文本",
+      "scheduledForUtc": "计划时间 UTC",
+      "bloodMoonPhase": "血月阶段",
+      "gapIds": "Gap IDs（逗号分隔）",
+      "run": "运行 dry-run",
+      "notEvaluated": "未求值",
+      "result": "条件结果：{result}",
+      "plannedActions": "计划动作 {count} 个",
+      "traceTitle": "求值追踪"
+    },
+    "confirmDelete": "删除规则“{name}”？",
+    "enums": {
+      "trigger": {
+        "PlayerJoined": "玩家加入",
+        "PlayerLeft": "玩家离开",
+        "ChatMessage": "聊天消息",
+        "Cron": "Cron 调度",
+        "BloodMoonPhaseEntered": "进入血月阶段"
+      },
+      "operator": {
+        "Equals": "等于",
+        "NotEquals": "不等于",
+        "InSet": "属于集合",
+        "NumberRange": "数值范围",
+        "TimeWindow": "时间窗口",
+        "PlayerGroup": "玩家组",
+        "Permission": "权限",
+        "Cooldown": "冷却"
+      },
+      "action": {
+        "BroadcastMessage": "广播消息",
+        "PrivateMessage": "私聊消息",
+        "Announcement": "公告",
+        "GrantItem": "发放物品",
+        "GrantRewardPackage": "发放奖励包",
+        "AdjustEconomy": "调整经济余额",
+        "KickPlayer": "踢出玩家",
+        "MutePlayer": "禁言玩家",
+        "RestrictedCommand": "受限命令",
+        "DiscordMessage": "Discord 消息"
+      },
+      "target": {
+        "Global": "全局",
+        "TriggerPlayer": "触发玩家",
+        "StablePlayer": "指定稳定玩家",
+        "DiscordTarget": "Discord 目标"
+      }
+    }
+  },
+  "discord": {
+    "title": "Discord 集成",
+    "common": {
+      "refresh": "刷新",
+      "retry": "重试",
+      "loading": "正在加载…",
+      "configured": "已配置",
+      "notConfigured": "未配置"
+    },
+    "state": {
+      "forbidden": "仅 Owner 可以管理 Discord 集成",
+      "unavailable": "Discord 配置暂不可用",
+      "stale": "刷新失败，当前显示上次成功读取的数据",
+      "operationIncomplete": "操作未完成"
+    },
+    "mode": {
+      "Webhook": "Webhook（网页钩子）",
+      "Bot": "Bot（机器人）"
+    },
+    "configuration": {
+      "title": "脱敏配置",
+      "description": "页面只显示凭据是否存在，不读取或回显 token、Webhook URL、secret 或消息正文。",
+      "enabled": "启用",
+      "mode": "模式",
+      "applicationId": "Application ID",
+      "guildId": "Guild ID",
+      "publicChannelId": "公共频道 ID",
+      "botCredential": "Bot 凭据",
+      "gameToDiscord": "游戏 → Discord",
+      "discordToGame": "Discord → 游戏",
+      "proxyEnabled": "使用代理",
+      "proxyEndpoint": "代理端点",
+      "save": "保存配置"
+    },
+    "targets": {
+      "title": "投递目标",
+      "add": "添加目标",
+      "keyPlaceholder": "目标键",
+      "channelPlaceholder": "频道 ID",
+      "credentialConfigured": "凭据已配置",
+      "noCredential": "无凭据"
+    },
+    "testDelivery": {
+      "title": "测试投递",
+      "description": "成功只表示请求已入队，不表示 Discord 已接收。",
+      "selectTarget": "选择目标",
+      "send": "发送固定测试消息",
+      "accepted": "投递已受理：{status}"
+    },
+    "delivery": {
+      "title": "投递记录",
+      "unavailableTitle": "投递历史暂不可用",
+      "unavailableDescription": "后端管理查询合同不可用；配置和测试投递不受影响。",
+      "empty": "暂无投递记录",
+      "retryCount": "{deliveryId} · 重试 {count}",
+      "mobileSummary": "移动端摘要"
+    },
+    "secrets": {
+      "botToken": "Bot token",
+      "keep": "保留当前值",
+      "replace": "替换",
+      "clear": "清空",
+      "clearConfirm": "确定清空此密钥？",
+      "apply": "提交密钥变更",
+      "submissionOnly": "值仅会提交一次，之后不会再次显示。"
+    },
+    "inbound": {
+      "title": "入站 Interaction",
+      "transportDescription": "Gateway 专用于 Discord 到游戏的聊天桥；Interaction 通过 signed HTTP 请求送达。",
+      "endpoint": "Interaction Endpoint",
+      "endpointHelp": "必须通过公网 HTTPS 暴露此固定路径，再在 Discord 开发者后台中配置它。",
+      "publicKey": "Interaction public key",
+      "replacePublicKey": "替换 public key"
+    },
+    "health": {
+      "title": "Transport 诊断",
+      "unavailable": "Transport 诊断暂不可用",
+      "gateway": "网关",
+      "inbound": "入站"
+    },
+    "binding": {
+      "title": "账号绑定",
+      "unavailable": "绑定列表暂不可用",
+      "empty": "暂无绑定",
+      "subject": "Discord {discordSubject}",
+      "remove": "解绑",
+      "playerPlaceholder": "玩家 Crossplatform ID",
+      "createCode": "创建一次性绑定码",
+      "codeOnce": "绑定码只显示一次",
+      "expiresAt": "过期：{time}",
+      "hide": "隐藏",
+      "confirmRemove": "解除 Discord 绑定 {discordSubject}？"
+    },
+    "commands": {
+      "title": "固定命令目录",
+      "unavailable": "命令目录暂不可用",
+      "empty": "暂无命令",
+      "enabled": "启用",
+      "disabled": "停用",
+      "remoteAllowed": "允许远程",
+      "bindingOnly": "仅绑定用途"
+    }
+  },
+  "geoIp": {
+    "title": "GeoIP 访问策略",
+    "common": {
+      "refresh": "刷新",
+      "retry": "重试",
+      "loading": "正在加载…",
+      "add": "添加",
+      "remove": "移除",
+      "none": "无",
+      "unknown": "未知"
+    },
+    "currentFailureMode": "当前失败策略：{mode}",
+    "state": {
+      "forbidden": "仅 Owner 可以管理 GeoIP 策略",
+      "unavailable": "GeoIP 策略暂不可用",
+      "stale": "刷新失败，当前显示上次成功读取的数据",
+      "operationIncomplete": "操作未完成"
+    },
+    "provider": {
+      "LocalMmdb": "本地 MMDB（LocalMmdb）",
+      "MaxMindWebService": "MaxMind Web Service"
+    },
+    "failureMode": {
+      "FailOpen": "失败时放行（FailOpen）",
+      "FailClosed": "失败时拒绝（FailClosed）",
+      "failOpenDescription": "查询或缓存不可用时允许加入；请持续关注诊断告警。",
+      "failClosedDescription": "查询或缓存不可用时拒绝加入；启用前确认数据源可用。"
+    },
+    "effect": {
+      "Allow": "允许（Allow）",
+      "Deny": "拒绝（Deny）"
+    },
+    "policy": {
+      "title": "策略设置",
+      "description": "浏览器只选择批准 provider，不读取 MMDB 路径、MaxMind 凭据或原始 provider 错误。",
+      "enabled": "启用",
+      "bypassAdmins": "管理员绕过",
+      "provider": "Provider",
+      "failureMode": "失败策略",
+      "rejectionMessage": "拒绝文案",
+      "save": "保存策略"
+    },
+    "networkRules": {
+      "title": "IP / CIDR 规则",
+      "description": "Deny 优先于 Allow；保存时按当前顺序生成 ordinal。",
+      "empty": "暂无网络规则",
+      "ruleIdPlaceholder": "规则 ID"
+    },
+    "countryRules": {
+      "title": "国家规则",
+      "description": "使用两位 ISO 国家代码。",
+      "empty": "暂无国家规则"
+    },
+    "test": {
+      "title": "测试查询",
+      "description": "只接受公网 IP；响应和页面仅显示 masked IP。受理表示刷新已入队。",
+      "submit": "测试"
+    },
+    "diagnostics": {
+      "title": "诊断",
+      "unavailableTitle": "GeoIP diagnostics 暂不可用",
+      "unavailableDescription": "策略读取和编辑仍可使用；页面不会显示 provider 原始错误。",
+      "status": "状态",
+      "persistentFailure": "持续故障",
+      "cacheHealth": "缓存健康度",
+      "dataVersion": "数据版本",
+      "queueDepth": "刷新队列",
+      "rejectedRefreshes": "拒绝刷新",
+      "lastLookup": "最近查询",
+      "externalService": "外部服务",
+      "localData": "本地数据",
+      "providerVersion": "数据版本：{dataVersion} · Build：{buildEpoch}"
+    },
+    "decisions": {
+      "title": "最近决策",
+      "empty": "暂无决策"
+    },
+    "credentials": {
+      "title": "MaxMind 凭据",
+      "description": "页面仅显示凭据状态、指纹和更新时间；替换值提交后会立即从此表单清空。",
+      "unavailableTitle": "GeoIP 凭据暂不可用",
+      "unavailableDescription": "无法确认凭据状态；请刷新页面后再进行修改。",
+      "action": "操作",
+      "operation": {
+        "Keep": "保留当前值",
+        "Replace": "替换",
+        "Clear": "清空"
+      },
+      "set": "已设置",
+      "notSet": "未设置",
+      "status": "状态：{status}",
+      "fingerprint": "指纹：{fingerprint}",
+      "updatedAt": "更新时间：{updatedAt}",
+      "accountId": {
+        "title": "Account ID",
+        "value": "替换 Account ID"
+      },
+      "licenseKey": {
+        "title": "License key",
+        "value": "替换 License key"
+      },
+      "save": "保存凭据"
+    },
+    "secrets": {
+      "maxMindLicenseKey": "MaxMind 许可证密钥",
+      "clearConfirm": "确定清空 MaxMind 凭据？"
+    }
+  },
+  "community": {
+    "common": {
+    "cancel": "取消",
+    "clear": "清空",
+    "coordinates": "X {x} / Y {y} / Z {z}",
+    "disabled": "已禁用",
+    "edit": "编辑",
+      "enabled": "启用",
+      "query": "查询",
+      "restoreServerValue": "恢复服务端值",
+      "retry": "重试",
+      "saveAndConfirm": "保存并等待确认"
+    },
+    "state": {
+      "forbiddenTitle": "{subject}无权访问",
+      "forbiddenDescription": "当前会话没有读取或修改该运营配置的权限。",
+      "unavailableTitle": "{subject}暂不可用",
+      "unavailableDescription": "未取得可验证的服务端响应；页面不会使用缓存草稿补充合同。",
+      "staleTitle": "{subject}刷新失败",
+      "staleDescription": "当前保留上次服务端确认的数据，不代表最新状态。"
+    },
+    "mutation": {
+      "confirmedTitle": "服务端已确认",
+      "confirmedDescription": "页面状态已使用本次响应中的权威数据更新。",
+      "forbiddenTitle": "写操作被拒绝",
+      "forbiddenDescription": "当前会话没有执行该操作的权限，页面数据未改变。",
+      "unavailableTitle": "服务端确认不可用",
+      "unavailableDescription": "无法确认写操作结果；页面不会显示成功，也不会自动重试。请刷新后核对。",
+      "failedTitle": "写操作未完成",
+      "failedDescription": "服务端拒绝了当前输入或检测到状态冲突；请刷新权威数据后重试。"
+    },
+    "voteRound": {
+      "actionResultUnknown": "动作结果未知",
+      "actionResultUnknownDescription": "投票结算与后续动作结果相互独立；请核对真实游戏状态，页面不会显示动作成功或自动重试。",
+      "initiator": "发起者",
+      "target": "目标",
+      "noFixedTarget": "无固定目标",
+      "eligibleCount": "合格人数",
+      "threshold": "阈值",
+      "thresholdValue": "{percent}% / 最少 {count} 人",
+      "openedAt": "打开时间",
+      "expiresAt": "截止时间",
+      "settlementConfirmation": "结算由服务端判断是否到期并保证单次生效。确认请求结算此固定轮次？",
+      "confirmSettlement": "确认请求结算",
+      "requestSettlement": "请求服务端结算"
+    },
+  "votes": {
+    "title": "社区投票",
+    "refresh": "刷新配置与轮次列表",
+      "configurationTitle": "投票配置",
+      "configurationDescription": "Kick 与 Restart 独立配置，写入携带 rowVersion 并等待服务端确认。",
+    "configurationSubject": "投票配置",
+    "configurationEmpty": "服务端没有返回投票配置。",
+    "historyTitle": "全部投票轮次",
+    "historyDescription": "这里是通用投票轮次历史；待动作工作会单独列出。",
+    "historySubject": "投票轮次历史",
+    "historyEmpty": "服务端没有返回投票轮次。",
+    "queuedTitle": "待动作轮次",
+    "queuedDescription": "这些轮次已有待处理动作，需要运营关注。",
+      "queuedSubject": "待动作轮次",
+      "queuedEmpty": "当前没有 ActionQueued 轮次。",
+      "queryTitle": "轮次查询与结算",
+      "queryDescription": "结算只改变投票轮次；投票通过不等于后续踢人或重启动作成功。",
+      "roundId": "轮次 ID",
+      "queryRound": "查询固定轮次",
+      "roundSubject": "投票轮次",
+      "settlementCompleted": "服务端已完成本次结算",
+      "alreadySettled": "服务端确认该轮次已经结算",
+      "settlementCounts": "参与 {participantCount} · Yes {yesCount} · No {noCount}"
+    },
+    "voteConfiguration": {
+      "version": "版本 {version}",
+      "durationMs": "持续时间（毫秒）",
+      "thresholdPercent": "通过阈值（%）",
+      "minimumParticipants": "最小参与数",
+      "initiatorMinimumOnlineMs": "发起者最低在线（毫秒）",
+      "participantMinimumOnlineMs": "参与者最低在线（毫秒）",
+      "initiatorCooldownMs": "发起者冷却（毫秒）",
+      "targetCooldownMs": "目标冷却（毫秒）",
+      "globalCooldownMs": "全局冷却（毫秒）",
+      "mutualExclusionScope": "互斥范围",
+      "voteSelection": "票选择",
+      "allowVoteChange": "允许截止前变更一次"
+    },
+  "teleport": {
+    "title": "传送设置与查询",
+    "refresh": "刷新设置与历史记录",
+    "verifiedDataTitle": "只展示服务端可验证数据",
+    "verifiedDataDescription": "家园按玩家身份查询；好友记录与传送操作历史来自服务端确认的列表。",
+      "settingsSubject": "传送设置",
+      "rulesTitle": "规则配置",
+      "rulesDescription": "Home、City、Friend、Return 与 Admin 独立保存；rowVersion 冲突不会覆盖新版本。",
+      "settingsEmpty": "服务端没有返回任何传送设置。",
+    "friendshipRecordsTitle": "好友记录",
+    "friendshipRecordsDescription": "这里展示所有服务端确认的好友记录。",
+    "friendshipRecordsSubject": "好友记录",
+    "friendshipRecordsEmpty": "服务端没有返回好友记录。",
+    "friendshipMemberA": "成员 A",
+    "friendshipMemberB": "成员 B",
+    "friendshipCreatedBy": "创建者",
+    "friendshipAcceptedAt": "接受时间",
+    "operationsTitle": "传送操作历史",
+    "operationsDescription": "这里展示所有服务端确认的传送操作。",
+    "operationsSubject": "传送操作历史",
+    "operationsEmpty": "服务端没有返回传送操作。",
+    "targetPlayer": "目标玩家",
+    "noTargetPlayer": "无目标玩家",
+    "queriesTitle": "直接查询",
+    "queriesDescription": "可按单个玩家、好友关系双方或操作 ID 查询。",
+      "homesTitle": "玩家家园",
+      "friendshipTitle": "好友关系",
+      "playerIdentity": "玩家身份（crossplatformId）",
+      "playerA": "玩家 A",
+      "playerB": "玩家 B",
+      "operationTitle": "传送操作",
+      "operationId": "操作 ID",
+      "homesSubject": "玩家家园",
+      "homesEmpty": "该玩家没有可用家园。",
+      "friendshipSubject": "好友关系",
+      "areFriends": "服务端确认双方为好友",
+      "areNotFriends": "服务端确认双方不是好友",
+      "operationSubject": "传送操作",
+      "pendingReconciliation": "等待人工核对",
+      "pendingReconciliationTitle": "结果未知，等待人工核对",
+      "pendingReconciliationDescription": "服务端无法证明传送是否完成；不要重复发起，也不要把 HTTP 接受表示为传送成功。",
+      "player": "玩家",
+      "updatedAt": "状态更新时间",
+      "destinationWorld": "目的世界",
+      "destinationCoordinates": "目的坐标"
+    },
+    "teleportSetting": {
+      "version": "版本 {version}",
+      "maxHomes": "每名玩家最多家园数",
+      "cooldownMs": "独立冷却（毫秒）",
+      "globalCooldownMs": "全局冷却（毫秒）",
+      "feeAmount": "费用（最小单位）",
+      "bloodMoonRestriction": "血月限制",
+      "denyDuringBloodMoon": "血月期间拒绝"
+    },
+  "cityForm": {
+      "createTitle": "新建或按 ID 覆盖城市",
+      "editTitle": "编辑 {name}",
+    "description": "保存后只采用服务端返回值；禁用城市仍显示在全量城市列表中。",
+      "cityId": "城市 ID",
+      "name": "名称",
+      "descriptionField": "描述",
+      "worldId": "世界 ID",
+      "yaw": "朝向",
+      "sortOrder": "排序",
+      "availability": "可用状态",
+      "playerSelectable": "玩家可选择"
+    },
+  "cities": {
+    "title": "城市管理",
+    "refresh": "刷新城市列表",
+    "listSubject": "城市列表",
+    "listTitle": "全部城市",
+    "listDescription": "展示启用与禁用城市。可选择条目编辑；服务端没有删除合同。",
+    "create": "新建城市",
+    "listEmpty": "服务端没有返回城市。",
+      "noDescription": "无描述",
+      "sortOrder": "排序 {value}"
+    }
+  },
+  "worldTools": {
+    "title": "世界工具",
+    "tabs": {
+      "resources": "世界资源",
+      "operations": "操作"
+    },
+    "view": {
+      "worldChanged": "确认期间世界标识或版本发生变化。请重新检查操作。",
+      "notSubmitted": "操作未提交"
+    },
+    "common": {
+      "refresh": "刷新",
+      "clear": "清除",
+      "cancel": "取消",
+      "yes": "是",
+      "no": "否",
+      "errorCode": "错误：{code}"
+    },
+    "read": {
+      "observed": "观测时间 {time}",
+      "position": "位置 {x}, {y}, {z}",
+      "summary": {
+        "title": "世界摘要",
+        "unavailable": "世界摘要不可用",
+        "worldId": "世界 ID",
+        "worldVersion": "世界版本",
+        "mapResourceVersion": "地图资源版本",
+        "gameVersion": "游戏版本",
+        "seed": "种子",
+        "width": "宽度",
+        "height": "高度",
+        "availableExtent": "可用范围",
+        "availableExtentValue": "X {minimumX}…{maximumX}; Z {minimumZ}…{maximumZ}"
+      },
+      "landClaims": {
+        "title": "领地石",
+        "unavailable": "领地石不可用",
+        "owner": "所有者 {owner}",
+        "position": "位置 {x}, {y}, {z} · 半径 {radius}",
+        "ownerDetails": "所有者最后登录 {lastLogin} · 服务端 ID {serverId}",
+        "empty": "未返回领地石。"
+      },
+      "vehicles": {
+        "title": "载具",
+        "unavailable": "载具不可用",
+        "typeAndOwner": "{type} · 所有者 {owner}",
+        "details": "锁定 {locked} · 燃料 {fuel} · 品质 {quality} · 容器 {container}",
+        "empty": "未返回载具。"
+      },
+      "drones": {
+        "title": "无人机",
+        "unavailable": "无人机不可用",
+        "typeAndOwner": "{type} · 所有者 {owner}",
+        "details": "锁定 {locked} · 品质 {quality} · 容器 {container}",
+        "empty": "未返回无人机。"
+      },
+      "containers": {
+        "title": "容器",
+        "unavailable": "容器不可用",
+        "parentAndPosition": "父级 {parent} · 位置 {x}, {y}, {z}",
+        "details": "锁定 {locked} · 槽位 {used} / {total}",
+        "item": "{resourceId} × {count} · 品质 {quality}",
+        "itemDetailsUnavailable": "物品详情不可用。",
+        "empty": "未返回容器。"
+      },
+      "catalogs": {
+        "title": "已批准的操作目录",
+        "blocks": "方块",
+        "prefabs": "预制体",
+        "entityTypes": "实体类型",
+        "versionObserved": "版本 {version} · 观测时间 {time}",
+        "approvedIdentifiers": "{count} 个已批准标识符"
+      }
+    },
+    "operations": {
+      "title": "世界操作",
+      "description": "每个动作都使用固定请求结构，并在产生副作用前重新验证。",
+      "ownerRequiredTitle": "需要 Owner 权限",
+      "ownerRequiredDescription": "Admin 或 Viewer 会话不会呈现世界变更控件。",
+      "snapshotRequiredTitle": "需要当前世界快照",
+      "snapshotRequiredDescription": "过期或不可用的世界标识不能用于准备变更。",
+      "catalogUnavailable": "已批准目录不可用",
+      "cannotReview": "无法检查操作",
+      "review": "检查操作",
+      "feedback": {
+        "snapshotRequired": "需要当前世界快照。",
+        "catalogUnavailable": "所需的已批准资源目录不可用。",
+        "invalidForm": "操作表单无效。"
+      },
+      "types": {
+        "deleteLandClaim": "删除领地石",
+        "moveOnlinePlayer": "移动在线玩家",
+        "moveEntity": "移动实体",
+        "copyRegion": "复制区域",
+        "fillRegion": "填充区域",
+        "clearRegion": "清空区域",
+        "pasteRegion": "粘贴区域",
+        "setBlock": "设置方块",
+        "placePrefab": "放置预制体",
+        "removePrefab": "移除预制体",
+        "spawnEntity": "生成实体",
+        "deleteEntity": "删除实体",
+        "cleanupEntities": "清理实体",
+        "reloadResource": "重新加载游戏资源",
+        "collectGarbage": "执行游戏垃圾回收",
+        "undoChangeSet": "撤销变更集",
+        "refreshMapResources": "刷新地图资源",
+        "renderExploredMap": "渲染已探索地图",
+        "renderFullMap": "渲染完整地图"
+      },
+      "fields": {
+        "operation": "操作",
+        "crossplatformId": "跨平台 ID",
+        "targetId": "目标 ID",
+        "entityId": "实体 ID",
+        "ownerStableIdentity": "所有者稳定标识",
+        "onlineObservedAtUtc": "在线状态 UTC 观测时间",
+        "entityTypeResourceId": "实体类型资源 ID",
+        "center": "中心",
+        "coordinate": "坐标",
+        "anchor": "锚点",
+        "observedPosition": "观测位置",
+        "destination": "目的地",
+        "boundedRegion": "有界区域",
+        "firstX": "起点 X",
+        "firstY": "起点 Y",
+        "firstZ": "起点 Z",
+        "secondX": "终点 X",
+        "secondY": "终点 Y",
+        "secondZ": "终点 Z",
+        "blockInternalName": "方块内部名称",
+        "rotation": "旋转",
+        "shape": "形状",
+        "prefabResourceId": "预制体资源 ID",
+        "prefabInstanceId": "预制体实例 ID",
+        "quantity": "数量",
+        "radius": "半径",
+        "maximumCount": "最大数量",
+        "entityCategory": "实体类别",
+        "resourceCategory": "资源类别",
+        "sourceChangeSetId": "源变更集 ID",
+        "sourceOperationId": "源操作 ID",
+        "changeSetId": "变更集 ID",
+        "currentRegionHash": "当前区域哈希",
+        "mapScope": "地图范围",
+        "limitBounds": "限制为明确的 X/Z 边界",
+        "minimumX": "最小 X",
+        "minimumZ": "最小 Z",
+        "maximumX": "最大 X",
+        "maximumZ": "最大 Z"
+      }
+    },
+    "history": {
+      "title": "跟踪的操作",
+      "description": "URL 中的 operation ID 会在刷新后恢复此记录。",
+      "refreshStatus": "刷新状态",
+      "acceptedTitle": "操作已接受处理",
+      "acceptedDescription": "回执 {operationId} 不是成功的终态结果。",
+      "resultUnknownTitle": "操作结果未知",
+      "resultUnknownDescription": "不要重试或假定成功。再次执行动作前，请检查操作和审计证据。",
+      "rollbackFailedTitle": "操作回滚失败",
+      "rollbackFailedDescription": "世界可能已部分改变。请停止后续变更并检查恢复证据。",
+      "statusUnavailable": "操作状态不可用",
+      "empty": "当前没有跟踪任何操作。",
+      "operationId": "操作 ID",
+      "progress": "进度",
+      "error": "错误",
+      "table": {
+        "operation": "操作",
+        "status": "状态",
+        "worldVersion": "世界版本",
+        "created": "创建时间"
+      }
+    },
+    "confirm": {
+      "title": "检查世界操作",
+      "description": "服务端会在开始副作用前重新验证固定目标和版本。",
+      "dangerTitle": "危险的世界操作",
+      "dangerDescription": "202 回执表示已接受处理，并不表示已成功完成。",
+      "target": "目标",
+      "world": "世界",
+      "scope": "范围",
+      "worldVersion": "世界版本",
+      "mapResourceVersion": "地图资源版本",
+      "catalogVersion": "目录版本",
+      "expectedImpact": "预期影响",
+      "reversibility": "可逆性",
+      "reversible": "可通过已验证的变更集撤销",
+      "notReversible": "不可撤销",
+      "strongConfirmation": "强确认",
+      "strongConfirmationDescription": "准确输入 CONFIRM 以确认已了解较高影响。",
+      "confirmOperation": "确认操作"
+    }
+  },
+  "modules": {
+    "title": "功能模块",
+    "common": {
+      "refresh": "刷新",
+      "cancel": "取消",
+      "none": "无",
+      "errorCode": "错误：{code}"
+    },
+    "healthUnknownTitle": "模块健康状态未知",
+    "healthUnknownDescription": "当前 API 会报告每个健康来源，但不会报告健康值。页面不会推断健康状态。",
+    "stateUnavailable": "功能模块状态不可用",
+    "table": {
+      "module": "模块",
+      "lifecycle": "生命周期",
+      "health": "健康状态",
+      "details": "配置与数据保留"
+    },
+    "status": {
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "unknown": "未知"
+    },
+    "fields": {
+      "disableMode": "禁用模式",
+      "healthSource": "来源",
+      "dependencies": "依赖项",
+      "settingsSummary": "设置摘要",
+      "dataRetention": "数据保留",
+      "consumers": "使用方",
+      "updated": "更新时间",
+      "updatedBy": "{time}，操作者 {operator}",
+      "rowVersion": "行版本"
+    },
+    "actions": {
+      "enable": "启用",
+      "disable": "禁用"
+    },
+    "unavailableTitle": "功能模块不可用",
+    "unavailableDescription": "无法加载固定的 17 模块合同。",
+    "enableDialog": {
+      "title": "启用功能模块",
+      "description": "启用前确认准确的模块和行版本。",
+      "dependencyRevalidation": "将重新验证依赖状态",
+      "module": "模块",
+      "expectedRowVersion": "预期行版本",
+      "dependencies": "依赖项",
+      "confirm": "启用模块"
+    },
+    "disableDialog": {
+      "title": "禁用功能模块",
+      "description": "禁用前确认模块生命周期影响。",
+      "dangerTitle": "危险的模块状态变更",
+      "dangerDescription": "禁用模式：{disableMode}。将重新验证活动使用方和依赖项。",
+      "module": "模块",
+      "expectedRowVersion": "预期行版本",
+      "dataRetention": "数据保留",
+      "confirm": "禁用模块"
     }
   },
   "console": {
@@ -542,6 +2053,44 @@
   "forbidden": {
     "title": "无权访问此页面",
     "description": "当前身份没有访问该功能的权限。"
+  },
+  "dailyReward": {
+    "title": "每日奖励",
+    "refresh": "刷新每日奖励",
+    "ruleId": "daily",
+    "explanationTitle": "一个每日规则，对应一个可管理奖励包",
+    "explanationDescription": "玩家使用无参数的 daily 命令。本页只修改奖励包绑定和启停状态，不会重放已有领取。",
+    "version": "服务端版本 {version}",
+    "save": "保存每日奖励",
+    "form": {
+      "title": "每日奖励规则",
+      "description": "服务端确认保存后，后续 UTC 每日领取才会使用此绑定。",
+      "ruleId": "规则 ID",
+      "ruleIdDescription": "无参数游戏命令始终使用此规则。",
+      "rewardPackageId": "奖励包 ID",
+      "rewardPackageIdDescription": "输入已有奖励包的 ID。保存时服务端会再次验证。",
+      "rewardPackageIdPlaceholder": "例如：starter-pack",
+      "enabled": "启用",
+      "enabledDescription": "停用规则会拒绝每日领取，不会创建发放。"
+    },
+    "state": {
+      "notConfiguredTitle": "尚未配置每日奖励",
+      "notConfiguredDescription": "请先选择已有奖励包，玩家才能领取每日奖励。",
+      "staleTitle": "正在显示上次确认的策略",
+      "staleDescription": "最新请求失败。草稿已保留；处理冲突前请刷新。",
+      "forbiddenTitle": "无权管理每日奖励",
+      "forbiddenDescription": "只有 Owner 可以读取或修改此策略。",
+      "failedTitle": "每日奖励策略暂不可用",
+      "failedDescription": "服务端没有返回可验证的策略。"
+    },
+    "error": {
+      "title": "未保存每日奖励",
+      "conflict": "服务端上的策略已变更。草稿已保留；请刷新后重试。",
+      "invalid": "请检查奖励包 ID 是否存在以及草稿是否有效。",
+      "unavailable": "服务端无法确认这次变更。草稿已保留。",
+      "forbidden": "当前会话无权修改此策略。",
+      "session_expired": "会话已失效，请重新登录后保存。"
+    }
   },
   "apiKeys": {
     "title": "API Keys",

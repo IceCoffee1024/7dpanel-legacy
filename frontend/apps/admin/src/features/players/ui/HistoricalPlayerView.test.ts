@@ -78,7 +78,11 @@ function mountView() {
     wrapper: mount(HistoricalPlayerView, {
       global: {
         stubs: {
-          UButton: { props: ['label'], emits: ['click'], template: '<button @click="$emit(\'click\')">{{ label }}<slot /></button>' },
+          Button: {
+            props: ['label', 'to'],
+            emits: ['click'],
+            template: '<a v-if="to" :href="to">{{ label }}<slot /></a><button v-else @click="$emit(\'click\')">{{ label }}<slot /></button>',
+          },
           PlayersSectionNavigation: true,
           HistoricalSnapshotTimeline: { props: ['snapshots', 'gaps'], emits: ['selectSnapshot', 'loadMore'], template: '<button data-testid="snapshot-row" @click="$emit(\'selectSnapshot\', snapshots[0])">{{ snapshots[0]?.player.name }}</button>' },
           HistoricalSnapshotDetailsSlideover: { props: ['open', 'snapshot'], emits: ['update:open'], template: '<section v-if="open" data-testid="snapshot-details">{{ snapshot?.snapshotId }}</section>' },
@@ -93,6 +97,7 @@ it('renders summary and timeline data, then opens a read-only snapshot detail', 
 
   expect(wrapper.text()).toContain('Ada')
   expect(wrapper.text()).toContain('1')
+  expect(wrapper.get('a[href="/players/profile/EOS_ada"]').text()).toBe('查看只读档案')
   await wrapper.get('[data-testid="snapshot-row"]').trigger('click')
   expect(wrapper.get('[data-testid="snapshot-details"]').text()).toContain('19')
   expect(wrapper.text()).not.toMatch(/踢出|封禁|传送|重置/)

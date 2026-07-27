@@ -109,6 +109,12 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.NotNull(document["paths"]?["/api/v1/console/commands"]?["post"]);
                 Assert.NotNull(document["paths"]?["/api/v1/players/online"]?["get"]);
                 Assert.NotNull(document["paths"]?["/api/v1/players/{entityId}/kick"]?["post"]);
+                Assert.NotNull(document["paths"]?["/api/v1/audit"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/game-events"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/chat/mutes"]?["get"]);
+                Assert.NotNull(document["paths"]?["/api/v1/chat/mutes"]?["post"]);
+                Assert.NotNull(document["paths"]?["/api/v1/chat/mutes/{crossplatformId}"]?["put"]);
+                Assert.NotNull(document["paths"]?["/api/v1/chat/mutes/{crossplatformId}"]?["delete"]);
                 var tokenOperation = document["paths"]?["/api/v1/auth/token"]?["post"];
                 Assert.NotNull(tokenOperation);
                 var formSchema = tokenOperation!["requestBody"]?["content"]?

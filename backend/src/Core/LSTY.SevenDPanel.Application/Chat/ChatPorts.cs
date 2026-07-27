@@ -49,6 +49,11 @@ namespace LSTY.SevenDPanel.Application.Chat
         void RemoveProfile(string crossplatformId);
     }
 
+    public interface IChatMuteRuntimeConfiguration : IChatRuntimeConfiguration
+    {
+        void ReplaceMuteSnapshot(IReadOnlyDictionary<string, ChatMuteRecord> snapshot);
+    }
+
     public interface IChatOperationAuditTrail
     {
         void Record(ChatOperationAuditEntry entry);

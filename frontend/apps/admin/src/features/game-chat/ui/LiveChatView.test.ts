@@ -1,9 +1,12 @@
 import type { OnlinePlayer } from '../../players/api/onlinePlayers'
 import type { ChatMessage } from '../model/chatMessage'
+import type { AdminLocaleRuntime } from '../../../app/i18n'
 
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 
+import { createAdminI18n } from '../../../app/i18n'
 import LiveChatView from './LiveChatView.vue'
 
 const messages: ChatMessage[] = [
@@ -74,7 +77,21 @@ const unavailablePlayer = makePlayer({
   crossplatformIdentity: null,
 })
 
-function mountView(overrides: Partial<InstanceType<typeof LiveChatView>['$props']> = {}) {
+function localeRuntime(locale: 'en' | 'zh-CN'): AdminLocaleRuntime {
+  return createAdminI18n({
+    repository: {
+      restore: () => locale,
+      save: () => true,
+      subscribe: () => () => {},
+    },
+    documentElement: { lang: '' },
+  })
+}
+
+function mountView(
+  overrides: Partial<InstanceType<typeof LiveChatView>['$props']> = {},
+  runtime?: AdminLocaleRuntime,
+) {
   const panelStub = { template: '<section><slot name="header" /><slot /></section>' }
   const navbarStub = { props: ['title'], template: '<header>{{ title }}<slot name="leading" /><slot name="right" /></header>' }
   const badgeStub = { template: '<span><slot /></span>' }
@@ -113,6 +130,7 @@ function mountView(overrides: Partial<InstanceType<typeof LiveChatView>['$props'
       ...overrides,
     },
     global: {
+      ...(runtime === undefined ? {} : { plugins: [runtime.i18n] }),
       stubs: {
         Badge: badgeStub,
         Button: buttonStub,
@@ -134,6 +152,28 @@ function mountView(overrides: Partial<InstanceType<typeof LiveChatView>['$props'
 }
 
 describe('LiveChatView', () => {
+  it('reactively localizes live status, channels, sources and controls', async () => {
+    const runtime = localeRuntime('zh-CN')
+    const wrapper = mountView({}, runtime)
+
+    expect(wrapper.text()).toContain('实时聊天')
+    expect(wrapper.text()).toContain('在线玩家')
+    expect(wrapper.text()).toContain('已缓冲 2 条')
+    expect(wrapper.text()).toContain('全局')
+    expect(wrapper.text()).toContain('管理员')
+
+    runtime.setLocale('en')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Live chat')
+    expect(wrapper.text()).toContain('Online players')
+    expect(wrapper.text()).toContain('2 buffered')
+    expect(wrapper.text()).toContain('Global')
+    expect(wrapper.text()).toContain('Administrator')
+    expect(wrapper.text()).not.toContain('实时聊天')
+    runtime.dispose()
+  })
+
   it('renders message content as escaped plain text and filters channels from the controlled contract', async () => {
     const wrapper = mountView()
 
@@ -156,7 +196,7 @@ describe('LiveChatView', () => {
       sendError: 'Could not send. Try again.',
     })
 
-    expect(wrapper.get('[data-testid="chat-gap"]').text()).toContain('Some live messages may be missing')
+    expect(wrapper.get('[data-testid="chat-gap"]').text()).toContain('部分实时消息可能缺失')
     expect(wrapper.get('[data-testid="chat-send-error"]').text()).toContain('Could not send')
     expect(wrapper.get('[data-testid="chat-composer-input"]').element).toHaveProperty('value', 'retry this message')
     expect(wrapper.get('[data-testid="chat-message-viewport"]').text()).not.toContain('Could not send')

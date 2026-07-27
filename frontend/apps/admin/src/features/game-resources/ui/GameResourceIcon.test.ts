@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { shallowMount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,7 +12,7 @@ describe('gameResourceIcon', () => {
 
   it.each(['missing', 'invalid'] as const)('renders the same accessible placeholder for %s icons', (iconStatus) => {
     const pinia = createPinia()
-    const wrapper = mount(GameResourceIcon, {
+    const wrapper = shallowMount(GameResourceIcon, {
       props: { alt: 'Stone', iconStatus, resourceId: 'resource-1' },
       global: { plugins: [pinia], stubs: { UIcon: true } },
     })
@@ -34,7 +34,7 @@ describe('gameResourceIcon', () => {
       observe() {}
     })
 
-    const wrapper = mount(GameResourceIcon, {
+    const wrapper = shallowMount(GameResourceIcon, {
       props: { alt: 'Stone', iconStatus: 'available', resourceId: 'resource-1' },
       global: { plugins: [pinia], stubs: { UIcon: true } },
     })
