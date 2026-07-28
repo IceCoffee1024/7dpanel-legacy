@@ -2,7 +2,7 @@
 state: Current
 document_role: Implementation Plan
 primary_spec: ../specs/2026-07-26-legacy-parity-economy-community-design.md
-last_updated: "2026-07-27"
+last_updated: "2026-07-28"
 ---
 
 # 旧版本功能对齐第四波：经济、奖励、传送与社区投票实施计划
@@ -282,7 +282,7 @@ public sealed class TeleportActionCommand
 - 新建：`backend/tests/LSTY.SevenDPanel.Tests/CommunityVoteUseCaseTests.cs`
 - 新建：`backend/tests/LSTY.SevenDPanel.Tests/CommunityGameCommandTests.cs`
 
-**固定命令：** `bal`（别名 `balance/money`）、`pay`（`transfer/send`）、`moneytop`（`baltop/ecotop`）、`daily`（`claim`）、`shop`、`buy`、`redeem`、`homes`、`sethome`、`delhome`、`home`、`cities`、`city`、`tpa`、`tpaccept`、`tpreject`、`back`、`votekick`、`voterestart`。投票命令只接受启动参数或 `yes|y|no|n`。
+**命令目录：** `bal`（别名 `balance/money`）、`pay`（`transfer/send`）、`moneytop`（`baltop/ecotop`）、`daily`（`claim`）、`shop`、`buy`、`redeem`、`homes`、`sethome`、`delhome`、`home`、`cities`、`city`、`tpa`、`tpaccept`、`tpreject`、`back`、`votekick`、`voterestart`。私人家四个命令保留上述默认值并允许 Owner 配置下一次启动使用的名称；投票命令只接受启动参数或 `yes|y|no|n`。
 
 - [x] **步骤 1：写资格、投票和唯一结算失败测试**
 

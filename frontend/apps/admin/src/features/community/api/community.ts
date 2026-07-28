@@ -27,6 +27,7 @@ export interface TeleportSettings {
   readonly globalCooldownMs: bigint
   readonly denyDuringBloodMoon: boolean
   readonly feeAmount: bigint
+  readonly homeExperience?: HomeTeleportExperience | null
   readonly updatedAtUtc: string
   readonly rowVersion: bigint
 }
@@ -38,7 +39,29 @@ export interface TeleportSettingsInput {
   readonly globalCooldownMs: bigint
   readonly denyDuringBloodMoon: boolean
   readonly feeAmount: bigint
+  readonly homeExperience?: HomeTeleportExperienceInput | null
 }
+
+export interface HomeTeleportExperience {
+  readonly setFeeAmount: bigint
+  readonly listCommandName: string
+  readonly setCommandName: string
+  readonly deleteCommandName: string
+  readonly teleportCommandName: string
+  readonly noHomesMessage: string
+  readonly limitMessage: string
+  readonly setSuccessMessage: string
+  readonly overwriteMessage: string
+  readonly deleteSuccessMessage: string
+  readonly notFoundMessage: string
+  readonly cooldownMessage: string
+  readonly teleportSuccessMessage: string
+  readonly setInsufficientFundsMessage: string
+  readonly teleportInsufficientFundsMessage: string
+  readonly bloodMoonMessage: string
+}
+
+export type HomeTeleportExperienceInput = HomeTeleportExperience
 
 export interface PlayerHome {
   readonly homeId: string
@@ -165,7 +188,8 @@ export interface VoteSettlement {
 }
 
 const positionKeys = ['worldId', 'x', 'y', 'z', 'yaw'] as const
-const teleportSettingsKeys = ['kind', 'enabled', 'maxHomes', 'cooldownMs', 'globalCooldownMs', 'denyDuringBloodMoon', 'feeAmount', 'updatedAtUtc', 'rowVersion'] as const
+const teleportSettingsKeys = ['kind', 'enabled', 'maxHomes', 'cooldownMs', 'globalCooldownMs', 'denyDuringBloodMoon', 'feeAmount', 'homeExperience', 'updatedAtUtc', 'rowVersion'] as const
+const homeExperienceKeys = ['setFeeAmount', 'listCommandName', 'setCommandName', 'deleteCommandName', 'teleportCommandName', 'noHomesMessage', 'limitMessage', 'setSuccessMessage', 'overwriteMessage', 'deleteSuccessMessage', 'notFoundMessage', 'cooldownMessage', 'teleportSuccessMessage', 'setInsufficientFundsMessage', 'teleportInsufficientFundsMessage', 'bloodMoonMessage'] as const
 const homeKeys = ['homeId', 'crossplatformId', 'name', 'position', 'createdAtUtc', 'updatedAtUtc', 'rowVersion'] as const
 const cityKeys = ['cityId', 'name', 'description', 'enabled', 'position', 'sortOrder', 'createdAtUtc', 'updatedAtUtc', 'rowVersion'] as const
 const friendshipKeys = ['firstCrossplatformId', 'secondCrossplatformId', 'areFriends'] as const
@@ -318,6 +342,9 @@ export function parseTeleportSettings(value: unknown): TeleportSettings {
   const maxHomes = source.maxHomes === null ? null : integer(source.maxHomes, 0)
   if (kind !== 'Home' && maxHomes !== null)
     return invalid()
+  const homeExperience = source.homeExperience === null ? null : parseHomeExperience(source.homeExperience)
+  if ((kind === 'Home') !== (homeExperience !== null))
+    return invalid()
   return Object.freeze({
     kind,
     enabled: bool(source.enabled),
@@ -326,8 +353,31 @@ export function parseTeleportSettings(value: unknown): TeleportSettings {
     globalCooldownMs: long(source.globalCooldownMs),
     denyDuringBloodMoon: bool(source.denyDuringBloodMoon),
     feeAmount: long(source.feeAmount),
+    homeExperience,
     updatedAtUtc: utc(source.updatedAtUtc),
     rowVersion: long(source.rowVersion),
+  })
+}
+
+function parseHomeExperience(value: unknown): HomeTeleportExperience {
+  const source = record(value, homeExperienceKeys)
+  return Object.freeze({
+    setFeeAmount: long(source.setFeeAmount),
+    listCommandName: text(source.listCommandName),
+    setCommandName: text(source.setCommandName),
+    deleteCommandName: text(source.deleteCommandName),
+    teleportCommandName: text(source.teleportCommandName),
+    noHomesMessage: text(source.noHomesMessage),
+    limitMessage: text(source.limitMessage),
+    setSuccessMessage: text(source.setSuccessMessage),
+    overwriteMessage: text(source.overwriteMessage),
+    deleteSuccessMessage: text(source.deleteSuccessMessage),
+    notFoundMessage: text(source.notFoundMessage),
+    cooldownMessage: text(source.cooldownMessage),
+    teleportSuccessMessage: text(source.teleportSuccessMessage),
+    setInsufficientFundsMessage: text(source.setInsufficientFundsMessage),
+    teleportInsufficientFundsMessage: text(source.teleportInsufficientFundsMessage),
+    bloodMoonMessage: text(source.bloodMoonMessage),
   })
 }
 
@@ -521,6 +571,9 @@ export async function updateTeleportSetting(
       globalCooldownMs: wireInteger(input.globalCooldownMs),
       denyDuringBloodMoon: input.denyDuringBloodMoon,
       feeAmount: wireInteger(input.feeAmount),
+      homeExperience: input.homeExperience == null
+        ? null
+        : { ...input.homeExperience, setFeeAmount: wireInteger(input.homeExperience.setFeeAmount) },
       expectedRowVersion: wireInteger(current.rowVersion),
     }),
     expectedStatus: 200,

@@ -34,6 +34,8 @@ last_updated: "2026-07-28"
 
 当前仍有验证合同缺口：Discord Gateway 生命周期、interaction Ed25519 transport 和持久私密回执均已有代码，仍缺 Discord sandbox/真实环境往返；同时还缺真实游戏、外部服务和发布环境证据。奖励/成就/在线奖励观察源、Community 全量城市/好友/传送操作/投票轮次、原子 `expectedRowVersion` 与 `daily`/`shop`/`tpa` 专用持久合同已具备代码和上述聚焦自动化；它们仍不等同于真实游戏或候选发布验收。
 
+2026-07-28 私人家体验对齐完成后，Debug 后端产品编译和 Admin typecheck 通过；`EconomyCommunityMigrationTests` 为 `3/3`，Community 命令聚焦测试为 `13/13`，OpenAPI snapshot 为 `1/1` 并完成客户端再生成。额外执行的聊天桥接组合过滤共 `15` 项，其中 `13` 项通过，另 `2` 项分别因测试进程未加载 `ModEvents+SChatMessageData` 和 Daily handler 集合断言为空而失败；未将其计为本次功能通过证据，也未扩大到全量测试或真实 7DTD。
+
 ### 产品需求追踪
 
 | 需求 | 关键场景 | 主要测试层级 | 必须保留的证据 |
@@ -47,7 +49,7 @@ last_updated: "2026-07-28"
 | `CAP-07` | Owner-only 实时/历史聊天、全局与私聊发送、聊天禁言及到期、聊天设置、彩色默认规则、玩家 Profile、类型化 `help`、命令绕过、单次替换广播、异常 fail-open、历史 gap 和纯文本安全 | 单元、SQLite 集成、OWIN/API 集成、Admin 组件、真实进程、E2E、安全 | 原始事件字段、SSE sequence、历史 cursor/gap、禁言状态与操作事务、游戏内消息/私发、权限矩阵、审计和纯文本断言 |
 | `CAP-08` | 玩家 Profile、会话、活动、位置、背包、技能和每日摘要；背包比较、物品来源、补偿；版本化物品/方块/本地化/图标目录；类型化物品与重置动作 | 字段映射、Application/SevenDays 单元、SQLite、OWIN/API、Admin 组件、按需真实进程 | 当前版本字段来源与单位、不可变快照、数据缺口、路径拒绝、API/页面状态、动作与专用审计 |
 | `CAP-09` | 原子经济账本、冻结、调整、转账、商店库存与购买、奖励包、兑换码、成就、在线奖励、幂等发放与补偿 | Domain/Application 单元、SQLite 并发/故障集成、OWIN/API、Admin 组件、按需游戏命令 | 账本事务、并发兑换、发放幂等键、恢复/补偿结果、权限与页面断言 |
-| `CAP-10` | 家/城市/好友/返回点和管理员传送；冷却、血月、费用与目标重验；投票踢人和重启的资格、阈值、互斥和单次结算 | Domain/Application 单元、SQLite、游戏 Adapter、OWIN/API、Admin 组件、聚焦真实进程 | 规则矩阵、扣费/动作关联、稳定目标、投票唯一性、类型化动作与结果记录 |
+| `CAP-10` | 家/城市/好友/返回点和管理员传送；私人家默认名称、命令配置、设置/传送费用、坐标列表与私发提示；冷却、血月与目标重验；投票踢人和重启的资格、阈值、互斥和单次结算 | Domain/Application 单元、SQLite、游戏 Adapter、OWIN/API、Admin 组件、聚焦真实进程 | 规则矩阵、默认名称、启动期命令注册、扣费/动作关联、稳定目标、投票唯一性、类型化动作与结果记录 |
 | `CAP-11` | Discord Webhook/Bot/频道/代理/聊天桥/Slash/绑定/远程 allow-list；GeoIP 国家/IP 策略、缓存、绕过、失败模式和诊断 | Adapter 契约、输入验证、安全、故障注入、OWIN/API、Admin 组件 | Secret 扫描、签名/权限拒绝、出站重试结果、聊天 fail-open、GeoIP 命中和不可用策略 |
 | `CAP-12` | 地图和探索区域资源、领地/车辆/无人机容器、类型化世界工具、持久长作业、功能模块启停与依赖 | 字段/路径测试、Application/SevenDays/文件集成、作业恢复、OWIN/API、Admin 组件、按需真实进程 | 世界版本、路径与范围拒绝、线程断言、作业终态、未知结果、模块依赖和数据保留 |
 | `NFR-01` | 无产品方云服务、无外网条件下部署 Mod、打开面板并完成全部 P0 核心流程 | Windows/Linux 真实进程、离线验收 | 发布物清单、网络隔离记录和验收报告 |

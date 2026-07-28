@@ -11,11 +11,16 @@ namespace LSTY.SevenDPanel.Application.Community
     {
         private readonly ICommunityStore store;
         private readonly Func<DateTimeOffset> utcNow;
+        private readonly IEconomyLedgerStore? ledger;
 
-        public HomeUseCases(ICommunityStore store, Func<DateTimeOffset> utcNow)
+        public HomeUseCases(
+            ICommunityStore store,
+            Func<DateTimeOffset> utcNow,
+            IEconomyLedgerStore? ledger = null)
         {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.utcNow = utcNow ?? throw new ArgumentNullException(nameof(utcNow));
+            this.ledger = ledger;
         }
 
         public PlayerHome Save(
@@ -46,6 +51,59 @@ namespace LSTY.SevenDPanel.Application.Community
 
         public IReadOnlyList<PlayerHome> List(string crossplatformId) =>
             store.ListHomes(crossplatformId);
+
+        public TeleportSettings Settings() => store.GetTeleportSettings(TeleportKind.Home);
+
+        public PlayerHome SaveFromPlayerCommand(
+            string homeId,
+            string name,
+            TeleportPlayerSnapshot player,
+            string operationId)
+        {
+            if (player == null) throw new ArgumentNullException(nameof(player));
+            if (string.IsNullOrWhiteSpace(operationId)) throw new ArgumentException("An operation id is required.", nameof(operationId));
+            var experience = store.GetTeleportSettings(TeleportKind.Home).HomeExperience!;
+            if (experience.SetFeeAmount == 0) return Save(homeId, name, player);
+            if (ledger == null) throw new InvalidOperationException("The economy ledger is unavailable.");
+            var now = RequireUtc(utcNow());
+            var reservationId = "home-save-reservation:" + operationId;
+            FundsReservationResult reservation;
+            try
+            {
+                reservation = ledger.TryReserve(new FundsReservationDraft(
+                    reservationId,
+                    "player:" + player.CrossplatformId,
+                    experience.SetFeeAmount,
+                    operationId + ":reserve",
+                    "HomeSave",
+                    operationId,
+                    now,
+                    null));
+            }
+            catch (EconomyAccountNotFoundException)
+            {
+                throw new TeleportRejectedException(TeleportFailureCodes.AccountUnavailable);
+            }
+            if (reservation.Status == FundsReservationStatus.InsufficientFunds)
+                throw new TeleportRejectedException(TeleportFailureCodes.InsufficientFunds);
+            if (reservation.Status != FundsReservationStatus.Reserved &&
+                reservation.Status != FundsReservationStatus.Captured)
+                throw new TeleportRejectedException(TeleportFailureCodes.AccountUnavailable);
+
+            try
+            {
+                var home = Save(homeId, name, player);
+                if (reservation.Status != FundsReservationStatus.Captured)
+                    ledger.Capture(reservationId, "home-save-capture:" + operationId, operationId + ":capture", RequireUtc(utcNow()));
+                return home;
+            }
+            catch
+            {
+                if (reservation.Status != FundsReservationStatus.Captured)
+                    ledger.Release(reservationId, RequireUtc(utcNow()));
+                throw;
+            }
+        }
 
         public bool Delete(string crossplatformId, string name) =>
             store.DeleteHome(crossplatformId, name);

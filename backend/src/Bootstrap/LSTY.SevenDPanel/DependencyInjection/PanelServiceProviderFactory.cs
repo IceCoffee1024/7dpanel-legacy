@@ -893,7 +893,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<SevenDaysCommunityGameGateway>());
                 services.AddSingleton(serviceProvider => new HomeUseCases(
                     serviceProvider.GetRequiredService<ICommunityStore>(),
-                    () => DateTimeOffset.UtcNow));
+                    () => DateTimeOffset.UtcNow,
+                    serviceProvider.GetRequiredService<IEconomyLedgerStore>()));
                 services.AddSingleton<CityUseCases>();
                 services.AddSingleton<FriendUseCases>();
                 services.AddSingleton(serviceProvider => new TeleportUseCases(
@@ -1054,7 +1055,9 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 serviceProvider.GetRequiredService<HelpGameChatCommandHandler>()
             };
             handlers.AddRange(CommunityGameChatCommandHandlerSet.Create(
-                serviceProvider.GetRequiredService<CommunityGameCommandRouter>()));
+                serviceProvider.GetRequiredService<CommunityGameCommandRouter>(),
+                serviceProvider.GetRequiredService<ICommunityStore>()
+                    .GetTeleportSettings(TeleportKind.Home).HomeExperience));
             return handlers;
         }
 

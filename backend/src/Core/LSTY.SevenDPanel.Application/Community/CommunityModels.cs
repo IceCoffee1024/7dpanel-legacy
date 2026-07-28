@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using LSTY.SevenDPanel.Domain.Community;
 
 namespace LSTY.SevenDPanel.Application.Community
@@ -107,7 +108,8 @@ namespace LSTY.SevenDPanel.Application.Community
             bool denyDuringBloodMoon,
             long feeAmount,
             DateTimeOffset updatedAtUtc,
-            long rowVersion)
+            long rowVersion,
+            HomeTeleportExperience? homeExperience = null)
         {
             CommunityModelValidation.RequireOperationKind(kind, nameof(kind));
             if (maxHomes < 0) throw new ArgumentOutOfRangeException(nameof(maxHomes));
@@ -125,6 +127,9 @@ namespace LSTY.SevenDPanel.Application.Community
             FeeAmount = feeAmount;
             UpdatedAtUtc = updatedAtUtc;
             RowVersion = rowVersion;
+            HomeExperience = kind == TeleportKind.Home
+                ? homeExperience ?? HomeTeleportExperience.Default
+                : null;
         }
 
         public TeleportKind Kind { get; }
@@ -136,6 +141,87 @@ namespace LSTY.SevenDPanel.Application.Community
         public long FeeAmount { get; }
         public DateTimeOffset UpdatedAtUtc { get; }
         public long RowVersion { get; }
+        public HomeTeleportExperience? HomeExperience { get; }
+    }
+
+    public sealed class HomeTeleportExperience
+    {
+        public static readonly HomeTeleportExperience Default = new HomeTeleportExperience(
+            0, "homes", "sethome", "delhome", "home",
+            "You have no saved homes.", "Home limit reached.", "Home '{name}' saved.",
+            "Home '{name}' updated.", "Home '{name}' deleted.", "Home '{name}' was not found.",
+            "Teleport cooldown is active.", "Teleported to home '{name}'.",
+            "Not enough balance to set a home.", "Not enough balance to teleport home.",
+            "Home teleport is disabled during a blood moon.");
+
+        public HomeTeleportExperience(
+            long setFeeAmount, string listCommandName, string setCommandName,
+            string deleteCommandName, string teleportCommandName, string noHomesMessage,
+            string limitMessage, string setSuccessMessage, string overwriteMessage,
+            string deleteSuccessMessage, string notFoundMessage, string cooldownMessage,
+            string teleportSuccessMessage, string setInsufficientFundsMessage,
+            string teleportInsufficientFundsMessage, string bloodMoonMessage)
+        {
+            if (setFeeAmount < 0) throw new ArgumentOutOfRangeException(nameof(setFeeAmount));
+            SetFeeAmount = setFeeAmount;
+            ListCommandName = Require(listCommandName, nameof(listCommandName), false);
+            SetCommandName = Require(setCommandName, nameof(setCommandName), false);
+            DeleteCommandName = Require(deleteCommandName, nameof(deleteCommandName), false);
+            TeleportCommandName = Require(teleportCommandName, nameof(teleportCommandName), false);
+            var commands = new[] { ListCommandName, SetCommandName, DeleteCommandName, TeleportCommandName };
+            if (commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() != commands.Length)
+                throw new ArgumentException("Home command names must be unique.");
+            ValidateCommand(ListCommandName, CommunityGameCommandId.Homes);
+            ValidateCommand(SetCommandName, CommunityGameCommandId.SetHome);
+            ValidateCommand(DeleteCommandName, CommunityGameCommandId.DeleteHome);
+            ValidateCommand(TeleportCommandName, CommunityGameCommandId.Home);
+            NoHomesMessage = Require(noHomesMessage, nameof(noHomesMessage), true);
+            LimitMessage = Require(limitMessage, nameof(limitMessage), true);
+            SetSuccessMessage = Require(setSuccessMessage, nameof(setSuccessMessage), true);
+            OverwriteMessage = Require(overwriteMessage, nameof(overwriteMessage), true);
+            DeleteSuccessMessage = Require(deleteSuccessMessage, nameof(deleteSuccessMessage), true);
+            NotFoundMessage = Require(notFoundMessage, nameof(notFoundMessage), true);
+            CooldownMessage = Require(cooldownMessage, nameof(cooldownMessage), true);
+            TeleportSuccessMessage = Require(teleportSuccessMessage, nameof(teleportSuccessMessage), true);
+            SetInsufficientFundsMessage = Require(setInsufficientFundsMessage, nameof(setInsufficientFundsMessage), true);
+            TeleportInsufficientFundsMessage = Require(teleportInsufficientFundsMessage, nameof(teleportInsufficientFundsMessage), true);
+            BloodMoonMessage = Require(bloodMoonMessage, nameof(bloodMoonMessage), true);
+        }
+
+        public long SetFeeAmount { get; }
+        public string ListCommandName { get; }
+        public string SetCommandName { get; }
+        public string DeleteCommandName { get; }
+        public string TeleportCommandName { get; }
+        public string NoHomesMessage { get; }
+        public string LimitMessage { get; }
+        public string SetSuccessMessage { get; }
+        public string OverwriteMessage { get; }
+        public string DeleteSuccessMessage { get; }
+        public string NotFoundMessage { get; }
+        public string CooldownMessage { get; }
+        public string TeleportSuccessMessage { get; }
+        public string SetInsufficientFundsMessage { get; }
+        public string TeleportInsufficientFundsMessage { get; }
+        public string BloodMoonMessage { get; }
+
+        private static string Require(string value, string parameterName, bool allowWhitespace)
+        {
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("A value is required.", parameterName);
+            var normalized = value.Trim();
+            if (!allowWhitespace && normalized.Any(char.IsWhiteSpace))
+                throw new ArgumentException("Command names cannot contain whitespace.", parameterName);
+            return normalized;
+        }
+
+        private static void ValidateCommand(string value, CommunityGameCommandId expected)
+        {
+            if (string.Equals(value, "help", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("A home command name conflicts with another registered command.");
+            var existing = CommunityGameCommandDirectory.Find(value);
+            if (existing != null && existing.Id != expected)
+                throw new ArgumentException("A home command name conflicts with another registered command.");
+        }
     }
 
     public sealed class PlayerHome

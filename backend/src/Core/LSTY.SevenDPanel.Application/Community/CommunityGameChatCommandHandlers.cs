@@ -8,28 +8,46 @@ namespace LSTY.SevenDPanel.Application.Community
     public static class CommunityGameChatCommandHandlerSet
     {
         public static IReadOnlyList<IGameChatCommandHandler> Create(
-            CommunityGameCommandRouter router)
+            CommunityGameCommandRouter router,
+            HomeTeleportExperience? homeExperience = null)
         {
             if (router == null) throw new ArgumentNullException(nameof(router));
             return CommunityGameCommandDirectory.Definitions
                 .Select(definition => (IGameChatCommandHandler)
-                    new CommunityGameChatCommandHandler(definition, router))
+                    new CommunityGameChatCommandHandler(
+                        definition,
+                        CommandName(definition, homeExperience),
+                        router))
                 .ToArray();
         }
+
+        private static string CommandName(
+            CommunityGameCommandDefinition definition,
+            HomeTeleportExperience? experience) => definition.Id switch
+            {
+                CommunityGameCommandId.Homes when experience != null => experience.ListCommandName,
+                CommunityGameCommandId.SetHome when experience != null => experience.SetCommandName,
+                CommunityGameCommandId.DeleteHome when experience != null => experience.DeleteCommandName,
+                CommunityGameCommandId.Home when experience != null => experience.TeleportCommandName,
+                _ => definition.Name
+            };
     }
 
     internal sealed class CommunityGameChatCommandHandler : IGameChatCommandHandler
     {
         private readonly CommunityGameCommandRouter router;
+        private readonly CommunityGameCommandDefinition definition;
 
         public CommunityGameChatCommandHandler(
             CommunityGameCommandDefinition definition,
+            string commandName,
             CommunityGameCommandRouter router)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
+            this.definition = definition;
             this.router = router ?? throw new ArgumentNullException(nameof(router));
             Descriptor = new GameChatCommandDescriptor(
-                definition.Name,
+                commandName,
                 definition.Aliases);
         }
 
@@ -39,7 +57,7 @@ namespace LSTY.SevenDPanel.Application.Community
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var result = router.Route(
-                Descriptor.Name,
+                definition,
                 new CommunityGameCommandContext(
                     context.CrossplatformId,
                     context.DisplayName,

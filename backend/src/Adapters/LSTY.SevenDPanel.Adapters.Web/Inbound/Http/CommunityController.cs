@@ -126,8 +126,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             if (!ModelState.IsValid || body == null)
                 return ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);
             if (body.ExpectedRowVersion < 0 || body.MaxHomes < 0 || body.CooldownMs < 0 ||
-                body.GlobalCooldownMs < 0 || body.FeeAmount < 0 ||
-                (parsed != TeleportKind.Home && body.MaxHomes.HasValue))
+                 body.GlobalCooldownMs < 0 || body.FeeAmount < 0 ||
+                 (parsed != TeleportKind.Home && (body.MaxHomes.HasValue || body.HomeExperience != null)) ||
+                 (parsed == TeleportKind.Home && body.HomeExperience == null) ||
+                 body.HomeExperience?.SetFeeAmount < 0)
             {
                 return Invalid("invalid_teleport_setting", "The teleport setting is invalid.");
             }
@@ -143,7 +145,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     body.DenyDuringBloodMoon,
                     body.FeeAmount,
                     UtcNow(),
-                    body.ExpectedRowVersion));
+                    body.ExpectedRowVersion,
+                    body.HomeExperience?.ToDomain()));
                 return Request.CreateResponse(
                     HttpStatusCode.OK,
                     new TeleportSettingsHttpResponse(saved));
@@ -155,6 +158,10 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             catch (CommunityNotFoundException)
             {
                 return NotFound("community_teleport_setting_not_found", "The teleport setting was not found.");
+            }
+            catch (ArgumentException)
+            {
+                return Invalid("invalid_teleport_setting", "The teleport setting is invalid.");
             }
             catch (Exception exception)
             {

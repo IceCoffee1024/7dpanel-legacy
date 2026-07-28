@@ -717,8 +717,28 @@ export type TeleportSettingsHttpResponse = {
     globalCooldownMs?: number;
     denyDuringBloodMoon?: boolean;
     feeAmount?: number;
+    homeExperience?: HomeTeleportExperienceHttpModel | null;
     updatedAtUtc?: string;
     rowVersion?: number;
+};
+
+export type HomeTeleportExperienceHttpModel = {
+    setFeeAmount?: number;
+    listCommandName?: string;
+    setCommandName?: string;
+    deleteCommandName?: string;
+    teleportCommandName?: string;
+    noHomesMessage?: string;
+    limitMessage?: string;
+    setSuccessMessage?: string;
+    overwriteMessage?: string;
+    deleteSuccessMessage?: string;
+    notFoundMessage?: string;
+    cooldownMessage?: string;
+    teleportSuccessMessage?: string;
+    setInsufficientFundsMessage?: string;
+    teleportInsufficientFundsMessage?: string;
+    bloodMoonMessage?: string;
 };
 
 export type TeleportSettingsUpsertHttpRequest = {
@@ -728,6 +748,7 @@ export type TeleportSettingsUpsertHttpRequest = {
     globalCooldownMs?: number;
     denyDuringBloodMoon?: boolean;
     feeAmount?: number;
+    homeExperience?: HomeTeleportExperienceHttpModel | null;
     expectedRowVersion?: number;
 };
 

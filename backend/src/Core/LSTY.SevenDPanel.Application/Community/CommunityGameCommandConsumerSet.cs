@@ -334,23 +334,46 @@ namespace LSTY.SevenDPanel.Application.Community
 
             public CommunityCommandConsumerResult ListHomes(CommunityGameCommandContext context)
             {
+                var experience = HomeExperience();
                 var messages = homes.List(context.CrossplatformId)
-                    .Select(home => home.Name)
+                    .Select(home => home.Name + " @ " + home.Position.WorldId + " (" +
+                        home.Position.X.ToString(CultureInfo.InvariantCulture) + ", " +
+                        home.Position.Y.ToString(CultureInfo.InvariantCulture) + ", " +
+                        home.Position.Z.ToString(CultureInfo.InvariantCulture) + ")")
                     .ToArray();
-                return CommunityCommandConsumerResult.Succeeded(messages);
+                return CommunityCommandConsumerResult.Succeeded(
+                    messages.Length == 0 ? new[] { experience.NoHomesMessage } : messages);
             }
 
             public CommunityCommandConsumerResult SetHome(CommunityGameCommandContext context)
             {
                 var player = Current(context);
                 if (player == null) return CommunityCommandConsumerResult.Rejected("player_not_online");
+                var homeName = HomeName(context);
+                var experience = HomeExperience();
+                var existed = homes.List(context.CrossplatformId)
+                    .Any(home => string.Equals(home.Name, homeName, StringComparison.OrdinalIgnoreCase));
                 try
                 {
-                    var home = homes.Save(
-                        StableHomeId(context.CrossplatformId, context.Arguments[0]),
-                        context.Arguments[0],
-                        player.Player);
-                    return CommunityCommandConsumerResult.Succeeded(home.Name);
+                    var operationId = Id("home-save");
+                    var home = homes.SaveFromPlayerCommand(
+                        StableHomeId(context.CrossplatformId, homeName),
+                        homeName,
+                        player.Player,
+                        operationId);
+                    return CommunityCommandConsumerResult.Succeeded(
+                        Render(existed ? experience.OverwriteMessage : experience.SetSuccessMessage, homeName));
+                }
+                catch (CommunityLimitExceededException exception)
+                {
+                    return CommunityCommandConsumerResult.Rejected(exception.Code, experience.LimitMessage);
+                }
+                catch (TeleportRejectedException exception)
+                {
+                    var message = exception.Code == TeleportFailureCodes.InsufficientFunds
+                        ? experience.SetInsufficientFundsMessage
+                        : exception.Code;
+                    return CommunityCommandConsumerResult.Rejected(exception.Code, message);
                 }
                 catch (CommunityException exception)
                 {
@@ -358,17 +381,52 @@ namespace LSTY.SevenDPanel.Application.Community
                 }
             }
 
-            public CommunityCommandConsumerResult DeleteHome(CommunityGameCommandContext context) =>
-                homes.Delete(context.CrossplatformId, context.Arguments[0])
-                    ? CommunityCommandConsumerResult.Succeeded(context.Arguments[0])
-                    : CommunityCommandConsumerResult.Rejected("not_found");
+            public CommunityCommandConsumerResult DeleteHome(CommunityGameCommandContext context)
+            {
+                var homeName = HomeName(context);
+                var experience = HomeExperience();
+                return homes.Delete(context.CrossplatformId, homeName)
+                    ? CommunityCommandConsumerResult.Succeeded(Render(experience.DeleteSuccessMessage, homeName))
+                    : CommunityCommandConsumerResult.Rejected("not_found", Render(experience.NotFoundMessage, homeName));
+            }
 
-            public CommunityCommandConsumerResult TeleportHome(CommunityGameCommandContext context) =>
-                ExecuteTeleport(context, (request, cancellationToken) =>
-                    teleports.TeleportHomeAsync(
-                        request,
-                        context.Arguments[0],
-                        cancellationToken));
+            public CommunityCommandConsumerResult TeleportHome(CommunityGameCommandContext context)
+            {
+                var player = Current(context);
+                if (player == null) return CommunityCommandConsumerResult.Rejected("player_not_online");
+                var homeName = HomeName(context);
+                var experience = HomeExperience();
+                var operationId = Id("teleport");
+                try
+                {
+                    var operation = teleports.TeleportHomeAsync(
+                            new TeleportExecutionRequest(operationId, "game-command:" + operationId,
+                                player.Player, "Player", context.CrossplatformId, operationId),
+                            homeName,
+                            CancellationToken.None)
+                        .GetAwaiter().GetResult();
+                    if (operation.State == TeleportOperationState.Completed)
+                        return CommunityCommandConsumerResult.Succeeded(Render(experience.TeleportSuccessMessage, homeName));
+                    return ToTeleportResult(operation);
+                }
+                catch (TeleportRejectedException exception)
+                {
+                    var message = exception.Code == TeleportFailureCodes.DestinationNotFound
+                        ? experience.NotFoundMessage
+                        : exception.Code == TeleportFailureCodes.CooldownActive
+                            ? experience.CooldownMessage
+                            : exception.Code == TeleportFailureCodes.InsufficientFunds
+                                ? experience.TeleportInsufficientFundsMessage
+                                : exception.Code == TeleportFailureCodes.BloodMoonDenied
+                                    ? experience.BloodMoonMessage
+                                    : exception.Code;
+                    return CommunityCommandConsumerResult.Rejected(exception.Code, Render(message, homeName));
+                }
+                catch (CommunityException exception)
+                {
+                    return CommunityCommandConsumerResult.Rejected(exception.Code);
+                }
+            }
 
             public CommunityCommandConsumerResult ListCities(CommunityGameCommandContext context)
             {
@@ -461,6 +519,15 @@ namespace LSTY.SevenDPanel.Application.Community
 
             private CommunityPlayerCommandSnapshot? Current(CommunityGameCommandContext context) =>
                 players.FindOnlineByCrossplatformId(context.CrossplatformId);
+
+            private HomeTeleportExperience HomeExperience() =>
+                homes.Settings().HomeExperience!;
+
+            private static string HomeName(CommunityGameCommandContext context) =>
+                context.Arguments.Count == 0 ? "home" : context.Arguments[0];
+
+            private static string Render(string template, string homeName) =>
+                template.Replace("{name}", homeName);
 
             private static CommunityCommandConsumerResult ToTeleportResult(
                 TeleportOperation operation)

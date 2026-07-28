@@ -1,0 +1,16 @@
+ALTER TABLE teleport_settings ADD COLUMN set_fee_amount INTEGER NOT NULL DEFAULT 0 CHECK (set_fee_amount >= 0);
+ALTER TABLE teleport_settings ADD COLUMN list_command_name TEXT NOT NULL DEFAULT 'homes';
+ALTER TABLE teleport_settings ADD COLUMN set_command_name TEXT NOT NULL DEFAULT 'sethome';
+ALTER TABLE teleport_settings ADD COLUMN delete_command_name TEXT NOT NULL DEFAULT 'delhome';
+ALTER TABLE teleport_settings ADD COLUMN teleport_command_name TEXT NOT NULL DEFAULT 'home';
+ALTER TABLE teleport_settings ADD COLUMN no_homes_message TEXT NOT NULL DEFAULT 'You have no saved homes.';
+ALTER TABLE teleport_settings ADD COLUMN home_limit_message TEXT NOT NULL DEFAULT 'Home limit reached.';
+ALTER TABLE teleport_settings ADD COLUMN set_success_message TEXT NOT NULL DEFAULT 'Home ''{name}'' saved.';
+ALTER TABLE teleport_settings ADD COLUMN overwrite_message TEXT NOT NULL DEFAULT 'Home ''{name}'' updated.';
+ALTER TABLE teleport_settings ADD COLUMN delete_success_message TEXT NOT NULL DEFAULT 'Home ''{name}'' deleted.';
+ALTER TABLE teleport_settings ADD COLUMN home_not_found_message TEXT NOT NULL DEFAULT 'Home ''{name}'' was not found.';
+ALTER TABLE teleport_settings ADD COLUMN home_cooldown_message TEXT NOT NULL DEFAULT 'Teleport cooldown is active.';
+ALTER TABLE teleport_settings ADD COLUMN teleport_success_message TEXT NOT NULL DEFAULT 'Teleported to home ''{name}''.';
+ALTER TABLE teleport_settings ADD COLUMN set_insufficient_funds_message TEXT NOT NULL DEFAULT 'Not enough balance to set a home.';
+ALTER TABLE teleport_settings ADD COLUMN teleport_insufficient_funds_message TEXT NOT NULL DEFAULT 'Not enough balance to teleport home.';
+ALTER TABLE teleport_settings ADD COLUMN blood_moon_message TEXT NOT NULL DEFAULT 'Home teleport is disabled during a blood moon.';

@@ -54,6 +54,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             GlobalCooldownMs = checked((long)settings.GlobalCooldown.TotalMilliseconds);
             DenyDuringBloodMoon = settings.DenyDuringBloodMoon;
             FeeAmount = settings.FeeAmount;
+            HomeExperience = settings.HomeExperience == null
+                ? null
+                : new HomeTeleportExperienceHttpModel(settings.HomeExperience);
             UpdatedAtUtc = settings.UpdatedAtUtc.UtcDateTime;
             RowVersion = settings.RowVersion;
         }
@@ -65,6 +68,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public long GlobalCooldownMs { get; }
         public bool DenyDuringBloodMoon { get; }
         public long FeeAmount { get; }
+        public HomeTeleportExperienceHttpModel? HomeExperience { get; }
         public DateTime UpdatedAtUtc { get; }
         public long RowVersion { get; }
     }
@@ -77,7 +81,57 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public long GlobalCooldownMs { get; set; }
         public bool DenyDuringBloodMoon { get; set; }
         public long FeeAmount { get; set; }
+        public HomeTeleportExperienceHttpModel? HomeExperience { get; set; }
         public long ExpectedRowVersion { get; set; }
+    }
+
+    public sealed class HomeTeleportExperienceHttpModel
+    {
+        public HomeTeleportExperienceHttpModel() { }
+
+        internal HomeTeleportExperienceHttpModel(HomeTeleportExperience value)
+        {
+            SetFeeAmount = value.SetFeeAmount;
+            ListCommandName = value.ListCommandName;
+            SetCommandName = value.SetCommandName;
+            DeleteCommandName = value.DeleteCommandName;
+            TeleportCommandName = value.TeleportCommandName;
+            NoHomesMessage = value.NoHomesMessage;
+            LimitMessage = value.LimitMessage;
+            SetSuccessMessage = value.SetSuccessMessage;
+            OverwriteMessage = value.OverwriteMessage;
+            DeleteSuccessMessage = value.DeleteSuccessMessage;
+            NotFoundMessage = value.NotFoundMessage;
+            CooldownMessage = value.CooldownMessage;
+            TeleportSuccessMessage = value.TeleportSuccessMessage;
+            SetInsufficientFundsMessage = value.SetInsufficientFundsMessage;
+            TeleportInsufficientFundsMessage = value.TeleportInsufficientFundsMessage;
+            BloodMoonMessage = value.BloodMoonMessage;
+        }
+
+        public long SetFeeAmount { get; set; }
+        public string ListCommandName { get; set; } = "homes";
+        public string SetCommandName { get; set; } = "sethome";
+        public string DeleteCommandName { get; set; } = "delhome";
+        public string TeleportCommandName { get; set; } = "home";
+        public string NoHomesMessage { get; set; } = string.Empty;
+        public string LimitMessage { get; set; } = string.Empty;
+        public string SetSuccessMessage { get; set; } = string.Empty;
+        public string OverwriteMessage { get; set; } = string.Empty;
+        public string DeleteSuccessMessage { get; set; } = string.Empty;
+        public string NotFoundMessage { get; set; } = string.Empty;
+        public string CooldownMessage { get; set; } = string.Empty;
+        public string TeleportSuccessMessage { get; set; } = string.Empty;
+        public string SetInsufficientFundsMessage { get; set; } = string.Empty;
+        public string TeleportInsufficientFundsMessage { get; set; } = string.Empty;
+        public string BloodMoonMessage { get; set; } = string.Empty;
+
+        internal HomeTeleportExperience ToDomain() => new HomeTeleportExperience(
+            SetFeeAmount, ListCommandName, SetCommandName, DeleteCommandName,
+            TeleportCommandName, NoHomesMessage, LimitMessage, SetSuccessMessage,
+            OverwriteMessage, DeleteSuccessMessage, NotFoundMessage, CooldownMessage,
+            TeleportSuccessMessage, SetInsufficientFundsMessage,
+            TeleportInsufficientFundsMessage, BloodMoonMessage);
     }
 
     public sealed class PlayerHomeHttpResponse

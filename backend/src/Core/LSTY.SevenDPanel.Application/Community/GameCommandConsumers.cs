@@ -64,9 +64,9 @@ namespace LSTY.SevenDPanel.Application.Community
                 Define(CommunityGameCommandId.Buy, "buy", BuyArguments),
                 Define(CommunityGameCommandId.Redeem, "redeem", OneSafeToken),
                 Define(CommunityGameCommandId.Homes, "homes", NoArguments),
-                Define(CommunityGameCommandId.SetHome, "sethome", OneSafeToken),
-                Define(CommunityGameCommandId.DeleteHome, "delhome", OneSafeToken),
-                Define(CommunityGameCommandId.Home, "home", OneSafeToken),
+                Define(CommunityGameCommandId.SetHome, "sethome", OptionalSafeToken),
+                Define(CommunityGameCommandId.DeleteHome, "delhome", OptionalSafeToken),
+                Define(CommunityGameCommandId.Home, "home", OptionalSafeToken),
                 Define(CommunityGameCommandId.Cities, "cities", NoArguments),
                 Define(CommunityGameCommandId.City, "city", OneSafeToken),
                 Define(CommunityGameCommandId.TeleportAsk, "tpa", OneSafeToken),
@@ -112,6 +112,9 @@ namespace LSTY.SevenDPanel.Application.Community
 
         private static bool OneSafeToken(IReadOnlyList<string> arguments) =>
             arguments.Count == 1 && IsSafeToken(arguments[0]);
+
+        private static bool OptionalSafeToken(IReadOnlyList<string> arguments) =>
+            arguments.Count == 0 || OneSafeToken(arguments);
 
         private static bool OptionalPositiveInteger(IReadOnlyList<string> arguments) =>
             arguments.Count == 0 ||
@@ -217,11 +220,11 @@ namespace LSTY.SevenDPanel.Application.Community
                 null,
                 messages ?? Array.Empty<string>());
 
-        public static CommunityCommandConsumerResult Rejected(string codeSuffix) =>
+        public static CommunityCommandConsumerResult Rejected(string codeSuffix, params string[] messages) =>
             new CommunityCommandConsumerResult(
                 CommunityCommandConsumerStatus.Rejected,
                 RequireCodeSuffix(codeSuffix),
-                Array.Empty<string>());
+                messages ?? Array.Empty<string>());
 
         public static CommunityCommandConsumerResult PermissionDenied() =>
             new CommunityCommandConsumerResult(
@@ -298,6 +301,15 @@ namespace LSTY.SevenDPanel.Application.Community
             var definition = CommunityGameCommandDirectory.Find(commandName);
             if (definition == null)
                 return Result(true, "community.command.unknown");
+            return Route(definition, context);
+        }
+
+        internal CommunityGameCommandResult Route(
+            CommunityGameCommandDefinition definition,
+            CommunityGameCommandContext context)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (context == null) throw new ArgumentNullException(nameof(context));
             if (!definition.Accepts(context.Arguments))
                 return Result(true, Code(definition, "invalid_arguments"));
             if (!consumers.TryGetValue(definition.Id, out var consumer) || !consumer.IsEnabled)
@@ -318,7 +330,7 @@ namespace LSTY.SevenDPanel.Application.Community
                 case CommunityCommandConsumerStatus.Succeeded:
                     return Result(true, Code(definition, "succeeded"), consumerResult.Messages);
                 case CommunityCommandConsumerStatus.Rejected:
-                    return Result(true, Code(definition, consumerResult.CodeSuffix!));
+                    return Result(true, Code(definition, consumerResult.CodeSuffix!), consumerResult.Messages);
                 case CommunityCommandConsumerStatus.PermissionDenied:
                     return Result(true, Code(definition, "permission_denied"));
                 default:

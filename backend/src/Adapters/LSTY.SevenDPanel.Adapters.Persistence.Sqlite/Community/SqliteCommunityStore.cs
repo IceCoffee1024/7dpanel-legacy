@@ -14,6 +14,16 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             SELECT teleport_kind AS Kind, enabled AS Enabled, max_homes AS MaxHomes,
                    cooldown_ms AS CooldownMs, global_cooldown_ms AS GlobalCooldownMs,
                    deny_during_blood_moon AS DenyDuringBloodMoon, fee_amount AS FeeAmount,
+                   set_fee_amount AS SetFeeAmount, list_command_name AS ListCommandName,
+                   set_command_name AS SetCommandName, delete_command_name AS DeleteCommandName,
+                   teleport_command_name AS TeleportCommandName, no_homes_message AS NoHomesMessage,
+                   home_limit_message AS HomeLimitMessage, set_success_message AS SetSuccessMessage,
+                   overwrite_message AS OverwriteMessage, delete_success_message AS DeleteSuccessMessage,
+                   home_not_found_message AS HomeNotFoundMessage, home_cooldown_message AS HomeCooldownMessage,
+                   teleport_success_message AS TeleportSuccessMessage,
+                   set_insufficient_funds_message AS SetInsufficientFundsMessage,
+                   teleport_insufficient_funds_message AS TeleportInsufficientFundsMessage,
+                   blood_moon_message AS BloodMoonMessage,
                    updated_at_utc AS UpdatedAtUtc, row_version AS RowVersion
             FROM teleport_settings";
 
@@ -101,6 +111,22 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 GlobalCooldownMs = ToMilliseconds(settings.GlobalCooldown),
                 DenyDuringBloodMoon = settings.DenyDuringBloodMoon ? 1 : 0,
                 settings.FeeAmount,
+                SetFeeAmount = settings.HomeExperience?.SetFeeAmount ?? 0,
+                ListCommandName = settings.HomeExperience?.ListCommandName ?? HomeTeleportExperience.Default.ListCommandName,
+                SetCommandName = settings.HomeExperience?.SetCommandName ?? HomeTeleportExperience.Default.SetCommandName,
+                DeleteCommandName = settings.HomeExperience?.DeleteCommandName ?? HomeTeleportExperience.Default.DeleteCommandName,
+                TeleportCommandName = settings.HomeExperience?.TeleportCommandName ?? HomeTeleportExperience.Default.TeleportCommandName,
+                NoHomesMessage = settings.HomeExperience?.NoHomesMessage ?? HomeTeleportExperience.Default.NoHomesMessage,
+                HomeLimitMessage = settings.HomeExperience?.LimitMessage ?? HomeTeleportExperience.Default.LimitMessage,
+                SetSuccessMessage = settings.HomeExperience?.SetSuccessMessage ?? HomeTeleportExperience.Default.SetSuccessMessage,
+                OverwriteMessage = settings.HomeExperience?.OverwriteMessage ?? HomeTeleportExperience.Default.OverwriteMessage,
+                DeleteSuccessMessage = settings.HomeExperience?.DeleteSuccessMessage ?? HomeTeleportExperience.Default.DeleteSuccessMessage,
+                HomeNotFoundMessage = settings.HomeExperience?.NotFoundMessage ?? HomeTeleportExperience.Default.NotFoundMessage,
+                HomeCooldownMessage = settings.HomeExperience?.CooldownMessage ?? HomeTeleportExperience.Default.CooldownMessage,
+                TeleportSuccessMessage = settings.HomeExperience?.TeleportSuccessMessage ?? HomeTeleportExperience.Default.TeleportSuccessMessage,
+                SetInsufficientFundsMessage = settings.HomeExperience?.SetInsufficientFundsMessage ?? HomeTeleportExperience.Default.SetInsufficientFundsMessage,
+                TeleportInsufficientFundsMessage = settings.HomeExperience?.TeleportInsufficientFundsMessage ?? HomeTeleportExperience.Default.TeleportInsufficientFundsMessage,
+                BloodMoonMessage = settings.HomeExperience?.BloodMoonMessage ?? HomeTeleportExperience.Default.BloodMoonMessage,
                 UpdatedAtUtc = settings.UpdatedAtUtc.ToUnixTimeMilliseconds(),
                 ExpectedRowVersion = settings.RowVersion
             };
@@ -115,10 +141,20 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                     @"INSERT INTO teleport_settings (
                           teleport_kind, enabled, max_homes, cooldown_ms,
                           global_cooldown_ms, deny_during_blood_moon, fee_amount,
-                          updated_at_utc, row_version)
+                          set_fee_amount, list_command_name, set_command_name, delete_command_name,
+                          teleport_command_name, no_homes_message, home_limit_message,
+                          set_success_message, overwrite_message, delete_success_message,
+                          home_not_found_message, home_cooldown_message, teleport_success_message,
+                          set_insufficient_funds_message, teleport_insufficient_funds_message,
+                          blood_moon_message, updated_at_utc, row_version)
                       VALUES (@Kind, @Enabled, @MaxHomes, @CooldownMs,
                           @GlobalCooldownMs, @DenyDuringBloodMoon, @FeeAmount,
-                          @UpdatedAtUtc, 0);",
+                           @SetFeeAmount, @ListCommandName, @SetCommandName, @DeleteCommandName,
+                           @TeleportCommandName, @NoHomesMessage, @HomeLimitMessage,
+                           @SetSuccessMessage, @OverwriteMessage, @DeleteSuccessMessage,
+                           @HomeNotFoundMessage, @HomeCooldownMessage, @TeleportSuccessMessage,
+                           @SetInsufficientFundsMessage, @TeleportInsufficientFundsMessage,
+                           @BloodMoonMessage, @UpdatedAtUtc, 0);",
                     parameters,
                     transaction);
             }
@@ -128,7 +164,19 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                           cooldown_ms = @CooldownMs,
                           global_cooldown_ms = @GlobalCooldownMs,
                           deny_during_blood_moon = @DenyDuringBloodMoon,
-                          fee_amount = @FeeAmount,
+                           fee_amount = @FeeAmount,
+                           set_fee_amount = @SetFeeAmount,
+                           list_command_name = @ListCommandName, set_command_name = @SetCommandName,
+                           delete_command_name = @DeleteCommandName, teleport_command_name = @TeleportCommandName,
+                           no_homes_message = @NoHomesMessage, home_limit_message = @HomeLimitMessage,
+                           set_success_message = @SetSuccessMessage, overwrite_message = @OverwriteMessage,
+                           delete_success_message = @DeleteSuccessMessage,
+                           home_not_found_message = @HomeNotFoundMessage,
+                           home_cooldown_message = @HomeCooldownMessage,
+                           teleport_success_message = @TeleportSuccessMessage,
+                           set_insufficient_funds_message = @SetInsufficientFundsMessage,
+                           teleport_insufficient_funds_message = @TeleportInsufficientFundsMessage,
+                           blood_moon_message = @BloodMoonMessage,
                           updated_at_utc = @UpdatedAtUtc,
                           row_version = row_version + 1
                       WHERE teleport_kind = @Kind
@@ -1010,7 +1058,16 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             row.DenyDuringBloodMoon != 0,
             row.FeeAmount,
             DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-            row.RowVersion);
+            row.RowVersion,
+            string.Equals(row.Kind, TeleportKind.Home.ToString(), StringComparison.Ordinal)
+                ? new HomeTeleportExperience(
+                    row.SetFeeAmount, row.ListCommandName, row.SetCommandName,
+                    row.DeleteCommandName, row.TeleportCommandName, row.NoHomesMessage,
+                    row.HomeLimitMessage, row.SetSuccessMessage, row.OverwriteMessage,
+                    row.DeleteSuccessMessage, row.HomeNotFoundMessage, row.HomeCooldownMessage,
+                    row.TeleportSuccessMessage, row.SetInsufficientFundsMessage,
+                    row.TeleportInsufficientFundsMessage, row.BloodMoonMessage)
+                : null);
 
         private static PlayerHome ToHome(HomeRow row) => new PlayerHome(
             row.HomeId,
@@ -1197,6 +1254,22 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long GlobalCooldownMs { get; set; }
             public int DenyDuringBloodMoon { get; set; }
             public long FeeAmount { get; set; }
+            public long SetFeeAmount { get; set; }
+            public string ListCommandName { get; set; } = "homes";
+            public string SetCommandName { get; set; } = "sethome";
+            public string DeleteCommandName { get; set; } = "delhome";
+            public string TeleportCommandName { get; set; } = "home";
+            public string NoHomesMessage { get; set; } = string.Empty;
+            public string HomeLimitMessage { get; set; } = string.Empty;
+            public string SetSuccessMessage { get; set; } = string.Empty;
+            public string OverwriteMessage { get; set; } = string.Empty;
+            public string DeleteSuccessMessage { get; set; } = string.Empty;
+            public string HomeNotFoundMessage { get; set; } = string.Empty;
+            public string HomeCooldownMessage { get; set; } = string.Empty;
+            public string TeleportSuccessMessage { get; set; } = string.Empty;
+            public string SetInsufficientFundsMessage { get; set; } = string.Empty;
+            public string TeleportInsufficientFundsMessage { get; set; } = string.Empty;
+            public string BloodMoonMessage { get; set; } = string.Empty;
             public long UpdatedAtUtc { get; set; }
             public long RowVersion { get; set; }
         }

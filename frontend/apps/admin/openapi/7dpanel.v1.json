@@ -15062,6 +15062,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "homeExperience": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HomeTeleportExperienceHttpModel"
+              }
+            ]
+          },
           "updatedAtUtc": {
             "type": "string",
             "format": "date-time"
@@ -15069,6 +15077,61 @@
           "rowVersion": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "HomeTeleportExperienceHttpModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "setFeeAmount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "listCommandName": {
+            "type": "string"
+          },
+          "setCommandName": {
+            "type": "string"
+          },
+          "deleteCommandName": {
+            "type": "string"
+          },
+          "teleportCommandName": {
+            "type": "string"
+          },
+          "noHomesMessage": {
+            "type": "string"
+          },
+          "limitMessage": {
+            "type": "string"
+          },
+          "setSuccessMessage": {
+            "type": "string"
+          },
+          "overwriteMessage": {
+            "type": "string"
+          },
+          "deleteSuccessMessage": {
+            "type": "string"
+          },
+          "notFoundMessage": {
+            "type": "string"
+          },
+          "cooldownMessage": {
+            "type": "string"
+          },
+          "teleportSuccessMessage": {
+            "type": "string"
+          },
+          "setInsufficientFundsMessage": {
+            "type": "string"
+          },
+          "teleportInsufficientFundsMessage": {
+            "type": "string"
+          },
+          "bloodMoonMessage": {
+            "type": "string"
           }
         }
       },
@@ -15098,6 +15161,14 @@
           "feeAmount": {
             "type": "integer",
             "format": "int64"
+          },
+          "homeExperience": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HomeTeleportExperienceHttpModel"
+              }
+            ]
           },
           "expectedRowVersion": {
             "type": "integer",
