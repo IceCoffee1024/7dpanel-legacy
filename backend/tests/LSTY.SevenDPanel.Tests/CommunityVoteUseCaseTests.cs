@@ -195,7 +195,7 @@ namespace LSTY.SevenDPanel.Tests
             TimeSpan? globalCooldown = null,
             TimeSpan? participantMinimumOnline = null) =>
             new VoteConfiguration(
-                "config-" + kind.ToString().ToLowerInvariant(),
+                "configuration-" + kind.ToString().ToLowerInvariant(),
                 kind,
                 enabled,
                 TimeSpan.FromMinutes(1),

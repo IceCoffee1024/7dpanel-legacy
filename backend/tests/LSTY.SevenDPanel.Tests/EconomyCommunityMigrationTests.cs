@@ -414,20 +414,13 @@ namespace LSTY.SevenDPanel.Tests
                   VALUES ('teleport-1', 'Home', 'EOS-1', 1, 'world-1', 'world-1',
                       123.125, 64, -4, 90, 'Completed', 'teleport-1', 'Player', 'EOS-1',
                       'wave4-teleport', 107, 108, 1);
-                  INSERT INTO vote_configurations (
-                      configuration_id, vote_kind, enabled, duration_ms, threshold_percent,
-                      minimum_participants, initiator_cooldown_ms, target_cooldown_ms,
-                      global_cooldown_ms, mutual_exclusion_scope, allow_vote_change,
-                      updated_at_utc, row_version)
-                  VALUES ('vote-config-1', 'Kick', 1, 60000, 60, 2, 0, 0, 0,
-                      'global', 0, 100, 0);
                   INSERT INTO vote_rounds (
                       round_id, configuration_id, vote_kind, state,
                       initiator_crossplatform_id, target_crossplatform_id, scope_key,
                       eligible_count, threshold_percent, minimum_participants,
                       allow_vote_change, idempotency_key, correlation_id,
                       opened_at_utc, expires_at_utc, settled_at_utc, row_version)
-                  VALUES ('vote-1', 'vote-config-1', 'Kick', 'Passed', 'EOS-1', 'EOS-2',
+                  VALUES ('vote-1', 'configuration-kick', 'Kick', 'Passed', 'EOS-1', 'EOS-2',
                       'global', 2, 60, 2, 0, 'vote-1', 'wave4-vote', 109, 169, 110, 1);",
                 new { Digest = new string('a', 64) });
         }

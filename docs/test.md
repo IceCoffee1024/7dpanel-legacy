@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-07-27"
+last_updated: "2026-07-28"
 ---
 
 # 7DPanel 测试策略
@@ -27,7 +27,7 @@ last_updated: "2026-07-27"
 | Admin World Tools API/composable | `51` 项通过 | 世界工具 API/composable 的局部状态与请求合同 | 最终页面整合、危险世界动作和恢复 |
 | OpenAPI | snapshot `1/1`；`pnpm api:gen` 成功 | 当前运行时合同与生成 SDK 来自同一 snapshot | 干净 Git 基线上的 `api:check` |
 | Admin 最终静态与聚焦组合 | typecheck 通过；`6` 个文件、`74/74`；i18n 单文件复验 `6/6` | AppShell、Owner-only 路由、双语资源合同、Community 页面与当前 TypeScript 边界 | world-tools/modules/player-map 完整聚焦组合、lint、浏览器与发布 |
-| 第四波 Daily/Community 收口 | 后端受影响过滤 `32/32`；Admin Daily/Community/i18n 聚焦 `7` 个文件、`37/37`；Admin typecheck 通过；`pnpm api:schema` `1/1` 与 `pnpm api:gen` 成功 | 每日规则绑定和领取资格、奖励观察、Community 全量查询/原子版本、Owner HTTP 边界、Admin 全量列表和生成合同 | 真实奖励发放、传送/投票副作用、浏览器 E2E、真实 7DTD、发布与跨平台 smoke |
+| 第四波 Daily/Community 收口 | 后端受影响过滤 `32/32`；Admin Daily/Community/i18n 聚焦 `7` 个文件、`37/37`；Admin typecheck 通过；`pnpm api:schema` `1/1` 与 `pnpm api:gen` 成功；2026-07-28 默认配置相关聚焦测试 `18/18` 通过 | 每日规则绑定和领取资格、奖励观察、Community 全量查询/原子版本、Owner HTTP 边界、Admin 全量列表和生成合同；新库由 `011`/`012` 直接初始化固定传送、投票和 Discord Slash 命令配置 | 真实奖励发放、传送/投票副作用、Discord interaction、浏览器 E2E、真实 7DTD、发布与跨平台 smoke |
 | Admin locale 静态审计 | `zh-CN`/`en` 各 `1570` 个叶子键；`1295` 个静态调用缺键 `0` | 两种 locale 键同构、无空值/HTML、插值参数一致、当前静态调用可解析 | 动态 key、真实语言切换、日期数字格式和窄屏视觉 |
 
 本轮最终 Admin typecheck、AppShell/router/i18n/Community 聚焦 Vitest 和 JSON key audit 已在页面与双语文案稳定后各执行一次；Daily/Community 收口后又以明确文件过滤完成 `37/37`，Vitest 以退出码 `0` 结束。2026-07-27 收口后，Admin 完整 Vitest 为 `128/128` 个文件、`874/874` 项通过、退出码 `0`，typecheck 与 Vite 生产构建也通过；但仍保留 Happy DOM `AbortError`、外网图标请求超时和 9 个 fork worker 超时终止噪声，因此不能将其作为稳定发布门禁。后端已运行 Release 聚合测试但未通过，具体失败记录见[已知缺口](#已知缺口)。publish、真实 `v3.0.1-b4`、备份恢复、玩家/世界副作用、真实 Discord、MaxMind、Windows/Linux smoke 均未执行。危险世界 smoke 还没有确认测试实例、可用备份和回滚目标，因此不得启动。

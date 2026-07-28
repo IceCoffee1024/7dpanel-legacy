@@ -116,7 +116,7 @@ namespace LSTY.SevenDPanel.Tests
                 Store = new SqliteVoteStore(connectionFactory);
                 ConnectionFactory = connectionFactory;
                 Store.SaveConfiguration(new VoteConfiguration(
-                    "restart", VoteKind.Restart, true, TimeSpan.FromMinutes(1), 60, 2,
+                    "configuration-restart", VoteKind.Restart, true, TimeSpan.FromMinutes(1), 60, 2,
                     TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero,
                     "global", false,
                     Now, 0));

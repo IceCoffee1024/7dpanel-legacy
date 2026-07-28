@@ -81,7 +81,7 @@ namespace LSTY.SevenDPanel.Tests
 
             var initialSetting = community.SaveTeleportSettings(Setting(TeleportKind.Home, true, 0));
             var currentSetting = community.SaveTeleportSettings(Setting(TeleportKind.Home, false, initialSetting.RowVersion));
-            Assert.Equal(1, currentSetting.RowVersion);
+            Assert.Equal(2, currentSetting.RowVersion);
             Assert.Throws<CommunityConflictException>(() =>
                 community.SaveTeleportSettings(Setting(TeleportKind.Home, true, initialSetting.RowVersion)));
             Assert.False(community.GetTeleportSettings(TeleportKind.Home).Enabled);
@@ -89,7 +89,7 @@ namespace LSTY.SevenDPanel.Tests
             var initialConfiguration = votes.SaveConfiguration(Configuration(VoteKind.Kick, true, 0));
             var currentConfiguration = votes.SaveConfiguration(
                 Configuration(VoteKind.Kick, false, initialConfiguration.RowVersion));
-            Assert.Equal(1, currentConfiguration.RowVersion);
+            Assert.Equal(2, currentConfiguration.RowVersion);
             Assert.Throws<CommunityConflictException>(() =>
                 votes.SaveConfiguration(Configuration(VoteKind.Kick, true, initialConfiguration.RowVersion)));
             Assert.False(votes.GetConfiguration(VoteKind.Kick)!.Enabled);

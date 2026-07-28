@@ -248,6 +248,12 @@ CREATE TABLE discord_command_settings (
         CHECK (remote_allowed IN (0, 1))
 );
 
+INSERT INTO discord_command_settings (command_key, enabled, remote_allowed)
+VALUES
+    ('bind', 1, 1),
+    ('status', 1, 1),
+    ('players', 0, 1);
+
 CREATE TABLE discord_deliveries (
     delivery_id TEXT PRIMARY KEY
         CHECK (length(trim(delivery_id)) > 0),

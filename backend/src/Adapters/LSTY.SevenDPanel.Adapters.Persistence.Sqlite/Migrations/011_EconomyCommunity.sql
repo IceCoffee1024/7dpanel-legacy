@@ -581,6 +581,16 @@ CREATE TABLE teleport_settings (
         CHECK (row_version >= 0)
 );
 
+INSERT INTO teleport_settings (
+    teleport_kind, enabled, max_homes, cooldown_ms, global_cooldown_ms,
+    deny_during_blood_moon, fee_amount, updated_at_utc, row_version)
+VALUES
+    ('Home', 1, NULL, 0, 0, 1, 0, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0),
+    ('City', 1, NULL, 0, 0, 1, 0, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0),
+    ('Friend', 1, NULL, 0, 0, 1, 0, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0),
+    ('Return', 1, NULL, 0, 0, 1, 0, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0),
+    ('Admin', 1, NULL, 0, 0, 1, 0, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0);
+
 CREATE TABLE player_homes (
     home_id TEXT PRIMARY KEY
         CHECK (length(trim(home_id)) > 0),
@@ -856,6 +866,17 @@ CREATE TABLE vote_configurations (
 
 CREATE UNIQUE INDEX ux_vote_configurations_kind
     ON vote_configurations(vote_kind);
+
+INSERT INTO vote_configurations (
+    configuration_id, vote_kind, enabled, duration_ms, threshold_percent,
+    minimum_participants, initiator_minimum_online_ms, participant_minimum_online_ms,
+    initiator_cooldown_ms, target_cooldown_ms, global_cooldown_ms,
+    mutual_exclusion_scope, allow_vote_change, updated_at_utc, row_version)
+VALUES
+    ('configuration-kick', 'Kick', 0, 60000, 60, 2, 0, 0, 0, 0, 0,
+        'global', 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0),
+    ('configuration-restart', 'Restart', 0, 60000, 60, 2, 0, 0, 0, 0, 0,
+        'global', 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000, 0);
 
 CREATE TABLE vote_rounds (
     round_id TEXT PRIMARY KEY
