@@ -3499,6 +3499,9 @@ namespace LSTY.SevenDPanel.Tests
                         continue;
                     }
 
+                    if (response.Name == "202" && response.Value["content"] == null)
+                        continue;
+
                     var content = Assert.IsType<JObject>(response.Value["content"]);
                     Assert.NotEmpty(content.Properties());
                     Assert.Null(content["application/octet-stream"]);

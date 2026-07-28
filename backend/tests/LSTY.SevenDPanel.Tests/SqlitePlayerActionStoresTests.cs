@@ -71,7 +71,10 @@ namespace LSTY.SevenDPanel.Tests
                   FROM sqlite_master
                   WHERE type = 'view' AND name = 'unified_audit_projection';")!;
             Assert.All(OperationTables, table => Assert.Contains(table, viewSql, StringComparison.Ordinal));
-            Assert.DoesNotContain("failure_code", viewSql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(
+                "'GrantItem', created_at_utc, status, correlation_id, 0",
+                viewSql,
+                StringComparison.Ordinal);
             Assert.DoesNotContain("internal_name", viewSql, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("actual_quantity", viewSql, StringComparison.OrdinalIgnoreCase);
         }

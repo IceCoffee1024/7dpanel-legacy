@@ -23,12 +23,14 @@ namespace LSTY.SevenDPanel.Tests
         {
             using var database = new TemporaryDatabase();
             var round = database.StartPassedRound("due-round", Now.AddMinutes(-1));
-            using var runtime = CreateRuntime(database.Store, new RecordingVoteActionPort(), Now);
+            var actions = new RecordingVoteActionPort();
+            using var runtime = CreateRuntime(database.Store, actions, Now);
 
             runtime.Start();
             runtime.RunOnce();
 
-            Assert.Equal(VoteRoundState.Passed, database.Store.GetRound(round.RoundId).State);
+            Assert.Equal(VoteRoundState.ActionSucceeded, database.Store.GetRound(round.RoundId).State);
+            Assert.Equal(1, actions.CallCount);
         }
 
         [Fact]

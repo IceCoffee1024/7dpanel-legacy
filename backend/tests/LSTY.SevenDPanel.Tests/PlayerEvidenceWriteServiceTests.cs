@@ -11,8 +11,6 @@ namespace LSTY.SevenDPanel.Tests
 {
     public sealed class PlayerEvidenceWriteServiceTests
     {
-        private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(5);
-
         [Fact]
         public void Producer_is_nonblocking_and_queue_full_creates_separate_inventory_and_skill_gaps()
         {
@@ -22,7 +20,7 @@ namespace LSTY.SevenDPanel.Tests
             service.Start();
 
             Assert.True(service.TryRecord(Draft(1)));
-            Assert.True(store.Entered.Wait(TestTimeout));
+            WaitFor(store.Entered);
             Assert.True(service.TryRecord(Draft(2)));
             var elapsed = Stopwatch.StartNew();
             Assert.False(service.TryRecord(Draft(3)));
@@ -72,7 +70,7 @@ namespace LSTY.SevenDPanel.Tests
                 store, 2, TimeSpan.FromMilliseconds(50), () => Utc(20));
             service.Start();
             Assert.True(service.TryRecord(Draft(6)));
-            Assert.True(store.Entered.Wait(TestTimeout));
+            WaitFor(store.Entered);
             Assert.True(service.TryRecord(Draft(7)));
 
             var elapsed = Stopwatch.StartNew();
@@ -82,10 +80,7 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(elapsed.Elapsed < TimeSpan.FromSeconds(1));
             Assert.False(service.TryRecord(Draft(8)));
             store.Release.Set();
-            Assert.True(SpinWait.SpinUntil(
-                () => store.InventoryGaps.Any(gap => gap.Reason == PlayerEvidenceWriteService.DrainTimeoutReason) &&
-                      store.SkillGaps.Any(gap => gap.Reason == PlayerEvidenceWriteService.DrainTimeoutReason),
-                TestTimeout));
+            WaitFor(store.DrainTimeoutGapsRecorded);
 
             var inventoryGap = store.InventoryGaps.Single(gap =>
                 gap.Reason == PlayerEvidenceWriteService.DrainTimeoutReason);
@@ -133,13 +128,13 @@ namespace LSTY.SevenDPanel.Tests
             try
             {
                 Assert.True(service.TryRecord(SessionDraft(1)));
-                Assert.True(store.FirstAppendStarted.Wait(TestTimeout));
+                WaitFor(store.FirstAppendStarted);
                 lock (publishedSessionIds) Assert.Empty(publishedSessionIds);
 
                 store.ReleaseFirstAppend.Set();
-                Assert.True(store.FirstAppendFailed.Wait(TestTimeout));
+                WaitFor(store.FirstAppendFailed);
                 Assert.True(service.TryRecord(SessionDraft(2)));
-                Assert.True(published.Wait(TestTimeout));
+                WaitFor(published);
 
                 subscription.Dispose();
                 Assert.True(service.TryRecord(SessionDraft(3)));
@@ -198,6 +193,9 @@ namespace LSTY.SevenDPanel.Tests
 
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 27, 10, minute, 0, TimeSpan.Zero);
+
+        private static void WaitFor(ManualResetEventSlim signal) =>
+            signal.Wait(TestContext.Current.CancellationToken);
 
         private class RecordingStore : IPlayerEvidenceStore
         {
@@ -262,17 +260,47 @@ namespace LSTY.SevenDPanel.Tests
         private sealed class BlockingStore : RecordingStore
         {
             private int blocked;
+            private int inventoryDrainTimeoutRecorded;
+            private int skillDrainTimeoutRecorded;
             public ManualResetEventSlim Entered { get; } = new ManualResetEventSlim(false);
             public ManualResetEventSlim Release { get; } = new ManualResetEventSlim(false);
+            public ManualResetEventSlim DrainTimeoutGapsRecorded { get; } = new ManualResetEventSlim(false);
 
             public override void AppendInventorySnapshot(PlayerInventorySnapshot snapshot)
             {
                 if (Interlocked.Exchange(ref blocked, 1) == 0)
                 {
                     Entered.Set();
-                    Release.Wait(TestTimeout);
+                    Release.Wait();
                 }
                 base.AppendInventorySnapshot(snapshot);
+            }
+
+            public override void AppendInventoryGap(PlayerEvidenceGap gap)
+            {
+                base.AppendInventoryGap(gap);
+                if (gap.Reason == PlayerEvidenceWriteService.DrainTimeoutReason)
+                {
+                    Interlocked.Exchange(ref inventoryDrainTimeoutRecorded, 1);
+                    SetDrainTimeoutGapsRecorded();
+                }
+            }
+
+            public override void AppendSkillGap(PlayerEvidenceGap gap)
+            {
+                base.AppendSkillGap(gap);
+                if (gap.Reason == PlayerEvidenceWriteService.DrainTimeoutReason)
+                {
+                    Interlocked.Exchange(ref skillDrainTimeoutRecorded, 1);
+                    SetDrainTimeoutGapsRecorded();
+                }
+            }
+
+            private void SetDrainTimeoutGapsRecorded()
+            {
+                if (Volatile.Read(ref inventoryDrainTimeoutRecorded) == 1 &&
+                    Volatile.Read(ref skillDrainTimeoutRecorded) == 1)
+                    DrainTimeoutGapsRecorded.Set();
             }
         }
 
@@ -309,8 +337,7 @@ namespace LSTY.SevenDPanel.Tests
                 if (Interlocked.Increment(ref appendCount) == 1)
                 {
                     FirstAppendStarted.Set();
-                    if (!ReleaseFirstAppend.Wait(TestTimeout))
-                        throw new TimeoutException("The test did not release the first append.");
+                    ReleaseFirstAppend.Wait();
                     FirstAppendFailed.Set();
                     throw new InvalidOperationException("session unavailable");
                 }

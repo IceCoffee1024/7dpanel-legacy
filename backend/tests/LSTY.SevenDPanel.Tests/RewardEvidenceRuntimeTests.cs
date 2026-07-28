@@ -19,7 +19,7 @@ namespace LSTY.SevenDPanel.Tests
             new DateTimeOffset(2026, 7, 27, 0, 0, 0, TimeSpan.Zero);
 
         [Fact]
-        public void Persisted_scalar_and_session_evidence_invoke_reward_use_cases()
+        public async Task Persisted_scalar_and_session_evidence_invoke_reward_use_cases()
         {
             using var history = new PlayerHistoryWriteService(
                 new RecordingHistoryStore(), 4, TimeSpan.FromSeconds(1), () => ObservedAtUtc);
@@ -27,19 +27,27 @@ namespace LSTY.SevenDPanel.Tests
                 new RecordingEvidenceStore(), 4, TimeSpan.FromSeconds(1), () => ObservedAtUtc);
             var achievements = new List<ObserveAchievementCommand>();
             EvaluateOnlineRewardsCommand? onlineEvaluation = null;
-            using var completed = new ManualResetEventSlim();
+            var achievementsCompleted = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var onlineEvaluationCompleted = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
             using var runtime = new RewardEvidenceRuntime(
                 history.SubscribePersisted,
                 evidence.SubscribePersisted,
                 (command, _) =>
                 {
-                    achievements.Add(command);
+                    lock (achievements)
+                    {
+                        achievements.Add(command);
+                        if (achievements.Count == 4)
+                            achievementsCompleted.TrySetResult(true);
+                    }
                     return Task.CompletedTask;
                 },
                 (command, _) =>
                 {
                     onlineEvaluation = command;
-                    completed.Set();
+                    onlineEvaluationCompleted.TrySetResult(true);
                     return Task.CompletedTask;
                 },
                 new NoopRuntime(),
@@ -67,7 +75,11 @@ namespace LSTY.SevenDPanel.Tests
                 null)));
             Assert.True(history.TryRecord(Snapshot()));
 
-            Assert.True(completed.Wait(TestTimeout, TestContext.Current.CancellationToken));
+            await WaitForCompletion(
+                Task.WhenAll(achievementsCompleted.Task, onlineEvaluationCompleted.Task),
+                TestContext.Current.CancellationToken);
+            ObserveAchievementCommand[] observedAchievements;
+            lock (achievements) observedAchievements = achievements.ToArray();
             Assert.Equal(
                 new[]
                 {
@@ -76,8 +88,8 @@ namespace LSTY.SevenDPanel.Tests
                     AchievementStatistic.PlayerKills,
                     AchievementStatistic.Deaths
                 },
-                achievements.Select(command => command.Statistic));
-            Assert.All(achievements, command =>
+                observedAchievements.Select(command => command.Statistic));
+            Assert.All(observedAchievements, command =>
             {
                 Assert.Equal("EOS-player", command.CrossplatformId);
                 Assert.Equal(42, command.ExpectedEntityId);
@@ -91,6 +103,19 @@ namespace LSTY.SevenDPanel.Tests
             runtime.Stop();
             evidence.Stop();
             history.Stop();
+        }
+
+        private static async Task WaitForCompletion(Task task, CancellationToken cancellationToken)
+        {
+            var timeout = Task.Delay(TestTimeout, cancellationToken);
+            var completed = await Task.WhenAny(task, timeout);
+            if (completed != task)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                throw new TimeoutException("Reward evidence callbacks did not complete in time.");
+            }
+
+            await task;
         }
 
         private static PlayerSnapshot Snapshot() => new PlayerSnapshot(

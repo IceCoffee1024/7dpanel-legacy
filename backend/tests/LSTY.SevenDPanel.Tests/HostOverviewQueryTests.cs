@@ -66,10 +66,10 @@ namespace LSTY.SevenDPanel.Tests
             var sampler = new HostCpuSampler();
             Assert.Null(sampler.Sample(platform));
 
-            var first = Task.Run(() => sampler.Sample(platform));
+            var first = RunOnDedicatedThread(() => sampler.Sample(platform));
             Assert.True(platform.FirstConcurrentReadEntered.Wait(TimeSpan.FromSeconds(2)));
             var secondStarted = new ManualResetEventSlim(false);
-            var second = Task.Run(() =>
+            var second = RunOnDedicatedThread(() =>
             {
                 secondStarted.Set();
                 return sampler.Sample(platform);
@@ -346,12 +346,12 @@ namespace LSTY.SevenDPanel.Tests
             using (var start = new ManualResetEventSlim(false))
             using (var invoked = new CountdownEvent(5))
             {
-                var requests = Enumerable.Range(0, 5).Select(_ => Task.Run(async () =>
+                var requests = Enumerable.Range(0, 5).Select(_ => RunOnDedicatedThread(() =>
                 {
                     start.Wait();
                     var request = resolver.ResolveAsync(TestContext.Current.CancellationToken);
                     invoked.Signal();
-                    return await request;
+                    return request.GetAwaiter().GetResult();
                 })).ToArray();
 
                 start.Set();
@@ -375,6 +375,15 @@ namespace LSTY.SevenDPanel.Tests
                 new DeviceIdentityProvider("LSTY.SevenDPanel"),
                 new PublicNetworkAddressResolver(overview, new RecordingHandler(_ => Task.FromException<HttpResponseMessage>(new InvalidOperationException())), () => DateTimeOffset.UtcNow),
                 () => new DateTimeOffset(2026, 7, 25, 0, 0, 0, TimeSpan.Zero));
+        }
+
+        private static Task<T> RunOnDedicatedThread<T>(Func<T> action)
+        {
+            return Task.Factory.StartNew(
+                action,
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
         }
 
         private static IEnumerable<IHostStorageVolumeSource> ThrowAfterFirstVolume()

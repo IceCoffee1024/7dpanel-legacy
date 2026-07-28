@@ -213,11 +213,25 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             }
 
             var operation = context.OperationDescription.Operation;
-            if (!operation.Responses.TryGetValue("200", out var response)) return;
-
             operation.Responses.Remove("200");
-            response.Description = "The server operation request was accepted.";
-            operation.Responses["202"] = response;
+            operation.Responses["202"] = OpenApiResponses.Json(
+                "The server operation request was accepted.",
+                CreateServerOperationResponseSchema(
+                    string.Equals(path, "/api/v1/server-operations/restart", StringComparison.Ordinal)));
+        }
+
+        private static JsonSchema CreateServerOperationResponseSchema(bool restart)
+        {
+            var schema = new JsonSchema { Type = JsonObjectType.Object };
+            schema.Properties["operationId"] = CreateStringProperty("Accepted operation identifier.");
+            schema.Properties["code"] = CreateStringProperty("Accepted operation status.");
+            schema.Properties["requestedAtUtc"] = CreateStringProperty("Request time in UTC.");
+            schema.Properties[restart ? "scriptStartedAtUtc" : "acceptedAtUtc"] =
+                CreateStringProperty("Acceptance time in UTC.");
+            schema.Properties["auditStatus"] = CreateStringProperty("Audit persistence status.");
+            foreach (var property in schema.Properties.Keys)
+                schema.RequiredProperties.Add(property);
+            return schema;
         }
 
         private static void DescribeMapContracts(OperationProcessorContext context)

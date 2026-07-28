@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.DependencyInjection;
+using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Application.Community;
 using LSTY.SevenDPanel.Application.Economy;
 using LSTY.SevenDPanel.Domain.Community;
@@ -105,18 +106,31 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("\"updatedAtUtc\":\"2026-07-27T00:00:00Z\"", settingsJson);
             Assert.Null(settings[0]!["UpdatedAtUtc"]);
 
+            var update = (JObject)settings[0]!.DeepClone();
+            update.Remove("kind");
+            update.Remove("updatedAtUtc");
+            update.Remove("rowVersion");
+            update["enabled"] = true;
+            update["maxHomes"] = 3;
+            update["cooldownMs"] = 1000;
+            update["globalCooldownMs"] = 500;
+            update["denyDuringBloodMoon"] = true;
+            update["feeAmount"] = 0;
+            update["expectedRowVersion"] = 9;
+
             using var conflict = await PutJsonAsync(
                 host.Client,
                 "api/v1/community/teleport-settings/home",
-                "{\"enabled\":true,\"maxHomes\":3,\"cooldownMs\":1000,\"globalCooldownMs\":500,\"denyDuringBloodMoon\":true,\"feeAmount\":0,\"expectedRowVersion\":9}");
+                update.ToString());
             var problem = JObject.Parse(await conflict.Content.ReadAsStringAsync());
             Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
             Assert.Equal("community_version_conflict", (string?)problem["code"]);
 
+            update["expectedRowVersion"] = 0;
             using var updated = await PutJsonAsync(
                 host.Client,
                 "api/v1/community/teleport-settings/home",
-                "{\"enabled\":true,\"maxHomes\":3,\"cooldownMs\":1000,\"globalCooldownMs\":500,\"denyDuringBloodMoon\":true,\"feeAmount\":0,\"expectedRowVersion\":0}");
+                update.ToString());
             var payload = JObject.Parse(await updated.Content.ReadAsStringAsync());
             Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
             Assert.Equal(1, (long?)payload["rowVersion"]);
@@ -150,7 +164,7 @@ namespace LSTY.SevenDPanel.Tests
             using var invitation = await PostJsonAsync(
                 host.Client,
                 "api/v1/community/friendships/requests",
-                "{\"requestId\":\"request-2\",\"requesterCrossplatformId\":\"EOS_1\",\"targetCrossplatformId\":\"EOS_2\",\"expiresAtUtc\":\"2026-07-28T00:00:00Z\"}");
+                "{\"requestId\":\"request-2\",\"requesterCrossplatformId\":\"EOS_1\",\"targetCrossplatformId\":\"EOS_2\",\"expiresAtUtc\":\"2099-01-01T00:00:00Z\"}");
             Assert.Equal(HttpStatusCode.Created, invitation.StatusCode);
 
             using var removed = await host.Client.DeleteAsync(
@@ -293,6 +307,10 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton<ICommunityVoteActionPort, SuccessfulVoteActionPort>();
             services.AddSingleton<IPanelRuntimeStatus>(new StubRuntimeStatus(readiness));
             services.AddSingleton<Func<DateTimeOffset>>(() => FixedNow);
+            services.AddSingleton(new GameChatCommandCatalog(Array.Empty<IGameChatCommandHandler>()));
+            services.AddSingleton<Func<IEnumerable<IGameChatCommandHandler>>>(
+                _ => () => Array.Empty<IGameChatCommandHandler>());
+            services.AddSingleton<GameChatCommandRegistrationService>();
             services.AddSingleton<HomeUseCases>();
             services.AddSingleton<CityUseCases>();
             services.AddSingleton<FriendUseCases>();

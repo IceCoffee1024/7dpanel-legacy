@@ -704,8 +704,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             && row.TargetEntityId == intent.Target.EntityId
             && row.TargetOnlineObservedAtUtc == PlayerActionSql.ToUnixMilliseconds(intent.Target.OnlineObservedAtUtc)
             && string.Equals(row.WorldId, intent.Target.WorldId, StringComparison.Ordinal)
-            && string.Equals(row.ClientRequestKey, intent.ClientRequestKey, StringComparison.Ordinal)
-            && string.Equals(row.CorrelationId, intent.CorrelationId, StringComparison.Ordinal);
+            && string.Equals(row.ClientRequestKey, intent.ClientRequestKey, StringComparison.Ordinal);
     }
 
     internal static class PlayerActionSql

@@ -24,7 +24,7 @@
 | `N-08` | 玩家资料、追踪与物品治理 | 玩家身份与历史资料；会话和活动；位置与地图；背包、技能和统计；游戏物品/方块/图标资源目录；类型化物品及重置动作 | `CAP-08` | 90% | `PlayerEvidenceController`、`GameResourcesController`、`MapController`、`MapJobsController`；Admin `player-profile`、`player-map`、`game-resources` |
 | `N-09` | 经济、商店与奖励 | 玩家账户与余额；双重记账交易；转账和排行榜；商品与库存；购买；奖励包；兑换码；成就、在线和每日奖励；补偿与退款 | `CAP-09` | 90% | `CommerceController`、`RewardsController`、`AchievementsController`、`OnlineRewardsController`；Admin `economy`、`commerce`、`rewards` |
 | `N-10` | 传送与社区投票 | 私人家；城市；好友请求与传送；返回点；管理员传送；冷却、费用和血月规则；踢人/重启投票及结算 | `CAP-10` | 90% | `CommunityController`、`CommunityGameCommandRouter`；Admin `community` |
-| `N-11` | 外部集成与访问策略 | Discord Webhook/Bot；游戏聊天桥；Discord Gateway 与 Interaction；Slash 命令；玩家绑定；远程执行 allow-list；GeoIP 国家/IP 策略 | `CAP-11` | 85% | `DiscordIntegrationController`、`GeoIpAccessPoliciesController`；Admin `discord`、`geoip` |
+| `N-11` | 外部集成与访问策略 | Discord Webhook/Bot；游戏聊天桥；Discord Gateway 与 Interaction；Slash 命令；玩家绑定；Gateway/Inbound health 状态、错误码与观察时间；远程执行 allow-list；GeoIP 国家/IP 策略 | `CAP-11` | 85% | `DiscordIntegrationController`、`GeoIpAccessPoliciesController`；Admin `discord`、`geoip` |
 | `N-12` | 世界工具与功能模块 | 世界和地图信息；领地、车辆、无人机等世界资源；类型化世界操作；长作业；功能模块启停、依赖和状态 | `CAP-12` | 85% | `WorldController`、`WorldOperationsController`、`ModulesController`；Admin `world-tools`、`modules` |
 
 ## 旧项目核心功能模块

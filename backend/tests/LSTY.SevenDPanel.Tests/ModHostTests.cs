@@ -132,7 +132,11 @@ namespace LSTY.SevenDPanel.Tests
         {
             var webHost = new FakeWebHost(blockStart: true);
             var host = new ModHost(() => webHost);
-            var startTask = Task.Run(host.Start, TestContext.Current.CancellationToken);
+            var startTask = Task.Factory.StartNew(
+                host.Start,
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
 
             try
             {
@@ -161,7 +165,11 @@ namespace LSTY.SevenDPanel.Tests
                 StartException = new InvalidOperationException("failed")
             };
             var host = new ModHost(() => webHost);
-            var startTask = Task.Run(host.Start, TestContext.Current.CancellationToken);
+            var startTask = Task.Factory.StartNew(
+                host.Start,
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
 
             try
             {

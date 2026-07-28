@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -27,24 +28,19 @@ namespace LSTY.SevenDPanel.Tests
             new DateTimeOffset(2026, 7, 27, 5, 0, 0, TimeSpan.Zero);
 
         [Fact]
-        public void Daily_command_requires_a_configured_rule_id_without_a_fallback()
+        public void Daily_command_uses_the_fixed_daily_rule_id()
         {
             var create = typeof(CommunityGameCommandConsumerSet).GetMethod(
                 "Create",
                 BindingFlags.Public | BindingFlags.Static);
-            var ruleIdParameter = Assert.Single(create!.GetParameters().Where(parameter =>
-                string.Equals(parameter.Name, "dailyCommandRuleId", StringComparison.Ordinal)));
+            Assert.NotNull(create);
+            Assert.DoesNotContain(create!.GetParameters(), parameter =>
+                string.Equals(parameter.Name, "dailyCommandRuleId", StringComparison.Ordinal));
 
-            Assert.Equal(typeof(string), ruleIdParameter.ParameterType);
-
-            using var fixture = new DailyFixture("daily-configured");
-            var missing = Assert.Throws<TargetInvocationException>(() => create.Invoke(
-                null,
-                CreateArguments(create, fixture, null)));
-            Assert.IsType<ArgumentException>(missing.InnerException);
+            using var fixture = new DailyFixture("daily");
 
             var consumers = Assert.IsAssignableFrom<IReadOnlyList<ICommunityGameCommandConsumer>>(
-                create.Invoke(null, CreateArguments(create, fixture, "daily-configured")));
+                create.Invoke(null, CreateArguments(create, fixture)));
             var result = consumers.Single(consumer => consumer.Command == CommunityGameCommandId.Daily)
                 .Execute(new CommunityGameCommandContext("EOS-A", "Alice", Array.Empty<string>()));
 
@@ -55,10 +51,10 @@ namespace LSTY.SevenDPanel.Tests
         [Fact]
         public void Incoming_global_daily_chat_invokes_the_community_daily_application_port()
         {
-            using var fixture = new DailyFixture("daily-configured");
+            using var fixture = new DailyFixture("daily");
             var catalog = new GameChatCommandCatalog(
                 CommunityGameChatCommandHandlerSet.Create(new CommunityGameCommandRouter(
-                    CreateConsumers(fixture, "daily-configured"))));
+                    CreateConsumers(fixture))));
             var state = new ChatRuntimeState(new ChatSettingsStore(), new ColoredChatStore());
             state.Load();
             var liveWindow = new ServerEventLiveWindow(8);
@@ -80,29 +76,25 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         private static IReadOnlyList<ICommunityGameCommandConsumer> CreateConsumers(
-            DailyFixture fixture,
-            string? dailyCommandRuleId)
+            DailyFixture fixture)
         {
             var create = typeof(CommunityGameCommandConsumerSet).GetMethod(
                 "Create",
                 BindingFlags.Public | BindingFlags.Static)!;
             return Assert.IsAssignableFrom<IReadOnlyList<ICommunityGameCommandConsumer>>(
-                create.Invoke(null, CreateArguments(create, fixture, dailyCommandRuleId)));
+                create.Invoke(null, CreateArguments(create, fixture)));
         }
 
         private static object?[] CreateArguments(
             MethodInfo create,
-            DailyFixture fixture,
-            string? dailyCommandRuleId) =>
+            DailyFixture fixture) =>
             create.GetParameters().Select(parameter => CreateArgument(
                 parameter,
-                fixture,
-                dailyCommandRuleId)).ToArray();
+                fixture)).ToArray();
 
         private static object? CreateArgument(
             ParameterInfo parameter,
-            DailyFixture fixture,
-            string? dailyCommandRuleId)
+            DailyFixture fixture)
         {
             switch (parameter.Name)
             {
@@ -123,7 +115,6 @@ namespace LSTY.SevenDPanel.Tests
                 case "isEnabled": return new Func<CommunityGameCommandId, bool>(_ => true);
                 case "utcClock": return new Func<DateTimeOffset>(() => Now);
                 case "idFactory": return new Func<string>(() => "test-command");
-                case "dailyCommandRuleId": return dailyCommandRuleId;
                 default: throw new InvalidOperationException(
                     "Unexpected Create parameter: " + parameter.Name);
             }
@@ -165,6 +156,7 @@ namespace LSTY.SevenDPanel.Tests
 
         private static Type GameType(string name)
         {
+            LoadGameAssembly();
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 var type = assembly.GetType(name, false);
@@ -172,6 +164,32 @@ namespace LSTY.SevenDPanel.Tests
             }
 
             throw new InvalidOperationException("The Seven Days game type was not loaded: " + name);
+        }
+
+        private static void LoadGameAssembly()
+        {
+            if (AppDomain.CurrentDomain.GetAssemblies().Any(assembly =>
+                    string.Equals(assembly.GetName().Name, "Assembly-CSharp", StringComparison.Ordinal)))
+                return;
+
+            for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+                 directory != null;
+                 directory = directory.Parent)
+            {
+                var assemblyPath = Path.Combine(
+                    directory.FullName,
+                    "7dtd-reference",
+                    "v3.0.1-b4",
+                    "runtime",
+                    "7DaysToDieServer_Data",
+                    "Managed",
+                    "Assembly-CSharp.dll");
+                if (File.Exists(assemblyPath))
+                {
+                    Assembly.LoadFrom(assemblyPath);
+                    return;
+                }
+            }
         }
 
         private sealed class DailyFixture : IDisposable

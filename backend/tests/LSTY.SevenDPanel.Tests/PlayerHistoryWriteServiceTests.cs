@@ -11,8 +11,6 @@ namespace LSTY.SevenDPanel.Tests
 {
     public sealed class PlayerHistoryWriteServiceTests
     {
-        private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(2);
-
         [Fact]
         public void Producer_never_calls_the_store_and_a_full_queue_preserves_older_snapshots()
         {
@@ -27,7 +25,7 @@ namespace LSTY.SevenDPanel.Tests
             try
             {
                 Assert.True(service.TryRecord(first));
-                Assert.True(store.FirstAppendStarted.Wait(TestTimeout));
+                WaitFor(store.FirstAppendStarted);
 
                 Assert.True(service.TryRecord(second));
                 Assert.False(service.TryRecord(dropped));
@@ -70,7 +68,7 @@ namespace LSTY.SevenDPanel.Tests
 
             service.Start();
             Assert.True(service.TryRecord(CreateSnapshot("Failed")));
-            Assert.True(store.FirstAppendAttempted.Wait(TestTimeout));
+            WaitFor(store.FirstAppendAttempted);
             Assert.True(service.TryRecord(CreateSnapshot("Recovered")));
             service.Stop();
 
@@ -100,13 +98,13 @@ namespace LSTY.SevenDPanel.Tests
             try
             {
                 Assert.True(service.TryRecord(CreateSnapshot("Failed")));
-                Assert.True(store.FirstAppendStarted.Wait(TestTimeout));
+                WaitFor(store.FirstAppendStarted);
                 lock (publishedNames) Assert.Empty(publishedNames);
 
                 store.ReleaseFirstAppend.Set();
-                Assert.True(store.FirstAppendFailed.Wait(TestTimeout));
+                WaitFor(store.FirstAppendFailed);
                 Assert.True(service.TryRecord(CreateSnapshot("Persisted")));
-                Assert.True(published.Wait(TestTimeout));
+                WaitFor(published);
 
                 subscription.Dispose();
                 Assert.True(service.TryRecord(CreateSnapshot("After cancellation")));
@@ -133,9 +131,9 @@ namespace LSTY.SevenDPanel.Tests
             try
             {
                 Assert.True(service.TryRecord(CreateSnapshot("Failed")));
-                Assert.True(store.FailedAppendAttempted.Wait(TestTimeout));
+                WaitFor(store.FailedAppendAttempted);
                 Assert.True(service.TryRecord(CreateSnapshot("Recovered")));
-                Assert.True(store.FirstGapStarted.Wait(TestTimeout));
+                WaitFor(store.FirstGapStarted);
                 Assert.True(service.TryRecord(CreateSnapshot("Queued")));
                 Assert.False(service.TryRecord(CreateSnapshot("Queue full")));
 
@@ -168,7 +166,7 @@ namespace LSTY.SevenDPanel.Tests
             service.Start();
             try
             {
-                Assert.True(store.CompactCalled.Wait(TestTimeout));
+                WaitFor(store.CompactCalled);
                 Assert.Equal(1000, store.CompactMaximumDeletes);
                 Assert.NotEqual(producerThread, store.CompactThreadId);
             }
@@ -184,6 +182,9 @@ namespace LSTY.SevenDPanel.Tests
                 queueCapacity,
                 TimeSpan.FromMilliseconds(250),
                 () => new DateTimeOffset(2026, 7, 25, 0, 0, 0, TimeSpan.Zero));
+
+        private static void WaitFor(ManualResetEventSlim signal) =>
+            signal.Wait(TestContext.Current.CancellationToken);
 
         private static PlayerSnapshot CreateSnapshot(string name, bool includeCrossplatformIdentity = true) =>
             new PlayerSnapshot(
@@ -292,8 +293,7 @@ namespace LSTY.SevenDPanel.Tests
                 if (Interlocked.Increment(ref appendCount) == 1)
                 {
                     FirstAppendStarted.Set();
-                    if (!ReleaseFirstAppend.Wait(TestTimeout))
-                        throw new TimeoutException("The test did not release the first append.");
+                    ReleaseFirstAppend.Wait();
                 }
 
                 base.Append(snapshot);
@@ -341,8 +341,7 @@ namespace LSTY.SevenDPanel.Tests
                 if (Interlocked.Increment(ref appendCount) == 1)
                 {
                     FirstAppendStarted.Set();
-                    if (!ReleaseFirstAppend.Wait(TestTimeout))
-                        throw new TimeoutException("The test did not release the first append.");
+                    ReleaseFirstAppend.Wait();
                     FirstAppendFailed.Set();
                     throw new InvalidOperationException("history unavailable");
                 }
@@ -382,8 +381,7 @@ namespace LSTY.SevenDPanel.Tests
                 if (gap.Reason == PlayerHistoryGapReason.StoreFailure && !FirstGapStarted.IsSet)
                 {
                     FirstGapStarted.Set();
-                    if (!ReleaseFirstGap.Wait(TestTimeout))
-                        throw new TimeoutException("The test did not release the first gap.");
+                    ReleaseFirstGap.Wait();
                 }
             }
         }

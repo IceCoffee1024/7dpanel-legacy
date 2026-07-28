@@ -126,7 +126,7 @@ namespace LSTY.SevenDPanel.Tests
             using var handler = new RecordingHandler((_, _) =>
             {
                 var response = new HttpResponseMessage((HttpStatusCode)429);
-                response.Headers.Add("Retry-After", "2.5");
+                response.Headers.TryAddWithoutValidation("Retry-After", "2.5");
                 return Task.FromResult(response);
             });
             using var synchronizer = new DiscordGuildCommandSynchronizer(handler);
