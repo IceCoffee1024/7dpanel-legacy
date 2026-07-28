@@ -20,21 +20,38 @@ const denyDuringBloodMoon = shallowRef(false)
 const feeAmount = shallowRef('0')
 const setFeeAmount = shallowRef('0')
 const homeExperience = reactive({
-  listCommandName: '', setCommandName: '', deleteCommandName: '', teleportCommandName: '',
-  noHomesMessage: '', limitMessage: '', setSuccessMessage: '', overwriteMessage: '',
-  deleteSuccessMessage: '', notFoundMessage: '', cooldownMessage: '', teleportSuccessMessage: '',
-  setInsufficientFundsMessage: '', teleportInsufficientFundsMessage: '', bloodMoonMessage: '',
+  listCommandName: '',
+  setCommandName: '',
+  deleteCommandName: '',
+  teleportCommandName: '',
+  noHomesMessage: '',
+  limitMessage: '',
+  setSuccessMessage: '',
+  overwriteMessage: '',
+  deleteSuccessMessage: '',
+  notFoundMessage: '',
+  cooldownMessage: '',
+  teleportSuccessMessage: '',
+  setInsufficientFundsMessage: '',
+  teleportInsufficientFundsMessage: '',
+  bloodMoonMessage: '',
 })
 
 const commandFields = [
-  ['listCommandName', 'listCommandName'], ['setCommandName', 'setCommandName'],
-  ['deleteCommandName', 'deleteCommandName'], ['teleportCommandName', 'teleportCommandName'],
+  ['listCommandName', 'listCommandName'],
+  ['setCommandName', 'setCommandName'],
+  ['deleteCommandName', 'deleteCommandName'],
+  ['teleportCommandName', 'teleportCommandName'],
 ] as const
 const messageFields = [
-  ['noHomesMessage', 'noHomesMessage'], ['limitMessage', 'limitMessage'],
-  ['setSuccessMessage', 'setSuccessMessage'], ['overwriteMessage', 'overwriteMessage'],
-  ['deleteSuccessMessage', 'deleteSuccessMessage'], ['notFoundMessage', 'notFoundMessage'],
-  ['cooldownMessage', 'cooldownMessage'], ['teleportSuccessMessage', 'teleportSuccessMessage'],
+  ['noHomesMessage', 'noHomesMessage'],
+  ['limitMessage', 'limitMessage'],
+  ['setSuccessMessage', 'setSuccessMessage'],
+  ['overwriteMessage', 'overwriteMessage'],
+  ['deleteSuccessMessage', 'deleteSuccessMessage'],
+  ['notFoundMessage', 'notFoundMessage'],
+  ['cooldownMessage', 'cooldownMessage'],
+  ['teleportSuccessMessage', 'teleportSuccessMessage'],
   ['setInsufficientFundsMessage', 'setInsufficientFundsMessage'],
   ['teleportInsufficientFundsMessage', 'teleportInsufficientFundsMessage'],
   ['bloodMoonMessage', 'bloodMoonMessage'],
@@ -48,8 +65,9 @@ function reset(setting: TeleportSettings) {
   denyDuringBloodMoon.value = setting.denyDuringBloodMoon
   feeAmount.value = setting.feeAmount.toString()
   if (setting.homeExperience != null) {
-    setFeeAmount.value = setting.homeExperience.setFeeAmount.toString()
-    Object.assign(homeExperience, setting.homeExperience)
+    const { setFeeAmount: nextSetFeeAmount, ...nextHomeExperience } = setting.homeExperience
+    setFeeAmount.value = nextSetFeeAmount.toString()
+    Object.assign(homeExperience, nextHomeExperience)
   }
 }
 
@@ -91,8 +109,12 @@ function submit() {
     <template #header>
       <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <h3 class="font-semibold text-highlighted">{{ setting.kind }}</h3>
-          <p class="text-xs text-muted">{{ t('community.teleportSetting.version', { version: setting.rowVersion.toString() }) }} · {{ setting.updatedAtUtc }}</p>
+          <h3 class="font-semibold text-highlighted">
+            {{ setting.kind }}
+          </h3>
+          <p class="text-xs text-muted">
+            {{ t('community.teleportSetting.version', { version: setting.rowVersion.toString() }) }} · {{ setting.updatedAtUtc }}
+          </p>
         </div>
         <USwitch v-model="enabled" :label="t('community.common.enabled')" />
       </div>
@@ -141,8 +163,19 @@ function submit() {
 
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
-        <UButton color="neutral" :label="t('community.common.restoreServerValue')" variant="outline" :disabled="saving" @click="reset(setting)" />
-        <UButton :label="t('community.common.saveAndConfirm')" :disabled="!valid" :loading="saving" @click="submit" />
+        <UButton
+          color="neutral"
+          :label="t('community.common.restoreServerValue')"
+          variant="outline"
+          :disabled="saving"
+          @click="reset(setting)"
+        />
+        <UButton
+          :label="t('community.common.saveAndConfirm')"
+          :disabled="!valid"
+          :loading="saving"
+          @click="submit"
+        />
       </div>
     </template>
   </UCard>

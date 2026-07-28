@@ -108,6 +108,34 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public bool HasCredentials { get; }
     }
 
+    public sealed class DiscordHealthHttpResponse
+    {
+        public DiscordHealthHttpResponse(DiscordHealthSnapshot health)
+        {
+            if (health == null) throw new ArgumentNullException(nameof(health));
+            Gateway = new DiscordHealthSectionHttpResponse(health.Gateway);
+            Inbound = new DiscordHealthSectionHttpResponse(health.Inbound);
+        }
+
+        public DiscordHealthSectionHttpResponse Gateway { get; }
+        public DiscordHealthSectionHttpResponse Inbound { get; }
+    }
+
+    public sealed class DiscordHealthSectionHttpResponse
+    {
+        public DiscordHealthSectionHttpResponse(DiscordHealthSection health)
+        {
+            if (health == null) throw new ArgumentNullException(nameof(health));
+            State = health.State.ToString();
+            ErrorCode = health.ErrorCode;
+            ObservedAtUtc = health.ObservedAtUtc;
+        }
+
+        public string State { get; }
+        public string? ErrorCode { get; }
+        public DateTimeOffset? ObservedAtUtc { get; }
+    }
+
     public sealed class DiscordTargetHttpResponse
     {
         public DiscordTargetHttpResponse(

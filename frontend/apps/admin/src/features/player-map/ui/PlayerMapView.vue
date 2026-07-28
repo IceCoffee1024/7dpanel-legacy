@@ -296,8 +296,10 @@ async function applyTrackFilters() {
             <span class="mb-1 block font-medium">{{ t('players.map.searchPlayers') }}</span>
             <input
               :value="controller.playerSearch.value"
+              id="player-map-search"
               class="w-full min-w-0 rounded-md border border-default bg-default px-2 py-2"
               data-testid="player-search"
+              name="player-map-search"
               :placeholder="t('players.map.searchPlayersPlaceholder')"
               type="search"
               @input="searchPlayers"
@@ -305,7 +307,12 @@ async function applyTrackFilters() {
           </label>
           <label class="min-w-0 text-sm">
             <span class="mb-1 block font-medium">{{ t('players.map.player') }}</span>
-            <select v-model="selectedPlayer" class="w-full min-w-0 rounded-md border border-default bg-default px-2 py-2">
+            <select
+              id="player-map-player"
+              v-model="selectedPlayer"
+              class="w-full min-w-0 rounded-md border border-default bg-default px-2 py-2"
+              name="player-map-player"
+            >
               <option value="">{{ t('players.map.selectPlayer') }}</option>
               <option v-for="option in playerOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -315,8 +322,10 @@ async function applyTrackFilters() {
           <label class="min-w-0 text-sm">
             <span class="mb-1 block font-medium">{{ t('players.map.fromUtc') }}</span>
             <input
+              id="player-map-from-utc"
               v-model="fromUtc"
               class="w-full rounded-md border border-default bg-default px-2 py-2"
+              name="player-map-from-utc"
               placeholder="2026-07-25T00:00:00Z"
               type="text"
             >
@@ -324,8 +333,10 @@ async function applyTrackFilters() {
           <label class="min-w-0 text-sm">
             <span class="mb-1 block font-medium">{{ t('players.map.toUtc') }}</span>
             <input
+              id="player-map-to-utc"
               v-model="toUtc"
               class="w-full rounded-md border border-default bg-default px-2 py-2"
+              name="player-map-to-utc"
               placeholder="2026-07-26T00:00:00Z"
               type="text"
             >
@@ -423,6 +434,7 @@ async function applyTrackFilters() {
                 :disabled="observations.length === 0 || selectedObservationIndex < 0"
                 :max="Math.max(0, observations.length - 1)"
                 min="0"
+                name="player-map-observation"
                 :value="Math.max(0, selectedObservationIndex)"
                 step="1"
                 type="range"

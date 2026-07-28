@@ -171,10 +171,14 @@ function parseHealthSection(value: unknown) {
   return Object.freeze({ state: source.state as DiscordHealthState, errorCode: nullableText(source.errorCode), observedAtUtc: nullableUtc(source.observedAtUtc) })
 }
 
-export async function getDiscordHealth(authorization: string, signal?: AbortSignal): Promise<DiscordHealth> {
-  const source = record(await requestJson<unknown>('/api/v1/integrations/discord/health', { headers: headers(authorization), signal }))
+export function parseDiscordHealth(value: unknown): DiscordHealth {
+  const source = record(value)
   keys(source, ['gateway', 'inbound'])
   return Object.freeze({ gateway: parseHealthSection(source.gateway), inbound: parseHealthSection(source.inbound) })
+}
+
+export async function getDiscordHealth(authorization: string, signal?: AbortSignal): Promise<DiscordHealth> {
+  return parseDiscordHealth(await requestJson<unknown>('/api/v1/integrations/discord/health', { headers: headers(authorization), signal }))
 }
 
 export async function updateDiscordSecret(authorization: string, secretKey: string, operation: SecretOperation, signal?: AbortSignal): Promise<void> {

@@ -310,8 +310,13 @@ namespace LSTY.SevenDPanel.Tests
                     () => Guid.NewGuid().ToString("N"),
                     "public"));
 
+            Assert.Equal(
+                DiscordHealthState.Unavailable,
+                runtime.GetHealth().Inbound.State);
             Assert.True(runtime.Start());
             Assert.False(runtime.Start());
+            Assert.Equal(DiscordHealthState.Healthy, runtime.GetHealth().Inbound.State);
+            Assert.Null(runtime.GetHealth().Inbound.ErrorCode);
             Assert.Equal(
                 DiscordInboundDisposition.Forwarded,
                 (await runtime.HandleMessageAsync(
@@ -319,6 +324,9 @@ namespace LSTY.SevenDPanel.Tests
                     CancellationToken.None)).Disposition);
             Assert.True(await runtime.StopAsync(TimeSpan.FromSeconds(1), CancellationToken.None));
             Assert.True(await runtime.StopAsync(TimeSpan.FromSeconds(1), CancellationToken.None));
+            Assert.Equal(
+                "discord_inbound_runtime_not_running",
+                runtime.GetHealth().Inbound.ErrorCode);
             Assert.Equal(
                 DiscordInboundDisposition.NotRunning,
                 (await runtime.HandleMessageAsync(

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { listDiscordDeliveries, parseDiscordConfiguration } from './discord'
+import { getDiscordHealth, listDiscordDeliveries, parseDiscordConfiguration, parseDiscordHealth } from './discord'
 
 const requestJson = vi.hoisted(() => vi.fn())
 
@@ -48,5 +48,21 @@ describe('Discord API parser', () => {
 
     requestJson.mockResolvedValueOnce([{ ...delivery, contentText: 'secret message' }])
     await expect(listDiscordDeliveries('Bearer owner')).rejects.toThrow('Invalid server protocol')
+  })
+
+  it('requests and strictly parses the Discord health contract', async () => {
+    const health = {
+      gateway: { state: 'Connected', errorCode: null, observedAtUtc: '2026-07-28T08:00:00Z' },
+      inbound: { state: 'Healthy', errorCode: null, observedAtUtc: '2026-07-28T08:00:01+00:00' },
+    }
+    requestJson.mockResolvedValueOnce(health)
+
+    await expect(getDiscordHealth('Bearer owner')).resolves.toEqual(health)
+    expect(requestJson).toHaveBeenCalledWith('/api/v1/integrations/discord/health', {
+      headers: { Authorization: 'Bearer owner' },
+      signal: undefined,
+    })
+    expect(() => parseDiscordHealth({ ...health, status: 'ok' })).toThrow('Invalid server protocol')
+    expect(() => parseDiscordHealth({ ...health, gateway: { ...health.gateway, state: 'Running' } })).toThrow('Invalid server protocol')
   })
 })

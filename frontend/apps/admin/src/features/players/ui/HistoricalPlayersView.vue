@@ -42,8 +42,11 @@ function loadMore() {
           <div class="flex gap-2">
             <UInput
               v-model="controller.search.value"
+              :aria-label="t('players.history.searchPlaceholder')"
+              id="historical-player-search"
               data-testid="history-search"
               icon="i-lucide-search"
+              name="historical-player-search"
               :placeholder="t('players.history.searchPlaceholder')"
             /><UButton
               color="neutral"

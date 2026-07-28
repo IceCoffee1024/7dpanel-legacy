@@ -114,10 +114,13 @@ function handleKeydown(event: KeyboardEvent) {
 
     <div class="flex min-w-0 gap-2">
       <UInput
+        :aria-label="t('console.command.placeholder')"
+        id="console-command"
         class="min-w-0 flex-1 font-mono"
         :disabled="isSubmitting"
         icon="i-lucide-terminal"
         :model-value="input"
+        name="console-command"
         :placeholder="t('console.command.placeholder')"
         size="lg"
         @keydown="handleKeydown"

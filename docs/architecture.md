@@ -312,7 +312,7 @@ GET /
 | `/api/v1/player-evidence`、`/api/v1/player-actions` | `PlayerEvidenceController`、`PlayerActionsController` | Owner-only 玩家 Profile/证据查询和类型化物品/重置动作；稳定身份、操作状态和结果未知显式保留 |
 | `/api/v1/economy`、`/api/v1/rewards`、`/api/v1/commerce`、`/api/v1/achievements`、`/api/v1/online-rewards` | 对应 Controller | Owner-only 经济账本、奖励发放、商品/兑换、成就和在线奖励管理；`daily` 规则读写与领取资格从持久策略和观察运行时消费，不把未知结果伪装为完成 |
 | `/api/v1/community` | `CommunityController` | Owner-only 传送设置、城市、好友、传送操作和投票管理；全量列表端点稳定排序，传送设置/投票配置的版本冲突由底层条件更新和 HTTP 409 表达 |
-| `/api/v1/automations`、`/api/v1/integrations/discord`、`/api/v1/access-policies/geoip` | 对应 Controller | Owner-only 固定自动化规则、Discord 配置/投递/绑定/命令、Gateway 和 interaction Ed25519 签名入口，以及 GeoIP 策略；不表示 Discord sandbox/真实往返或真实 MaxMind 已验证 |
+| `/api/v1/automations`、`/api/v1/integrations/discord`、`/api/v1/access-policies/geoip` | 对应 Controller | Owner-only 固定自动化规则、Discord 配置/投递/绑定/命令、Gateway 和 interaction Ed25519 签名入口，以及 GeoIP 策略；`GET /api/v1/integrations/discord/health` 从同一 `DiscordInboundRuntime` 返回 Gateway/Inbound 的真实状态、错误码与观察时间，运行时状态源不可用时返回 503 `discord_health_unavailable`；不表示 Discord sandbox/真实往返或真实 MaxMind 已验证 |
 | `/api/v1/world`、`/api/v1/world-operations`、`/api/v1/map-jobs`、`/api/v1/modules` | 对应 Controller | Owner-only 世界只读、持久世界/地图操作和固定功能模块；HTTP 接受或作业入队不表示危险副作用成功 |
 | `GET /` | StaticFiles | 返回 Admin `index.html` |
 | `GET/HEAD` 无扩展名、非 API 且非 `/assets` 路径 | SPA fallback + StaticFiles | 服务端返回 `index.html`；客户端是否存在该路由由 Vue Router 决定 |

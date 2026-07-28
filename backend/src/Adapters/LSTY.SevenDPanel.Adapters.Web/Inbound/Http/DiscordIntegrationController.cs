@@ -24,9 +24,13 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         private readonly IDiscordInteractionSignatureVerifier? interactionSignatureVerifier;
         private readonly IDiscordInteractionPersistenceStore? interactionStore;
         private readonly IDiscordDeferredInteractionSink? deferredInteractionSink;
+        private readonly IDiscordIntegrationHealthSource? healthSource;
 
-        public DiscordIntegrationController(IDiscordIntegrationStore store) =>
+        public DiscordIntegrationController(IDiscordIntegrationStore store)
+        {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
+            healthSource = store as IDiscordIntegrationHealthSource;
+        }
 
         public DiscordIntegrationController(
             IDiscordIntegrationStore store,
@@ -46,6 +50,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         {
             this.deferredInteractionSink = deferredInteractionSink ??
                 throw new ArgumentNullException(nameof(deferredInteractionSink));
+            healthSource = deferredInteractionSink as IDiscordIntegrationHealthSource;
         }
 
         [HttpGet]
@@ -66,6 +71,35 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     HttpStatusCode.ServiceUnavailable,
                     "discord_configuration_unavailable",
                     "Discord integration configuration is temporarily unavailable.");
+            }
+        }
+
+        [HttpGet]
+        [Route("health")]
+        [ResponseType(typeof(DiscordHealthHttpResponse))]
+        public HttpResponseMessage GetHealth()
+        {
+            if (healthSource == null)
+            {
+                return Problem(
+                    HttpStatusCode.ServiceUnavailable,
+                    "discord_health_unavailable",
+                    "Discord integration health is temporarily unavailable.");
+            }
+
+            try
+            {
+                var health = new GetDiscordHealthUseCase(store, healthSource).Execute();
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new DiscordHealthHttpResponse(health));
+            }
+            catch
+            {
+                return Problem(
+                    HttpStatusCode.ServiceUnavailable,
+                    "discord_health_unavailable",
+                    "Discord integration health is temporarily unavailable.");
             }
         }
 

@@ -74,12 +74,14 @@ function handleKeydown(event: KeyboardEvent) {
     <div class="flex min-w-0 items-end gap-2">
       <UTextarea
         :aria-label="t('gameChat.live.composer.messageAria')"
+        id="live-chat-message"
         autoresize
         class="min-w-0 flex-1"
         data-testid="chat-composer-input"
         :disabled="isSubmitting"
         :maxrows="6"
         :model-value="draft"
+        name="live-chat-message"
         :placeholder="t('gameChat.live.composer.placeholder')"
         :rows="2"
         @keydown="handleKeydown"

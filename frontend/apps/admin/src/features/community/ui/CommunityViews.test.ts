@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { readonly, shallowRef } from 'vue'
 
 import CitiesView from './CitiesView.vue'
+import TeleportSettingForm from './TeleportSettingForm.vue'
 import TeleportSettingsView from './TeleportSettingsView.vue'
 import VoteConfigurationView from './VoteConfigurationView.vue'
 
@@ -14,6 +15,8 @@ function state(value: CommunityViewState = 'idle') {
 
 function controller(overrides: Partial<CommunityController> = {}): CommunityController {
   return {
+    gameCommandConfigurationState: state(),
+    gameCommandConfiguration: readonly(shallowRef(null)),
     teleportSettingsState: state(),
     teleportSettings: readonly(shallowRef([])),
     homesState: state(),
@@ -41,6 +44,8 @@ function controller(overrides: Partial<CommunityController> = {}): CommunityCont
     settlement: readonly(shallowRef(null)),
     mutationState: readonly(shallowRef('idle')),
     mutationTarget: readonly(shallowRef(null)),
+    loadGameCommandConfiguration: vi.fn(),
+    saveGameCommandConfiguration: vi.fn(),
     loadTeleportSettings: vi.fn(),
     saveTeleportSetting: vi.fn(),
     queryHomes: vi.fn(),
@@ -68,6 +73,43 @@ const dashboardStub = {
 }
 
 describe('community views', () => {
+  it('renders home settings with bigint fee fields without mixing them into text validation', () => {
+    expect(() => mount(TeleportSettingForm, {
+      props: {
+        saving: false,
+        setting: {
+          kind: 'Home',
+          enabled: true,
+          maxHomes: 3,
+          cooldownMs: 0n,
+          globalCooldownMs: 0n,
+          denyDuringBloodMoon: true,
+          feeAmount: 0n,
+          homeExperience: {
+            setFeeAmount: 0n,
+            listCommandName: 'homes',
+            setCommandName: 'sethome',
+            deleteCommandName: 'delhome',
+            teleportCommandName: 'home',
+            noHomesMessage: 'No homes.',
+            limitMessage: 'Limit reached.',
+            setSuccessMessage: 'Saved.',
+            overwriteMessage: 'Updated.',
+            deleteSuccessMessage: 'Deleted.',
+            notFoundMessage: 'Not found.',
+            cooldownMessage: 'Cooldown active.',
+            teleportSuccessMessage: 'Teleported.',
+            setInsufficientFundsMessage: 'Insufficient funds.',
+            teleportInsufficientFundsMessage: 'Insufficient funds.',
+            bloodMoonMessage: 'Unavailable during blood moon.',
+          },
+          updatedAtUtc: '2026-07-28T00:00:00Z',
+          rowVersion: 0n,
+        },
+      },
+    })).not.toThrow()
+  })
+
   it('keeps a pending teleport operation visible as an unknown result', () => {
     const wrapper = mount(TeleportSettingsView, {
       props: {

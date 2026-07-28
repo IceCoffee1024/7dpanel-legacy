@@ -22,7 +22,7 @@ vi.mock('@nuxt/ui/composables', async (importOriginal) => {
   }
 })
 
-async function mountAppShell() {
+async function mountAppShell(initialPath = '/players') {
   localStorage.clear()
   sessionStorage.clear()
   const pinia = createPinia()
@@ -65,7 +65,7 @@ async function mountAppShell() {
       { path: '/login', component: { template: '<div />' } },
     ],
   })
-  await router.push('/players')
+  await router.push(initialPath)
   await router.isReady()
   const auth = useAuthStore(pinia)
   auth.token = '7dp_t_id.secret'
@@ -246,6 +246,56 @@ describe('appShell', () => {
       ?.find(item => item.to === '/players')
 
     expect(playersItem?.exact).toBe(true)
+  })
+
+  it('closes the command palette after navigating to the selected page', async () => {
+    const { router, wrapper } = await mountAppShell()
+    const search = wrapper.findComponent({ name: 'DashboardSearch' })
+    const searchButton = wrapper.findAll('button').find(button => button.text().includes('搜索'))
+    let finishNavigation: (() => void) | undefined
+    router.beforeEach((to) => {
+      if (to.path !== '/game-resources')
+        return true
+
+      return new Promise<boolean>((resolve) => {
+        finishNavigation = () => resolve(true)
+      })
+    })
+
+    expect(searchButton).toBeDefined()
+    await searchButton?.trigger('click')
+    await nextTick()
+    expect(search.props('open')).toBe(true)
+
+    const destination = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')]
+      .find(item => item.textContent?.includes('游戏资源'))
+    expect(destination).toBeDefined()
+    destination?.click()
+    await vi.waitFor(() => expect(finishNavigation).toBeDefined())
+
+    expect(router.currentRoute.value.fullPath).toBe('/players')
+    expect(search.props('open')).toBe(true)
+
+    finishNavigation?.()
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/game-resources')
+    expect(search.props('open')).toBe(false)
+  })
+
+  it.each([
+    ['/players/history', '玩家与世界'],
+    ['/game-chat/history', '游戏聊天'],
+    ['/backups', '服务器运维'],
+    ['/economy/accounts', '经济与奖励'],
+    ['/community/cities', '传送与投票'],
+    ['/integrations/geoip', '集成与访问策略'],
+  ])('opens the owning navigation group for a deep link to %s', async (path, groupLabel) => {
+    const { wrapper } = await mountAppShell(path)
+    const group = wrapper.findAll('button').find(button => button.text().includes(groupLabel))
+
+    expect(group).toBeDefined()
+    expect(group?.attributes('aria-expanded')).toBe('true')
   })
 
   it('keeps g-p and adds g-r navigation shortcuts', async () => {

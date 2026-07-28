@@ -3,19 +3,45 @@ import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { defineShortcuts } from '@nuxt/ui/composables'
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '../features/auth'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const { t } = useI18n()
 const sidebarOpen = shallowRef(false)
+const searchOpen = shallowRef(false)
 const canUseConsole = computed(() => auth.role === 'Owner' || auth.role === 'Admin')
 const isOwner = computed(() => auth.role === 'Owner')
 
 function closeSidebar() {
   sidebarOpen.value = false
+}
+
+function isNavigationGroupActive(items: NavigationMenuItem[]) {
+  return items.some((item) => {
+    if (typeof item.to !== 'string')
+      return false
+
+    return route.path === item.to || (!item.exact && route.path.startsWith(`${item.to}/`))
+  })
+}
+
+function createSearchItem({ label, icon, to }: NavigationMenuItem) {
+  return {
+    label,
+    icon,
+    async onSelect(event: Event) {
+      if (typeof to !== 'string')
+        return
+
+      event.preventDefault()
+      await router.push(to)
+      searchOpen.value = false
+    },
+  }
 }
 
 const gameChatNavigation = computed<NavigationMenuItem[]>(() => [
@@ -94,6 +120,7 @@ const navigation = computed<NavigationMenuItem[]>(() => [
     label: t('shell.playersAndWorld'),
     icon: 'i-lucide-earth',
     children: playerAndWorldNavigation.value,
+    defaultOpen: isNavigationGroupActive(playerAndWorldNavigation.value),
   },
   {
     label: 'API Keys',
@@ -108,6 +135,7 @@ const navigation = computed<NavigationMenuItem[]>(() => [
         label: t('gameChat.title'),
         icon: 'i-lucide-messages-square',
         children: gameChatNavigation.value,
+        defaultOpen: isNavigationGroupActive(gameChatNavigation.value),
       }]
     : []),
   ...(isOwner.value
@@ -119,16 +147,36 @@ const navigation = computed<NavigationMenuItem[]>(() => [
       }]
     : []),
   ...(isOwner.value
-    ? [{ label: t('shell.operations'), icon: 'i-lucide-server-cog', children: operationsNavigation.value }]
+    ? [{
+        label: t('shell.operations'),
+        icon: 'i-lucide-server-cog',
+        children: operationsNavigation.value,
+        defaultOpen: isNavigationGroupActive(operationsNavigation.value),
+      }]
     : []),
   ...(isOwner.value
-    ? [{ label: t('shell.economyAndRewards'), icon: 'i-lucide-coins', children: economyNavigation.value }]
+    ? [{
+        label: t('shell.economyAndRewards'),
+        icon: 'i-lucide-coins',
+        children: economyNavigation.value,
+        defaultOpen: isNavigationGroupActive(economyNavigation.value),
+      }]
     : []),
   ...(isOwner.value
-    ? [{ label: t('shell.community'), icon: 'i-lucide-users-round', children: communityNavigation.value }]
+    ? [{
+        label: t('shell.community'),
+        icon: 'i-lucide-users-round',
+        children: communityNavigation.value,
+        defaultOpen: isNavigationGroupActive(communityNavigation.value),
+      }]
     : []),
   ...(isOwner.value
-    ? [{ label: t('shell.integrations'), icon: 'i-lucide-plug-zap', children: integrationsNavigation.value }]
+    ? [{
+        label: t('shell.integrations'),
+        icon: 'i-lucide-plug-zap',
+        children: integrationsNavigation.value,
+        defaultOpen: isNavigationGroupActive(integrationsNavigation.value),
+      }]
     : []),
   ...(isOwner.value
     ? [{
@@ -174,43 +222,43 @@ const searchGroups = computed(() => [{
   id: 'navigation',
   label: t('shell.navigation'),
   items: [
-    {
+    createSearchItem({
       label: t('overview.title'),
       icon: 'i-lucide-layout-dashboard',
       to: '/',
-    },
-    ...playerAndWorldNavigation.value.map(({ label, icon, to }) => ({ label, icon, to })),
-    {
+    }),
+    ...playerAndWorldNavigation.value.map(createSearchItem),
+    createSearchItem({
       label: 'API Keys',
       icon: 'i-lucide-key-round',
       to: '/api-keys',
-    },
+    }),
     ...(isOwner.value
-      ? gameChatNavigation.value.map(({ label, icon, to }) => ({ label, icon, to }))
+      ? gameChatNavigation.value.map(createSearchItem)
       : []),
-    ...(isOwner.value ? [{ label: t('shell.auditAndEvents'), icon: 'i-lucide-shield-ellipsis', to: '/audit' }] : []),
+    ...(isOwner.value ? [createSearchItem({ label: t('shell.auditAndEvents'), icon: 'i-lucide-shield-ellipsis', to: '/audit' })] : []),
     ...(isOwner.value
-      ? operationsNavigation.value.map(({ label, icon, to }) => ({ label, icon, to }))
-      : []),
-    ...(isOwner.value
-      ? economyNavigation.value.map(({ label, icon, to }) => ({ label, icon, to }))
+      ? operationsNavigation.value.map(createSearchItem)
       : []),
     ...(isOwner.value
-      ? communityNavigation.value.map(({ label, icon, to }) => ({ label, icon, to }))
+      ? economyNavigation.value.map(createSearchItem)
       : []),
     ...(isOwner.value
-      ? integrationsNavigation.value.map(({ label, icon, to }) => ({ label, icon, to }))
+      ? communityNavigation.value.map(createSearchItem)
       : []),
-    ...(isOwner.value ? [{ label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration' }] : []),
-    { label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists' },
-    ...(isOwner.value ? [{ label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions' }] : []),
-    { label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods' },
+    ...(isOwner.value
+      ? integrationsNavigation.value.map(createSearchItem)
+      : []),
+    ...(isOwner.value ? [createSearchItem({ label: t('governance.serverConfiguration'), icon: 'i-lucide-settings-2', to: '/server-configuration' })] : []),
+    createSearchItem({ label: t('governance.accessLists'), icon: 'i-lucide-list-checks', to: '/access-lists' }),
+    ...(isOwner.value ? [createSearchItem({ label: t('governance.permissions'), icon: 'i-lucide-shield-check', to: '/permissions' })] : []),
+    createSearchItem({ label: t('governance.mods'), icon: 'i-lucide-blocks', to: '/mods' }),
     ...(canUseConsole.value
-      ? [{
+      ? [createSearchItem({
           label: t('console.title'),
           icon: 'i-lucide-terminal',
           to: '/console-logs',
-        }]
+        })]
       : []),
   ],
 }])
@@ -267,6 +315,7 @@ defineShortcuts({
         />
 
         <UNavigationMenu
+          :key="route.path"
           :collapsed="collapsed"
           :items="navigation"
           orientation="vertical"
@@ -303,6 +352,8 @@ defineShortcuts({
     </UDashboardSidebar>
 
     <UDashboardSearch
+      v-model:open="searchOpen"
+      :description="t('dashboardSearch.description')"
       :title="t('shell.search')"
       :placeholder="t('shell.searchPages')"
       :groups="searchGroups"

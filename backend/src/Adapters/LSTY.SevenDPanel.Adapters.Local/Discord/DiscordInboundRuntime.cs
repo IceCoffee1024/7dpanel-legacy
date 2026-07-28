@@ -9,6 +9,8 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
     public sealed class DiscordInboundRuntime :
         IDiscordInboundTransportSink,
         IDiscordDeferredInteractionSink,
+        IDiscordIntegrationHealthSource,
+        IDiscordGatewayHealthSink,
         IDisposable
     {
         private readonly BridgeDiscordMessageToGameUseCase discordToGame;
@@ -23,6 +25,14 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         private bool running;
         private bool disposed;
         private int activeHandlers;
+        private DiscordHealthSection gatewayHealth = new DiscordHealthSection(
+            DiscordHealthState.Unavailable,
+            "discord_gateway_not_started",
+            null);
+        private DiscordHealthSection inboundHealth = new DiscordHealthSection(
+            DiscordHealthState.Unavailable,
+            "discord_inbound_runtime_not_running",
+            null);
 
         public DiscordInboundRuntime(
             BridgeDiscordMessageToGameUseCase discordToGame,
@@ -71,6 +81,10 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 drained = new TaskCompletionSource<bool>(
                     TaskCreationOptions.RunContinuationsAsynchronously);
                 running = true;
+                inboundHealth = new DiscordHealthSection(
+                    DiscordHealthState.Healthy,
+                    null,
+                    DateTimeOffset.UtcNow);
                 return true;
             }
         }
@@ -85,6 +99,10 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             lock (sync)
             {
                 running = false;
+                inboundHealth = new DiscordHealthSection(
+                    DiscordHealthState.Unavailable,
+                    "discord_inbound_runtime_not_running",
+                    DateTimeOffset.UtcNow);
                 if (activeHandlers == 0)
                 {
                     drained.TrySetResult(true);
@@ -185,7 +203,30 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 if (disposed) return;
                 disposed = true;
                 running = false;
+                inboundHealth = new DiscordHealthSection(
+                    DiscordHealthState.Unavailable,
+                    "discord_inbound_runtime_not_running",
+                    DateTimeOffset.UtcNow);
                 if (activeHandlers == 0) drained.TrySetResult(true);
+            }
+        }
+
+        public DiscordHealthSnapshot GetHealth()
+        {
+            lock (sync) return new DiscordHealthSnapshot(gatewayHealth, inboundHealth);
+        }
+
+        public void ObserveGatewayHealth(
+            DiscordHealthState state,
+            string? errorCode,
+            DateTimeOffset observedAtUtc)
+        {
+            if (observedAtUtc.Offset != TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(observedAtUtc));
+            lock (sync)
+            {
+                if (disposed) return;
+                gatewayHealth = new DiscordHealthSection(state, errorCode, observedAtUtc);
             }
         }
 

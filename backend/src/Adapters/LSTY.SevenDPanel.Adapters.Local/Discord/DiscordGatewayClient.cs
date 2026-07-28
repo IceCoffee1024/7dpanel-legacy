@@ -564,6 +564,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         private readonly DiscordGatewayV10Session session;
         private readonly IDiscordGatewaySocketFactory socketFactory;
         private readonly IDiscordGatewayDelay delay;
+        private readonly IDiscordGatewayHealthSink? healthSink;
         private readonly object sync = new object();
         private CancellationTokenSource? runCancellation;
         private Task runTask = Task.CompletedTask;
@@ -591,6 +592,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             session = new DiscordGatewayV10Session(
                 options,
                 sink ?? throw new ArgumentNullException(nameof(sink)));
+            healthSink = sink as IDiscordGatewayHealthSink;
             this.socketFactory = socketFactory ?? throw new ArgumentNullException(nameof(socketFactory));
             this.delay = delay ?? throw new ArgumentNullException(nameof(delay));
         }
@@ -635,6 +637,9 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             if (pending.IsCompleted)
             {
                 await ObserveCompletionAsync(pending).ConfigureAwait(false);
+                ObserveHealth(
+                    DiscordHealthState.Unavailable,
+                    "discord_gateway_not_running");
                 return true;
             }
 
@@ -643,11 +648,17 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             if (completed == pending)
             {
                 await ObserveCompletionAsync(pending).ConfigureAwait(false);
+                ObserveHealth(
+                    DiscordHealthState.Unavailable,
+                    "discord_gateway_not_running");
                 return true;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
             DisposeCurrentSocket();
+            ObserveHealth(
+                DiscordHealthState.Unavailable,
+                "discord_gateway_stop_timeout");
             return false;
         }
 
@@ -660,6 +671,9 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 runCancellation?.Cancel();
             }
             DisposeCurrentSocket();
+            ObserveHealth(
+                DiscordHealthState.Unavailable,
+                "discord_gateway_not_running");
         }
 
         private async Task RunAsync(CancellationToken cancellationToken)
@@ -669,6 +683,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    ObserveHealth(DiscordHealthState.Connecting, null);
                     DiscordGatewayConnectionResult connectionResult;
                     Exception? connectionFailure = null;
                     try
@@ -701,11 +716,20 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                         connectionResult.ReconnectReason);
                     if (connectionFailure != null)
                     {
+                        ObserveHealth(
+                            DiscordHealthState.Unavailable,
+                            "discord_gateway_connection_failure");
                         PublishDiagnostic(new DiscordGatewayDiagnostic(
                             "connection_failure",
                             connectionFailure.GetType().Name,
                             reconnectAttempt,
                             reconnectDelay));
+                    }
+                    else
+                    {
+                        ObserveHealth(
+                            DiscordHealthState.Degraded,
+                            "discord_gateway_reconnecting");
                     }
                     await delay.DelayAsync(reconnectDelay, cancellationToken).ConfigureAwait(false);
                 }
@@ -773,6 +797,8 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 }
                 var result = await session.ProcessAsync(payload, cancellationToken).ConfigureAwait(false);
                 sessionEstablished |= result.SessionEstablished;
+                if (result.SessionEstablished)
+                    ObserveHealth(DiscordHealthState.Connected, null);
                 if (!string.IsNullOrEmpty(result.OutboundPayload))
                 {
                     await socket.SendTextAsync(result.OutboundPayload!, cancellationToken)
@@ -850,6 +876,9 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
                 }
             }
         }
+
+        private void ObserveHealth(DiscordHealthState state, string? errorCode) =>
+            healthSink?.ObserveGatewayHealth(state, errorCode, DateTimeOffset.UtcNow);
 
         private void SetCurrentSocket(IDiscordGatewaySocket? socket)
         {

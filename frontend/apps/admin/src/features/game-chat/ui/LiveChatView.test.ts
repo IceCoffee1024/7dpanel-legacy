@@ -198,7 +198,13 @@ describe('LiveChatView', () => {
 
     expect(wrapper.get('[data-testid="chat-gap"]').text()).toContain('部分实时消息可能缺失')
     expect(wrapper.get('[data-testid="chat-send-error"]').text()).toContain('Could not send')
-    expect(wrapper.get('[data-testid="chat-composer-input"]').element).toHaveProperty('value', 'retry this message')
+    const composer = wrapper.get('[data-testid="chat-composer-input"]')
+    expect(composer.element).toHaveProperty('value', 'retry this message')
+    expect(composer.attributes()).toMatchObject({
+      'aria-label': '聊天消息',
+      'id': 'live-chat-message',
+      'name': 'live-chat-message',
+    })
     expect(wrapper.get('[data-testid="chat-message-viewport"]').text()).not.toContain('Could not send')
     expect(wrapper.get('[data-testid="chat-message-viewport"]').text()).not.toContain('Some live messages may be missing')
   })

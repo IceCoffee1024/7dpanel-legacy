@@ -40,7 +40,10 @@ describe('GeoIpView credentials', () => {
       },
     })
     const replacement = '12345'
+    const testIpAddress = wrapper.get('#geoip-test-ip-address')
 
+    expect(testIpAddress.attributes('name')).toBe('geoip-test-ip-address')
+    expect(testIpAddress.attributes('aria-label')).toBe('geoIp.test.title')
     await wrapper.get('[data-testid="geoip-account-id-operation"]').setValue('Replace')
     await wrapper.get('[data-testid="geoip-account-id-value"]').setValue(replacement)
     await wrapper.get('[data-testid="geoip-license-key-operation"]').setValue('Clear')

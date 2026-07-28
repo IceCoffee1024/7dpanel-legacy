@@ -35,6 +35,7 @@ namespace LSTY.SevenDPanel.Tests
                 type.GetCustomAttribute<RoutePrefixAttribute>()?.Prefix);
 
             AssertRoute(type, "GetConfiguration", "", typeof(HttpGetAttribute));
+            AssertRoute(type, "GetHealth", "health", typeof(HttpGetAttribute));
             AssertRoute(type, "PutConfiguration", "", typeof(HttpPutAttribute));
             AssertRoute(type, "Test", "test", typeof(HttpPostAttribute));
             AssertRoute(type, "GetDeliveries", "deliveries", typeof(HttpGetAttribute));
@@ -102,6 +103,87 @@ namespace LSTY.SevenDPanel.Tests
             Assert.DoesNotContain("bot-token-value", json, StringComparison.Ordinal);
             Assert.DoesNotContain("webhook/secret", json, StringComparison.Ordinal);
             Assert.DoesNotContain("fingerprint", json, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task Health_get_returns_the_configured_runtime_snapshot()
+        {
+            var store = ConfiguredStore();
+            store.Settings = store.Settings! with
+            {
+                Mode = DiscordIntegrationMode.Bot,
+                BridgeDiscordToGame = true
+            };
+            store.SetSecret(new DiscordSecretValue(
+                DiscordSecretKeys.BotToken,
+                "bot-token-value",
+                "bot-fingerprint",
+                FixedNow));
+            store.Health = new DiscordHealthSnapshot(
+                new DiscordHealthSection(
+                    DiscordHealthState.Connected,
+                    null,
+                    FixedNow.AddSeconds(1)),
+                new DiscordHealthSection(
+                    DiscordHealthState.Healthy,
+                    null,
+                    FixedNow));
+            using var host = CreateHost("Owner", store);
+
+            using var response = await host.Client.GetAsync(
+                "api/v1/integrations/discord/health",
+                TestContext.Current.CancellationToken);
+            var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("Connected", (string?)payload["gateway"]!["state"]);
+            Assert.Equal("Healthy", (string?)payload["inbound"]!["state"]);
+            Assert.Null((string?)payload["gateway"]!["errorCode"]);
+            Assert.Equal(
+                FixedNow.AddSeconds(1),
+                (DateTimeOffset?)payload["gateway"]!["observedAtUtc"]);
+        }
+
+        [Fact]
+        public async Task Health_get_fails_closed_when_runtime_health_cannot_be_read()
+        {
+            var store = ConfiguredStore();
+            store.ThrowOnHealthRead = true;
+            using var host = CreateHost("Owner", store);
+
+            using var response = await host.Client.GetAsync(
+                "api/v1/integrations/discord/health",
+                TestContext.Current.CancellationToken);
+            var problem = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal("discord_health_unavailable", (string?)problem["code"]);
+        }
+
+        [Fact]
+        public async Task Health_get_does_not_mask_an_incomplete_gateway_configuration()
+        {
+            var store = ConfiguredStore();
+            store.Settings = store.Settings! with
+            {
+                Mode = DiscordIntegrationMode.Bot,
+                BridgeDiscordToGame = true
+            };
+            store.Health = new DiscordHealthSnapshot(
+                new DiscordHealthSection(DiscordHealthState.Connected, null, FixedNow),
+                new DiscordHealthSection(DiscordHealthState.Healthy, null, FixedNow));
+            using var host = CreateHost("Owner", store);
+
+            using var response = await host.Client.GetAsync(
+                "api/v1/integrations/discord/health",
+                TestContext.Current.CancellationToken);
+            var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("Unavailable", (string?)payload["gateway"]!["state"]);
+            Assert.Equal(
+                "discord_gateway_configuration_incomplete",
+                (string?)payload["gateway"]!["errorCode"]);
         }
 
         [Fact]
@@ -601,7 +683,8 @@ namespace LSTY.SevenDPanel.Tests
 
         private sealed class MemoryDiscordStore :
             IDiscordIntegrationStore,
-            IDiscordInteractionPersistenceStore
+            IDiscordInteractionPersistenceStore,
+            IDiscordIntegrationHealthSource
         {
             private readonly Dictionary<string, DiscordSecretValue> secrets =
                 new Dictionary<string, DiscordSecretValue>(StringComparer.Ordinal);
@@ -617,6 +700,20 @@ namespace LSTY.SevenDPanel.Tests
             public int RegisterInteractionCallCount { get; private set; }
             public DiscordInteraction? AcceptedInteraction { get; private set; }
             public string? AcceptedInteractionToken { get; private set; }
+            public bool ThrowOnHealthRead { get; set; }
+            public DiscordHealthSnapshot Health { get; set; } = new DiscordHealthSnapshot(
+                new DiscordHealthSection(
+                    DiscordHealthState.Unavailable,
+                    "discord_gateway_not_started",
+                    null),
+                new DiscordHealthSection(
+                    DiscordHealthState.Unavailable,
+                    "discord_inbound_runtime_not_running",
+                    null));
+
+            public DiscordHealthSnapshot GetHealth() => ThrowOnHealthRead
+                ? throw new InvalidOperationException("health unavailable")
+                : Health;
 
             public DiscordIntegrationSettings? GetSettings() => Settings;
 

@@ -42,7 +42,13 @@ describe('gameResourcesFilters', () => {
       global: { plugins: [routerPlugin(), ui] },
     })
 
-    await wrapper.get('[data-testid="game-resource-search"]').setValue('steel')
+    const search = wrapper.get('[data-testid="game-resource-search"]')
+    expect(search.attributes()).toMatchObject({
+      'aria-label': '搜索内部名称或本地化名称',
+      'id': 'game-resource-search',
+      'name': 'game-resource-search',
+    })
+    await search.setValue('steel')
     await wrapper.get('[data-testid="game-resource-refresh"]').trigger('click')
 
     expect(wrapper.emitted('search')?.slice(-1)[0]).toEqual(['steel'])

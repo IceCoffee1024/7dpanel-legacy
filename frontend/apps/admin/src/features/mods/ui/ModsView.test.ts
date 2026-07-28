@@ -65,6 +65,10 @@ beforeEach(() => useModsMock.mockReset())
 
 it('does not claim a disabled-next-start mod is unloaded now', () => {
   const wrapper = mountView()
+  expect(wrapper.get('#mods-search').attributes()).toMatchObject({
+    'aria-label': '搜索模组',
+    'name': 'mods-search',
+  })
   expect(wrapper.text()).toContain('当前已加载')
   expect(wrapper.text()).toContain('下次启动禁用')
   expect(wrapper.text()).toContain('重启后生效')

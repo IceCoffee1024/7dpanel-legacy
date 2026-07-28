@@ -176,6 +176,29 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Gateway_client_reports_connecting_connected_and_stopped_health()
+        {
+            var socket = new ScriptedGatewaySocket();
+            var sink = new RecordingInboundSink();
+            using var client = new DiscordGatewayClient(
+                Options(TimeSpan.Zero),
+                sink,
+                new QueueGatewaySocketFactory(socket),
+                new ControlledGatewayDelay());
+
+            Assert.True(client.Start());
+            Assert.Contains(sink.Health, item => item.State == DiscordHealthState.Connecting);
+            socket.Push("{\"op\":10,\"d\":{\"heartbeat_interval\":60000}}");
+            await EventuallyAsync(() => socket.SentPayloads.Any(payload => Opcode(payload) == 2));
+            socket.Push("{\"op\":0,\"s\":1,\"t\":\"READY\",\"d\":{\"session_id\":\"session-1\",\"resume_gateway_url\":\"wss://resume.discord.test\"}}");
+            await EventuallyAsync(() => sink.Health.Any(item => item.State == DiscordHealthState.Connected));
+
+            Assert.True(await client.StopAsync(TimeSpan.FromSeconds(1), CancellationToken.None));
+            Assert.Equal(DiscordHealthState.Unavailable, sink.Health.Last().State);
+            Assert.Equal("discord_gateway_not_running", sink.Health.Last().ErrorCode);
+        }
+
+        [Fact]
         public async Task Gateway_client_delays_then_resumes_or_reidentifies_after_invalid_session()
         {
             var first = new ScriptedGatewaySocket();
@@ -392,12 +415,22 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
-        private class RecordingInboundSink : IDiscordInboundTransportSink
+        private class RecordingInboundSink :
+            IDiscordInboundTransportSink,
+            IDiscordGatewayHealthSink
         {
             public List<DiscordMessageCreateEnvelope> Messages { get; } =
                 new List<DiscordMessageCreateEnvelope>();
             public List<DiscordInteractionEnvelope> Interactions { get; } =
                 new List<DiscordInteractionEnvelope>();
+            public ConcurrentQueue<DiscordHealthSection> Health { get; } =
+                new ConcurrentQueue<DiscordHealthSection>();
+
+            public void ObserveGatewayHealth(
+                DiscordHealthState state,
+                string? errorCode,
+                DateTimeOffset observedAtUtc) =>
+                Health.Enqueue(new DiscordHealthSection(state, errorCode, observedAtUtc));
 
             public virtual Task<DiscordInboundResult> HandleMessageAsync(
                 DiscordMessageCreateEnvelope message,

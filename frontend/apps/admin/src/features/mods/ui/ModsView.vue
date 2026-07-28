@@ -77,7 +77,14 @@ async function confirmChange() {
 
     <template #body>
       <div class="space-y-4">
-        <UInput v-model="search" icon="i-lucide-search" :placeholder="t('mods.search')" />
+        <UInput
+          id="mods-search"
+          v-model="search"
+          :aria-label="t('mods.search')"
+          icon="i-lucide-search"
+          name="mods-search"
+          :placeholder="t('mods.search')"
+        />
 
         <p v-if="controller.state.value === 'loading'" class="text-sm text-muted">
           {{ t('mods.loading') }}

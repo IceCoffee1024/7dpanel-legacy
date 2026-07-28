@@ -77,4 +77,16 @@ describe('useDiscord', () => {
     expect(forbidden.result.state.value).toBe('forbidden')
     expect(forbidden.result.errorCode.value).toBe('owner_required')
   })
+
+  it('keeps configuration usable when the independent health contract is unavailable', async () => {
+    api.getDiscordHealth.mockRejectedValue(new HttpError('http', 'http_error', { status: 503, problemCode: 'discord_health_unavailable' }))
+
+    const mounted = mountComposable(); apps.push(mounted.app)
+    await flushPromises()
+
+    expect(mounted.result.state.value).toBe('ready')
+    expect(mounted.result.configuration.value).toBe(configuration)
+    expect(mounted.result.health.value).toBeNull()
+    expect(mounted.result.healthState.value).toBe('unavailable')
+  })
 })

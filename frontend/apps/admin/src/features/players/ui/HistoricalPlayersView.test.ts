@@ -57,7 +57,13 @@ it('renders a searchable summary list, quality state and a load-more action', as
   expect(wrapper.text()).toContain('Ada')
   expect(wrapper.text()).toContain('存在历史缺口')
   expect(wrapper.text()).toContain('EOS_0002d12af0fe4add9c7de0fbc238d431')
-  await wrapper.get('[data-testid="history-search"]').setValue('Ada')
+  const search = wrapper.get('[data-testid="history-search"]')
+  expect(search.attributes()).toMatchObject({
+    'aria-label': '按名称或跨平台身份搜索',
+    'id': 'historical-player-search',
+    'name': 'historical-player-search',
+  })
+  await search.setValue('Ada')
   expect(controller.search.value).toBe('Ada')
   await wrapper.get('[data-testid="history-load-more"]').trigger('click')
   expect(controller.loadMore).toHaveBeenCalledOnce()

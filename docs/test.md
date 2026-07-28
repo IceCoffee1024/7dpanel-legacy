@@ -21,7 +21,7 @@ last_updated: "2026-07-28"
 | Community 游戏命令与 DI | `23/23` | 固定 handler、参数安全、真实消费者与组合根解析 | 真实玩家私发、传送、投票或经济副作用 |
 | Commerce/Rewards HTTP | `14/14` | 经济、奖励、商业管理合同的聚焦 HTTP 行为 | 并发全矩阵、真实发物品和补偿 |
 | Automation HTTP | `11/11` | 规则 CRUD、validate、dry-run 与 execution 路由 | 真实游戏 trigger 和动作副作用 |
-| Discord HTTP | `15/15` | 脱敏设置、投递、绑定和命令管理合同 | Gateway WebSocket 和 interaction 签名的 sandbox 或真实环境往返 |
+| Discord HTTP | `18/18` | 脱敏设置、投递、绑定和命令管理，以及 Gateway/Inbound health 的状态、错误码、观察时间和状态源不可用时的 503 合同 | Gateway WebSocket 和 interaction 签名的 sandbox 或真实环境往返 |
 | Discord Gateway/interaction 收口 | 持久 Slash `/status` 私密 follow-up 回归 `1/1` | 运行时组装后的持久交互使用原 interaction token 发出私密回执 | Discord Gateway WebSocket、Ed25519 请求和投递限流在 sandbox 或真实环境的往返 |
 | Admin Automation/Discord/GeoIP parser | `3/3` | 严格响应解析与敏感字段拒绝 | 最终整站 typecheck、浏览器交互和外部服务 |
 | Admin World Tools API/composable | `51` 项通过 | 世界工具 API/composable 的局部状态与请求合同 | 最终页面整合、危险世界动作和恢复 |

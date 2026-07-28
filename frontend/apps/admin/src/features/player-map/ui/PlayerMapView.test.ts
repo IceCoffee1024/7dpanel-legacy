@@ -121,7 +121,12 @@ describe('playerMapView', () => {
 
     expect(layout.classes()).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full', 'overflow-x-hidden']))
     expect(wrapper.get('[data-testid="player-map-filters"]').classes()).toEqual(expect.arrayContaining(['grid-cols-1', 'min-w-0', 'max-w-full']))
-    await wrapper.get('[data-testid="player-search"]').setValue('Ada')
+    const search = wrapper.get('[data-testid="player-search"]')
+    expect(search.attributes()).toMatchObject({ id: 'player-map-search', name: 'player-map-search' })
+    expect(wrapper.get('#player-map-player').attributes('name')).toBe('player-map-player')
+    expect(wrapper.get('#player-map-from-utc').attributes('name')).toBe('player-map-from-utc')
+    expect(wrapper.get('#player-map-to-utc').attributes('name')).toBe('player-map-to-utc')
+    await search.setValue('Ada')
     expect(wrapper.text()).toContain('轨迹由已保留的位置观察组成')
     expect(wrapper.text()).toContain('历史玩家：不可用')
     expect(wrapper.text()).not.toMatch(/删除|传送|渲染/)
@@ -132,6 +137,7 @@ describe('playerMapView', () => {
     const { controller, wrapper } = mountState('ready', true)
 
     expect(wrapper.get('[data-testid="observation-time-control"]').element).toHaveProperty('value', '0')
+    expect(wrapper.get('[data-testid="observation-time-control"]').attributes('name')).toBe('player-map-observation')
     expect(wrapper.get('[data-testid="selected-observed-at"]').text()).toContain('2026')
     await wrapper.get('[data-testid="observation-time-control"]').setValue('1')
     expect(controller.selectObservation).toHaveBeenCalledWith(2)
