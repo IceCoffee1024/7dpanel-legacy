@@ -555,7 +555,7 @@ export async function fetchCities(authorization: string, signal?: AbortSignal): 
 }
 
 export async function fetchAllCities(authorization: string, signal?: AbortSignal): Promise<readonly City[]> {
-  return collection(await requestJson<unknown>(queryPath('/api/v1/cities', { enabledOnly: false }), {
+  return collection(await requestJson<unknown>(queryPath('/api/v1/community/cities', { enabledOnly: false }), {
     headers: headers(authorization),
     expectedStatus: 200,
     signal,
@@ -604,7 +604,7 @@ export async function fetchFriendship(
 }
 
 export async function fetchFriendshipRecords(authorization: string, signal?: AbortSignal): Promise<readonly FriendshipRecord[]> {
-  return collection(await requestJson<unknown>('/api/v1/friendships/records', {
+  return collection(await requestJson<unknown>('/api/v1/community/friendships/records', {
     headers: headers(authorization),
     expectedStatus: 200,
     signal,
@@ -624,7 +624,7 @@ export async function fetchTeleportOperation(authorization: string, operationId:
 }
 
 export async function fetchTeleportOperations(authorization: string, signal?: AbortSignal): Promise<readonly TeleportOperation[]> {
-  return collection(await requestJson<unknown>('/api/v1/teleport-operations', {
+  return collection(await requestJson<unknown>('/api/v1/community/teleport-operations', {
     headers: headers(authorization),
     expectedStatus: 200,
     signal,
@@ -683,7 +683,7 @@ export async function fetchActionQueuedVoteRounds(authorization: string, signal?
 }
 
 export async function fetchVoteRounds(authorization: string, signal?: AbortSignal): Promise<readonly VoteRound[]> {
-  return collection(await requestJson<unknown>('/api/v1/vote-rounds', {
+  return collection(await requestJson<unknown>('/api/v1/community/vote-rounds', {
     headers: headers(authorization),
     expectedStatus: 200,
     signal,

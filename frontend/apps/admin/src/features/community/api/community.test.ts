@@ -241,10 +241,10 @@ describe('community transport', () => {
     ])
 
     expect(vi.mocked(requestJson).mock.calls.map(call => call[0])).toEqual([
-      '/api/v1/cities?enabledOnly=false',
-      '/api/v1/friendships/records',
-      '/api/v1/teleport-operations',
-      '/api/v1/vote-rounds',
+      '/api/v1/community/cities?enabledOnly=false',
+      '/api/v1/community/friendships/records',
+      '/api/v1/community/teleport-operations',
+      '/api/v1/community/vote-rounds',
       '/api/v1/community/vote-rounds?actionQueuedOnly=true',
     ])
   })
