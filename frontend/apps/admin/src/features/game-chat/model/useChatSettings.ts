@@ -17,6 +17,9 @@ const defaultSettings: ChatSettings = Object.freeze({
   globalServerName: null,
   whisperServerName: null,
   commandPrefixes: Object.freeze(['/']) as string[],
+  allowNoPrefix: false,
+  commandParameterSeparator: ' ',
+  hideRegisteredCommandGlobalMessages: true,
   excludeCommandsFromHistory: true,
   historyRetentionDays: 0,
 })

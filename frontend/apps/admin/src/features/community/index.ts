@@ -6,6 +6,10 @@ export type { CommunityController } from './model/useCommunity'
 export type {
   City,
   CityInput,
+  CommunityGameCommandConfiguration,
+  CommunityGameCommandConfigurationInput,
+  CommunityGameCommandId,
+  CommunityGameCommandSetting,
   TeleportSettings,
   TeleportSettingsInput,
   VoteConfiguration,

@@ -23,6 +23,8 @@ function state(value: CommunityViewState = 'idle') {
 
 function controller(): CommunityController {
   return {
+    gameCommandConfigurationState: state(),
+    gameCommandConfiguration: readonly(shallowRef(null)),
     teleportSettingsState: state(),
     teleportSettings: readonly(shallowRef([])),
     homesState: state(),
@@ -50,6 +52,8 @@ function controller(): CommunityController {
     settlement: readonly(shallowRef(null)),
     mutationState: readonly(shallowRef('idle')),
     mutationTarget: readonly(shallowRef(null)),
+    loadGameCommandConfiguration: vi.fn().mockResolvedValue(undefined),
+    saveGameCommandConfiguration: vi.fn(),
     loadTeleportSettings: vi.fn().mockResolvedValue(undefined),
     saveTeleportSetting: vi.fn(),
     queryHomes: vi.fn(),

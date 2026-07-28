@@ -1,10 +1,90 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Application.Community;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
+    public sealed class GameChatCommandHttpResponse
+    {
+        public GameChatCommandHttpResponse(GameChatCommandDescriptor command)
+        {
+            if (command == null) throw new ArgumentNullException(nameof(command));
+            CommandId = command.CommandId;
+            Name = command.Name;
+            Aliases = command.Aliases.ToArray();
+            IsEnabled = command.IsEnabled;
+        }
+
+        public string CommandId { get; }
+        public string Name { get; }
+        public IReadOnlyList<string> Aliases { get; }
+        public bool IsEnabled { get; }
+    }
+
+    public sealed class CommunityGameCommandConfigurationHttpResponse
+    {
+        public CommunityGameCommandConfigurationHttpResponse(
+            CommunityGameCommandConfiguration configuration)
+        {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            Commands = configuration.Commands
+                .Select(command => new CommunityGameCommandSettingHttpModel(command))
+                .ToArray();
+            UpdatedAtUtc = configuration.UpdatedAtUtc.UtcDateTime;
+            RowVersion = configuration.RowVersion;
+        }
+
+        public IReadOnlyList<CommunityGameCommandSettingHttpModel> Commands { get; }
+        public DateTime UpdatedAtUtc { get; }
+        public long RowVersion { get; }
+    }
+
+    public sealed class CommunityGameCommandConfigurationUpsertHttpRequest
+    {
+        public CommunityGameCommandSettingHttpModel[]? Commands { get; set; }
+        public long ExpectedRowVersion { get; set; }
+
+        internal CommunityGameCommandConfiguration ToDomain(DateTimeOffset updatedAtUtc) =>
+            new CommunityGameCommandConfiguration(
+                (Commands ?? throw new ArgumentException("Commands are required."))
+                    .Select(command => command.ToDomain()),
+                updatedAtUtc,
+                ExpectedRowVersion);
+    }
+
+    public sealed class CommunityGameCommandSettingHttpModel
+    {
+        public CommunityGameCommandSettingHttpModel()
+        {
+        }
+
+        internal CommunityGameCommandSettingHttpModel(CommunityGameCommandSetting setting)
+        {
+            CommandId = setting.CommandId.ToString();
+            Name = setting.Name;
+            Aliases = setting.Aliases.ToArray();
+        }
+
+        public string? CommandId { get; set; }
+        public string? Name { get; set; }
+        public string[]? Aliases { get; set; }
+
+        internal CommunityGameCommandSetting ToDomain()
+        {
+            if (!Enum.TryParse(CommandId, true, out CommunityGameCommandId commandId) ||
+                !Enum.IsDefined(typeof(CommunityGameCommandId), commandId))
+            {
+                throw new ArgumentException("The Community command ID is invalid.");
+            }
+            return new CommunityGameCommandSetting(
+                commandId,
+                Name!,
+                Aliases ?? throw new ArgumentException("Aliases are required."));
+        }
+    }
+
     public sealed class CommunityWorldPositionHttpModel
     {
         public CommunityWorldPositionHttpModel()

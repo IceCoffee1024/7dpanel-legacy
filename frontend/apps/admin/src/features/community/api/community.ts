@@ -4,12 +4,35 @@ export const TELEPORT_KINDS = ['Home', 'City', 'Friend', 'Return', 'Admin'] as c
 export const TELEPORT_OPERATION_STATES = ['Reserved', 'Dispatching', 'PendingReconciliation', 'Completed', 'Failed', 'Refunded'] as const
 export const VOTE_KINDS = ['Kick', 'Restart'] as const
 export const VOTE_ROUND_STATES = ['Open', 'Passed', 'Rejected', 'Expired', 'Cancelled', 'ActionQueued', 'ActionSucceeded', 'ActionFailed', 'ActionResultUnknown'] as const
+export const COMMUNITY_GAME_COMMAND_IDS = [
+  'Balance', 'Pay', 'MoneyTop', 'Daily', 'Shop', 'Buy', 'Redeem',
+  'Homes', 'SetHome', 'DeleteHome', 'Home', 'Cities', 'City',
+  'TeleportAsk', 'TeleportAccept', 'TeleportReject', 'Back',
+  'VoteKick', 'VoteRestart',
+] as const
 
 export type TeleportKind = typeof TELEPORT_KINDS[number]
 export type TeleportOperationState = typeof TELEPORT_OPERATION_STATES[number]
 export type VoteKind = typeof VOTE_KINDS[number]
 export type VoteRoundState = typeof VOTE_ROUND_STATES[number]
 export type VoteSettlementStatus = 'NotDue' | 'Settled' | 'AlreadySettled'
+export type CommunityGameCommandId = typeof COMMUNITY_GAME_COMMAND_IDS[number]
+
+export interface CommunityGameCommandSetting {
+  readonly commandId: CommunityGameCommandId
+  readonly name: string
+  readonly aliases: readonly string[]
+}
+
+export interface CommunityGameCommandConfiguration {
+  readonly commands: readonly CommunityGameCommandSetting[]
+  readonly updatedAtUtc: string
+  readonly rowVersion: bigint
+}
+
+export interface CommunityGameCommandConfigurationInput {
+  readonly commands: readonly CommunityGameCommandSetting[]
+}
 
 export interface WorldPosition {
   readonly worldId: string
@@ -198,6 +221,8 @@ const operationKeys = ['operationId', 'kind', 'crossplatformId', 'targetCrosspla
 const voteConfigurationKeys = ['configurationId', 'kind', 'enabled', 'durationMs', 'thresholdPercent', 'minimumParticipants', 'initiatorMinimumOnlineMs', 'participantMinimumOnlineMs', 'initiatorCooldownMs', 'targetCooldownMs', 'globalCooldownMs', 'mutualExclusionScope', 'allowVoteChange', 'updatedAtUtc', 'rowVersion'] as const
 const voteRoundKeys = ['roundId', 'configurationId', 'kind', 'state', 'initiatorCrossplatformId', 'targetCrossplatformId', 'scopeKey', 'eligibleCount', 'thresholdPercent', 'minimumParticipants', 'allowVoteChange', 'actionJobId', 'actionOperationId', 'correlationId', 'openedAtUtc', 'expiresAtUtc', 'settledAtUtc', 'actionCompletedAtUtc', 'rowVersion'] as const
 const voteSettlementKeys = ['status', 'round', 'participantCount', 'yesCount', 'noCount', 'wasSettled'] as const
+const gameCommandConfigurationKeys = ['commands', 'updatedAtUtc', 'rowVersion'] as const
+const gameCommandSettingKeys = ['commandId', 'name', 'aliases'] as const
 
 function invalid(): never {
   throw new Error('Invalid community response')
@@ -354,6 +379,28 @@ export function parseTeleportSettings(value: unknown): TeleportSettings {
     denyDuringBloodMoon: bool(source.denyDuringBloodMoon),
     feeAmount: long(source.feeAmount),
     homeExperience,
+    updatedAtUtc: utc(source.updatedAtUtc),
+    rowVersion: long(source.rowVersion),
+  })
+}
+
+function parseGameCommandSetting(value: unknown): CommunityGameCommandSetting {
+  const source = record(value, gameCommandSettingKeys)
+  return Object.freeze({
+    commandId: enumValue(source.commandId, COMMUNITY_GAME_COMMAND_IDS),
+    name: text(source.name),
+    aliases: collection(source.aliases, item => text(item)),
+  })
+}
+
+export function parseGameCommandConfiguration(value: unknown): CommunityGameCommandConfiguration {
+  const source = record(value, gameCommandConfigurationKeys)
+  const commands = collection(source.commands, parseGameCommandSetting)
+  if (commands.length !== COMMUNITY_GAME_COMMAND_IDS.length
+    || new Set(commands.map(command => command.commandId)).size !== COMMUNITY_GAME_COMMAND_IDS.length)
+    return invalid()
+  return Object.freeze({
+    commands,
     updatedAtUtc: utc(source.updatedAtUtc),
     rowVersion: long(source.rowVersion),
   })
@@ -553,6 +600,39 @@ export async function fetchTeleportSettings(authorization: string, signal?: Abor
     || new Set(settings.map(value => value.kind)).size !== TELEPORT_KINDS.length)
     return invalid()
   return settings
+}
+
+export async function fetchGameCommandConfiguration(
+  authorization: string,
+  signal?: AbortSignal,
+): Promise<CommunityGameCommandConfiguration> {
+  return parseGameCommandConfiguration(await requestJson<unknown>('/api/v1/community/game-command-configuration', {
+    headers: headers(authorization),
+    expectedStatus: 200,
+    signal,
+  }))
+}
+
+export async function updateGameCommandConfiguration(
+  authorization: string,
+  current: CommunityGameCommandConfiguration,
+  input: CommunityGameCommandConfigurationInput,
+  signal?: AbortSignal,
+): Promise<CommunityGameCommandConfiguration> {
+  const response = await requestJson<unknown>('/api/v1/community/game-command-configuration', {
+    method: 'PUT',
+    headers: headers(authorization, true),
+    body: JSON.stringify({
+      commands: input.commands,
+      expectedRowVersion: wireInteger(current.rowVersion),
+    }),
+    expectedStatus: 200,
+    signal,
+  })
+  const authoritative = parseGameCommandConfiguration(response)
+  if (authoritative.rowVersion <= current.rowVersion)
+    return invalid()
+  return authoritative
 }
 
 export async function updateTeleportSetting(

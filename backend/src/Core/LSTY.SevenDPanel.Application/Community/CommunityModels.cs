@@ -171,10 +171,10 @@ namespace LSTY.SevenDPanel.Application.Community
             var commands = new[] { ListCommandName, SetCommandName, DeleteCommandName, TeleportCommandName };
             if (commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() != commands.Length)
                 throw new ArgumentException("Home command names must be unique.");
-            ValidateCommand(ListCommandName, CommunityGameCommandId.Homes);
-            ValidateCommand(SetCommandName, CommunityGameCommandId.SetHome);
-            ValidateCommand(DeleteCommandName, CommunityGameCommandId.DeleteHome);
-            ValidateCommand(TeleportCommandName, CommunityGameCommandId.Home);
+            ValidateCommand(ListCommandName);
+            ValidateCommand(SetCommandName);
+            ValidateCommand(DeleteCommandName);
+            ValidateCommand(TeleportCommandName);
             NoHomesMessage = Require(noHomesMessage, nameof(noHomesMessage), true);
             LimitMessage = Require(limitMessage, nameof(limitMessage), true);
             SetSuccessMessage = Require(setSuccessMessage, nameof(setSuccessMessage), true);
@@ -214,12 +214,9 @@ namespace LSTY.SevenDPanel.Application.Community
             return normalized;
         }
 
-        private static void ValidateCommand(string value, CommunityGameCommandId expected)
+        private static void ValidateCommand(string value)
         {
             if (string.Equals(value, "help", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("A home command name conflicts with another registered command.");
-            var existing = CommunityGameCommandDirectory.Find(value);
-            if (existing != null && existing.Id != expected)
                 throw new ArgumentException("A home command name conflicts with another registered command.");
         }
     }

@@ -276,6 +276,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<SqliteCommunityStore>();
                 services.AddSingleton<ICommunityStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteCommunityStore>());
+                services.AddSingleton<ICommunityGameCommandConfigurationStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteCommunityStore>());
                 services.AddSingleton<ITeleportFriendRequestStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteCommunityStore>());
                 services.AddSingleton<SqliteChargedTeleportOperationStore>();
@@ -505,6 +507,9 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<SqliteChatOperationAuditTrail>();
                 services.AddSingleton<IChatOperationAuditTrail>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteChatOperationAuditTrail>());
+                services.AddSingleton<SqliteGameChatCommandAuditTrail>();
+                services.AddSingleton<IGameChatCommandAuditTrail>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteGameChatCommandAuditTrail>());
                 services.AddSingleton<SqliteChatMuteStore>();
                 services.AddSingleton<IChatMuteStore>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteChatMuteStore>());
@@ -526,9 +531,14 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     log));
                 services.AddSingleton<ChatHistoryWriteService>();
                 services.AddSingleton<ColoredChatRenderer>();
-                services.AddSingleton(_ => new HelpGameChatCommandHandler(() => true));
+                services.AddSingleton(serviceProvider => new HelpGameChatCommandHandler(
+                    () => true,
+                    () => serviceProvider.GetRequiredService<GameChatCommandCatalog>().Commands));
                 services.AddSingleton(serviceProvider => new GameChatCommandCatalog(
                     CreateGameChatCommandHandlers(serviceProvider)));
+                services.AddSingleton(serviceProvider => new GameChatCommandRegistrationService(
+                    serviceProvider.GetRequiredService<GameChatCommandCatalog>(),
+                    () => CreateGameChatCommandHandlers(serviceProvider)));
                 services.AddSingleton<SevenDaysGameChatCommandReplySender>();
                 services.AddSingleton(serviceProvider => new SevenDaysChatMessageCoordinator(
                     serviceProvider.GetRequiredService<ChatRuntimeState>(),
@@ -539,7 +549,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<GameChatCommandCatalog>(),
                     serviceProvider.GetRequiredService<SevenDaysGameChatCommandReplySender>(),
                     serviceProvider.GetRequiredService<IAutomationTriggerIngress>(),
-                    serviceProvider.GetRequiredService<BridgeGameChatToDiscordUseCase>()));
+                    serviceProvider.GetRequiredService<BridgeGameChatToDiscordUseCase>(),
+                    serviceProvider.GetRequiredService<IGameChatCommandAuditTrail>()));
                 services.AddSingleton<SevenDaysChatMessageSender>();
                 services.AddSingleton<IChatMessageSender>(serviceProvider =>
                     serviceProvider.GetRequiredService<SevenDaysChatMessageSender>());
@@ -1056,8 +1067,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
             };
             handlers.AddRange(CommunityGameChatCommandHandlerSet.Create(
                 serviceProvider.GetRequiredService<CommunityGameCommandRouter>(),
-                serviceProvider.GetRequiredService<ICommunityStore>()
-                    .GetTeleportSettings(TeleportKind.Home).HomeExperience));
+                serviceProvider.GetRequiredService<ICommunityGameCommandConfigurationStore>()
+                    .GetGameCommandConfiguration()));
             return handlers;
         }
 

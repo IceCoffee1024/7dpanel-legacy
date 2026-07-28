@@ -47,6 +47,19 @@ last_updated: "2026-07-28"
 
 上述代码边界已有聚焦自动化证据，但真实 `v3.0.1-b4` 中的字段分类、广播顺序、第三方聊天 Mod 冲突、关服排空，以及桌面/窄屏浏览器主路径仍待人工验收，详见[测试策略](test.md#游戏聊天完整切片)。
 
+### 聊天命令动态配置与热更新的证据边界
+
+当前实现以[第四波设计规格](superpowers/specs/2026-07-26-legacy-parity-economy-community-design.md#动态命令配置与原子目录重建)为变更记录：
+
+- `GameChatCommandCatalog` 持有不可变活动快照，`Replace` 先完整构建名称/别名索引，再通过一次原子交换发布；冲突时旧快照保持不变。`help`、`GET /api/v1/community/game-commands` 和消息路由读取同一快照，清单返回稳定命令 ID、当前名称、别名和启用状态。
+- `017_CommunityGameCommandConfiguration.sql` 和 `CommunityGameCommandConfiguration` 持久化并校验 19 个 Community 命令的名称与别名，按 `OrdinalIgnoreCase` 保证包括保留词 `help` 在内的全局唯一性。`GET/PUT /api/v1/community/game-command-configuration` 与 Admin Community 页面提供 Owner 配置入口；私人家旧入口和聚合配置在同一 SQLite 事务内双向同步。
+- `GameChatCommandRegistrationService` 在聚合配置或私人家配置保存后从 SQLite 重新组装全部类型化消费者并发布新快照，因此后续消息无需重启即可使用新目录。SQLite 事务与内存交换不是一个跨介质事务；极少数“数据库提交成功但目录重建异常”会返回失败并保留旧活动快照，需由后续保存或进程重启重新装载，不能宣称已实现跨介质原子提交。
+- `018_ChatCommandParsingOptions.sql`、聊天设置 API 和 Admin 页面提供 `AllowNoPrefix`、单字符参数分隔符及已登记命令全局消息隐藏选项。无前缀消息只有首词命中活动名称或别名才进入命令处理，其他消息继续原版聊天；登记命令至多执行一次。
+- `SqliteGameChatCommandAuditTrail` 把命令能力 ID、实际调用名称、稳定玩家身份、时间和结果写入既有 `chat_operation_audit`，继续由 `unified_audit_projection` 统一查询，不新增重复审计表，也不复制正文、参数或兑换码。审计失败只记录日志并 fail-open，不改变聊天或命令结果。
+- `discordbind` 不属于本次游戏内命令目录或热更新范围；Discord 绑定保持第五波专用边界。
+
+当前聚焦证据和未执行的真实游戏边界见[测试策略](test.md#聊天命令动态配置与热更新对齐)。
+
 ### 证据基础第一波
 
 第一波把 `CAP-01`、`CAP-05` 和 `CAP-07` 的底层证据链实现为当前项目边界内的完整切片，没有以目标蓝图或旧项目源码作为当前实现证据：
@@ -398,6 +411,7 @@ GET /
 
 - 第一波代码和聚焦自动化已经覆盖运行指标、游戏事件/gap、统一审计、禁言/到期、`help`、DI/OWIN/OpenAPI 和 Admin 页面；后端 Release 聚合已有 `29` 项失败，Admin 全量 ESLint 仍有既有积压。2026-07-27 Admin 全量 Vitest `128/128` 个文件、`874/874` 项通过且 typecheck、生产构建通过，但 teardown/外网资源/worker 噪声尚未治理，不能作为稳定发布门禁；真实 `v3.0.1-b4` 与浏览器 E2E 仍未形成当前证据。精确结果与已接受测试基础设施缺口见[测试策略](test.md#已知缺口)。
 - 游戏聊天完整代码切片已实现，SQLite 历史 gap 聚焦语义、运行时 OpenAPI 快照和生成客户端已有自动化证据；仍需在真实 `v3.0.1-b4` 进程验证 `ModEvents.ChatMessage` 字段、处理器顺序、替换消息重入抑制、`StopHandlersAndVanilla` 单次广播、命令绕过、关服排空以及与其他聊天 Mod 的冲突。全量 lint/build、浏览器 E2E 和 Git 基线式 OpenAPI 漂移门禁尚未执行；自动化不能替代真实游戏或浏览器边界证据。
+- 聊天命令动态配置、原子目录重建、保存后热更新、`AllowNoPrefix`、参数分隔符、同源命令清单和统一聊天命令审计已形成可编译纵向切片；当前证据限于产品编译、目录/SQLite 聚焦测试、OpenAPI 快照和 Admin typecheck，真实 `v3.0.1-b4`、浏览器 E2E、审计故障注入及跨介质提交异常恢复仍未执行。
 
 - `GameStartDone` readiness 已进入每连接 Welcome 和一次 `game-ready` 事件，但尚无可重复查询的认证服务器状态端点；就绪前 `503` 和写请求 draining 拒绝仍是目标设计。
 - Owner 踢出链路已有 Application、SQLite、SevenDays、Katana 和 Admin 自动化，但尚未在 Windows `v3.0.1-b4` 真实进程验证拒绝原因、约 0.5 秒延迟断开、在线列表变化与 SQLite 审计一致性。31 字段 observation 已由自动化确认当前响应合同，历史发布物和 Owner 浏览器手工查看只覆盖当时较小字段集；真实进程仍未验证全部 `SavePlayerData` 字段来源、权限矩阵、断开后的 unavailable 转换或统计单位。关服竞态、帧预算、指标和 Linux 主线程证据仍缺失，不能从自动化、浏览器查看或只读 `version` 证据推导真实状态变更验收已经完成。

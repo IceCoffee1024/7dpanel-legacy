@@ -8,7 +8,10 @@ using Microsoft.Data.Sqlite;
 
 namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
 {
-    public sealed class SqliteCommunityStore : ICommunityStore, ITeleportFriendRequestStore
+    public sealed class SqliteCommunityStore :
+        ICommunityStore,
+        ICommunityGameCommandConfigurationStore,
+        ITeleportFriendRequestStore
     {
         private const string SettingsSelect = @"
             SELECT teleport_kind AS Kind, enabled AS Enabled, max_homes AS MaxHomes,
@@ -82,10 +85,74 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                    row_version AS RowVersion
             FROM teleport_operations";
 
+        private const string GameCommandTokenSelect = @"
+            SELECT token AS Token, command_id AS CommandId,
+                   is_primary AS IsPrimary, sort_order AS SortOrder
+            FROM community_game_command_tokens";
+
         private readonly SqliteConnectionFactory connectionFactory;
 
         public SqliteCommunityStore(SqliteConnectionFactory connectionFactory) =>
             this.connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+
+        public CommunityGameCommandConfiguration GetGameCommandConfiguration()
+        {
+            using var connection = connectionFactory.Open();
+            return ReadGameCommandConfiguration(connection, null);
+        }
+
+        public CommunityGameCommandConfiguration SaveGameCommandConfiguration(
+            CommunityGameCommandConfiguration configuration)
+        {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            using var connection = connectionFactory.Open();
+            using var transaction = connection.BeginTransaction(deferred: false);
+            var current = ReadGameCommandConfiguration(connection, transaction);
+            if (connection.Execute(
+                    @"UPDATE community_game_command_configurations
+                      SET updated_at_utc = @UpdatedAtUtc, row_version = row_version + 1
+                      WHERE configuration_id = 1 AND row_version = @ExpectedRowVersion;",
+                    new
+                    {
+                        UpdatedAtUtc = configuration.UpdatedAtUtc.ToUnixTimeMilliseconds(),
+                        ExpectedRowVersion = configuration.RowVersion
+                    },
+                    transaction) != 1)
+            {
+                throw new CommunityConflictException();
+            }
+
+            ReplaceGameCommandTokens(connection, transaction, configuration);
+            if (HomeCommandNamesChanged(current, configuration))
+            {
+                var home = HomeExperience(configuration);
+                if (connection.Execute(
+                        @"UPDATE teleport_settings
+                          SET list_command_name = @ListCommandName,
+                              set_command_name = @SetCommandName,
+                              delete_command_name = @DeleteCommandName,
+                              teleport_command_name = @TeleportCommandName,
+                              updated_at_utc = @UpdatedAtUtc,
+                              row_version = row_version + 1
+                          WHERE teleport_kind = 'Home';",
+                        new
+                        {
+                            home.ListCommandName,
+                            home.SetCommandName,
+                            home.DeleteCommandName,
+                            home.TeleportCommandName,
+                            UpdatedAtUtc = configuration.UpdatedAtUtc.ToUnixTimeMilliseconds()
+                        },
+                        transaction) != 1)
+                {
+                    throw new CommunityNotFoundException();
+                }
+            }
+
+            var stored = ReadGameCommandConfiguration(connection, transaction);
+            transaction.Commit();
+            return stored;
+        }
 
         public TeleportSettings GetTeleportSettings(TeleportKind kind)
         {
@@ -102,6 +169,16 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             if (settings == null) throw new ArgumentNullException(nameof(settings));
             using var connection = connectionFactory.Open();
             using var transaction = connection.BeginTransaction(deferred: false);
+            CommunityGameCommandConfiguration? currentCommands = null;
+            CommunityGameCommandConfiguration? updatedCommands = null;
+            if (settings.Kind == TeleportKind.Home)
+            {
+                currentCommands = ReadGameCommandConfiguration(connection, transaction);
+                updatedCommands = WithHomeExperience(
+                    currentCommands,
+                    settings.HomeExperience!,
+                    settings.UpdatedAtUtc);
+            }
             var parameters = new
             {
                 Kind = settings.Kind.ToString(),
@@ -190,6 +267,24 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 SettingsSelect + " WHERE teleport_kind = @Kind;",
                 new { Kind = settings.Kind.ToString() },
                 transaction);
+            if (currentCommands != null && updatedCommands != null &&
+                HomeCommandNamesChanged(currentCommands, updatedCommands))
+            {
+                if (connection.Execute(
+                        @"UPDATE community_game_command_configurations
+                          SET updated_at_utc = @UpdatedAtUtc, row_version = row_version + 1
+                          WHERE configuration_id = 1 AND row_version = @ExpectedRowVersion;",
+                        new
+                        {
+                            UpdatedAtUtc = settings.UpdatedAtUtc.ToUnixTimeMilliseconds(),
+                            ExpectedRowVersion = currentCommands.RowVersion
+                        },
+                        transaction) != 1)
+                {
+                    throw new CommunityConflictException();
+                }
+                ReplaceGameCommandTokens(connection, transaction, updatedCommands);
+            }
             transaction.Commit();
             return ToSettings(stored);
         }
@@ -1212,6 +1307,115 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 : (second, first);
         }
 
+        private static CommunityGameCommandConfiguration ReadGameCommandConfiguration(
+            SqliteConnection connection,
+            SqliteTransaction? transaction)
+        {
+            var metadata = connection.QuerySingleOrDefault<GameCommandConfigurationRow>(
+                @"SELECT updated_at_utc AS UpdatedAtUtc, row_version AS RowVersion
+                  FROM community_game_command_configurations WHERE configuration_id = 1;",
+                transaction: transaction) ?? throw new CommunityNotFoundException();
+            var tokens = connection.Query<GameCommandTokenRow>(
+                    GameCommandTokenSelect + " ORDER BY command_id ASC, is_primary DESC, sort_order ASC;",
+                    transaction: transaction)
+                .ToArray();
+            var settings = Enum.GetValues(typeof(CommunityGameCommandId))
+                .Cast<CommunityGameCommandId>()
+                .Select(commandId =>
+                {
+                    var rows = tokens
+                        .Where(row => string.Equals(
+                            row.CommandId,
+                            commandId.ToString(),
+                            StringComparison.Ordinal))
+                        .ToArray();
+                    var primary = rows.Single(row => row.IsPrimary == 1);
+                    return new CommunityGameCommandSetting(
+                        commandId,
+                        primary.Token,
+                        rows.Where(row => row.IsPrimary == 0)
+                            .OrderBy(row => row.SortOrder)
+                            .Select(row => row.Token));
+                })
+                .ToArray();
+            return new CommunityGameCommandConfiguration(
+                settings,
+                DateTimeOffset.FromUnixTimeMilliseconds(metadata.UpdatedAtUtc),
+                metadata.RowVersion);
+        }
+
+        private static void ReplaceGameCommandTokens(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            CommunityGameCommandConfiguration configuration)
+        {
+            connection.Execute("DELETE FROM community_game_command_tokens;", transaction: transaction);
+            var rows = configuration.Commands.SelectMany(command =>
+                new[]
+                {
+                    new
+                    {
+                        Token = command.Name,
+                        CommandId = command.CommandId.ToString(),
+                        IsPrimary = 1,
+                        SortOrder = 0
+                    }
+                }.Concat(command.Aliases.Select((alias, index) => new
+                {
+                    Token = alias,
+                    CommandId = command.CommandId.ToString(),
+                    IsPrimary = 0,
+                    SortOrder = index
+                }))).ToArray();
+            connection.Execute(
+                @"INSERT INTO community_game_command_tokens
+                      (token, command_id, is_primary, sort_order)
+                  VALUES (@Token, @CommandId, @IsPrimary, @SortOrder);",
+                rows,
+                transaction);
+        }
+
+        private static CommunityGameCommandConfiguration WithHomeExperience(
+            CommunityGameCommandConfiguration current,
+            HomeTeleportExperience home,
+            DateTimeOffset updatedAtUtc) =>
+            new CommunityGameCommandConfiguration(
+                current.Commands.Select(command => command.CommandId switch
+                {
+                    CommunityGameCommandId.Homes => Setting(command.CommandId, home.ListCommandName),
+                    CommunityGameCommandId.SetHome => Setting(command.CommandId, home.SetCommandName),
+                    CommunityGameCommandId.DeleteHome => Setting(command.CommandId, home.DeleteCommandName),
+                    CommunityGameCommandId.Home => Setting(command.CommandId, home.TeleportCommandName),
+                    _ => command
+                }),
+                updatedAtUtc,
+                current.RowVersion);
+
+        private static CommunityGameCommandSetting Setting(
+            CommunityGameCommandId commandId,
+            string name) =>
+            new CommunityGameCommandSetting(commandId, name, Array.Empty<string>());
+
+        private static HomeCommandNames HomeExperience(
+            CommunityGameCommandConfiguration configuration) =>
+            new HomeCommandNames(
+                configuration.Get(CommunityGameCommandId.Homes).Name,
+                configuration.Get(CommunityGameCommandId.SetHome).Name,
+                configuration.Get(CommunityGameCommandId.DeleteHome).Name,
+                configuration.Get(CommunityGameCommandId.Home).Name);
+
+        private static bool HomeCommandNamesChanged(
+            CommunityGameCommandConfiguration first,
+            CommunityGameCommandConfiguration second)
+        {
+            var firstHome = HomeExperience(first);
+            var secondHome = HomeExperience(second);
+            return !string.Equals(firstHome.ListCommandName, secondHome.ListCommandName, StringComparison.Ordinal) ||
+                   !string.Equals(firstHome.SetCommandName, secondHome.SetCommandName, StringComparison.Ordinal) ||
+                   !string.Equals(firstHome.DeleteCommandName, secondHome.DeleteCommandName, StringComparison.Ordinal) ||
+                   !string.Equals(firstHome.TeleportCommandName, secondHome.TeleportCommandName, StringComparison.Ordinal);
+        }
+
         private static long ToMilliseconds(TimeSpan value) => checked((long)value.TotalMilliseconds);
 
         private static T Parse<T>(string value) where T : struct, Enum =>
@@ -1272,6 +1476,40 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public string BloodMoonMessage { get; set; } = string.Empty;
             public long UpdatedAtUtc { get; set; }
             public long RowVersion { get; set; }
+        }
+
+        private sealed class GameCommandConfigurationRow
+        {
+            public long UpdatedAtUtc { get; set; }
+            public long RowVersion { get; set; }
+        }
+
+        private sealed class GameCommandTokenRow
+        {
+            public string Token { get; set; } = string.Empty;
+            public string CommandId { get; set; } = string.Empty;
+            public int IsPrimary { get; set; }
+            public int SortOrder { get; set; }
+        }
+
+        private sealed class HomeCommandNames
+        {
+            public HomeCommandNames(
+                string listCommandName,
+                string setCommandName,
+                string deleteCommandName,
+                string teleportCommandName)
+            {
+                ListCommandName = listCommandName;
+                SetCommandName = setCommandName;
+                DeleteCommandName = deleteCommandName;
+                TeleportCommandName = teleportCommandName;
+            }
+
+            public string ListCommandName { get; }
+            public string SetCommandName { get; }
+            public string DeleteCommandName { get; }
+            public string TeleportCommandName { get; }
         }
 
         private sealed class HomeRow

@@ -2,6 +2,8 @@ import type { DeepReadonly, Ref, ShallowRef } from 'vue'
 import type {
   City,
   CityInput,
+  CommunityGameCommandConfiguration,
+  CommunityGameCommandConfigurationInput,
   FriendshipRecord,
   FriendshipStatus,
   PlayerHome,
@@ -23,6 +25,7 @@ import * as api from '../api/community'
 export type CommunityViewState = 'idle' | 'loading' | 'empty' | 'ready' | 'stale' | 'unavailable' | 'forbidden'
 export type CommunityMutationState = 'idle' | 'saving' | 'confirmed' | 'failed' | 'unavailable' | 'forbidden'
 export type CommunityMutationTarget =
+  | { readonly kind: 'game-command-configuration', readonly id: string }
   | { readonly kind: 'teleport-setting', readonly id: string }
   | { readonly kind: 'city', readonly id: string }
   | { readonly kind: 'vote-configuration', readonly id: string }
@@ -39,6 +42,8 @@ export interface UseCommunityOptions {
   readonly auth?: CommunityAuth
   readonly fetchTeleportSettings?: typeof api.fetchTeleportSettings
   readonly updateTeleportSetting?: typeof api.updateTeleportSetting
+  readonly fetchGameCommandConfiguration?: typeof api.fetchGameCommandConfiguration
+  readonly updateGameCommandConfiguration?: typeof api.updateGameCommandConfiguration
   readonly fetchHomes?: typeof api.fetchHomes
   readonly fetchCities?: typeof api.fetchCities
   readonly fetchAllCities?: typeof api.fetchAllCities
@@ -56,6 +61,8 @@ export interface UseCommunityOptions {
 }
 
 export interface CommunityController {
+  readonly gameCommandConfigurationState: DeepReadonly<ShallowRef<CommunityViewState>>
+  readonly gameCommandConfiguration: DeepReadonly<ShallowRef<CommunityGameCommandConfiguration | null>>
   readonly teleportSettingsState: DeepReadonly<ShallowRef<CommunityViewState>>
   readonly teleportSettings: DeepReadonly<ShallowRef<readonly TeleportSettings[]>>
   readonly homesState: DeepReadonly<ShallowRef<CommunityViewState>>
@@ -83,6 +90,8 @@ export interface CommunityController {
   readonly settlement: DeepReadonly<ShallowRef<VoteSettlement | null>>
   readonly mutationState: DeepReadonly<ShallowRef<CommunityMutationState>>
   readonly mutationTarget: DeepReadonly<ShallowRef<CommunityMutationTarget | null>>
+  loadGameCommandConfiguration: () => Promise<void>
+  saveGameCommandConfiguration: (current: CommunityGameCommandConfiguration, input: CommunityGameCommandConfigurationInput) => Promise<boolean>
   loadTeleportSettings: () => Promise<void>
   saveTeleportSetting: (current: TeleportSettings, input: TeleportSettingsInput) => Promise<boolean>
   queryHomes: (crossplatformId: string) => Promise<void>
@@ -104,7 +113,7 @@ export interface CommunityController {
 }
 
 type QueryResource = 'homes' | 'friendship' | 'teleport-operation' | 'vote-round'
-type ResourceKey = 'teleport-settings' | 'friendship-records' | 'teleport-operations' | 'cities' | 'all-cities' | 'vote-configurations' | 'vote-rounds' | 'all-vote-rounds' | `${QueryResource}:${string}`
+type ResourceKey = 'game-command-configuration' | 'teleport-settings' | 'friendship-records' | 'teleport-operations' | 'cities' | 'all-cities' | 'vote-configurations' | 'vote-rounds' | 'all-vote-rounds' | `${QueryResource}:${string}`
 
 function stateAfterFailure(error: unknown, auth: CommunityAuth, hasData: boolean): CommunityViewState {
   if (error instanceof HttpError && error.status === 401) {
@@ -130,6 +139,8 @@ function mutationStateAfterFailure(error: unknown, auth: CommunityAuth): Communi
 
 export function useCommunity(options: UseCommunityOptions = {}): CommunityController {
   const auth = options.auth ?? useAuthStore()
+  const gameCommandConfigurationState = shallowRef<CommunityViewState>('idle')
+  const gameCommandConfiguration = shallowRef<CommunityGameCommandConfiguration | null>(null)
   const teleportSettingsState = shallowRef<CommunityViewState>('idle')
   const teleportSettings = shallowRef<readonly TeleportSettings[]>(Object.freeze([]))
   const homesState = shallowRef<CommunityViewState>('idle')
@@ -223,6 +234,19 @@ export function useCommunity(options: UseCommunityOptions = {}): CommunityContro
     }
     currentQueryKeys[resource] = key
     return load(key, state, hasData, request, apply)
+  }
+
+  function loadGameCommandConfiguration(): Promise<void> {
+    return load(
+      'game-command-configuration',
+      gameCommandConfigurationState,
+      () => gameCommandConfiguration.value !== null,
+      options.fetchGameCommandConfiguration ?? api.fetchGameCommandConfiguration,
+      (value) => {
+        gameCommandConfiguration.value = value
+        return 1
+      },
+    )
   }
 
   function loadTeleportSettings(): Promise<void> {
@@ -432,6 +456,20 @@ export function useCommunity(options: UseCommunityOptions = {}): CommunityContro
     }
   }
 
+  function saveGameCommandConfiguration(
+    current: CommunityGameCommandConfiguration,
+    input: CommunityGameCommandConfigurationInput,
+  ): Promise<boolean> {
+    return mutate(
+      { kind: 'game-command-configuration', id: 'community' },
+      (token, signal) => (options.updateGameCommandConfiguration ?? api.updateGameCommandConfiguration)(token, current, input, signal),
+      (authoritative) => {
+        gameCommandConfiguration.value = authoritative
+        gameCommandConfigurationState.value = 'ready'
+      },
+    )
+  }
+
   function saveTeleportSetting(current: TeleportSettings, input: TeleportSettingsInput): Promise<boolean> {
     return mutate(
       { kind: 'teleport-setting', id: current.kind },
@@ -502,6 +540,8 @@ export function useCommunity(options: UseCommunityOptions = {}): CommunityContro
   }
 
   return {
+    gameCommandConfigurationState: readonly(gameCommandConfigurationState),
+    gameCommandConfiguration: readonly(gameCommandConfiguration),
     teleportSettingsState: readonly(teleportSettingsState),
     teleportSettings: readonly(teleportSettings),
     homesState: readonly(homesState),
@@ -529,6 +569,8 @@ export function useCommunity(options: UseCommunityOptions = {}): CommunityContro
     settlement: readonly(settlement),
     mutationState: readonly(mutationState),
     mutationTarget: readonly(mutationTarget),
+    loadGameCommandConfiguration,
+    saveGameCommandConfiguration,
     loadTeleportSettings,
     saveTeleportSetting,
     queryHomes,

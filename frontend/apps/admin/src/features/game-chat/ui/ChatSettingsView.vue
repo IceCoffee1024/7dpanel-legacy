@@ -4,7 +4,10 @@ import type { ChatSettings } from '../model/gameChatManagement'
 import { reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { normalizeCommandPrefixes } from '../model/gameChatManagement'
+import {
+  isValidCommandParameterSeparator,
+  normalizeCommandPrefixes,
+} from '../model/gameChatManagement'
 
 const props = defineProps<{
   settings: ChatSettings
@@ -25,11 +28,14 @@ const draft = reactive({
   globalServerName: '',
   whisperServerName: '',
   commandPrefixes: [] as string[],
+  allowNoPrefix: false,
+  commandParameterSeparator: ' ',
+  hideRegisteredCommandGlobalMessages: true,
   excludeCommandsFromHistory: true,
   historyRetentionDays: 0,
 })
 let syncing = false
-const validationError = shallowRef<'commandPrefixes' | 'historyRetentionDays' | null>(null)
+const validationError = shallowRef<'commandPrefixes' | 'commandParameterSeparator' | 'historyRetentionDays' | null>(null)
 
 watch(() => props.settings, (settings) => {
   syncing = true
@@ -56,6 +62,10 @@ function submit() {
     validationError.value = 'commandPrefixes'
     return
   }
+  if (!isValidCommandParameterSeparator(draft.commandParameterSeparator, prefixes)) {
+    validationError.value = 'commandParameterSeparator'
+    return
+  }
   if (!Number.isInteger(draft.historyRetentionDays)
     || draft.historyRetentionDays < 0
     || draft.historyRetentionDays > 3650) {
@@ -69,6 +79,9 @@ function submit() {
     globalServerName: draft.globalServerName.trim() || null,
     whisperServerName: draft.whisperServerName.trim() || null,
     commandPrefixes: prefixes,
+    allowNoPrefix: draft.allowNoPrefix,
+    commandParameterSeparator: draft.commandParameterSeparator,
+    hideRegisteredCommandGlobalMessages: draft.hideRegisteredCommandGlobalMessages,
     excludeCommandsFromHistory: draft.excludeCommandsFromHistory,
     historyRetentionDays: draft.historyRetentionDays,
   })
@@ -115,6 +128,32 @@ function submit() {
             v-model="draft.commandPrefixes"
             data-testid="command-prefixes"
             class="w-full"
+            :disabled="isSaving || isResetting"
+          />
+        </UFormField>
+        <UFormField :label="t('gameChat.settings.fields.allowNoPrefix')" name="allowNoPrefix">
+          <UCheckbox
+            v-model="draft.allowNoPrefix"
+            :label="t('gameChat.settings.fields.allowNoPrefixDescription')"
+            :disabled="isSaving || isResetting"
+          />
+        </UFormField>
+        <UFormField
+          :label="t('gameChat.settings.fields.commandParameterSeparator')"
+          name="commandParameterSeparator"
+          :description="t('gameChat.settings.fields.commandParameterSeparatorDescription')"
+        >
+          <UInput
+            v-model="draft.commandParameterSeparator"
+            data-testid="command-parameter-separator"
+            class="w-full md:w-64"
+            :disabled="isSaving || isResetting"
+          />
+        </UFormField>
+        <UFormField :label="t('gameChat.settings.fields.hideRegisteredCommandGlobalMessages')" name="hideRegisteredCommandGlobalMessages">
+          <UCheckbox
+            v-model="draft.hideRegisteredCommandGlobalMessages"
+            :label="t('gameChat.settings.fields.hideRegisteredCommandGlobalMessagesDescription')"
             :disabled="isSaving || isResetting"
           />
         </UFormField>

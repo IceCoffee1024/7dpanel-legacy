@@ -22,6 +22,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
         private readonly SevenDaysGameChatCommandReplySender? replySender;
         private readonly IAutomationTriggerIngress? automationIngress;
         private readonly BridgeGameChatToDiscordUseCase? discordBridge;
+        private readonly IGameChatCommandAuditTrail? commandAudit;
         private readonly Action<string> log;
 
         public SevenDaysChatMessageCoordinator(
@@ -33,7 +34,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
             GameChatCommandCatalog? commands = null,
             SevenDaysGameChatCommandReplySender? replySender = null,
             IAutomationTriggerIngress? automationIngress = null,
-            BridgeGameChatToDiscordUseCase? discordBridge = null)
+            BridgeGameChatToDiscordUseCase? discordBridge = null,
+            IGameChatCommandAuditTrail? commandAudit = null)
             : this(
                 runtimeState,
                 renderer,
@@ -45,7 +47,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
                 commands,
                 replySender,
                 automationIngress,
-                discordBridge)
+                discordBridge,
+                commandAudit)
         {
         }
 
@@ -59,7 +62,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
             GameChatCommandCatalog? commands = null,
             SevenDaysGameChatCommandReplySender? replySender = null,
             IAutomationTriggerIngress? automationIngress = null,
-            BridgeGameChatToDiscordUseCase? discordBridge = null)
+            BridgeGameChatToDiscordUseCase? discordBridge = null,
+            IGameChatCommandAuditTrail? commandAudit = null)
         {
             this.runtimeState = runtimeState ?? throw new ArgumentNullException(nameof(runtimeState));
             this.renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
@@ -71,6 +75,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
             this.replySender = replySender;
             this.automationIngress = automationIngress;
             this.discordBridge = discordBridge;
+            this.commandAudit = commandAudit;
         }
 
         public ModEvents.EModEventResult Handle(ref ModEvents.SChatMessageData data)
@@ -89,7 +94,20 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
                     : (string.IsNullOrWhiteSpace(data.MainName) ? "Unknown" : data.MainName);
                 var channel = MapChannel(data.ChatType);
                 var recipients = data.RecipientEntityIds == null ? null : data.RecipientEntityIds.ToArray();
-                var isCommand = IsCommand(channel, messageText, snapshot.ChatSettings.CommandPrefixes);
+                var isPrefixedCommand = IsPrefixedCommand(
+                    channel,
+                    messageText,
+                    snapshot.ChatSettings.CommandPrefixes);
+                var parsedCommand = channel == ChatChannel.Global
+                    ? ParseCommand(
+                        messageText,
+                        isPrefixedCommand,
+                        snapshot.ChatSettings.CommandParameterSeparator)
+                    : null;
+                var isCommand = isPrefixedCommand
+                    || (snapshot.ChatSettings.AllowNoPrefix
+                        && parsedCommand != null
+                        && IsRegisteredCommand(parsedCommand.Name));
                 var occurredAtUtc = DateTimeOffset.UtcNow;
 
                 var retained = liveWindow.AppendChatMessage(
@@ -116,8 +134,12 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
                     crossplatformId,
                     messageText);
 
-                if (isCommand && TryHandleCommand(data.ClientInfo, crossplatformId, senderName, messageText))
+                if (isCommand && parsedCommand != null
+                    && TryHandleCommand(data.ClientInfo, crossplatformId, senderName, parsedCommand)
+                    && snapshot.ChatSettings.HideRegisteredCommandGlobalMessages)
+                {
                     return ModEvents.EModEventResult.StopHandlersAndVanilla;
+                }
 
                 if (sourceKind == ChatSourceKind.Player && channel == ChatChannel.Global &&
                     !string.IsNullOrWhiteSpace(crossplatformId) &&
@@ -182,7 +204,10 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
             return "Server";
         }
 
-        private static bool IsCommand(ChatChannel channel, string message, IReadOnlyList<string> prefixes)
+        private static bool IsPrefixedCommand(
+            ChatChannel channel,
+            string message,
+            IReadOnlyList<string> prefixes)
         {
             if (channel != ChatChannel.Global || string.IsNullOrEmpty(message)) return false;
             foreach (var prefix in prefixes)
@@ -190,24 +215,96 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
             return false;
         }
 
+        private static ParsedCommand? ParseCommand(
+            string message,
+            bool hasPrefix,
+            string parameterSeparator)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return null;
+            var commandText = hasPrefix ? message.Substring(1) : message;
+            string[] tokens;
+            if (string.Equals(parameterSeparator, " ", StringComparison.Ordinal))
+            {
+                tokens = commandText.Trim().Split(
+                    (char[]?)null,
+                    StringSplitOptions.RemoveEmptyEntries);
+            }
+            else
+            {
+                tokens = commandText.Split(
+                        new[] { parameterSeparator[0] },
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(token => token.Trim())
+                    .Where(token => token.Length > 0)
+                    .ToArray();
+            }
+
+            if (tokens.Length == 0) return null;
+            return new ParsedCommand(tokens[0], tokens.Skip(1).ToArray());
+        }
+
+        private bool IsRegisteredCommand(string commandName)
+        {
+            if (commands == null) return false;
+            return commands.Commands.Any(command =>
+                string.Equals(command.Name, commandName, StringComparison.OrdinalIgnoreCase)
+                || command.Aliases.Any(alias =>
+                    string.Equals(alias, commandName, StringComparison.OrdinalIgnoreCase)));
+        }
+
         private bool TryHandleCommand(
             ClientInfo? clientInfo,
             string? crossplatformId,
             string displayName,
-            string message)
+            ParsedCommand command)
         {
             if (commands == null || replySender == null || clientInfo == null || string.IsNullOrWhiteSpace(crossplatformId))
                 return false;
-            var tokens = message.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-            if (tokens.Length == 0) return false;
-            var commandName = tokens[0].Substring(1);
-            if (commandName.Length == 0) return false;
-            var result = commands.Handle(commandName,
-                new GameChatCommandContext(crossplatformId!, displayName, tokens.Skip(1)));
+            var result = commands.Handle(command.Name,
+                new GameChatCommandContext(crossplatformId!, displayName, command.Arguments));
+            TryAuditCommand(crossplatformId!, command.Name, result);
             return DeliverHandledCommand(
                 result,
                 messages => replySender.Send(clientInfo, messages),
                 log);
+        }
+
+        private void TryAuditCommand(
+            string crossplatformId,
+            string invokedName,
+            GameChatCommandResult result)
+        {
+            if (commandAudit == null || commands == null) return;
+            var descriptor = commands.Commands.FirstOrDefault(command =>
+                string.Equals(command.Name, invokedName, StringComparison.OrdinalIgnoreCase)
+                || command.Aliases.Any(alias =>
+                    string.Equals(alias, invokedName, StringComparison.OrdinalIgnoreCase)));
+            try
+            {
+                commandAudit.Record(new GameChatCommandAuditEntry(
+                    "player:" + crossplatformId,
+                    descriptor?.CommandId ?? "Unknown",
+                    invokedName,
+                    result.Code ?? "chat.command.unhandled",
+                    result.IsHandled,
+                    DateTimeOffset.UtcNow));
+            }
+            catch (Exception exception)
+            {
+                try { log("Chat command audit failed: " + exception.GetType().Name + "."); } catch { }
+            }
+        }
+
+        private sealed class ParsedCommand
+        {
+            public ParsedCommand(string name, IReadOnlyList<string> arguments)
+            {
+                Name = name;
+                Arguments = arguments;
+            }
+
+            public string Name { get; }
+            public IReadOnlyList<string> Arguments { get; }
         }
 
         private void TryWriteAutomationTrigger(

@@ -121,7 +121,7 @@ namespace LSTY.SevenDPanel.Application.Chat
                 actor,
                 ChatOperationKind.SaveSettings,
                 null,
-                new[] { "isEnabled", "globalServerName", "whisperServerName", "commandPrefixes", "excludeCommandsFromHistory", "historyRetentionDays" },
+                new[] { "isEnabled", "globalServerName", "whisperServerName", "commandPrefixes", "allowNoPrefix", "commandParameterSeparator", "hideRegisteredCommandGlobalMessages", "excludeCommandsFromHistory", "historyRetentionDays" },
                 utcClock()));
             return saved;
         }

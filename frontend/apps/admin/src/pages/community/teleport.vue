@@ -8,7 +8,12 @@
 </route>
 
 <script setup lang="ts">
-import type { TeleportSettings, TeleportSettingsInput } from '../../features/community'
+import type {
+  CommunityGameCommandConfiguration,
+  CommunityGameCommandConfigurationInput,
+  TeleportSettings,
+  TeleportSettingsInput,
+} from '../../features/community'
 
 import { onMounted, onUnmounted } from 'vue'
 
@@ -18,14 +23,24 @@ const controller = useCommunity()
 
 function refresh() {
   void Promise.all([
+    controller.loadGameCommandConfiguration(),
     controller.loadTeleportSettings(),
     controller.loadFriendshipRecords(),
     controller.loadTeleportOperations(),
   ])
 }
 
-function save(current: TeleportSettings, input: TeleportSettingsInput) {
-  void controller.saveTeleportSetting(current, input)
+async function save(current: TeleportSettings, input: TeleportSettingsInput) {
+  if (await controller.saveTeleportSetting(current, input) && current.kind === 'Home')
+    await controller.loadGameCommandConfiguration()
+}
+
+async function saveGameCommands(
+  current: CommunityGameCommandConfiguration,
+  input: CommunityGameCommandConfigurationInput,
+) {
+  if (await controller.saveGameCommandConfiguration(current, input))
+    await controller.loadTeleportSettings()
 }
 
 function queryHomes(crossplatformId: string) {
@@ -53,5 +68,6 @@ onUnmounted(controller.dispose)
     @query-operation="queryOperation"
     @refresh="refresh"
     @save="save"
+    @save-game-commands="saveGameCommands"
   />
 </template>

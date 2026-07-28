@@ -3975,6 +3975,98 @@
         ]
       }
     },
+    "/api/v1/community/game-commands": {
+      "get": {
+        "tags": [
+          "Community"
+        ],
+        "operationId": "Community_GetGameCommands",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GameChatCommandHttpResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/community/game-command-configuration": {
+      "get": {
+        "tags": [
+          "Community"
+        ],
+        "operationId": "Community_GetGameCommandConfiguration",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityGameCommandConfigurationHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Community"
+        ],
+        "operationId": "Community_PutGameCommandConfiguration",
+        "requestBody": {
+          "x-name": "body",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/CommunityGameCommandConfigurationUpsertHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityGameCommandConfigurationHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/community/teleport-settings": {
       "get": {
         "tags": [
@@ -14095,6 +14187,9 @@
         "required": [
           "isEnabled",
           "commandPrefixes",
+          "allowNoPrefix",
+          "commandParameterSeparator",
+          "hideRegisteredCommandGlobalMessages",
           "excludeCommandsFromHistory",
           "historyRetentionDays"
         ],
@@ -14115,6 +14210,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "allowNoPrefix": {
+            "type": "boolean"
+          },
+          "commandParameterSeparator": {
+            "type": "string"
+          },
+          "hideRegisteredCommandGlobalMessages": {
+            "type": "boolean"
           },
           "excludeCommandsFromHistory": {
             "type": "boolean"
@@ -15029,6 +15133,85 @@
           "expectedWorldId": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "GameChatCommandHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "commandId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isEnabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommunityGameCommandConfigurationHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityGameCommandSettingHttpModel"
+            }
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rowVersion": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CommunityGameCommandSettingHttpModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "aliases": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CommunityGameCommandConfigurationUpsertHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "commands": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/CommunityGameCommandSettingHttpModel"
+            }
+          },
+          "expectedRowVersion": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

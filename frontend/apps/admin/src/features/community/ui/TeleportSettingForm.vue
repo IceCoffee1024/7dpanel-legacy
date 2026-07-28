@@ -119,7 +119,7 @@ function submit() {
           v-for="field in commandFields"
           :key="field[0]"
           :label="t(`community.teleportSetting.${field[1]}`)"
-          :description="t('community.teleportSetting.commandRestartHint')"
+          :description="t('community.teleportSetting.commandImmediateHint')"
           required
         >
           <UInput v-model="homeExperience[field[0]]" class="w-full" />

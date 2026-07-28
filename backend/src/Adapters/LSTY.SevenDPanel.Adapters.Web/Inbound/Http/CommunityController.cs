@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
+using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Application.Community;
 using LSTY.SevenDPanel.Domain.Community;
 using LSTY.SevenDPanel.Hosting;
@@ -44,6 +45,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         private readonly SettleVoteUseCase settleVote;
         private readonly DispatchVoteActionUseCase dispatchVote;
         private readonly IPanelRuntimeStatus runtimeStatus;
+        private readonly GameChatCommandRegistrationService gameChatCommands;
 
         public CommunityController(
             ICommunityStore store,
@@ -56,7 +58,8 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             CastVoteUseCase castVote,
             SettleVoteUseCase settleVote,
             DispatchVoteActionUseCase dispatchVote,
-            IPanelRuntimeStatus runtimeStatus)
+            IPanelRuntimeStatus runtimeStatus,
+            GameChatCommandRegistrationService gameChatCommands)
         {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.voteStore = voteStore ?? throw new ArgumentNullException(nameof(voteStore));
@@ -69,6 +72,78 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             this.settleVote = settleVote ?? throw new ArgumentNullException(nameof(settleVote));
             this.dispatchVote = dispatchVote ?? throw new ArgumentNullException(nameof(dispatchVote));
             this.runtimeStatus = runtimeStatus ?? throw new ArgumentNullException(nameof(runtimeStatus));
+            this.gameChatCommands = gameChatCommands ?? throw new ArgumentNullException(nameof(gameChatCommands));
+        }
+
+        [HttpGet, Route("game-commands")]
+        [ResponseType(typeof(GameChatCommandHttpResponse[]))]
+        public HttpResponseMessage GetGameCommands() => Request.CreateResponse(
+            HttpStatusCode.OK,
+            gameChatCommands.Commands
+                .Select(command => new GameChatCommandHttpResponse(command))
+                .ToArray());
+
+        [HttpGet, Route("game-command-configuration")]
+        [ResponseType(typeof(CommunityGameCommandConfigurationHttpResponse))]
+        public HttpResponseMessage GetGameCommandConfiguration()
+        {
+            try
+            {
+                var configurationStore = GetGameCommandConfigurationStore();
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new CommunityGameCommandConfigurationHttpResponse(
+                        configurationStore.GetGameCommandConfiguration()));
+            }
+            catch (Exception exception)
+            {
+                return MapException(
+                    exception,
+                    "community_game_command_configuration_unavailable",
+                    "The Community game command configuration is unavailable.");
+            }
+        }
+
+        [HttpPut, Route("game-command-configuration")]
+        [ResponseType(typeof(CommunityGameCommandConfigurationHttpResponse))]
+        public HttpResponseMessage PutGameCommandConfiguration(
+            CommunityGameCommandConfigurationUpsertHttpRequest? body)
+        {
+            if (!ModelState.IsValid || body == null)
+                return ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);
+            if (body.ExpectedRowVersion < 0)
+            {
+                return Invalid(
+                    "invalid_community_game_command_configuration",
+                    "The Community game command configuration is invalid.");
+            }
+
+            try
+            {
+                var saved = GetGameCommandConfigurationStore()
+                    .SaveGameCommandConfiguration(body.ToDomain(UtcNow()));
+                gameChatCommands.Rebuild();
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new CommunityGameCommandConfigurationHttpResponse(saved));
+            }
+            catch (CommunityConflictException)
+            {
+                return VersionConflict();
+            }
+            catch (ArgumentException)
+            {
+                return Invalid(
+                    "invalid_community_game_command_configuration",
+                    "The Community game command configuration is invalid.");
+            }
+            catch (Exception exception)
+            {
+                return MapException(
+                    exception,
+                    "community_game_command_configuration_unavailable",
+                    "The Community game command configuration could not be saved.");
+            }
         }
 
         [HttpGet, Route("teleport-settings")]
@@ -147,6 +222,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     UtcNow(),
                     body.ExpectedRowVersion,
                     body.HomeExperience?.ToDomain()));
+                if (parsed == TeleportKind.Home) gameChatCommands.Rebuild();
                 return Request.CreateResponse(
                     HttpStatusCode.OK,
                     new TeleportSettingsHttpResponse(saved));
@@ -866,6 +942,11 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         }
 
         private static DateTimeOffset UtcNow() => DateTimeOffset.UtcNow;
+
+        private ICommunityGameCommandConfigurationStore GetGameCommandConfigurationStore() =>
+            store as ICommunityGameCommandConfigurationStore ??
+            throw new InvalidOperationException(
+                "The Community store does not support game command configuration.");
 
         private static bool HasText(string? value) => !string.IsNullOrWhiteSpace(value);
 

@@ -105,6 +105,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             GlobalServerName = settings.GlobalServerName;
             WhisperServerName = settings.WhisperServerName;
             CommandPrefixes = settings.CommandPrefixes.ToArray();
+            AllowNoPrefix = settings.AllowNoPrefix;
+            CommandParameterSeparator = settings.CommandParameterSeparator;
+            HideRegisteredCommandGlobalMessages = settings.HideRegisteredCommandGlobalMessages;
             ExcludeCommandsFromHistory = settings.ExcludeCommandsFromHistory;
             HistoryRetentionDays = settings.HistoryRetentionDays;
         }
@@ -112,6 +115,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public string? GlobalServerName { get; set; }
         public string? WhisperServerName { get; set; }
         [JsonProperty(Required = Required.Always)] public IReadOnlyList<string>? CommandPrefixes { get; set; }
+        [JsonProperty(Required = Required.Always)] public bool AllowNoPrefix { get; set; }
+        [JsonProperty(Required = Required.Always)] public string? CommandParameterSeparator { get; set; }
+        [JsonProperty(Required = Required.Always)] public bool HideRegisteredCommandGlobalMessages { get; set; }
         [JsonProperty(Required = Required.Always)] public bool ExcludeCommandsFromHistory { get; set; }
         [JsonProperty(Required = Required.Always)] public int HistoryRetentionDays { get; set; }
         internal ChatSettings ToApplication() => new ChatSettings
@@ -120,6 +126,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             GlobalServerName = GlobalServerName,
             WhisperServerName = WhisperServerName,
             CommandPrefixes = CommandPrefixes ?? Array.Empty<string>(),
+            AllowNoPrefix = AllowNoPrefix,
+            CommandParameterSeparator = CommandParameterSeparator ?? string.Empty,
+            HideRegisteredCommandGlobalMessages = HideRegisteredCommandGlobalMessages,
             ExcludeCommandsFromHistory = ExcludeCommandsFromHistory,
             HistoryRetentionDays = HistoryRetentionDays
         };

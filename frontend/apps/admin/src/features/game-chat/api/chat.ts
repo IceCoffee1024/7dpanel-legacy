@@ -8,6 +8,8 @@ import type {
 
 import * as v from 'valibot'
 
+import { isValidCommandParameterSeparator } from '../model/gameChatManagement'
+
 import {
   chatGetRecentMessagesQuery,
   chatSendGlobalMessageMutation,
@@ -102,6 +104,9 @@ const chatSettingsSchema = v.strictObject({
   globalServerName: v.nullable(v.string()),
   whisperServerName: v.nullable(v.string()),
   commandPrefixes: v.array(v.pipe(v.string(), v.length(1))),
+  allowNoPrefix: v.boolean(),
+  commandParameterSeparator: v.pipe(v.string(), v.length(1)),
+  hideRegisteredCommandGlobalMessages: v.boolean(),
   excludeCommandsFromHistory: v.boolean(),
   historyRetentionDays: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(3650)),
 })
@@ -161,6 +166,8 @@ export function parseChatHistoryPage(value: unknown): ChatHistoryPage {
 
 export function parseChatSettings(value: unknown): ChatSettings {
   const parsed = parseStrict(chatSettingsSchema, value, 'Invalid chat settings response')
+  if (!isValidCommandParameterSeparator(parsed.commandParameterSeparator, parsed.commandPrefixes))
+    throw new Error('Invalid chat settings response')
   return Object.freeze({
     ...parsed,
     commandPrefixes: Object.freeze([...parsed.commandPrefixes]) as string[],

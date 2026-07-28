@@ -991,6 +991,12 @@
         "whisperServerName": "私聊消息服务端名称",
         "commandPrefixes": "命令前缀",
         "commandPrefixesDescription": "输入一个或多个单字符前缀。",
+        "allowNoPrefix": "允许无前缀命令",
+        "allowNoPrefixDescription": "仅当首个 token 命中已注册命令或别名时才作为命令处理",
+        "commandParameterSeparator": "命令参数分隔符",
+        "commandParameterSeparatorDescription": "输入一个安全的单字符分隔符；空格表示按连续空白分隔。",
+        "hideRegisteredCommandGlobalMessages": "隐藏已注册命令的全局消息",
+        "hideRegisteredCommandGlobalMessagesDescription": "关闭后命令仍执行，同时允许原聊天消息继续广播",
         "excludeCommands": "排除命令历史",
         "excludeCommandsDescription": "命令消息不写入历史记录",
         "retentionDays": "历史保留天数",
@@ -998,6 +1004,7 @@
       },
       "validation": {
         "commandPrefixes": "每个命令前缀必须是一个非空白字符",
+        "commandParameterSeparator": "参数分隔符必须是空格或单个可打印非字母数字字符，且不能与命令前缀相同",
         "historyRetentionDays": "历史保留天数必须是 0 到 3650 之间的整数"
       },
       "save": "保存聊天设置"
@@ -1731,6 +1738,38 @@
       "destinationWorld": "目的世界",
       "destinationCoordinates": "目的坐标"
     },
+    "gameCommands": {
+      "title": "游戏聊天命令",
+      "description": "配置 Community 的 19 个聊天命令名称和别名。",
+      "subject": "游戏聊天命令配置",
+      "version": "版本 {version}",
+      "name": "命令名称",
+      "aliases": "命令别名",
+      "aliasesHint": "多个别名使用英文逗号分隔",
+      "immediateHint": "保存成功后立即生效，无需重启服务端。",
+      "save": "保存并立即生效",
+      "commandLabels": {
+        "Balance": "查询余额",
+        "Pay": "玩家转账",
+        "MoneyTop": "财富排行",
+        "Daily": "每日奖励",
+        "Shop": "商店列表",
+        "Buy": "购买商品",
+        "Redeem": "兑换码",
+        "Homes": "家园列表",
+        "SetHome": "设置家园",
+        "DeleteHome": "删除家园",
+        "Home": "传送回家",
+        "Cities": "城市列表",
+        "City": "城市传送",
+        "TeleportAsk": "请求玩家传送",
+        "TeleportAccept": "接受传送请求",
+        "TeleportReject": "拒绝传送请求",
+        "Back": "返回原位置",
+        "VoteKick": "发起踢人投票",
+        "VoteRestart": "发起重启投票"
+      }
+    },
     "teleportSetting": {
       "version": "版本 {version}",
       "maxHomes": "每名玩家最多家园数",
@@ -1742,7 +1781,7 @@
       "setCommandName": "设置家园命令",
       "deleteCommandName": "删除家园命令",
       "teleportCommandName": "回家命令",
-      "commandRestartHint": "修改命令名后重启服务端生效",
+      "commandImmediateHint": "保存成功后立即生效，无需重启服务端",
       "noHomesMessage": "没有家园提示",
       "limitMessage": "数量上限提示",
       "setSuccessMessage": "设置成功提示",

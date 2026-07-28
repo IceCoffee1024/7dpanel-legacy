@@ -1,24 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace LSTY.SevenDPanel.Application.Chat
 {
     public sealed class GameChatCommandDescriptor
     {
         public GameChatCommandDescriptor(string name, IReadOnlyList<string> aliases)
+            : this(name, name, aliases, true)
         {
+        }
+
+        public GameChatCommandDescriptor(
+            string commandId,
+            string name,
+            IReadOnlyList<string> aliases,
+            bool isEnabled)
+        {
+            CommandId = RequireName(commandId, nameof(commandId));
             Name = RequireName(name, nameof(name));
             if (aliases == null) throw new ArgumentNullException(nameof(aliases));
-            Aliases = aliases.Select(alias => RequireName(alias, nameof(aliases))).ToArray();
+            Aliases = Array.AsReadOnly(aliases.Select(alias => RequireName(alias, nameof(aliases))).ToArray());
             if (Aliases.Distinct(StringComparer.OrdinalIgnoreCase).Count() != Aliases.Count)
                 throw new ArgumentException("Command aliases must be unique.", nameof(aliases));
             if (Aliases.Contains(Name, StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException("A command alias cannot repeat its name.", nameof(aliases));
+            IsEnabled = isEnabled;
         }
 
+        public string CommandId { get; }
         public string Name { get; }
         public IReadOnlyList<string> Aliases { get; }
+        public bool IsEnabled { get; }
 
         private static string RequireName(string value, string parameterName)
         {
@@ -88,31 +102,42 @@ namespace LSTY.SevenDPanel.Application.Chat
 
     public sealed class GameChatCommandCatalog
     {
-        private readonly IReadOnlyDictionary<string, IGameChatCommandHandler> handlers;
+        private Snapshot snapshot;
 
         public GameChatCommandCatalog(IEnumerable<IGameChatCommandHandler> handlers)
         {
-            if (handlers == null) throw new ArgumentNullException(nameof(handlers));
-            var byName = new Dictionary<string, IGameChatCommandHandler>(StringComparer.OrdinalIgnoreCase);
-            var descriptors = new List<GameChatCommandDescriptor>();
-            foreach (var handler in handlers)
-            {
-                if (handler == null) throw new ArgumentException("Command handlers cannot be null.", nameof(handlers));
-                descriptors.Add(handler.Descriptor);
-                Add(byName, handler.Descriptor.Name, handler);
-                foreach (var alias in handler.Descriptor.Aliases) Add(byName, alias, handler);
-            }
-
-            this.handlers = byName;
-            Commands = descriptors.AsReadOnly();
+            snapshot = BuildSnapshot(handlers);
         }
 
-        public IReadOnlyList<GameChatCommandDescriptor> Commands { get; }
+        public IReadOnlyList<GameChatCommandDescriptor> Commands => Volatile.Read(ref snapshot).Commands;
+
+        public void Replace(IEnumerable<IGameChatCommandHandler> handlers)
+        {
+            var replacement = BuildSnapshot(handlers);
+            Interlocked.Exchange(ref snapshot, replacement);
+        }
+
+        public void Rebuild(
+            Func<IReadOnlyList<IGameChatCommandHandler>, IEnumerable<IGameChatCommandHandler>> rebuild)
+        {
+            if (rebuild == null) throw new ArgumentNullException(nameof(rebuild));
+            while (true)
+            {
+                var current = Volatile.Read(ref snapshot);
+                var replacementHandlers = rebuild(current.Handlers)
+                    ?? throw new InvalidOperationException("The command catalog rebuild returned null handlers.");
+                var replacement = BuildSnapshot(replacementHandlers);
+                if (ReferenceEquals(Interlocked.CompareExchange(ref snapshot, replacement, current), current))
+                    return;
+            }
+        }
 
         public GameChatCommandResult Handle(string commandName, GameChatCommandContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
-            if (string.IsNullOrWhiteSpace(commandName) || !handlers.TryGetValue(commandName.Trim(), out var handler))
+            var current = Volatile.Read(ref snapshot);
+            if (string.IsNullOrWhiteSpace(commandName) ||
+                !current.HandlersByName.TryGetValue(commandName.Trim(), out var handler))
                 return GameChatCommandResult.Unhandled();
             try
             {
@@ -124,6 +149,29 @@ namespace LSTY.SevenDPanel.Application.Chat
             }
         }
 
+        private static Snapshot BuildSnapshot(IEnumerable<IGameChatCommandHandler> handlers)
+        {
+            if (handlers == null) throw new ArgumentNullException(nameof(handlers));
+            var byName = new Dictionary<string, IGameChatCommandHandler>(StringComparer.OrdinalIgnoreCase);
+            var handlerList = new List<IGameChatCommandHandler>();
+            var descriptors = new List<GameChatCommandDescriptor>();
+            foreach (var handler in handlers)
+            {
+                if (handler == null) throw new ArgumentException("Command handlers cannot be null.", nameof(handlers));
+                if (handler.Descriptor == null)
+                    throw new ArgumentException("Command handler descriptors cannot be null.", nameof(handlers));
+                handlerList.Add(handler);
+                descriptors.Add(handler.Descriptor);
+                Add(byName, handler.Descriptor.Name, handler);
+                foreach (var alias in handler.Descriptor.Aliases) Add(byName, alias, handler);
+            }
+
+            return new Snapshot(
+                byName,
+                handlerList.AsReadOnly(),
+                descriptors.AsReadOnly());
+        }
+
         private static void Add(
             IDictionary<string, IGameChatCommandHandler> handlers,
             string name,
@@ -133,16 +181,38 @@ namespace LSTY.SevenDPanel.Application.Chat
                 throw new ArgumentException("Command names and aliases must be unique.", nameof(handler));
             handlers.Add(name, handler);
         }
+
+        private sealed class Snapshot
+        {
+            public Snapshot(
+                IReadOnlyDictionary<string, IGameChatCommandHandler> handlersByName,
+                IReadOnlyList<IGameChatCommandHandler> handlers,
+                IReadOnlyList<GameChatCommandDescriptor> commands)
+            {
+                HandlersByName = handlersByName;
+                Handlers = handlers;
+                Commands = commands;
+            }
+
+            public IReadOnlyDictionary<string, IGameChatCommandHandler> HandlersByName { get; }
+            public IReadOnlyList<IGameChatCommandHandler> Handlers { get; }
+            public IReadOnlyList<GameChatCommandDescriptor> Commands { get; }
+        }
     }
 
     public sealed class HelpGameChatCommandHandler : IGameChatCommandHandler
     {
         private readonly Func<bool> isAvailable;
+        private readonly Func<IReadOnlyList<GameChatCommandDescriptor>>? getCommands;
 
-        public HelpGameChatCommandHandler(Func<bool> isAvailable)
+        public HelpGameChatCommandHandler(
+            Func<bool> isAvailable,
+            Func<IReadOnlyList<GameChatCommandDescriptor>>? getCommands = null)
         {
             this.isAvailable = isAvailable ?? throw new ArgumentNullException(nameof(isAvailable));
-            Descriptor = new GameChatCommandDescriptor("help", Array.Empty<string>());
+            this.getCommands = getCommands;
+            Descriptor = new GameChatCommandDescriptor(
+                "Help", "help", Array.Empty<string>(), true);
         }
 
         public GameChatCommandDescriptor Descriptor { get; }
@@ -152,7 +222,14 @@ namespace LSTY.SevenDPanel.Application.Chat
             if (context == null) throw new ArgumentNullException(nameof(context));
             if (context.Arguments.Count != 0) return GameChatCommandResult.InvalidArguments();
             if (!isAvailable()) return GameChatCommandResult.Unavailable();
-            return GameChatCommandResult.HelpSucceeded(new[] { Descriptor.Name });
+            var commands = getCommands?.Invoke();
+            return GameChatCommandResult.HelpSucceeded(commands == null
+                ? new[] { Descriptor.Name }
+                : commands
+                    .Where(command => command.IsEnabled)
+                    .Select(command => command.Aliases.Count == 0
+                        ? command.Name
+                        : command.Name + " (" + string.Join(", ", command.Aliases) + ")"));
         }
     }
 }

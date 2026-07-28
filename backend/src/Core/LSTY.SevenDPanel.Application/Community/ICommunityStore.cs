@@ -4,6 +4,13 @@ using LSTY.SevenDPanel.Domain.Community;
 
 namespace LSTY.SevenDPanel.Application.Community
 {
+    public interface ICommunityGameCommandConfigurationStore
+    {
+        CommunityGameCommandConfiguration GetGameCommandConfiguration();
+        CommunityGameCommandConfiguration SaveGameCommandConfiguration(
+            CommunityGameCommandConfiguration configuration);
+    }
+
     public interface ICommunityStore
     {
         TeleportSettings GetTeleportSettings(TeleportKind kind);

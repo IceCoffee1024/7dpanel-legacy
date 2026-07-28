@@ -37,6 +37,9 @@ const settings = {
   globalServerName: 'Server',
   whisperServerName: null,
   commandPrefixes: ['/'],
+  allowNoPrefix: false,
+  commandParameterSeparator: ' ',
+  hideRegisteredCommandGlobalMessages: true,
   excludeCommandsFromHistory: true,
   historyRetentionDays: 30,
 }

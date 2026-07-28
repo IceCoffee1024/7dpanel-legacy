@@ -28,6 +28,9 @@ export interface ChatSettings {
   globalServerName: string | null
   whisperServerName: string | null
   commandPrefixes: string[]
+  allowNoPrefix: boolean
+  commandParameterSeparator: string
+  hideRegisteredCommandGlobalMessages: boolean
   excludeCommandsFromHistory: boolean
   historyRetentionDays: number
 }
@@ -70,6 +73,13 @@ export const chatSourceOptions: readonly ChatSourceKind[] = ['Player', 'Administ
 export const playerColorTagPermissionOptions: readonly PlayerColorTagPermission[] = ['None', 'AdminOnly', 'All']
 
 export const coloredChatTemplateVariables = ['playerName', 'playerId', 'entityId', 'chatType'] as const
+
+export function isValidCommandParameterSeparator(value: string, commandPrefixes: readonly string[]): boolean {
+  return value.length === 1
+    && !/[\p{C}\p{L}\p{N}]/u.test(value)
+    && (!/\s/u.test(value) || value === ' ')
+    && !commandPrefixes.includes(value)
+}
 
 export function createEmptyHistoryFilters(): ChatHistoryFilters {
   return {

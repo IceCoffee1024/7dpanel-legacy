@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -18,6 +19,9 @@ namespace LSTY.SevenDPanel.Application.Chat
         public string? GlobalServerName { get; init; }
         public string? WhisperServerName { get; init; }
         public required IReadOnlyList<string> CommandPrefixes { get; init; }
+        public bool AllowNoPrefix { get; init; }
+        public string CommandParameterSeparator { get; init; } = " ";
+        public bool HideRegisteredCommandGlobalMessages { get; init; } = true;
         public required bool ExcludeCommandsFromHistory { get; init; }
         public required int HistoryRetentionDays { get; init; }
     }
@@ -88,12 +92,35 @@ namespace LSTY.SevenDPanel.Application.Chat
                     prefixes.Add(prefix);
             }
 
+            var parameterSeparator = settings.CommandParameterSeparator;
+            if (parameterSeparator == null || parameterSeparator.Length != 1)
+                throw new ArgumentException("The command parameter separator must be exactly one character.", nameof(settings));
+            var separator = parameterSeparator[0];
+            var separatorCategory = char.GetUnicodeCategory(separator);
+            if (separatorCategory == UnicodeCategory.Control
+                || separatorCategory == UnicodeCategory.Format
+                || separatorCategory == UnicodeCategory.Surrogate
+                || separatorCategory == UnicodeCategory.PrivateUse
+                || separatorCategory == UnicodeCategory.OtherNotAssigned
+                || (char.IsWhiteSpace(separator) && separator != ' ')
+                || char.IsLetterOrDigit(separator))
+            {
+                throw new ArgumentException(
+                    "The command parameter separator must be a space or one printable non-alphanumeric character.",
+                    nameof(settings));
+            }
+            if (prefixes.Contains(parameterSeparator, StringComparer.Ordinal))
+                throw new ArgumentException("The command parameter separator cannot also be a command prefix.", nameof(settings));
+
             return new ChatSettings
             {
                 IsEnabled = settings.IsEnabled,
                 GlobalServerName = OptionalText(settings.GlobalServerName),
                 WhisperServerName = OptionalText(settings.WhisperServerName),
                 CommandPrefixes = prefixes.ToArray(),
+                AllowNoPrefix = settings.AllowNoPrefix,
+                CommandParameterSeparator = parameterSeparator,
+                HideRegisteredCommandGlobalMessages = settings.HideRegisteredCommandGlobalMessages,
                 ExcludeCommandsFromHistory = settings.ExcludeCommandsFromHistory,
                 HistoryRetentionDays = settings.HistoryRetentionDays
             };

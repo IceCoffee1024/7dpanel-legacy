@@ -991,6 +991,12 @@
         "whisperServerName": "Private-message server name",
         "commandPrefixes": "Command prefixes",
         "commandPrefixesDescription": "Enter one or more single-character prefixes.",
+        "allowNoPrefix": "Allow commands without a prefix",
+        "allowNoPrefixDescription": "Treat text as a command only when its first token matches a registered command or alias",
+        "commandParameterSeparator": "Command parameter separator",
+        "commandParameterSeparatorDescription": "Enter one safe separator character; a space splits on consecutive whitespace.",
+        "hideRegisteredCommandGlobalMessages": "Hide registered command global messages",
+        "hideRegisteredCommandGlobalMessagesDescription": "When disabled, commands still execute and the original chat message continues broadcasting",
         "excludeCommands": "Exclude command history",
         "excludeCommandsDescription": "Do not write command messages to chat history",
         "retentionDays": "History retention days",
@@ -998,6 +1004,7 @@
       },
       "validation": {
         "commandPrefixes": "Each command prefix must be one non-whitespace character",
+        "commandParameterSeparator": "The separator must be a space or one printable non-alphanumeric character and cannot match a command prefix",
         "historyRetentionDays": "History retention days must be an integer from 0 to 3650"
       },
       "save": "Save chat settings"
@@ -1731,6 +1738,38 @@
       "destinationWorld": "Destination world",
       "destinationCoordinates": "Destination coordinates"
     },
+    "gameCommands": {
+      "title": "Game chat commands",
+      "description": "Configure names and aliases for all 19 Community commands.",
+      "subject": "game chat command configuration",
+      "version": "Version {version}",
+      "name": "Command name",
+      "aliases": "Command aliases",
+      "aliasesHint": "Separate multiple aliases with commas",
+      "immediateHint": "Changes take effect immediately after saving; no server restart is required.",
+      "save": "Save and apply now",
+      "commandLabels": {
+        "Balance": "Balance",
+        "Pay": "Player payment",
+        "MoneyTop": "Money leaderboard",
+        "Daily": "Daily reward",
+        "Shop": "Shop list",
+        "Buy": "Buy product",
+        "Redeem": "Redeem code",
+        "Homes": "Home list",
+        "SetHome": "Set home",
+        "DeleteHome": "Delete home",
+        "Home": "Teleport home",
+        "Cities": "City list",
+        "City": "City teleport",
+        "TeleportAsk": "Request player teleport",
+        "TeleportAccept": "Accept teleport request",
+        "TeleportReject": "Reject teleport request",
+        "Back": "Return to previous position",
+        "VoteKick": "Start kick vote",
+        "VoteRestart": "Start restart vote"
+      }
+    },
     "teleportSetting": {
       "version": "Version {version}",
       "maxHomes": "Maximum homes per player",
@@ -1742,7 +1781,7 @@
       "setCommandName": "Set home command",
       "deleteCommandName": "Delete home command",
       "teleportCommandName": "Teleport home command",
-      "commandRestartHint": "Restart the server after changing command names",
+      "commandImmediateHint": "Changes take effect immediately after saving; no server restart is required",
       "noHomesMessage": "No homes message",
       "limitMessage": "Home limit message",
       "setSuccessMessage": "Set success message",

@@ -148,6 +148,9 @@ const chatSettings = {
   globalServerName: 'Server',
   whisperServerName: 'Operator',
   commandPrefixes: ['/'],
+  allowNoPrefix: false,
+  commandParameterSeparator: ' ',
+  hideRegisteredCommandGlobalMessages: true,
   excludeCommandsFromHistory: true,
   historyRetentionDays: 30,
 }

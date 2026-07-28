@@ -11,13 +11,15 @@ last_updated: "2026-07-28"
 
 **对应规格：** [旧版本功能对齐第四波：经济、奖励、传送与社区投票设计规格](../specs/2026-07-26-legacy-parity-economy-community-design.md)
 
-**目标：** 交付服务器本地双重记账、幂等奖励和商业流程、家/城市/好友/返回点传送及踢人/重启投票，使玩家只通过登记式游戏命令消费能力，`Owner` 只通过专用 Admin API 和页面管理配置与核对异常状态。
+**目标：** 交付服务器本地双重记账、幂等奖励和商业流程、家/城市/好友/返回点传送及踢人/重启投票，使玩家只通过登记式游戏命令消费能力；同时落实已批准的旧版对齐项 1、2、3、5，让 `Owner` 配置经济/传送/投票命令名称与别名、`AllowNoPrefix` 和参数分隔符，保存后原子热更新命令目录、命令清单与统一聊天命令审计。`discordbind` 不在本计划范围。
 
-**架构：** Domain 只承载账本平衡、grant/购买/传送/投票状态转换等纯不变量；Application 以稳定 `crossplatformId` 协调能力专属原子 Store、第三波类型化物品动作、第二波持久作业和 SevenDays 类型化传送。SQLite 以 `011_EconomyCommunity.sql` 建立本波基础写模型，并以向前 migration 承载已发布库的兼容扩展；Web 只提供 Owner-only 管理合同；Admin 通过生成客户端、严格 parser、URL keyset 和非乐观状态组合页面。
+**架构：** Domain 只承载账本平衡、grant/购买/传送/投票状态转换等纯不变量；Application 以稳定 `crossplatformId` 协调能力专属原子 Store、第三波类型化物品动作、第二波持久作业和 SevenDays 类型化传送。聊天命令以稳定能力标识绑定实际消费者，完整候选目录校验成功后一次原子替换不可变活动快照；路由、命令清单和聊天命令审计读取同一快照。SQLite 以 `011_EconomyCommunity.sql` 建立本波基础写模型，并以适用的向前 migration 承载已发布库的兼容扩展；Web 只提供 Owner-only 管理合同；Admin 通过生成客户端、严格 parser、URL keyset 和非乐观状态组合页面。
 
 **技术栈：** C# `11.0`、.NET Framework `4.8`、Microsoft.Data.Sqlite/Dapper/DbUp、ASP.NET Web API 2/Katana、Microsoft.Extensions.DependencyInjection、xUnit、Vue `3.5` Composition API、TypeScript `6.0`、Vue Router、Pinia Colada、Valibot、Nuxt UI `4`、Vitest `4.1`、Hey API、pnpm `11`。
 
 ## 当前执行记录（2026-07-27）
+
+- 2026-07-28 已批准追加“聊天命令动态配置与热更新对齐”：范围固定为旧版对齐项 1、2、3、5，包括原子命令目录重建、经济/传送/投票名称和别名配置、保存后热更新、`AllowNoPrefix`、参数分隔符、命令清单与统一聊天命令审计；`discordbind` 明确跳过。该追加项当前仍在实现，以下新增步骤均保持未完成，不能从规格批准、已有局部代码或旧的聚焦结果推导为已验证。
 
 - 本次已核实 Daily 奖励策略的持久化、API、`daily` 命令与 Owner 管理页接线：幂等键固定为 `ruleId` + `crossplatformId` + UTC `yyyyMMdd`；无规则或规则禁用时拒绝；外部标识固定为 `daily`。页面区分未配置、冲突、权限不足和不可用，并在冲突时保留草稿。
 - 本次已核实 Community 后端完整 API 合同，以及基于 `expectedRowVersion` 的原子更新保护；奖励证据运行时已接入生产路径，并补充回归覆盖。Community Admin 现显示完整城市（含停用项）、好友记录、传送操作和投票轮次，同时保留按 ID/双方查询及 `ActionQueued` 子集；城市保存和投票结算成功后刷新相应全量列表。
@@ -33,6 +35,7 @@ last_updated: "2026-07-28"
 - 目标依赖方向遵循[后端目标架构蓝图](../../architecture/backend-target-blueprint.md)、[Admin 前端目标架构蓝图](../../architecture/admin-frontend-target-blueprint.md)和[旧版本功能对齐目标蓝图](../../architecture/legacy-feature-parity-target-blueprint.md)。这些链接是 Current/Target 参考，不是第二个 primary dated design spec。
 - 串行执行前确认第二波已提供 `LSTY.SevenDPanel.Domain`、持久作业/计划重启和有界 consumer，第三波已提供稳定玩家资料、目录重验、`GrantItemUseCase` 及可查询的玩家动作终态。若这些生产合同尚未存在，停止第四波实施；不得在本波复制前序实现或临时绕过。
 - 仓库外旧项目 `7dtd-serveradmin` 只用于核对 `bal/pay/moneytop/daily/shop/buy/redeem`、`homes/sethome/delhome/home/cities/city/tpa/tpaccept/tpreject/back`、`votekick/voterestart` 的入口和字段语义。不得复制旧代码、DTO、页面、SQL 或其自由控制台命令奖励。
+- 本次聊天命令追加范围只落实旧版对齐项 1、2、3、5；`discordbind` 不进入游戏内命令目录、聊天设置、Admin 表单或本计划验收。Discord 绑定继续由第五波专用合同拥有。
 - 金额始终是非负 `long` 最小单位；玩家 `postedBalance - reservedDebit` 不得为负。系统账户允许负 `postedBalance`，但每个已提交事务的 Debit/Credit 总额必须相等。
 - 不创建通用 repository、事件总线、脚本平台、万能 action/payload JSON、通用补偿工作流或只有测试消费者的抽象。奖励动作首版只登记第三波已有的 `GrantItem` 和 `ResetSkills`，不能接收控制台原文。
 - 迭代时只运行当前任务列出的聚焦测试。任务 10 仅运行一次后端受影响聚合门禁和一次 Admin 受影响聚合门禁；真实 7DTD 只执行规格要求的一次购买发放、一次传送、一次投票动作及一次结果未知故障注入，不运行 Playwright 或 publish。
@@ -276,13 +279,23 @@ public sealed class TeleportActionCommand
 
 - 新建：`backend/src/Core/LSTY.SevenDPanel.Application/Community/VoteUseCases.cs`
 - 新建：`backend/src/Core/LSTY.SevenDPanel.Application/Community/GameCommandConsumers.cs`
+- 修改：`backend/src/Core/LSTY.SevenDPanel.Application/Chat/GameChatCommands.cs`
+- 修改：`backend/src/Core/LSTY.SevenDPanel.Application/Chat/ChatSettings.cs`
+- 修改：`backend/src/Core/LSTY.SevenDPanel.Application/Chat/ChatCommandUseCases.cs`
+- 新建或修改：`backend/src/Core/LSTY.SevenDPanel.Application/Chat/GameChatCommandAudit.cs`
 - 新建：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/Community/SqliteVoteStore.cs`
+- 修改：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/SqliteChatStore.cs`
+- 新建或修改：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/SqliteGameChatCommandAuditTrail.cs`
 - 新建：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Inbound/Community/CommunityCommandRuntime.cs`
+- 修改：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Inbound/Chat/SevenDaysChatMessageCoordinator.cs`
 - 新建：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Outbound/Community/CommunityVoteActionAdapter.cs`
 - 新建：`backend/tests/LSTY.SevenDPanel.Tests/CommunityVoteUseCaseTests.cs`
 - 新建：`backend/tests/LSTY.SevenDPanel.Tests/CommunityGameCommandTests.cs`
+- 修改：`backend/tests/LSTY.SevenDPanel.Tests/ChatApplicationTests.cs`
+- 修改：`backend/tests/LSTY.SevenDPanel.Tests/ChatMuteAndCommandTests.cs`
+- 新建或修改：`backend/tests/LSTY.SevenDPanel.Tests/GameChatCommandAuditTests.cs`
 
-**命令目录：** `bal`（别名 `balance/money`）、`pay`（`transfer/send`）、`moneytop`（`baltop/ecotop`）、`daily`（`claim`）、`shop`、`buy`、`redeem`、`homes`、`sethome`、`delhome`、`home`、`cities`、`city`、`tpa`、`tpaccept`、`tpreject`、`back`、`votekick`、`voterestart`。私人家四个命令保留上述默认值并允许 Owner 配置下一次启动使用的名称；投票命令只接受启动参数或 `yes|y|no|n`。
+**默认命令目录：** `help`；`bal`（别名 `balance/money`）、`pay`（`transfer/send`）、`moneytop`（`baltop/ecotop`）、`daily`（`claim`）、`shop`、`buy`、`redeem`；`homes`、`sethome`、`delhome`、`home`、`cities`、`city`、`tpa`、`tpaccept`、`tpreject`、`back`；`votekick`、`voterestart`。Owner 可配置经济、商店、兑换、传送和投票条目的名称与别名；保存成功后完整目录立即原子切换，无需重启。投票命令只接受启动参数或 `yes|y|no|n`。`discordbind` 不属于该目录。
 
 - [x] **步骤 1：写资格、投票和唯一结算失败测试**
 
@@ -291,6 +304,20 @@ public sealed class TeleportActionCommand
 - [x] **步骤 2：写命令路由失败测试**
 
   每个命令必须调用一个实际启用的 Application consumer；未知、未启用、参数非法和权限拒绝只私发稳定结果码。测试断言命令处理器不接收/执行 SQL、路径、通用 JSON、脚本或控制台原文。
+
+- [ ] **步骤 2b：补齐动态配置、原子目录、解析和审计失败测试**
+
+  覆盖完整候选目录按 `OrdinalIgnoreCase` 拒绝名称/别名冲突；构建或保存失败时旧快照、旧清单和旧路由保持一致；成功保存后并发读取只能看到完整旧快照或完整新快照。覆盖所有默认经济/传送/投票命令的自定义名称与别名、`AllowNoPrefix` 开关、参数分隔符边界、普通聊天未命中放行、带前缀未知命令、停用/参数无效/处理失败，以及命令清单与路由同源。审计断言稳定玩家身份、规范能力标识或未知标记、实际调用名称、时间和结果进入专用记录与统一投影，且不保存完整聊天正文、参数、兑换码或私发正文。
+
+  ```powershell
+  dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --configuration Release --filter "FullyQualifiedName~ChatApplicationTests|FullyQualifiedName~ChatMuteAndCommandTests|FullyQualifiedName~CommunityGameCommandTests|FullyQualifiedName~GameChatCommandAuditTests"
+  ```
+
+  预期先因完整配置合同、保存后目录发布、无前缀/分隔符解析或审计接线尚未完成而失败；不得把现有固定目录或单独的 `Replace` 单元测试计为整项 GREEN。
+
+- [x] **步骤 2c：实现保存后原子热更新和统一聊天命令审计**
+
+  使用稳定命令能力标识把配置映射到现有实际 consumer，先构建并验证完整候选快照，再持久化并一次发布；成功响应必须晚于发布。`help`、Owner 命令清单、实际路由和审计读取同一活动快照。`AllowNoPrefix=true` 只在首词精确命中活动名称或别名时消费无前缀消息，未命中继续原版聊天；参数只按活动分隔符规则进入既有 validator。审计失败 fail-open 但形成可识别告警或 gap。重新运行步骤 2b 命令并转 GREEN。
 
 - [ ] **步骤 3：确认 RED 后实现投票与动作接线**
 
@@ -318,7 +345,7 @@ public sealed class TeleportActionCommand
 
 - [ ] **步骤 1：写组合与生命周期失败测试**
 
-  断言 Domain 无产品引用；Application 只依赖 Domain；Web 不引用 Persistence/SevenDays；同一 Store 实例映射到各端口；启动先 migration，再恢复 `Reserved/Dispatching/Open` 记录，再接收命令；关闭先注销命令/事件生产者，再停止第二波 consumer，最后停止 inner runtime。恢复扫描只能查询状态，不重放 `PendingReconciliation`。
+  断言 Domain 无产品引用；Application 只依赖 Domain；Web 不引用 Persistence/SevenDays；同一 Store 实例映射到各端口；聊天设置 Store、活动命令目录、命令配置发布器和聊天命令审计只各有一个生产实例；启动先 migration、加载设置并构建完整目录，再恢复 `Reserved/Dispatching/Open` 记录并接收命令；关闭先注销命令/事件生产者，再停止第二波 consumer，最后停止 inner runtime。恢复扫描只能查询状态，不重放 `PendingReconciliation`。
 
 - [ ] **步骤 2：确认 RED 后注册对象图**
 
@@ -348,6 +375,8 @@ public sealed class TeleportActionCommand
 - 新建：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/CommunityHttpModels.cs`
 - 新建：`backend/tests/LSTY.SevenDPanel.Tests/CommerceRewardHttpTests.cs`
 - 新建：`backend/tests/LSTY.SevenDPanel.Tests/CommunityHttpTests.cs`
+- 修改：`backend/src/Adapters/LSTY.SevenDPanel.Adapters.Web/Inbound/Http/ChatController.cs`
+- 修改：聊天设置 HTTP DTO 与对应聚焦测试
 - 修改：`backend/tests/LSTY.SevenDPanel.Tests/OwinWebHostOpenApiSnapshotTests.cs`
 - 修改：`frontend/apps/admin/openapi/7dpanel.v1.json`
 - 修改：`frontend/apps/admin/src/shared/api/generated/`
@@ -357,6 +386,8 @@ public sealed class TeleportActionCommand
 - [x] **步骤 1：写 HTTP 角色和合同失败测试**
 
   对每组覆盖匿名 401、`Admin`/`Viewer` 403、`Owner` 200/201/202/204；非法金额/库存/规则/坐标/游标 400；缺失 404；版本/并发冲突 409；游戏未就绪 503。成功 DTO 使用 camelCase/UTC/nullable，列表使用 opaque keyset；兑换创建响应 `Cache-Control: no-store` 且只显示一次明文，后续 DTO 不含 digest、完整代码、SQL、路径或异常。
+
+  聊天设置读写同时覆盖 `AllowNoPrefix`、参数分隔符、可配置命令名称/别名和只读活动命令清单；冲突或候选目录无效返回稳定 400/409，响应不得在活动目录切换前宣称保存成功。`discordbind` 不出现在 DTO、OpenAPI 或清单。
 
 - [x] **步骤 2a：实现 Community 独立 DTO、Problem Details 和并发合同**
 
@@ -370,7 +401,7 @@ public sealed class TeleportActionCommand
 
   其余资源组同样只由 Controller 完成 Owner 授权、DTO 映射和稳定错误码；不持有 SQLite transaction，不筛选游戏集合，也不把 HTTP 202 表述为完成。
 
-- [ ] **步骤 3：刷新 OpenAPI 并生成客户端（此前基线已完成；当前合同刷新待执行）**
+- [x] **步骤 3：刷新 OpenAPI 并生成客户端**
 
   ```powershell
   $env:SEVENDPANEL_UPDATE_ADMIN_OPENAPI_SNAPSHOT = "1"
@@ -477,6 +508,10 @@ public sealed class TeleportActionCommand
 
   预期：Owner 可达全部十个页面，Admin/Viewer 无导航且守卫拒绝，`zh-CN`/`en` 文案和窄屏组件断言通过。
 
+- [x] **步骤 6：扩展现有 Owner 聊天设置页的动态命令配置**
+
+  在现有游戏聊天设置 Feature 中加入 `AllowNoPrefix`、参数分隔符、经济/传送/投票名称与别名编辑及只读活动命令清单。草稿与服务端活动值分离，保存不做乐观更新；名称/别名冲突或保存失败时保留草稿并明确旧目录仍生效，成功后以服务端返回清单刷新。补充 `zh-CN`/`en` 同构文案和窄屏表单测试；不得增加 `discordbind` 字段或入口。
+
 ### 任务 10：执行一次聚合门禁、一次真实窄验证并提升 Current 文档
 
 **文件：**
@@ -495,7 +530,7 @@ public sealed class TeleportActionCommand
 - [ ] **步骤 1：运行一次后端受影响聚合门禁**
 
   ```powershell
-  dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --configuration Release --no-restore --filter "FullyQualifiedName~Economy|FullyQualifiedName~Reward|FullyQualifiedName~Commerce|FullyQualifiedName~Community|FullyQualifiedName~DependencyInjectionTests|FullyQualifiedName~DependencyRulesTests|FullyQualifiedName~Openapi_document_matches_admin_codegen_snapshot"
+  dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --configuration Release --no-restore --filter "FullyQualifiedName~Economy|FullyQualifiedName~Reward|FullyQualifiedName~Commerce|FullyQualifiedName~Community|FullyQualifiedName~GameChatCommand|FullyQualifiedName~ChatApplicationTests|FullyQualifiedName~ChatMuteAndCommandTests|FullyQualifiedName~DependencyInjectionTests|FullyQualifiedName~DependencyRulesTests|FullyQualifiedName~Openapi_document_matches_admin_codegen_snapshot"
   ```
 
   预期：Domain、`011` SQLite migration/并发、Application、SevenDays、runtime/DI 和 HTTP/OpenAPI 受影响集合全部通过；这是稳定后的唯一后端聚合运行。
@@ -537,5 +572,7 @@ public sealed class TeleportActionCommand
 - 家、城市、好友和返回点传送在 Application 与游戏主线程双重重验身份、世界、边界、冷却、血月、费用和玩家状态。
 - 踢出/重启投票持久保存资格、选票、结算和后续动作结果；通过不等于动作成功，结算不会重复。
 - 游戏命令只注册同波真实消费者；Admin/API 仅 Owner 可见，玩家不登录网页，任何入口都不接受 SQL、路径、控制台原文、脚本或万能 JSON。
+- 经济/传送/投票命令名称与别名、`AllowNoPrefix` 和参数分隔符保存后原子热更新；命令清单、路由和统一聊天命令审计读取同一活动快照，失败保留旧完整目录。
+- `discordbind` 未进入本计划的游戏内命令目录、配置、Admin 或验收。
 - 后端/Admin 各一次受影响聚合门禁及规格要求的真实窄验证达到任务 10 记录结果；未运行的 Playwright、publish 与额外 smoke 明确记录。
 - Git 提交、推送或其他历史操作仍需用户另行显式授权。

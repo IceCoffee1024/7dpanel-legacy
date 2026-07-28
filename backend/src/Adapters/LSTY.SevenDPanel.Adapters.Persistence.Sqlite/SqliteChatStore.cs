@@ -174,6 +174,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
                       global_server_name = @GlobalServerName,
                       whisper_server_name = @WhisperServerName,
                       command_prefixes = @CommandPrefixes,
+                      allow_no_prefix = @AllowNoPrefix,
+                      command_parameter_separator = @CommandParameterSeparator,
+                      hide_registered_command_global_messages = @HideRegisteredCommandGlobalMessages,
                       exclude_commands_from_history = @ExcludeCommandsFromHistory,
                       history_retention_days = @HistoryRetentionDays
                   WHERE singleton_id = 1;",
@@ -183,6 +186,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
                     normalized.GlobalServerName,
                     normalized.WhisperServerName,
                     CommandPrefixes = string.Concat(normalized.CommandPrefixes),
+                    AllowNoPrefix = normalized.AllowNoPrefix ? 1 : 0,
+                    normalized.CommandParameterSeparator,
+                    HideRegisteredCommandGlobalMessages = normalized.HideRegisteredCommandGlobalMessages ? 1 : 0,
                     ExcludeCommandsFromHistory = normalized.ExcludeCommandsFromHistory ? 1 : 0,
                     normalized.HistoryRetentionDays
                 });
@@ -195,6 +201,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             connection.Execute(
                 @"UPDATE chat_settings SET is_enabled = 1, global_server_name = NULL,
                       whisper_server_name = NULL, command_prefixes = '/',
+                      allow_no_prefix = 0, command_parameter_separator = ' ',
+                      hide_registered_command_global_messages = 1,
                       exclude_commands_from_history = 1, history_retention_days = 30
                   WHERE singleton_id = 1;");
             return Get();
@@ -203,6 +211,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
         private const string SettingsSelect = @"SELECT is_enabled AS IsEnabled,
             global_server_name AS GlobalServerName, whisper_server_name AS WhisperServerName,
             command_prefixes AS CommandPrefixes,
+            allow_no_prefix AS AllowNoPrefix,
+            command_parameter_separator AS CommandParameterSeparator,
+            hide_registered_command_global_messages AS HideRegisteredCommandGlobalMessages,
             exclude_commands_from_history AS ExcludeCommandsFromHistory,
             history_retention_days AS HistoryRetentionDays
             FROM chat_settings WHERE singleton_id = 1;";
@@ -213,6 +224,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             GlobalServerName = row.GlobalServerName,
             WhisperServerName = row.WhisperServerName,
             CommandPrefixes = row.CommandPrefixes.Select(value => value.ToString()).ToArray(),
+            AllowNoPrefix = row.AllowNoPrefix != 0,
+            CommandParameterSeparator = row.CommandParameterSeparator,
+            HideRegisteredCommandGlobalMessages = row.HideRegisteredCommandGlobalMessages != 0,
             ExcludeCommandsFromHistory = row.ExcludeCommandsFromHistory != 0,
             HistoryRetentionDays = row.HistoryRetentionDays
         };
@@ -272,6 +286,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
             public string? GlobalServerName { get; set; }
             public string? WhisperServerName { get; set; }
             public string CommandPrefixes { get; set; } = string.Empty;
+            public int AllowNoPrefix { get; set; }
+            public string CommandParameterSeparator { get; set; } = " ";
+            public int HideRegisteredCommandGlobalMessages { get; set; }
             public int ExcludeCommandsFromHistory { get; set; }
             public int HistoryRetentionDays { get; set; }
         }

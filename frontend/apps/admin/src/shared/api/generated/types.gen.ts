@@ -457,6 +457,9 @@ export type ChatSettingsHttpModel = {
     globalServerName?: string | null;
     whisperServerName?: string | null;
     commandPrefixes: Array<string>;
+    allowNoPrefix: boolean;
+    commandParameterSeparator: string;
+    hideRegisteredCommandGlobalMessages: boolean;
     excludeCommandsFromHistory: boolean;
     historyRetentionDays: number;
 };
@@ -707,6 +710,30 @@ export type RedeemHttpRequest = {
     crossplatformId?: string | null;
     expectedEntityId?: number;
     expectedWorldId?: string | null;
+};
+
+export type GameChatCommandHttpResponse = {
+    commandId?: string;
+    name?: string;
+    aliases?: Array<string>;
+    isEnabled?: boolean;
+};
+
+export type CommunityGameCommandConfigurationHttpResponse = {
+    commands?: Array<CommunityGameCommandSettingHttpModel>;
+    updatedAtUtc?: string;
+    rowVersion?: number;
+};
+
+export type CommunityGameCommandSettingHttpModel = {
+    commandId?: string | null;
+    name?: string | null;
+    aliases?: Array<string> | null;
+};
+
+export type CommunityGameCommandConfigurationUpsertHttpRequest = {
+    commands?: Array<CommunityGameCommandSettingHttpModel> | null;
+    expectedRowVersion?: number;
 };
 
 export type TeleportSettingsHttpResponse = {
@@ -4425,6 +4452,45 @@ export type CommerceRedeemResponses = {
 };
 
 export type CommerceRedeemResponse = CommerceRedeemResponses[keyof CommerceRedeemResponses];
+
+export type CommunityGetGameCommandsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/game-commands';
+};
+
+export type CommunityGetGameCommandsResponses = {
+    200: Array<GameChatCommandHttpResponse>;
+};
+
+export type CommunityGetGameCommandsResponse = CommunityGetGameCommandsResponses[keyof CommunityGetGameCommandsResponses];
+
+export type CommunityGetGameCommandConfigurationData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/game-command-configuration';
+};
+
+export type CommunityGetGameCommandConfigurationResponses = {
+    200: CommunityGameCommandConfigurationHttpResponse;
+};
+
+export type CommunityGetGameCommandConfigurationResponse = CommunityGetGameCommandConfigurationResponses[keyof CommunityGetGameCommandConfigurationResponses];
+
+export type CommunityPutGameCommandConfigurationData = {
+    body?: CommunityGameCommandConfigurationUpsertHttpRequest | null;
+    path?: never;
+    query?: never;
+    url: '/api/v1/community/game-command-configuration';
+};
+
+export type CommunityPutGameCommandConfigurationResponses = {
+    200: CommunityGameCommandConfigurationHttpResponse;
+};
+
+export type CommunityPutGameCommandConfigurationResponse = CommunityPutGameCommandConfigurationResponses[keyof CommunityPutGameCommandConfigurationResponses];
 
 export type CommunityGetTeleportSettingsData = {
     body?: never;

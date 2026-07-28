@@ -21,6 +21,25 @@ namespace LSTY.SevenDPanel.Application.Community
                 .ToArray();
         }
 
+        public static IReadOnlyList<IGameChatCommandHandler> Create(
+            CommunityGameCommandRouter router,
+            CommunityGameCommandConfiguration configuration)
+        {
+            if (router == null) throw new ArgumentNullException(nameof(router));
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            return CommunityGameCommandDirectory.Definitions
+                .Select(definition =>
+                {
+                    var setting = configuration.Get(definition.Id);
+                    return (IGameChatCommandHandler)new CommunityGameChatCommandHandler(
+                        definition,
+                        setting.Name,
+                        setting.Aliases,
+                        router);
+                })
+                .ToArray();
+        }
+
         private static string CommandName(
             CommunityGameCommandDefinition definition,
             HomeTeleportExperience? experience) => definition.Id switch
@@ -42,13 +61,28 @@ namespace LSTY.SevenDPanel.Application.Community
             CommunityGameCommandDefinition definition,
             string commandName,
             CommunityGameCommandRouter router)
+            : this(
+                definition,
+                commandName,
+                definition == null ? Array.Empty<string>() : definition.Aliases,
+                router)
+        {
+        }
+
+        public CommunityGameChatCommandHandler(
+            CommunityGameCommandDefinition definition,
+            string commandName,
+            IReadOnlyList<string> aliases,
+            CommunityGameCommandRouter router)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             this.definition = definition;
             this.router = router ?? throw new ArgumentNullException(nameof(router));
             Descriptor = new GameChatCommandDescriptor(
+                definition.Id.ToString(),
                 commandName,
-                definition.Aliases);
+                aliases ?? throw new ArgumentNullException(nameof(aliases)),
+                true);
         }
 
         public GameChatCommandDescriptor Descriptor { get; }

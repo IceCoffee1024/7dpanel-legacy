@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { TeleportSettings, TeleportSettingsInput } from '../api/community'
+import type {
+  CommunityGameCommandConfiguration,
+  CommunityGameCommandConfigurationInput,
+  TeleportSettings,
+  TeleportSettingsInput,
+} from '../api/community'
 import type { CommunityController } from '../model/useCommunity'
 
 import { shallowRef } from 'vue'
@@ -8,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import CommunityMutationAlert from './CommunityMutationAlert.vue'
 import CommunityStateAlert from './CommunityStateAlert.vue'
 import FriendshipRecordsList from './FriendshipRecordsList.vue'
+import GameCommandConfigurationForm from './GameCommandConfigurationForm.vue'
 import TeleportSettingForm from './TeleportSettingForm.vue'
 import TeleportOperationsList from './TeleportOperationsList.vue'
 
@@ -15,6 +21,7 @@ const props = defineProps<{ controller: CommunityController }>()
 const { t } = useI18n()
 const emit = defineEmits<{
   refresh: []
+  saveGameCommands: [current: CommunityGameCommandConfiguration, input: CommunityGameCommandConfigurationInput]
   save: [current: TeleportSettings, input: TeleportSettingsInput]
   queryHomes: [crossplatformId: string]
   queryFriendship: [firstCrossplatformId: string, secondCrossplatformId: string]
@@ -50,6 +57,10 @@ function saveSetting(current: TeleportSettings, input: TeleportSettingsInput) {
   emit('save', current, input)
 }
 
+function saveGameCommands(current: CommunityGameCommandConfiguration, input: CommunityGameCommandConfigurationInput) {
+  emit('saveGameCommands', current, input)
+}
+
 function operationColor(state: string) {
   if (state === 'Completed')
     return 'success' as const
@@ -72,7 +83,7 @@ function operationColor(state: string) {
             icon="i-lucide-refresh-cw"
             :label="t('community.teleport.refresh')"
             variant="outline"
-            :loading="props.controller.teleportSettingsState.value === 'loading' || props.controller.friendshipRecordsState.value === 'loading' || props.controller.teleportOperationsState.value === 'loading'"
+            :loading="props.controller.gameCommandConfigurationState.value === 'loading' || props.controller.teleportSettingsState.value === 'loading' || props.controller.friendshipRecordsState.value === 'loading' || props.controller.teleportOperationsState.value === 'loading'"
             @click="emit('refresh')"
           />
         </template>
@@ -93,6 +104,23 @@ function operationColor(state: string) {
           :subject="t('community.teleport.settingsSubject')"
           @retry="emit('refresh')"
         />
+
+        <section class="space-y-3">
+          <CommunityStateAlert
+            :state="props.controller.gameCommandConfigurationState.value"
+            :subject="t('community.gameCommands.subject')"
+            @retry="emit('refresh')"
+          />
+          <div v-if="props.controller.gameCommandConfigurationState.value === 'loading' && props.controller.gameCommandConfiguration.value === null">
+            <USkeleton class="h-96 w-full" />
+          </div>
+          <GameCommandConfigurationForm
+            v-else-if="props.controller.gameCommandConfiguration.value !== null && props.controller.gameCommandConfigurationState.value !== 'forbidden' && props.controller.gameCommandConfigurationState.value !== 'unavailable'"
+            :configuration="props.controller.gameCommandConfiguration.value"
+            :saving="props.controller.mutationTarget.value?.kind === 'game-command-configuration'"
+            @save="saveGameCommands"
+          />
+        </section>
 
         <section class="space-y-3" aria-labelledby="teleport-settings-heading">
           <div>
