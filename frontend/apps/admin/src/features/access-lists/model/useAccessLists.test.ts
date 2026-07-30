@@ -41,7 +41,9 @@ describe('useAccessLists', () => {
 
   it('prevents concurrent mutations and refreshes only the changed list after success', async () => {
     let release!: () => void
-    const upsertBan = vi.fn(() => new Promise<void>((resolve) => { release = resolve }))
+    const upsertBan = vi.fn(() => new Promise<void>((resolve) => {
+      release = resolve
+    }))
     const fetchBans = vi.fn().mockResolvedValue([])
     const controller = useAccessLists({ auth, fetchBans, fetchWhitelist: vi.fn().mockResolvedValue([]), upsertBan })
     const input = { playerId: 'EOS_1', displayName: 'Player', bannedUntilUtc: null, reason: null }

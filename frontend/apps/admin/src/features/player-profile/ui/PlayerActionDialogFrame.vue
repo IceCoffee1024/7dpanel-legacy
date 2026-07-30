@@ -40,10 +40,26 @@ function updateOpen(open: boolean) {
     <template #body>
       <div v-if="target" class="space-y-4">
         <dl class="grid gap-2 rounded-lg border border-default p-3 text-sm sm:grid-cols-2">
-          <div><dt class="text-muted">{{ t('players.fields.player') }}</dt><dd>{{ target.name ?? target.crossplatformId }}</dd></div>
-          <div><dt class="text-muted">{{ t('players.fields.entityId') }}</dt><dd>{{ target.entityId }}</dd></div>
-          <div><dt class="text-muted">{{ t('players.profile.actions.world') }}</dt><dd>{{ target.worldId }}</dd></div>
-          <div><dt class="text-muted">{{ t('players.fields.observedAt') }}</dt><dd>{{ target.onlineObservedAtUtc }}</dd></div>
+          <div>
+            <dt class="text-muted">
+              {{ t('players.fields.player') }}
+            </dt><dd>{{ target.name ?? target.crossplatformId }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">
+              {{ t('players.fields.entityId') }}
+            </dt><dd>{{ target.entityId }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">
+              {{ t('players.profile.actions.world') }}
+            </dt><dd>{{ target.worldId }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">
+              {{ t('players.fields.observedAt') }}
+            </dt><dd>{{ target.onlineObservedAtUtc }}</dd>
+          </div>
         </dl>
         <UAlert
           v-if="!targetValid"
@@ -61,8 +77,20 @@ function updateOpen(open: boolean) {
       </div>
     </template>
     <template #footer>
-      <UButton color="neutral" variant="outline" :disabled="pending" :label="t('common.cancel')" @click="emit('close')" />
-      <UButton color="error" :loading="pending" :disabled="!targetValid || !canSubmit || pending" :label="confirmLabel" @click="emit('confirm')" />
+      <UButton
+        color="neutral"
+        variant="outline"
+        :disabled="pending"
+        :label="t('common.cancel')"
+        @click="emit('close')"
+      />
+      <UButton
+        color="error"
+        :loading="pending"
+        :disabled="!targetValid || !canSubmit || pending"
+        :label="confirmLabel"
+        @click="emit('confirm')"
+      />
     </template>
   </UModal>
 </template>

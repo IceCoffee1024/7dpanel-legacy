@@ -24,7 +24,12 @@ const { t } = useI18n()
       </p>
     </template>
     <template #footer>
-      <UButton color="neutral" :label="t('common.cancel')" variant="ghost" @click="open = false" />
+      <UButton
+        color="neutral"
+        :label="t('common.cancel')"
+        variant="ghost"
+        @click="open = false"
+      />
       <UButton :loading="props.submitting" :label="t('common.confirm')" @click="emit('confirm')" />
     </template>
   </UModal>

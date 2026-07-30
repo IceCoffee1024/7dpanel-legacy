@@ -10,8 +10,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { useBackups } from '../features/backups/model/useBackups'
 import { useBackupPolicies } from '../features/backups/model/useBackupPolicies'
+import { useBackups } from '../features/backups/model/useBackups'
 import BackupsView from '../features/backups/ui/BackupsView.vue'
 
 const router = useRouter()

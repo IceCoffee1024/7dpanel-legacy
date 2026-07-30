@@ -1,13 +1,21 @@
 import { mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import { defineComponent } from 'vue'
 
 import { HttpError } from '../../../shared/api/http'
 import { useMods } from './useMods'
 
 const mod = {
-  directoryId: 'Example', name: 'Example', displayName: 'Example', author: 'Author', version: '1',
-  website: null, description: null, isLoadedNow: true, isEnabledNextStart: false, isProtected: false,
+  directoryId: 'Example',
+  name: 'Example',
+  displayName: 'Example',
+  author: 'Author',
+  version: '1',
+  website: null,
+  description: null,
+  isLoadedNow: true,
+  isEnabledNextStart: false,
+  isProtected: false,
 }
 
 describe('useMods', () => {

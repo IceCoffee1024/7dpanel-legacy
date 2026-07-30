@@ -86,7 +86,7 @@ export async function setModEnabled(
 ): Promise<void> {
   await requestJson(`/api/v1/mods/${encodeURIComponent(directoryId)}/state`, {
     method: 'PUT',
-    headers: { Authorization: authorizationHeader, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': authorizationHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify({ enabled }),
     signal,
   })

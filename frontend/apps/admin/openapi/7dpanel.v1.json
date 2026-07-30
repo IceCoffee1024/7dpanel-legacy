@@ -1483,9 +1483,9 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The requested backup archive.",
             "content": {
-              "application/octet-stream": {
+              "application/zip": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -4290,16 +4290,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
+          "204": {
+            "description": "The resource was deleted."
           }
         },
         "security": [
@@ -4629,16 +4621,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
+          "204": {
+            "description": "The resource was deleted."
           }
         },
         "security": [
@@ -5399,6 +5383,31 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DiscordConfigurationHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/integrations/discord/health": {
+      "get": {
+        "tags": [
+          "DiscordIntegration"
+        ],
+        "operationId": "DiscordIntegration_GetHealth",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordHealthHttpResponse"
                 }
               }
             }
@@ -11314,7 +11323,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RestartServerOperationHttpResponse"
+                  "type": "object",
+                  "required": [
+                    "operationId",
+                    "code",
+                    "requestedAtUtc",
+                    "scriptStartedAtUtc",
+                    "auditStatus"
+                  ],
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "description": "Accepted operation identifier."
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Accepted operation status."
+                    },
+                    "requestedAtUtc": {
+                      "type": "string",
+                      "description": "Request time in UTC."
+                    },
+                    "scriptStartedAtUtc": {
+                      "type": "string",
+                      "description": "Acceptance time in UTC."
+                    },
+                    "auditStatus": {
+                      "type": "string",
+                      "description": "Audit persistence status."
+                    }
+                  }
                 }
               }
             }
@@ -11415,7 +11453,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShutdownServerOperationHttpResponse"
+                  "type": "object",
+                  "required": [
+                    "operationId",
+                    "code",
+                    "requestedAtUtc",
+                    "acceptedAtUtc",
+                    "auditStatus"
+                  ],
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "description": "Accepted operation identifier."
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Accepted operation status."
+                    },
+                    "requestedAtUtc": {
+                      "type": "string",
+                      "description": "Request time in UTC."
+                    },
+                    "acceptedAtUtc": {
+                      "type": "string",
+                      "description": "Acceptance time in UTC."
+                    },
+                    "auditStatus": {
+                      "type": "string",
+                      "description": "Audit persistence status."
+                    }
+                  }
                 }
               }
             }
@@ -16303,6 +16370,36 @@
           },
           "hasCredential": {
             "type": "boolean"
+          }
+        }
+      },
+      "DiscordHealthHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "gateway": {
+            "$ref": "#/components/schemas/DiscordHealthSectionHttpResponse"
+          },
+          "inbound": {
+            "$ref": "#/components/schemas/DiscordHealthSectionHttpResponse"
+          }
+        }
+      },
+      "DiscordHealthSectionHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "observedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         }
       },

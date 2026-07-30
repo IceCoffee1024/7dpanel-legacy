@@ -23,6 +23,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
             DescribeEvidenceFoundation(context);
             DescribePlayerEvidenceActions(context);
             DescribeJobsBackupsSchedules(context);
+            DescribeCommunityNoContentResponses(context);
             NormalizeNoContentResponse(context);
             DescribeProblemResponses(context);
             if (!RequiresAuthorization(context)) return true;
@@ -627,6 +628,20 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 else if (path.EndsWith("/download", StringComparison.Ordinal))
                 {
                     operation.OperationId = "downloadBackup";
+                    var response = new OpenApiResponse
+                    {
+                        Description = "The requested backup archive."
+                    };
+                    response.Content["application/zip"] =
+                        new OpenApiMediaType
+                        {
+                            Schema = new JsonSchema
+                            {
+                                Type = JsonObjectType.String,
+                                Format = "binary"
+                            }
+                        };
+                    operation.Responses["200"] = response;
                 }
                 else if (path.EndsWith("/restore", StringComparison.Ordinal))
                 {
@@ -676,6 +691,33 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
                 operation.OperationId = "deleteSchedule";
                 MoveSuccessResponse(operation, "200", "204", "The schedule was deleted.");
             }
+        }
+
+        private static void DescribeCommunityNoContentResponses(
+            OperationProcessorContext context)
+        {
+            if (context.OperationDescription.Method != OpenApiOperationMethod.Delete)
+                return;
+
+            var path = context.OperationDescription.Path;
+            if (!string.Equals(
+                    path,
+                    "/api/v1/community/homes/{crossplatformId}/{name}",
+                    StringComparison.Ordinal) &&
+                !string.Equals(
+                    path,
+                    "/api/v1/community/friendships/{firstCrossplatformId}/{secondCrossplatformId}",
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var operation = context.OperationDescription.Operation;
+            operation.Responses.Remove("200");
+            operation.Responses["204"] = new OpenApiResponse
+            {
+                Description = "The resource was deleted."
+            };
         }
 
         private static void DescribeGameResources(OperationProcessorContext context)

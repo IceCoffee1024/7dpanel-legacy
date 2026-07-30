@@ -102,8 +102,12 @@ function submit() {
     <UForm :state="draft" class="space-y-5" @submit="submit">
       <section class="space-y-4 rounded-lg border border-default p-4">
         <div>
-          <h2 class="font-medium text-highlighted">{{ t('gameChat.settings.sections.featureTitle') }}</h2>
-          <p class="text-sm text-muted">{{ t('gameChat.settings.sections.featureDescription') }}</p>
+          <h2 class="font-medium text-highlighted">
+            {{ t('gameChat.settings.sections.featureTitle') }}
+          </h2>
+          <p class="text-sm text-muted">
+            {{ t('gameChat.settings.sections.featureDescription') }}
+          </p>
         </div>
         <UFormField :label="t('gameChat.settings.fields.enabled')" name="isEnabled">
           <USwitch v-model="draft.isEnabled" :label="t('gameChat.settings.fields.enabledDescription')" :disabled="isSaving || isResetting" />
@@ -120,8 +124,12 @@ function submit() {
 
       <section class="space-y-4 rounded-lg border border-default p-4">
         <div>
-          <h2 class="font-medium text-highlighted">{{ t('gameChat.settings.sections.commandTitle') }}</h2>
-          <p class="text-sm text-muted">{{ t('gameChat.settings.sections.commandDescription') }}</p>
+          <h2 class="font-medium text-highlighted">
+            {{ t('gameChat.settings.sections.commandTitle') }}
+          </h2>
+          <p class="text-sm text-muted">
+            {{ t('gameChat.settings.sections.commandDescription') }}
+          </p>
         </div>
         <UFormField :label="t('gameChat.settings.fields.commandPrefixes')" name="commandPrefixes" :description="t('gameChat.settings.fields.commandPrefixesDescription')">
           <UInputTags

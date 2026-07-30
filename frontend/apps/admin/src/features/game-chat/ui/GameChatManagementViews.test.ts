@@ -198,7 +198,7 @@ describe('game chat management model', () => {
   })
 })
 
-describe('ChatHistoryView', () => {
+describe('chatHistoryView', () => {
   it('renders every approved field in desktop/mobile content as plain text', () => {
     const wrapper = mount(ChatHistoryView, {
       props: {
@@ -243,7 +243,7 @@ describe('ChatHistoryView', () => {
   })
 })
 
-describe('ChatSettingsView', () => {
+describe('chatSettingsView', () => {
   it('uses the approved fields, explains retention semantics and emits validated settings', async () => {
     const wrapper = mount(ChatSettingsView, {
       props: { settings: chatSettings, isSaving: false, isResetting: false },
@@ -283,7 +283,7 @@ describe('ChatSettingsView', () => {
   })
 })
 
-describe('ColoredChatPreview', () => {
+describe('coloredChatPreview', () => {
   it('renders template and message as plain text with controlled color styles', () => {
     const wrapper = mount(ColoredChatPreview, {
       props: {
@@ -304,7 +304,7 @@ describe('ColoredChatPreview', () => {
   })
 })
 
-describe('ColoredChatProfileDialog', () => {
+describe('coloredChatProfileDialog', () => {
   it('inserts all four approved variables and normalizes colors on create', async () => {
     const wrapper = mount(ColoredChatProfileDialog, {
       props: { open: true, mode: 'create', profile: null, isSubmitting: false },
@@ -338,7 +338,7 @@ describe('ColoredChatProfileDialog', () => {
   })
 })
 
-describe('ColoredChatView', () => {
+describe('coloredChatView', () => {
   it('renders profile/default tabs, profile filters and cursor actions', async () => {
     const wrapper = mount(ColoredChatView, {
       props: {

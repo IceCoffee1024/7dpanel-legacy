@@ -29,7 +29,9 @@ onBeforeRouteLeave(() => colored.canLeave())
   <UDashboardPanel id="game-chat-colored">
     <template #header>
       <UDashboardNavbar :title="t('gameChat.colored.title')">
-        <template #leading><UDashboardSidebarCollapse /></template>
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
       </UDashboardNavbar>
     </template>
     <div class="overflow-y-auto p-4 sm:p-6">

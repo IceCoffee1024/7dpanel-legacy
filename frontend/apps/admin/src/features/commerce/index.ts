@@ -1,5 +1,5 @@
+export type { AchievementDefinition, OnlineRewardRecord, RedeemCodeDefinition, ShopProduct } from './api/commerce'
 export { useAchievementOnlineRewards, useRedeemCodes, useShopProducts } from './model/useCommerce'
 export { default as AchievementOnlineRewardsView } from './ui/AchievementOnlineRewardsView.vue'
 export { default as RedeemCodesView } from './ui/RedeemCodesView.vue'
 export { default as ShopProductsView } from './ui/ShopProductsView.vue'
-export type { AchievementDefinition, OnlineRewardRecord, RedeemCodeDefinition, ShopProduct } from './api/commerce'

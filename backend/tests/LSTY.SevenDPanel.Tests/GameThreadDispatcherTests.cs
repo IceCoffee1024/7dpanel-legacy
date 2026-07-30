@@ -58,9 +58,11 @@ namespace LSTY.SevenDPanel.Tests
             });
             using var cancellation = new CancellationTokenSource();
             var waiting = request.WaitAsync(TimeSpan.FromMinutes(1), cancellation.Token);
-            var execution = Task.Run(
+            var execution = Task.Factory.StartNew(
                 request.Execute,
-                TestContext.Current.CancellationToken);
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
             Assert.True(started.Wait(
                 TimeSpan.FromSeconds(5),
                 TestContext.Current.CancellationToken));
@@ -85,9 +87,11 @@ namespace LSTY.SevenDPanel.Tests
                 return "completed";
             });
             var waiting = request.WaitAsync(TimeSpan.FromMinutes(1), CancellationToken.None);
-            var execution = Task.Run(
+            var execution = Task.Factory.StartNew(
                 request.Execute,
-                TestContext.Current.CancellationToken);
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
             Assert.True(started.Wait(
                 TimeSpan.FromSeconds(5),
                 TestContext.Current.CancellationToken));

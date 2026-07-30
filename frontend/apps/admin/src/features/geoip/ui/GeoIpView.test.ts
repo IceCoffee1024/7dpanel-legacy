@@ -1,9 +1,9 @@
 import type { GeoIpController } from '../model/useGeoIp'
 
 import { mount } from '@vue/test-utils'
-import { createI18n } from 'vue-i18n'
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
+import { createI18n } from 'vue-i18n'
 import GeoIpView from './GeoIpView.vue'
 
 const policy = Object.freeze({ version: 1, isEnabled: true, provider: 'LocalMmdb', failureMode: 'FailOpen', bypassAdmins: true, rejectionMessage: 'Denied', networkRules: [], countryRules: [], cacheHealth: { queueDepth: 0, rejectedRefreshCount: 0, lastCompletedAtUtc: null, lastLookupStatus: null, severity: 'Information', statusCode: 'ready' }, providers: [], recentDecisions: [] })
@@ -24,11 +24,24 @@ const stubs = {
 
 function controller(updateCredentials: ReturnType<typeof vi.fn>): GeoIpController {
   return {
-    state: shallowRef('ready'), policy: shallowRef(policy), diagnostics: shallowRef(null), diagnosticsState: shallowRef('ready'), testResult: shallowRef(null), isMutating: shallowRef(false), errorCode: shallowRef(null), credentials: shallowRef(credentials), credentialsState: shallowRef('ready'), refresh: vi.fn(), save: vi.fn(), test: vi.fn(), updateCredentials, dispose: vi.fn(),
+    state: shallowRef('ready'),
+    policy: shallowRef(policy),
+    diagnostics: shallowRef(null),
+    diagnosticsState: shallowRef('ready'),
+    testResult: shallowRef(null),
+    isMutating: shallowRef(false),
+    errorCode: shallowRef(null),
+    credentials: shallowRef(credentials),
+    credentialsState: shallowRef('ready'),
+    refresh: vi.fn(),
+    save: vi.fn(),
+    test: vi.fn(),
+    updateCredentials,
+    dispose: vi.fn(),
   } as unknown as GeoIpController
 }
 
-describe('GeoIpView credentials', () => {
+describe('geoIpView credentials', () => {
   it('forwards both intents and immediately clears the local replacement input', async () => {
     const updateCredentials = vi.fn().mockResolvedValue(true)
     const wrapper = mount(GeoIpView, {

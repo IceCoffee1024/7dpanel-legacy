@@ -1,12 +1,12 @@
-import type { ConsoleLogEntry } from './consoleLog'
 import type {
   ServerEventNotification,
   ServerEventsConnectionStatus,
 } from '../../../app/serverEvents'
+import type { ConsoleLogEntry } from './consoleLog'
 
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import { defineComponent } from 'vue'
 
 import { useConsoleLogs } from './useConsoleLogs'
 

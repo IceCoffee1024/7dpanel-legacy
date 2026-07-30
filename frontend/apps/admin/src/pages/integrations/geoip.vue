@@ -10,4 +10,6 @@ const router = useRouter()
 const controller = useGeoIp({ onSessionExpired: () => void router.replace({ path: '/login', query: { redirect: '/integrations/geoip' } }) })
 </script>
 
-<template><GeoIpView :controller="controller" /></template>
+<template>
+  <GeoIpView :controller="controller" />
+</template>

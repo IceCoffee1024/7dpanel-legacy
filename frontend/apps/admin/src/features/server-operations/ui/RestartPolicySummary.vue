@@ -22,9 +22,19 @@ const rows = computed(() => [
 
 <template>
   <UCard class="rounded-md">
-    <template #header><h2 class="font-semibold text-highlighted">{{ t('overview.restartPolicy.title') }}</h2></template>
+    <template #header>
+      <h2 class="font-semibold text-highlighted">
+        {{ t('overview.restartPolicy.title') }}
+      </h2>
+    </template>
     <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-      <div v-for="row in rows" :key="row[0]"><dt class="text-xs text-muted">{{ t(`overview.restartPolicy.${row[0]}`) }}</dt><dd class="mt-1 text-sm text-highlighted">{{ row[1] }}</dd></div>
+      <div v-for="row in rows" :key="row[0]">
+        <dt class="text-xs text-muted">
+          {{ t(`overview.restartPolicy.${row[0]}`) }}
+        </dt><dd class="mt-1 text-sm text-highlighted">
+          {{ row[1] }}
+        </dd>
+      </div>
     </dl>
   </UCard>
 </template>

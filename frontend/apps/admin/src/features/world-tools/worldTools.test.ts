@@ -1,12 +1,12 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, isReadonly } from 'vue'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
 import type {
   WorldOperationRecord,
   WorldOperationSubmission,
   WorldResourcesTransport,
 } from './api/worldTools'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { defineComponent, isReadonly } from 'vue'
 
 import {
   parseWorldOperation,
@@ -163,13 +163,13 @@ describe('world-tools transport', () => {
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(path).toBe(expectedPaths[submission.type])
     expect(init.method).toBe('POST')
-    expect(init.headers).toEqual({ Authorization: authorization, 'Content-Type': 'application/json' })
+    expect(init.headers).toEqual({ 'Authorization': authorization, 'Content-Type': 'application/json' })
     expect(JSON.parse(String(init.body))).toEqual(submission.request)
   })
 
   it.each(['Queued', 'Running', 'Succeeded', 'Failed', 'Cancelled', 'Interrupted', 'ResultUnknown', 'RollbackFailed'] as const)(
     'parses the %s operation state without collapsing it',
-    (status) => expect(parseWorldOperation(operation(status))).toMatchObject({ status }),
+    status => expect(parseWorldOperation(operation(status))).toMatchObject({ status }),
   )
 })
 
@@ -244,8 +244,14 @@ describe('world operation form mapping', () => {
   it('marks strong operations explicitly while leaving ordinary operations single-confirmation', () => {
     const summary = {
       sourceState: 'Success' as const,
-      worldId: 'world-1', worldVersion: 'world-v7', mapResourceVersion: 'map-v3',
-      seed: null, width: null, height: null, gameVersion: null, availableExtent: null,
+      worldId: 'world-1',
+      worldVersion: 'world-v7',
+      mapResourceVersion: 'map-v3',
+      seed: null,
+      width: null,
+      height: null,
+      gameVersion: null,
+      availableExtent: null,
       observedAtUtc: '2026-07-26T10:00:00.000Z',
     }
     const ordinary = createInitialWorldOperationForm()
@@ -315,9 +321,16 @@ describe('useWorldOperations', () => {
 describe('useWorldResources', () => {
   it('keeps independent read sources and maps a failed source to Unavailable', async () => {
     const summary = parseWorldSummary({
-      sourceState: 'Available', worldId: 'world-1', worldVersion: 'world-v7', seed: null,
-      width: 8192, height: 8192, gameVersion: '3.0.1-b4', mapResourceVersion: 'map-v3',
-      availableExtent: null, observedAtUtc: '2026-07-26T10:00:00.000Z',
+      sourceState: 'Available',
+      worldId: 'world-1',
+      worldVersion: 'world-v7',
+      seed: null,
+      width: 8192,
+      height: 8192,
+      gameVersion: '3.0.1-b4',
+      mapResourceVersion: 'map-v3',
+      availableExtent: null,
+      observedAtUtc: '2026-07-26T10:00:00.000Z',
     })
     const emptyCollection = { sourceState: 'Success' as const, observedAtUtc: '2026-07-26T10:00:00.000Z', items: [] }
     const emptyCatalog = { sourceState: 'Success' as const, catalogVersion: 'catalog-4', observedAtUtc: '2026-07-26T10:00:00.000Z', items: [] }

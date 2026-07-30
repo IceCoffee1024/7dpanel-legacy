@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Reference Include="System.IO.Compression" />
     <ProjectReference Include="..\..\src\Bootstrap\LSTY.SevenDPanel\LSTY.SevenDPanel.csproj" />
     <ProjectReference Include="..\..\src\Core\LSTY.SevenDPanel.Application\LSTY.SevenDPanel.Application.csproj" />

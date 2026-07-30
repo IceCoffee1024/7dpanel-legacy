@@ -1,5 +1,5 @@
-import type { OverviewSnapshot } from '../model/overview'
 import type { OverviewGetResponse } from '../../../shared/api/generated/types.gen'
+import type { OverviewSnapshot } from '../model/overview'
 
 import { requestJson } from '../../../shared/api/http'
 import { parseOverview } from '../model/overview'

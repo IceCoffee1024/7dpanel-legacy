@@ -254,7 +254,10 @@ export function useBackups(options: { onSessionExpired?: () => void } = {}): Bac
     const controller = new AbortController()
     pollController = controller
     try {
-      while (!disposed && !controller.signal.aborted) {
+      while (true) {
+        if (disposed || controller.signal.aborted)
+          return
+
         const job = parseJob(await getJob({ path: { jobId }, signal: controller.signal }))
         activeJob.value = job
         if (terminalStatuses.has(job.status)) {

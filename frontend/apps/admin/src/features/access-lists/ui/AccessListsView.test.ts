@@ -21,13 +21,17 @@ function mountView(role: 'Owner' | 'Viewer') {
     whitelist: readonly(shallowRef([])),
     canMutate: readonly(shallowRef(role !== 'Viewer')),
     mutationTarget: readonly(shallowRef(null)),
-    refreshBans: vi.fn(), refreshWhitelist: vi.fn(), saveBan: vi.fn(), removeBan: vi.fn(),
-    saveWhitelist: vi.fn(), removeWhitelist: vi.fn(), dispose: vi.fn(),
+    refreshBans: vi.fn(),
+    refreshWhitelist: vi.fn(),
+    saveBan: vi.fn(),
+    removeBan: vi.fn(),
+    saveWhitelist: vi.fn(),
+    removeWhitelist: vi.fn(),
+    dispose: vi.fn(),
   } as unknown as AccessListsController
   useAccessListsMock.mockReturnValue(controller)
   return mount(AccessListsView, {
-    global: { stubs: { UDashboardPanel: { template: '<section><slot name="header"/><slot name="body"/></section>' },
-      BanDialog: true, WhitelistDialog: true } },
+    global: { stubs: { UDashboardPanel: { template: '<section><slot name="header"/><slot name="body"/></section>' }, BanDialog: true, WhitelistDialog: true } },
   })
 }
 

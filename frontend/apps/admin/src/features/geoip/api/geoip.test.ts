@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as geoIp from './geoip'
+
 const requestJson = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../shared/api/http', () => ({ requestJson }))
 
-import * as geoIp from './geoip'
-
-describe('GeoIP credentials API', () => {
+describe('geoIP credentials API', () => {
   beforeEach(() => requestJson.mockReset())
 
   it('submits both credential intents and returns metadata without secret values', async () => {
@@ -30,7 +30,7 @@ describe('GeoIP credentials API', () => {
       '/api/v1/access-policies/geoip/credentials',
       expect.objectContaining({
         method: 'PUT',
-        headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
+        headers: { 'Authorization': 'Bearer owner', 'Content-Type': 'application/json' },
         body: JSON.stringify(draft),
       }),
     )

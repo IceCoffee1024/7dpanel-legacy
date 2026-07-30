@@ -12,13 +12,32 @@ const { t } = useI18n()
 const confirmed = shallowRef(false)
 const confirmationText = shallowRef('')
 const canSubmit = computed(() => confirmed.value && confirmationText.value === props.target?.crossplatformId)
-watch(() => props.open, open => { if (open) { confirmed.value = false; confirmationText.value = '' } })
+watch(() => props.open, (open) => {
+  if (!open)
+    return
+  confirmed.value = false
+  confirmationText.value = ''
+})
 </script>
 
 <template>
-  <PlayerActionDialogFrame :open="open" :target="target" :target-valid="targetValid" :pending="pending" :feedback="feedback" :can-submit="canSubmit" :title="t('players.profile.actions.resetFull.title')" :description="t('players.profile.actions.resetFull.description')" :confirm-label="t('players.profile.actions.resetFull.confirm')" @close="emit('close')" @confirm="emit('submit', { dangerConfirmed: true })">
+  <PlayerActionDialogFrame
+    :open="open"
+    :target="target"
+    :target-valid="targetValid"
+    :pending="pending"
+    :feedback="feedback"
+    :can-submit="canSubmit"
+    :title="t('players.profile.actions.resetFull.title')"
+    :description="t('players.profile.actions.resetFull.description')"
+    :confirm-label="t('players.profile.actions.resetFull.confirm')"
+    @close="emit('close')"
+    @confirm="emit('submit', { dangerConfirmed: true })"
+  >
     <UAlert color="error" :title="t('players.profile.actions.resetFull.impact')" :description="t('players.profile.actions.resetFull.recoveryWarning')" />
-    <UFormField :label="t('players.profile.actions.resetFull.typeIdentity')"><UInput v-model="confirmationText" class="w-full" :placeholder="target?.crossplatformId" /></UFormField>
+    <UFormField :label="t('players.profile.actions.resetFull.typeIdentity')">
+      <UInput v-model="confirmationText" class="w-full" :placeholder="target?.crossplatformId" />
+    </UFormField>
     <UCheckbox v-model="confirmed" :label="t('players.profile.actions.resetFull.disposableConfirm')" />
   </PlayerActionDialogFrame>
 </template>

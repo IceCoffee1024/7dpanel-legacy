@@ -10,4 +10,6 @@ const router = useRouter()
 const controller = useAutomation({ onSessionExpired: () => void router.replace({ path: '/login', query: { redirect: '/automation' } }) })
 </script>
 
-<template><AutomationView :controller="controller" /></template>
+<template>
+  <AutomationView :controller="controller" />
+</template>

@@ -35,7 +35,7 @@ describe('mod API', () => {
 
     expect(requestJson).toHaveBeenNthCalledWith(2, '/api/v1/mods/Example%20Mod/state', {
       method: 'PUT',
-      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer token', 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled: false }),
       signal: undefined,
     })

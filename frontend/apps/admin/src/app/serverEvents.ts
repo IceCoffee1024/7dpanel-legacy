@@ -2,14 +2,14 @@ import type { StreamEvent } from '../shared/api/generated/core/serverSentEvents.
 
 import { serverEventsGet } from '../shared/api/generated/sdk.gen'
 
-export type ServerEventType =
-  | 'welcome'
-  | 'console-log'
-  | 'chat-message'
-  | 'game-ready'
-  | 'server-stopping'
-  | 'gap'
-  | 'heartbeat'
+export type ServerEventType
+  = | 'welcome'
+    | 'console-log'
+    | 'chat-message'
+    | 'game-ready'
+    | 'server-stopping'
+    | 'gap'
+    | 'heartbeat'
 
 export interface ServerEventNotification {
   type: ServerEventType
@@ -22,11 +22,11 @@ export interface ServerEventsLifecycle {
   stop: (options?: { clearCursor?: boolean }) => void
 }
 
-export type ServerEventsConnectionStatus =
-  | 'connecting'
-  | 'live'
-  | 'reconnecting'
-  | 'stopped'
+export type ServerEventsConnectionStatus
+  = | 'connecting'
+    | 'live'
+    | 'reconnecting'
+    | 'stopped'
 
 interface ServerEventStreamOptions {
   headers: HeadersInit
@@ -73,12 +73,14 @@ function waitForReconnect(delayMs: number, signal: AbortSignal): Promise<void> {
     return Promise.resolve()
 
   return new Promise((resolve) => {
+    let timeout: ReturnType<typeof setTimeout> | undefined
     const finish = () => {
-      clearTimeout(timeout)
+      if (timeout !== undefined)
+        clearTimeout(timeout)
       signal.removeEventListener('abort', finish)
       resolve()
     }
-    const timeout = setTimeout(finish, delayMs)
+    timeout = setTimeout(finish, delayMs)
     signal.addEventListener('abort', finish, { once: true })
   })
 }
@@ -136,7 +138,10 @@ export function createServerEvents(
     currentAuthorizationHeader: string,
     signal: AbortSignal,
   ): Promise<void> {
-    while (!signal.aborted && currentGeneration === generation) {
+    while (true) {
+      if (signal.aborted || currentGeneration !== generation)
+        return
+
       const headers: Record<string, string> = {
         Accept: 'text/event-stream',
         Authorization: currentAuthorizationHeader,

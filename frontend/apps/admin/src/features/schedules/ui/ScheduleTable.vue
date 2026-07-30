@@ -30,8 +30,12 @@ const columns = computed<TableColumn<ScheduleRecord>[]>(() => [
     </template>
     <template #cronExpression-cell="{ row }">
       <div>
-        <p class="font-mono text-xs">{{ row.original.cronExpression }}</p>
-        <p class="text-xs text-muted">{{ row.original.timeZoneId }} · {{ t(`schedules.policy.${row.original.concurrencyPolicy}`) }}</p>
+        <p class="font-mono text-xs">
+          {{ row.original.cronExpression }}
+        </p>
+        <p class="text-xs text-muted">
+          {{ row.original.timeZoneId }} · {{ t(`schedules.policy.${row.original.concurrencyPolicy}`) }}
+        </p>
       </div>
     </template>
     <template #nextOccurrenceUtc-cell="{ row }">
@@ -42,9 +46,28 @@ const columns = computed<TableColumn<ScheduleRecord>[]>(() => [
     </template>
     <template #actions-cell="{ row }">
       <div class="flex flex-wrap justify-end gap-2">
-        <UButton :disabled="disabled" :label="t('common.edit')" size="sm" variant="outline" @click="emit('edit', row.original)" />
-        <UButton :disabled="disabled" :label="row.original.enabled ? t('schedules.action.disable') : t('schedules.action.enable')" size="sm" variant="outline" @click="emit('setEnabled', row.original, !row.original.enabled)" />
-        <UButton color="error" :disabled="disabled" :label="t('schedules.action.delete')" size="sm" variant="soft" @click="emit('remove', row.original)" />
+        <UButton
+          :disabled="disabled"
+          :label="t('common.edit')"
+          size="sm"
+          variant="outline"
+          @click="emit('edit', row.original)"
+        />
+        <UButton
+          :disabled="disabled"
+          :label="row.original.enabled ? t('schedules.action.disable') : t('schedules.action.enable')"
+          size="sm"
+          variant="outline"
+          @click="emit('setEnabled', row.original, !row.original.enabled)"
+        />
+        <UButton
+          color="error"
+          :disabled="disabled"
+          :label="t('schedules.action.delete')"
+          size="sm"
+          variant="soft"
+          @click="emit('remove', row.original)"
+        />
       </div>
     </template>
     <template #empty>

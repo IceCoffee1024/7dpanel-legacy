@@ -125,10 +125,16 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Activity
                 try
                 {
                     var occurredAtUtc = DateTimeOffset.UtcNow;
-                    var pending = Task.Run(() => RecordSafelyAsync(
-                        displayName,
-                        occurredAtUtc,
-                        record));
+                    var pending = Task.Factory.StartNew(
+                        () => RecordSafelyAsync(
+                                displayName,
+                                occurredAtUtc,
+                                record)
+                            .GetAwaiter()
+                            .GetResult(),
+                        CancellationToken.None,
+                        TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default);
                     pendingWrites.Add(pending);
                     _ = pending.ContinueWith(
                         _ => RemovePending(pending),

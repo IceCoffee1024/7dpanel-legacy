@@ -95,18 +95,45 @@ function submit() {
       </UFormField>
     </div>
 
-    <UFormField v-if="form.kind === 'ScheduledConsoleCommand'" :label="t('schedules.form.command')" name="commandText" required>
+    <UFormField
+      v-if="form.kind === 'ScheduledConsoleCommand'"
+      :label="t('schedules.form.command')"
+      name="commandText"
+      required
+    >
       <UInput v-model="form.commandText" :disabled="disabled" />
     </UFormField>
-    <UFormField v-else-if="form.kind === 'ScheduledRestart'" :label="t('schedules.form.countdown')" name="countdownSeconds" required>
+    <UFormField
+      v-else-if="form.kind === 'ScheduledRestart'"
+      :label="t('schedules.form.countdown')"
+      name="countdownSeconds"
+      required
+    >
       <UInputNumber v-model="form.countdownSeconds" :disabled="disabled" :min="0" />
     </UFormField>
-    <UFormField v-else :label="t('schedules.form.message')" name="messageText" required>
-      <UTextarea v-model="form.messageText" autoresize :disabled="disabled" :maxlength="500" />
+    <UFormField
+      v-else
+      :label="t('schedules.form.message')"
+      name="messageText"
+      required
+    >
+      <UTextarea
+        v-model="form.messageText"
+        autoresize
+        :disabled="disabled"
+        :maxlength="500"
+      />
     </UFormField>
 
     <div class="flex justify-end gap-2">
-      <UButton color="neutral" :disabled="disabled" :label="t('common.cancel')" type="button" variant="outline" @click="emit('cancel')" />
+      <UButton
+        color="neutral"
+        :disabled="disabled"
+        :label="t('common.cancel')"
+        type="button"
+        variant="outline"
+        @click="emit('cancel')"
+      />
       <UButton :disabled="disabled" :label="schedule === null ? t('schedules.form.create') : t('common.save')" type="submit" />
     </div>
   </UForm>

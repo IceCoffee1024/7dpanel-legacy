@@ -72,8 +72,12 @@ watch(() => props.configuration, reset, { immediate: true })
     <template #header>
       <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <h3 class="font-semibold text-highlighted">{{ t('community.gameCommands.title') }}</h3>
-          <p class="text-sm text-muted">{{ t('community.gameCommands.description') }}</p>
+          <h3 class="font-semibold text-highlighted">
+            {{ t('community.gameCommands.title') }}
+          </h3>
+          <p class="text-sm text-muted">
+            {{ t('community.gameCommands.description') }}
+          </p>
         </div>
         <p class="text-xs text-muted">
           {{ t('community.gameCommands.version', { version: configuration.rowVersion.toString() }) }} · {{ configuration.updatedAtUtc }}
@@ -107,7 +111,9 @@ watch(() => props.configuration, reset, { immediate: true })
 
     <template #footer>
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm text-muted">{{ t('community.gameCommands.immediateHint') }}</p>
+        <p class="text-sm text-muted">
+          {{ t('community.gameCommands.immediateHint') }}
+        </p>
         <div class="flex gap-2">
           <UButton
             color="neutral"

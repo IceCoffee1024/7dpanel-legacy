@@ -89,7 +89,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands
             {
                 if (started || stopped) return;
                 var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                consumerTask = Task.Run(() => ConsumeAsync(ready, cancellation.Token));
+                consumerTask = Task.Factory.StartNew(
+                    () => Consume(ready, cancellation.Token),
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                    TaskScheduler.Default);
                 ready.Task.GetAwaiter().GetResult();
                 lock (metricsSync) accepting = true;
                 try
@@ -205,14 +209,14 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands
             TryPublish(observation);
         }
 
-        private async Task ConsumeAsync(
+        private void Consume(
             TaskCompletionSource<bool> ready,
             CancellationToken cancellationToken)
         {
             ready.TrySetResult(true);
             try
             {
-                while (await channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                while (channel.Reader.WaitToReadAsync(cancellationToken).AsTask().GetAwaiter().GetResult())
                 {
                     while (channel.Reader.TryRead(out var observation))
                     {

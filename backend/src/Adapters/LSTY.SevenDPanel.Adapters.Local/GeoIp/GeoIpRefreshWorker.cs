@@ -19,6 +19,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.GeoIp
         private readonly TimeSpan drainTimeout;
         private readonly Func<DateTimeOffset> utcClock;
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+        private readonly ManualResetEventSlim consumerStarted = new ManualResetEventSlim(false);
         private Task? consumer;
         private bool accepting;
         private bool stopped;
@@ -50,13 +51,20 @@ namespace LSTY.SevenDPanel.Adapters.Local.GeoIp
 
         public void Start()
         {
+            var waitForConsumer = false;
             lock (sync)
             {
                 if (stopped) throw new ObjectDisposedException(nameof(GeoIpRefreshWorker));
                 if (consumer != null) return;
                 accepting = true;
-                consumer = Task.Run(Consume);
+                consumer = Task.Factory.StartNew(
+                    Consume,
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default);
+                waitForConsumer = true;
             }
+            if (waitForConsumer) consumerStarted.Wait();
         }
 
         public bool TryWrite(GeoIpRefreshRequest request)
@@ -112,13 +120,15 @@ namespace LSTY.SevenDPanel.Adapters.Local.GeoIp
             try { Stop(); } finally
             {
                 cancellation.Dispose();
+                consumerStarted.Dispose();
                 queue.Dispose();
                 foreach (var provider in providers.Values) provider.Dispose();
             }
         }
 
-        private async Task Consume()
+        private void Consume()
         {
+            consumerStarted.Set();
             foreach (var request in queue.GetConsumingEnumerable(cancellation.Token))
             {
                 if (!IsCurrentAndEnabled(request)) continue;
@@ -133,10 +143,11 @@ namespace LSTY.SevenDPanel.Adapters.Local.GeoIp
                 {
                     try
                     {
-                        result = await provider.LookupAsync(
+                        result = provider.LookupAsync(
                                 request.CanonicalIp,
                                 cancellation.Token)
-                            .ConfigureAwait(false);
+                            .GetAwaiter()
+                            .GetResult();
                     }
                     catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
                     {

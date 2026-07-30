@@ -3,8 +3,94 @@ import type { CreateRedeemCodeInput } from '../api/commerce'
 import type { RedeemCodesController } from '../model/useCommerce'
 import { reactive, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-const props = defineProps<{ controller: RedeemCodesController }>(); const emit = defineEmits<{ load: [id: string], create: [input: CreateRedeemCodeInput], clearGenerated: [] }>(); const lookupId = shallowRef(''); const form = reactive({ rewardPackageId: '', enabled: true, validFromUtc: '', expiresAtUtc: '', maxRedemptions: '', perPlayerLimit: '' })
+
+const props = defineProps<{ controller: RedeemCodesController }>()
+const emit = defineEmits<{ load: [id: string], create: [input: CreateRedeemCodeInput], clearGenerated: [] }>()
+const lookupId = shallowRef('')
+const form = reactive({ rewardPackageId: '', enabled: true, validFromUtc: '', expiresAtUtc: '', maxRedemptions: '', perPlayerLimit: '' })
 const { t } = useI18n()
-function create() { emit('create', { rewardPackageId: form.rewardPackageId.trim(), enabled: form.enabled, validFromUtc: form.validFromUtc || null, expiresAtUtc: form.expiresAtUtc || null, maxRedemptions: form.maxRedemptions === '' ? null : Number(form.maxRedemptions), perPlayerLimit: form.perPlayerLimit === '' ? null : Number(form.perPlayerLimit) }) }
+function create() {
+  emit('create', { rewardPackageId: form.rewardPackageId.trim(), enabled: form.enabled, validFromUtc: form.validFromUtc || null, expiresAtUtc: form.expiresAtUtc || null, maxRedemptions: form.maxRedemptions === '' ? null : Number(form.maxRedemptions), perPlayerLimit: form.perPlayerLimit === '' ? null : Number(form.perPlayerLimit) })
+}
 </script>
-<template><UDashboardPanel id="redeem-codes"><template #header><UDashboardNavbar :title="t('commerce.redeemCodes.title')"><template #leading><UDashboardSidebarCollapse /></template></UDashboardNavbar></template><template #body><UContainer class="space-y-5 py-5"><UAlert v-if="props.controller.errorCode.value" color="error" :title="t('commerce.redeemCodes.operationIncomplete')" :description="props.controller.errorCode.value" /><UAlert v-if="props.controller.generated.value" color="warning" :title="t('commerce.redeemCodes.plaintext.title')" :description="t('commerce.redeemCodes.plaintext.description')"><template #actions><UButton color="neutral" :label="t('commerce.redeemCodes.plaintext.close')" variant="outline" @click="emit('clearGenerated')" /></template></UAlert><UCard v-if="props.controller.generated.value"><code class="block break-all rounded-md bg-elevated p-4 text-lg">{{ props.controller.generated.value.code }}</code></UCard><UCard><div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end"><UFormField :label="t('commerce.redeemCodes.recordId')"><UInput v-model="lookupId" class="w-full" /></UFormField><UButton color="neutral" :label="t('commerce.redeemCodes.loadMasked')" variant="outline" @click="emit('load', lookupId.trim())" /></div><div v-if="props.controller.definition.value" class="mt-4 rounded-md border border-default p-3"><p class="font-medium">{{ props.controller.definition.value.maskedCode }}</p><p class="text-sm text-muted">{{ t('commerce.redeemCodes.redemptionCount', { packageId: props.controller.definition.value.rewardPackageId, count: props.controller.definition.value.redemptionCount }) }}</p></div></UCard><UCard><template #header><h2 class="font-semibold">{{ t('commerce.redeemCodes.generate.title') }}</h2></template><div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"><UFormField :label="t('commerce.common.rewardPackageId')"><UInput v-model="form.rewardPackageId" class="w-full" /></UFormField><UFormField :label="t('commerce.redeemCodes.generate.validFromUtc')"><UInput v-model="form.validFromUtc" class="w-full" /></UFormField><UFormField :label="t('commerce.redeemCodes.generate.expiresAtUtc')"><UInput v-model="form.expiresAtUtc" class="w-full" /></UFormField><UFormField :label="t('commerce.redeemCodes.generate.maxRedemptions')"><UInput v-model="form.maxRedemptions" class="w-full" inputmode="numeric" /></UFormField><UFormField :label="t('commerce.common.perPlayerLimit')"><UInput v-model="form.perPlayerLimit" class="w-full" inputmode="numeric" /></UFormField><UCheckbox v-model="form.enabled" :label="t('commerce.redeemCodes.generate.enabled')" /></div><template #footer><div class="flex justify-end"><UButton :label="t('commerce.redeemCodes.generate.submit')" :disabled="!form.rewardPackageId.trim()" :loading="props.controller.isMutating.value" @click="create" /></div></template></UCard></UContainer></template></UDashboardPanel></template>
+
+<template>
+  <UDashboardPanel id="redeem-codes">
+    <template #header>
+      <UDashboardNavbar :title="t('commerce.redeemCodes.title')">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+      </UDashboardNavbar>
+    </template><template #body>
+      <UContainer class="space-y-5 py-5">
+        <UAlert
+          v-if="props.controller.errorCode.value"
+          color="error"
+          :title="t('commerce.redeemCodes.operationIncomplete')"
+          :description="props.controller.errorCode.value"
+        /><UAlert
+          v-if="props.controller.generated.value"
+          color="warning"
+          :title="t('commerce.redeemCodes.plaintext.title')"
+          :description="t('commerce.redeemCodes.plaintext.description')"
+        >
+          <template #actions>
+            <UButton
+              color="neutral"
+              :label="t('commerce.redeemCodes.plaintext.close')"
+              variant="outline"
+              @click="emit('clearGenerated')"
+            />
+          </template>
+        </UAlert><UCard v-if="props.controller.generated.value">
+          <code class="block break-all rounded-md bg-elevated p-4 text-lg">{{ props.controller.generated.value.code }}</code>
+        </UCard><UCard>
+          <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <UFormField :label="t('commerce.redeemCodes.recordId')">
+              <UInput v-model="lookupId" class="w-full" />
+            </UFormField><UButton
+              color="neutral"
+              :label="t('commerce.redeemCodes.loadMasked')"
+              variant="outline"
+              @click="emit('load', lookupId.trim())"
+            />
+          </div><div v-if="props.controller.definition.value" class="mt-4 rounded-md border border-default p-3">
+            <p class="font-medium">
+              {{ props.controller.definition.value.maskedCode }}
+            </p><p class="text-sm text-muted">
+              {{ t('commerce.redeemCodes.redemptionCount', { packageId: props.controller.definition.value.rewardPackageId, count: props.controller.definition.value.redemptionCount }) }}
+            </p>
+          </div>
+        </UCard><UCard>
+          <template #header>
+            <h2 class="font-semibold">
+              {{ t('commerce.redeemCodes.generate.title') }}
+            </h2>
+          </template><div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <UFormField :label="t('commerce.common.rewardPackageId')">
+              <UInput v-model="form.rewardPackageId" class="w-full" />
+            </UFormField><UFormField :label="t('commerce.redeemCodes.generate.validFromUtc')">
+              <UInput v-model="form.validFromUtc" class="w-full" />
+            </UFormField><UFormField :label="t('commerce.redeemCodes.generate.expiresAtUtc')">
+              <UInput v-model="form.expiresAtUtc" class="w-full" />
+            </UFormField><UFormField :label="t('commerce.redeemCodes.generate.maxRedemptions')">
+              <UInput v-model="form.maxRedemptions" class="w-full" inputmode="numeric" />
+            </UFormField><UFormField :label="t('commerce.common.perPlayerLimit')">
+              <UInput v-model="form.perPlayerLimit" class="w-full" inputmode="numeric" />
+            </UFormField><UCheckbox v-model="form.enabled" :label="t('commerce.redeemCodes.generate.enabled')" />
+          </div><template #footer>
+            <div class="flex justify-end">
+              <UButton
+                :label="t('commerce.redeemCodes.generate.submit')"
+                :disabled="!form.rewardPackageId.trim()"
+                :loading="props.controller.isMutating.value"
+                @click="create"
+              />
+            </div>
+          </template>
+        </UCard>
+      </UContainer>
+    </template>
+  </UDashboardPanel>
+</template>

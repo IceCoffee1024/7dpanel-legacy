@@ -315,13 +315,38 @@ export interface WorldResourcesTransport {
 
 const sourceStates = new Set(['Available', 'Success', 'Partial', 'Stale', 'Unavailable'])
 const operationStatuses = new Set<WorldOperationStatus>([
-  'Queued', 'Running', 'Succeeded', 'Failed', 'Cancelled', 'Interrupted', 'ResultUnknown', 'RollbackFailed',
+  'Queued',
+  'Running',
+  'Succeeded',
+  'Failed',
+  'Cancelled',
+  'Interrupted',
+  'ResultUnknown',
+  'RollbackFailed',
 ])
 const operationKinds = new Set<WorldOperationKind>([
-  'DeleteLandClaim', 'MoveOnlinePlayer', 'MoveEntity', 'RefreshMapResources', 'RenderExploredMap', 'RenderFullMap',
-  'CopyRegion', 'FillRegion', 'ClearRegion', 'PasteRegion', 'SetBlock', 'PlacePrefab', 'RemovePrefab', 'SpawnEntity',
-  'DeleteEntity', 'CleanupEntities', 'ReloadBlocks', 'ReloadItems', 'ReloadEntityClasses', 'ReloadPrefabs',
-  'CollectGarbage', 'UndoChangeSet',
+  'DeleteLandClaim',
+  'MoveOnlinePlayer',
+  'MoveEntity',
+  'RefreshMapResources',
+  'RenderExploredMap',
+  'RenderFullMap',
+  'CopyRegion',
+  'FillRegion',
+  'ClearRegion',
+  'PasteRegion',
+  'SetBlock',
+  'PlacePrefab',
+  'RemovePrefab',
+  'SpawnEntity',
+  'DeleteEntity',
+  'CleanupEntities',
+  'ReloadBlocks',
+  'ReloadItems',
+  'ReloadEntityClasses',
+  'ReloadPrefabs',
+  'CollectGarbage',
+  'UndoChangeSet',
 ])
 
 function record(value: unknown, message = 'Invalid world tools response'): Record<string, unknown> {
@@ -562,22 +587,30 @@ function get<T>(path: string, authorizationHeader: string, parser: (value: unkno
   return requestJson<unknown>(path, { headers: { Authorization: authorizationHeader }, signal }).then(parser)
 }
 
-export const fetchWorldSummary = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/summary', authorizationHeader, parseWorldSummary, signal)
-export const fetchWorldLandClaims = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/land-claims', authorizationHeader, value => parseCollection(value, parseLandClaim), signal)
-export const fetchWorldVehicles = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/vehicles', authorizationHeader, value => parseCollection(value, parseVehicle), signal)
-export const fetchWorldDrones = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/drones', authorizationHeader, value => parseCollection(value, parseDrone), signal)
-export const fetchWorldContainers = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/containers', authorizationHeader, value => parseCollection(value, parseContainer), signal)
-export const fetchWorldBlockCatalog = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/catalogs/blocks', authorizationHeader, parseCatalog, signal)
-export const fetchWorldPrefabCatalog = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/catalogs/prefabs', authorizationHeader, parseCatalog, signal)
-export const fetchWorldEntityTypeCatalog = (authorizationHeader: string, signal?: AbortSignal) =>
-  get('/api/v1/world/catalogs/entity-types', authorizationHeader, parseCatalog, signal)
+export function fetchWorldSummary(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/summary', authorizationHeader, parseWorldSummary, signal)
+}
+export function fetchWorldLandClaims(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/land-claims', authorizationHeader, value => parseCollection(value, parseLandClaim), signal)
+}
+export function fetchWorldVehicles(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/vehicles', authorizationHeader, value => parseCollection(value, parseVehicle), signal)
+}
+export function fetchWorldDrones(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/drones', authorizationHeader, value => parseCollection(value, parseDrone), signal)
+}
+export function fetchWorldContainers(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/containers', authorizationHeader, value => parseCollection(value, parseContainer), signal)
+}
+export function fetchWorldBlockCatalog(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/catalogs/blocks', authorizationHeader, parseCatalog, signal)
+}
+export function fetchWorldPrefabCatalog(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/catalogs/prefabs', authorizationHeader, parseCatalog, signal)
+}
+export function fetchWorldEntityTypeCatalog(authorizationHeader: string, signal?: AbortSignal) {
+  return get('/api/v1/world/catalogs/entity-types', authorizationHeader, parseCatalog, signal)
+}
 
 export const worldResourcesTransport: WorldResourcesTransport = Object.freeze({
   fetchSummary: fetchWorldSummary,
@@ -598,7 +631,7 @@ async function postOperation<TRequest>(
 ): Promise<WorldOperationReceipt> {
   const response = await requestJson<unknown>(path, {
     method: 'POST',
-    headers: { Authorization: authorizationHeader, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': authorizationHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
     expectedStatus: 202,
     signal,

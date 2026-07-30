@@ -70,7 +70,13 @@ async function confirmChange() {
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" :label="t('common.reload')" @click="controller.refresh" />
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            :label="t('common.reload')"
+            @click="controller.refresh"
+          />
         </template>
       </UDashboardNavbar>
     </template>

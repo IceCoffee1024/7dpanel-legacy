@@ -20,20 +20,40 @@ export function createAutomationAction(): AutomationAction {
 function createDraft(rule: AutomationRule | null): AutomationRuleDraft {
   if (rule !== null) {
     return structuredClone({
-      id: rule.id, expectedVersion: rule.version, name: rule.name, isEnabled: rule.isEnabled, trigger: rule.trigger,
-      condition: rule.condition, actions: rule.actions, cooldownSeconds: rule.cooldownSeconds, cooldownScope: rule.cooldownScope,
-      concurrencyPolicy: rule.concurrencyPolicy, failurePolicy: rule.failurePolicy,
+      id: rule.id,
+      expectedVersion: rule.version,
+      name: rule.name,
+      isEnabled: rule.isEnabled,
+      trigger: rule.trigger,
+      condition: rule.condition,
+      actions: rule.actions,
+      cooldownSeconds: rule.cooldownSeconds,
+      cooldownScope: rule.cooldownScope,
+      concurrencyPolicy: rule.concurrencyPolicy,
+      failurePolicy: rule.failurePolicy,
     })
   }
   return {
-    id: '', name: '', isEnabled: true, trigger: { type: 'PlayerJoined' }, condition: createPredicateCondition(), actions: [createAutomationAction()],
-    cooldownSeconds: 0, cooldownScope: 'RulePlayer', concurrencyPolicy: 'SkipIfRunning', failurePolicy: 'StopOnFailure',
+    id: '',
+    name: '',
+    isEnabled: true,
+    trigger: { type: 'PlayerJoined' },
+    condition: createPredicateCondition(),
+    actions: [createAutomationAction()],
+    cooldownSeconds: 0,
+    cooldownScope: 'RulePlayer',
+    concurrencyPolicy: 'SkipIfRunning',
+    failurePolicy: 'StopOnFailure',
   }
 }
 
 function createSnapshot(triggerType: AutomationRuleDraft['trigger']['type']): AutomationTriggerSnapshot {
   return {
-    triggerId: '', trigger: { type: triggerType }, occurredAtUtc: new Date().toISOString(), actor: {}, gapIds: [],
+    triggerId: '',
+    trigger: { type: triggerType },
+    occurredAtUtc: new Date().toISOString(),
+    actor: {},
+    gapIds: [],
   }
 }
 
@@ -50,7 +70,8 @@ export function useAutomationEditor(selected: Readonly<Ref<AutomationRule | null
   function updateDraft(value: AutomationRuleDraft) {
     const triggerChanged = value.trigger.type !== draft.value.trigger.type
     draft.value = value
-    if (triggerChanged) snapshot.value = createSnapshot(value.trigger.type)
+    if (triggerChanged)
+      snapshot.value = createSnapshot(value.trigger.type)
   }
   function updateSnapshot(value: AutomationTriggerSnapshot) {
     snapshot.value = value

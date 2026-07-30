@@ -442,6 +442,12 @@ namespace LSTY.SevenDPanel.Tests
                 TimeSpan.FromSeconds(15));
             using var output = new MemoryStream();
             using var cancellation = new CancellationTokenSource();
+            using var expirationObserved = new ManualResetEventSlim(false);
+            authentication.AfterApiKeyValidation = () =>
+            {
+                if (authentication.ApiKeyValidationCount >= 2)
+                    expirationObserved.Set();
+            };
 
             Assert.True(session.TryAuthorize(
                 FakeAuthenticationStore.Subject,
@@ -451,16 +457,8 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(session.TryReserve());
 
             var writeTask = session.WriteAsync(output, null, cancellation.Token);
-            var completed = await Task.WhenAny(
-                writeTask,
-                Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
-            if (completed != writeTask)
-            {
-                cancellation.Cancel();
-                await writeTask;
-            }
-
-            Assert.Same(writeTask, completed);
+            expirationObserved.Wait(TestContext.Current.CancellationToken);
+            await writeTask;
             Assert.True(authentication.ApiKeyValidationCount >= 2);
             var text = Encoding.UTF8.GetString(output.ToArray());
             Assert.StartsWith("event: welcome\n", text);
@@ -483,7 +481,11 @@ namespace LSTY.SevenDPanel.Tests
                 () => DateTimeOffset.UtcNow,
                 TimeSpan.FromSeconds(15),
                 TimeSpan.FromMilliseconds(25));
-            using var output = new MemoryStream();
+            var heartbeatWritten = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            using var output = new ObservingMemoryStream(
+                ": keep-alive\n\n",
+                heartbeatWritten);
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 TestContext.Current.CancellationToken);
 
@@ -495,13 +497,38 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(session.TryReserve());
 
             var writeTask = session.WriteAsync(output, null, cancellation.Token);
-            await Task.Delay(TimeSpan.FromMilliseconds(125), TestContext.Current.CancellationToken);
+            var observed = await Task.WhenAny(
+                heartbeatWritten.Task,
+                Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+            Assert.Same(heartbeatWritten.Task, observed);
             cancellation.Cancel();
             await writeTask;
 
             var text = Encoding.UTF8.GetString(output.ToArray());
             Assert.StartsWith("event: welcome\n", text);
             Assert.Contains(": keep-alive\n\n", text);
+        }
+
+        private sealed class ObservingMemoryStream : MemoryStream
+        {
+            private readonly string expectedText;
+            private readonly TaskCompletionSource<bool> observed;
+
+            public ObservingMemoryStream(
+                string expectedText,
+                TaskCompletionSource<bool> observed)
+            {
+                this.expectedText = expectedText;
+                this.observed = observed;
+            }
+
+            public override Task FlushAsync(CancellationToken cancellationToken)
+            {
+                var text = Encoding.UTF8.GetString(ToArray());
+                if (text.IndexOf(expectedText, StringComparison.Ordinal) >= 0)
+                    observed.TrySetResult(true);
+                return base.FlushAsync(cancellationToken);
+            }
         }
 
         [Fact]
@@ -689,6 +716,7 @@ namespace LSTY.SevenDPanel.Tests
             public DateTimeOffset? ApiKeyExpiresUtc { get; set; }
             public string Role { get; set; } = PanelUserIdentity.OwnerRole;
             public Action? AfterAccessTokenValidation { get; set; }
+            public Action? AfterApiKeyValidation { get; set; }
             public int AccessTokenValidationCount { get; private set; }
             public int ApiKeyValidationCount { get; private set; }
 
@@ -753,6 +781,7 @@ namespace LSTY.SevenDPanel.Tests
                 out StoredApiKey storedApiKey)
             {
                 ApiKeyValidationCount++;
+                AfterApiKeyValidation?.Invoke();
                 storedApiKey = null!;
                 if (!Active ||
                     !ApiKeyActive ||

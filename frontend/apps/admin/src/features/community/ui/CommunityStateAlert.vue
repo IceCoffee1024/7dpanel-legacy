@@ -28,7 +28,12 @@ const { t } = useI18n()
     :description="t('community.state.unavailableDescription')"
   >
     <template #actions>
-      <UButton color="neutral" :label="t('community.common.retry')" variant="outline" @click="$emit('retry')" />
+      <UButton
+        color="neutral"
+        :label="t('community.common.retry')"
+        variant="outline"
+        @click="$emit('retry')"
+      />
     </template>
   </UAlert>
   <UAlert
@@ -39,7 +44,12 @@ const { t } = useI18n()
     :description="t('community.state.staleDescription')"
   >
     <template #actions>
-      <UButton color="neutral" :label="t('community.common.retry')" variant="outline" @click="$emit('retry')" />
+      <UButton
+        color="neutral"
+        :label="t('community.common.retry')"
+        variant="outline"
+        @click="$emit('retry')"
+      />
     </template>
   </UAlert>
 </template>

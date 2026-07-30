@@ -1,6 +1,6 @@
+import type { AdminLocaleRuntime } from '../../../app/i18n'
 import type { OnlinePlayer } from '../../players/api/onlinePlayers'
 import type { ChatMessage } from '../model/chatMessage'
-import type { AdminLocaleRuntime } from '../../../app/i18n'
 
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
@@ -151,7 +151,7 @@ function mountView(
   })
 }
 
-describe('LiveChatView', () => {
+describe('liveChatView', () => {
   it('reactively localizes live status, channels, sources and controls', async () => {
     const runtime = localeRuntime('zh-CN')
     const wrapper = mountView({}, runtime)

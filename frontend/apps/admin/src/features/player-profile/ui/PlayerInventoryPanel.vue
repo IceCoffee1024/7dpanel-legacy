@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { InventoryDiff, ProfileSection } from './playerProfileUi'
+import type { InventoryDiff, InventorySnapshot, ProfileSection } from './playerProfileUi'
 
 import { useI18n } from 'vue-i18n'
 
 import PlayerEvidenceBadge from './PlayerEvidenceBadge.vue'
-import type { InventorySnapshot } from './playerProfileUi'
 
 defineProps<{
   section: ProfileSection<InventorySnapshot>
@@ -43,20 +42,50 @@ function itemLabel(diff: InventoryDiff['changes'][number]): string {
       </p>
       <div class="hidden overflow-x-auto md:block">
         <table class="w-full text-sm">
-          <thead><tr class="border-b border-default text-left text-muted"><th class="p-2">{{ t('players.profile.inventory.item') }}</th><th class="p-2">{{ t('players.profile.inventory.container') }}</th><th class="p-2">{{ t('players.profile.inventory.quantity') }}</th><th class="p-2">{{ t('players.profile.inventory.quality') }}</th></tr></thead>
-          <tbody><tr v-for="item in section.value.items" :key="`${item.container}:${item.slot}`" class="border-b border-muted"><td class="p-2 font-mono">{{ item.internalName }}</td><td class="p-2">{{ item.container }} · {{ item.slot }}</td><td class="p-2">{{ item.count }}</td><td class="p-2">{{ item.quality ?? t('common.unknown') }}</td></tr></tbody>
+          <thead>
+            <tr class="border-b border-default text-left text-muted">
+              <th class="p-2">
+                {{ t('players.profile.inventory.item') }}
+              </th><th class="p-2">
+                {{ t('players.profile.inventory.container') }}
+              </th><th class="p-2">
+                {{ t('players.profile.inventory.quantity') }}
+              </th><th class="p-2">
+                {{ t('players.profile.inventory.quality') }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in section.value.items" :key="`${item.container}:${item.slot}`" class="border-b border-muted">
+              <td class="p-2 font-mono">
+                {{ item.internalName }}
+              </td><td class="p-2">
+                {{ item.container }} · {{ item.slot }}
+              </td><td class="p-2">
+                {{ item.count }}
+              </td><td class="p-2">
+                {{ item.quality ?? t('common.unknown') }}
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
       <ul class="space-y-2 md:hidden">
         <li v-for="item in section.value.items" :key="`${item.container}:${item.slot}`" class="rounded-lg border border-default p-3">
-          <p class="break-all font-mono text-sm">{{ item.internalName }}</p>
-          <p class="text-sm text-muted">{{ item.container }} · {{ item.slot }} · ×{{ item.count }}</p>
+          <p class="break-all font-mono text-sm">
+            {{ item.internalName }}
+          </p>
+          <p class="text-sm text-muted">
+            {{ item.container }} · {{ item.slot }} · ×{{ item.count }}
+          </p>
         </li>
       </ul>
     </template>
     <UAlert v-else color="neutral" :title="t(`players.profile.section.${section.state.toLowerCase()}`)" />
     <div v-if="diffs.length" class="space-y-2">
-      <h3 class="text-sm font-semibold">{{ t('players.profile.inventory.changes') }}</h3>
+      <h3 class="text-sm font-semibold">
+        {{ t('players.profile.inventory.changes') }}
+      </h3>
       <article v-for="diff in diffs" :key="diff.currentSnapshotId" class="rounded-lg border border-default p-3">
         <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
           <span class="text-sm text-muted">{{ d(new Date(diff.currentObservedAtUtc), 'playerObservation') }}</span>
@@ -70,6 +99,12 @@ function itemLabel(diff: InventoryDiff['changes'][number]): string {
         </ul>
       </article>
     </div>
-    <UButton color="neutral" size="sm" variant="outline" :label="t('players.history.loadMore')" @click="emit('loadMore')" />
+    <UButton
+      color="neutral"
+      size="sm"
+      variant="outline"
+      :label="t('players.history.loadMore')"
+      @click="emit('loadMore')"
+    />
   </section>
 </template>

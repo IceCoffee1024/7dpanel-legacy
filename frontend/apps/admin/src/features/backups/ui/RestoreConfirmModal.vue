@@ -24,19 +24,43 @@ function confirm() {
   >
     <template #body>
       <div v-if="backup" class="space-y-4">
-        <UAlert color="warning" icon="i-lucide-triangle-alert" :title="t('backups.restore.warning')" :description="t('backups.restore.nextStart')" />
+        <UAlert
+          color="warning"
+          icon="i-lucide-triangle-alert"
+          :title="t('backups.restore.warning')"
+          :description="t('backups.restore.nextStart')"
+        />
         <dl class="grid gap-2 text-sm sm:grid-cols-[auto_1fr]">
-          <dt class="text-muted">{{ t('backups.table.kind') }}</dt><dd>{{ t(`backups.kind.${backup.kind}`) }}</dd>
-          <dt class="text-muted">{{ t('backups.table.createdAt') }}</dt><dd>{{ new Date(backup.createdAtUtc).toLocaleString() }}</dd>
-          <dt class="text-muted">SHA-256</dt><dd class="break-all font-mono text-xs">{{ backup.sha256 }}</dd>
+          <dt class="text-muted">
+            {{ t('backups.table.kind') }}
+          </dt><dd>{{ t(`backups.kind.${backup.kind}`) }}</dd>
+          <dt class="text-muted">
+            {{ t('backups.table.createdAt') }}
+          </dt><dd>{{ new Date(backup.createdAtUtc).toLocaleString() }}</dd>
+          <dt class="text-muted">
+            SHA-256
+          </dt><dd class="break-all font-mono text-xs">
+            {{ backup.sha256 }}
+          </dd>
         </dl>
         <UAlert v-if="backup.kind === 'PanelDatabase'" color="neutral" :title="t('backups.restore.panelDatabaseReceipt')" />
         <UCheckbox v-model="restartAfterStage" :label="t('backups.restore.restartAfterStage')" />
       </div>
     </template>
     <template #footer="{ close }">
-      <UButton color="neutral" :disabled="disabled" :label="t('common.cancel')" variant="outline" @click="close" />
-      <UButton color="error" :disabled="disabled || backup === null" :label="t('backups.restore.confirm')" @click="confirm" />
+      <UButton
+        color="neutral"
+        :disabled="disabled"
+        :label="t('common.cancel')"
+        variant="outline"
+        @click="close"
+      />
+      <UButton
+        color="error"
+        :disabled="disabled || backup === null"
+        :label="t('backups.restore.confirm')"
+        @click="confirm"
+      />
     </template>
   </UModal>
 </template>

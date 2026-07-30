@@ -131,7 +131,7 @@ export async function saveBackupPolicy(
     `/api/v1/backups/policies/${encodeURIComponent(policy.kind)}`,
     {
       method: 'PUT',
-      headers: { Authorization: authorizationHeader, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': authorizationHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(toBackupPolicyUpdateRequest(policy)),
       signal,
     },

@@ -27,19 +27,31 @@ const { d, t } = useI18n()
     />
     <dl v-if="profile.summary.value" class="grid gap-3 rounded-lg border border-default p-4 sm:grid-cols-2 lg:grid-cols-4">
       <div>
-        <dt class="text-sm text-muted">{{ t('players.fields.player') }}</dt>
-        <dd class="font-medium">{{ profile.summary.value.latestName }}</dd>
+        <dt class="text-sm text-muted">
+          {{ t('players.fields.player') }}
+        </dt>
+        <dd class="font-medium">
+          {{ profile.summary.value.latestName }}
+        </dd>
       </div>
       <div>
-        <dt class="text-sm text-muted">{{ t('players.fields.crossplatformIdentity') }}</dt>
-        <dd class="break-all font-mono text-sm">{{ profile.crossplatformId }}</dd>
+        <dt class="text-sm text-muted">
+          {{ t('players.fields.crossplatformIdentity') }}
+        </dt>
+        <dd class="break-all font-mono text-sm">
+          {{ profile.crossplatformId }}
+        </dd>
       </div>
       <div>
-        <dt class="text-sm text-muted">{{ t('players.history.firstObserved') }}</dt>
+        <dt class="text-sm text-muted">
+          {{ t('players.history.firstObserved') }}
+        </dt>
         <dd>{{ d(new Date(profile.summary.value.firstObservedAtUtc), 'playerObservation') }}</dd>
       </div>
       <div>
-        <dt class="text-sm text-muted">{{ t('players.history.lastObserved') }}</dt>
+        <dt class="text-sm text-muted">
+          {{ t('players.history.lastObserved') }}
+        </dt>
         <dd>{{ d(new Date(profile.summary.value.lastObservedAtUtc), 'playerObservation') }}</dd>
       </div>
     </dl>

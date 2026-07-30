@@ -13,9 +13,9 @@ import {
 import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
 import {
-  parseConsoleCommandCatalog,
   executeConsoleCommand,
   fetchConsoleCommandCatalog,
+  parseConsoleCommandCatalog,
 } from '../api/consoleCommands'
 
 export type ConsoleCommandFeedbackCode
@@ -73,10 +73,14 @@ function matchesPrefix(command: ConsoleCommandCatalogEntry, prefix: string): boo
 }
 
 function replaceFirstWord(value: string, replacement: string): string {
-  const match = /^(\s*)\S+(.*)$/s.exec(value)
-  if (match === null)
+  const wordStart = value.search(/\S/)
+  if (wordStart === -1)
     return replacement
-  return `${match[1]}${replacement}${match[2]}`
+  const whitespaceOffset = value.slice(wordStart).search(/\s/)
+  if (whitespaceOffset === -1)
+    return `${value.slice(0, wordStart)}${replacement}`
+  const wordEnd = wordStart + whitespaceOffset
+  return `${value.slice(0, wordStart)}${replacement}${value.slice(wordEnd)}`
 }
 
 function feedbackFor(error: unknown): ConsoleCommandFeedback {
@@ -108,10 +112,11 @@ export function useConsoleCommands(options: UseConsoleCommandsOptions = {}): Con
   const catalogQuery = useQuery<ConsoleCommandCatalog, Error>({
     key: catalogQueryKey,
     query: async (context) => {
-      if (generatedCatalogDefinition !== null)
+      if (generatedCatalogDefinition !== null) {
         return parseConsoleCommandCatalog(await generatedCatalogDefinition.query(
           context as unknown as Parameters<typeof generatedCatalogDefinition.query>[0],
         ))
+      }
       const authorizationHeader = auth.authorizationHeader
       if (authorizationHeader === null)
         throw new HttpError('http', 'Authentication required', { status: 401 })

@@ -1,7 +1,7 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
-
 import type { WorldOperationRecord } from '../api/worldTools'
+import { mount } from '@vue/test-utils'
+
+import { describe, expect, it } from 'vitest'
 
 import { createInitialWorldOperationForm, createWorldOperationReview } from '../model/worldOperationForm'
 import WorldOperationConfirmDialog from './WorldOperationConfirmDialog.vue'
@@ -68,7 +68,7 @@ function worldOperation(status: WorldOperationRecord['status']): WorldOperationR
   }
 }
 
-describe('WorldOperationConfirmDialog', () => {
+describe('worldOperationConfirmDialog', () => {
   it('keeps the complete strong confirmation visible and requires CONFIRM', async () => {
     const form = createInitialWorldOperationForm()
     form.type = 'renderFullMap'
@@ -93,7 +93,7 @@ describe('WorldOperationConfirmDialog', () => {
   })
 })
 
-describe('WorldOperationPanel', () => {
+describe('worldOperationPanel', () => {
   it('does not render world mutation controls for non-Owners', () => {
     const wrapper = mount(WorldOperationPanel, {
       props: { summary, canMutate: false, submitting: false },
@@ -105,7 +105,7 @@ describe('WorldOperationPanel', () => {
   })
 })
 
-describe('WorldOperationHistory', () => {
+describe('worldOperationHistory', () => {
   it.each([
     ['ResultUnknown'],
     ['RollbackFailed'],
@@ -120,9 +120,9 @@ describe('WorldOperationHistory', () => {
   })
 })
 
-describe('WorldReadDetails', () => {
+describe('worldReadDetails', () => {
   it('shows all source labels, observation time, and nullable values honestly', () => {
-    const resource = <T,>(sourceState: 'Success' | 'Partial' | 'Stale' | 'Unavailable', data: T | null) => ({
+    const resource = <T>(sourceState: 'Success' | 'Partial' | 'Stale' | 'Unavailable', data: T | null) => ({
       phase: data === null ? 'failed' as const : 'ready' as const,
       sourceState,
       data,

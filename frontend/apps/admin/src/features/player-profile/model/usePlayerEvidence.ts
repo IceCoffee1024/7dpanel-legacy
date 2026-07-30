@@ -67,9 +67,12 @@ interface EvidencePage<T> {
 }
 
 function mapState(value: string | undefined): PlayerEvidenceViewState {
-  if (value === 'Available') return 'available'
-  if (value === 'Partial') return 'partial'
-  if (value === 'Forbidden') return 'forbidden'
+  if (value === 'Available')
+    return 'available'
+  if (value === 'Partial')
+    return 'partial'
+  if (value === 'Forbidden')
+    return 'forbidden'
   return 'unavailable'
 }
 
@@ -105,14 +108,16 @@ export function usePlayerEvidence(
     let version = 0
 
     async function run(append: boolean): Promise<void> {
-      if (disposed) return
+      if (disposed)
+        return
       const id = toValue(crossplatformId).trim()
       if (id === '') {
         state.value = 'unavailable'
         return
       }
       const cursor = append ? nextCursor.value : null
-      if (append && cursor === null) return
+      if (append && cursor === null)
+        return
       controller?.abort()
       const currentVersion = ++version
       const nextController = new AbortController()
@@ -123,11 +128,13 @@ export function usePlayerEvidence(
         state.value = items.value.length === 0 ? 'unavailable' : 'stale'
         return
       }
-      if (items.value.length === 0) state.value = 'loading'
+      if (items.value.length === 0)
+        state.value = 'loading'
       isRefreshing.value = true
       try {
         const page = normalize(await request(authorizationHeader, id, cursor, nextController.signal))
-        if (disposed || currentVersion !== version) return
+        if (disposed || currentVersion !== version)
+          return
         items.value = Object.freeze(append ? [...items.value, ...page.values] : [...page.values])
         observedAtUtc.value = page.observedAtUtc ?? null
         nextCursor.value = page.nextCursor ?? null
@@ -137,8 +144,10 @@ export function usePlayerEvidence(
         sessionExpiryNotified = false
       }
       catch (error) {
-        if (disposed || currentVersion !== version || (error instanceof HttpError && error.code === 'aborted')) return
-        if (error instanceof HttpError && error.status === 401) expireSession()
+        if (disposed || currentVersion !== version || (error instanceof HttpError && error.code === 'aborted'))
+          return
+        if (error instanceof HttpError && error.status === 401)
+          expireSession()
         if (error instanceof HttpError && error.status === 403) {
           items.value = Object.freeze([])
           nextCursor.value = null
@@ -260,7 +269,8 @@ export function usePlayerEvidence(
   )
 
   function dispose() {
-    if (disposed) return
+    if (disposed)
+      return
     disposed = true
     stop()
     snapshots.dispose()

@@ -18,9 +18,9 @@ import CircleGeometry from 'ol/geom/Circle.js'
 import LineString from 'ol/geom/LineString.js'
 import Point from 'ol/geom/Point.js'
 import Polygon from 'ol/geom/Polygon.js'
+import { defaults as defaultInteractions } from 'ol/interaction/defaults.js'
 import Draw, { createBox } from 'ol/interaction/Draw.js'
 import Modify from 'ol/interaction/Modify.js'
-import { defaults as defaultInteractions } from 'ol/interaction/defaults.js'
 import VectorLayer from 'ol/layer/Vector.js'
 import OlMap from 'ol/Map.js'
 import { unByKey } from 'ol/Observable.js'
@@ -31,12 +31,12 @@ import Stroke from 'ol/style/Stroke.js'
 import Style from 'ol/style/Style.js'
 import View from 'ol/View.js'
 
+import { fetchCurrentMapLayer } from '../api/mapLayerAdapter'
 import { createLocalBackgroundLayer } from '../model/mapBackground'
 import { createTrackFeatures } from '../model/mapFeatures'
 import { createGameProjection, fromMapCoordinate, mapExtent, toMapCoordinate } from '../model/mapProjection'
 import { createAuthenticatedTileLayerController } from '../model/useAuthenticatedTileLayer'
 import { createMapVectorLayerController } from '../model/useMapVectorLayer'
-import { fetchCurrentMapLayer } from '../api/mapLayerAdapter'
 
 export interface GameMapCoordinate {
   readonly x: number
@@ -380,7 +380,7 @@ export function createOpenLayersGameMapRuntime(options: CreateOpenLayersGameMapR
       if (areaSource.isEmpty())
         return
       const interaction = new Modify({ source: areaSource })
-      areaInteractionEventKeys = [interaction.on('modifyend', event => {
+      areaInteractionEventKeys = [interaction.on('modifyend', (event) => {
         const feature = event.features.item(0)
         if (feature !== undefined)
           publishAreaGeometry(feature as Feature<Geometry>)

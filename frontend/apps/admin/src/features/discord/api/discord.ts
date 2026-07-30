@@ -56,20 +56,33 @@ export interface DiscordHealth {
 const modes = new Set<DiscordMode>(['Webhook', 'Bot'])
 const deliveryStatuses = new Set<DiscordDeliveryStatus>(['Pending', 'Sending', 'RetryScheduled', 'Succeeded', 'Failed', 'ResultUnknown', 'Cancelled'])
 const healthStates = new Set<DiscordHealthState>(['Disabled', 'Connecting', 'Connected', 'Healthy', 'Degraded', 'Unavailable'])
-function invalid(): never { throw new Error('Invalid server protocol') }
+function invalid(): never {
+  throw new Error('Invalid server protocol')
+}
 function record(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) invalid()
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    invalid()
   return value as Record<string, unknown>
 }
 function keys(value: Record<string, unknown>, allowed: readonly string[]) {
-  if (Object.keys(value).some(key => !allowed.includes(key))) invalid()
+  if (Object.keys(value).some(key => !allowed.includes(key)))
+    invalid()
 }
-function text(value: unknown): string { return typeof value === 'string' ? value : invalid() }
-function boolean(value: unknown): boolean { return typeof value === 'boolean' ? value : invalid() }
-function integer(value: unknown, minimum = 0): number { return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum ? value : invalid() }
-function nullableText(value: unknown): string | null { return value === null ? null : text(value) }
+function text(value: unknown): string {
+  return typeof value === 'string' ? value : invalid()
+}
+function boolean(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : invalid()
+}
+function integer(value: unknown, minimum = 0): number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum ? value : invalid()
+}
+function nullableText(value: unknown): string | null {
+  return value === null ? null : text(value)
+}
 function nullableUtc(value: unknown): string | null {
-  if (value === null) return null
+  if (value === null)
+    return null
   const result = text(value)
   return Number.isFinite(Date.parse(result)) && /(?:Z|[+-]00:00)$/.test(result) ? result : invalid()
 }
@@ -77,50 +90,72 @@ function nullableUtc(value: unknown): string | null {
 export function parseDiscordConfiguration(value: unknown): DiscordConfiguration {
   const source = record(value)
   keys(source, ['version', 'isEnabled', 'mode', 'applicationId', 'guildId', 'publicChannelId', 'bridgeGameToDiscord', 'bridgeDiscordToGame', 'proxy', 'hasBotToken', 'targets', 'updatedAtUtc'])
-  if (typeof source.mode !== 'string' || !modes.has(source.mode as DiscordMode) || !Array.isArray(source.targets)) invalid()
-  const proxy = record(source.proxy); keys(proxy, ['isEnabled', 'endpoint', 'hasCredentials'])
+  if (typeof source.mode !== 'string' || !modes.has(source.mode as DiscordMode) || !Array.isArray(source.targets))
+    invalid()
+  const proxy = record(source.proxy)
+  keys(proxy, ['isEnabled', 'endpoint', 'hasCredentials'])
   const targets = Object.freeze(source.targets.map((value) => {
-    const target = record(value); keys(target, ['targetKey', 'deliveryMode', 'channelId', 'isEnabled', 'hasCredential'])
-    if (typeof target.deliveryMode !== 'string' || !modes.has(target.deliveryMode as DiscordMode)) invalid()
+    const target = record(value)
+    keys(target, ['targetKey', 'deliveryMode', 'channelId', 'isEnabled', 'hasCredential'])
+    if (typeof target.deliveryMode !== 'string' || !modes.has(target.deliveryMode as DiscordMode))
+      invalid()
     return Object.freeze({
-      targetKey: text(target.targetKey), deliveryMode: target.deliveryMode as DiscordMode, channelId: nullableText(target.channelId),
-      isEnabled: boolean(target.isEnabled), hasCredential: boolean(target.hasCredential),
+      targetKey: text(target.targetKey),
+      deliveryMode: target.deliveryMode as DiscordMode,
+      channelId: nullableText(target.channelId),
+      isEnabled: boolean(target.isEnabled),
+      hasCredential: boolean(target.hasCredential),
     })
   }))
   return Object.freeze({
-    version: integer(source.version), isEnabled: boolean(source.isEnabled), mode: source.mode as DiscordMode,
-    applicationId: nullableText(source.applicationId), guildId: nullableText(source.guildId), publicChannelId: nullableText(source.publicChannelId),
-    bridgeGameToDiscord: boolean(source.bridgeGameToDiscord), bridgeDiscordToGame: boolean(source.bridgeDiscordToGame),
+    version: integer(source.version),
+    isEnabled: boolean(source.isEnabled),
+    mode: source.mode as DiscordMode,
+    applicationId: nullableText(source.applicationId),
+    guildId: nullableText(source.guildId),
+    publicChannelId: nullableText(source.publicChannelId),
+    bridgeGameToDiscord: boolean(source.bridgeGameToDiscord),
+    bridgeDiscordToGame: boolean(source.bridgeDiscordToGame),
     proxy: Object.freeze({ isEnabled: boolean(proxy.isEnabled), endpoint: nullableText(proxy.endpoint), hasCredentials: boolean(proxy.hasCredentials) }),
-    hasBotToken: boolean(source.hasBotToken), targets, updatedAtUtc: nullableUtc(source.updatedAtUtc),
+    hasBotToken: boolean(source.hasBotToken),
+    targets,
+    updatedAtUtc: nullableUtc(source.updatedAtUtc),
   })
 }
 
 function parseDelivery(value: unknown): DiscordDelivery {
-  const source = record(value); keys(source, ['deliveryId', 'businessKey', 'targetKey', 'status', 'nextAttemptAtUtc', 'retryCount', 'createdAtUtc', 'completedAtUtc'])
-  if (typeof source.status !== 'string' || !deliveryStatuses.has(source.status as DiscordDeliveryStatus)) invalid()
+  const source = record(value)
+  keys(source, ['deliveryId', 'businessKey', 'targetKey', 'status', 'nextAttemptAtUtc', 'retryCount', 'createdAtUtc', 'completedAtUtc'])
+  if (typeof source.status !== 'string' || !deliveryStatuses.has(source.status as DiscordDeliveryStatus))
+    invalid()
   return Object.freeze({ deliveryId: text(source.deliveryId), businessKey: text(source.businessKey), targetKey: text(source.targetKey), status: source.status as DiscordDeliveryStatus, nextAttemptAtUtc: nullableUtc(source.nextAttemptAtUtc), retryCount: integer(source.retryCount), createdAtUtc: nullableUtc(source.createdAtUtc) ?? invalid(), completedAtUtc: nullableUtc(source.completedAtUtc) })
 }
 
 function parseDeliveries(value: unknown): readonly DiscordDelivery[] {
-  if (!Array.isArray(value)) invalid()
+  if (!Array.isArray(value))
+    invalid()
   return Object.freeze(value.map(parseDelivery))
 }
 
 function parseBindings(value: unknown): readonly DiscordBinding[] {
-  if (!Array.isArray(value)) invalid()
+  if (!Array.isArray(value))
+    invalid()
   return Object.freeze(value.map((entry) => {
-    const source = record(entry); keys(source, ['discordSubject', 'crossplatformId', 'isActive', 'createdAtUtc', 'updatedAtUtc'])
+    const source = record(entry)
+    keys(source, ['discordSubject', 'crossplatformId', 'isActive', 'createdAtUtc', 'updatedAtUtc'])
     return Object.freeze({ discordSubject: text(source.discordSubject), crossplatformId: text(source.crossplatformId), isActive: boolean(source.isActive), createdAtUtc: nullableUtc(source.createdAtUtc) ?? invalid(), updatedAtUtc: nullableUtc(source.updatedAtUtc) ?? invalid() })
   }))
 }
 
 function parseCommands(value: unknown): readonly DiscordCommand[] {
-  if (!Array.isArray(value)) invalid()
+  if (!Array.isArray(value))
+    invalid()
   return Object.freeze(value.map((entry) => {
-    const source = record(entry); keys(source, ['commandKey', 'isEnabled', 'remoteAllowed'])
+    const source = record(entry)
+    keys(source, ['commandKey', 'isEnabled', 'remoteAllowed'])
     const commandKey = text(source.commandKey)
-    if (!['bind', 'status', 'players'].includes(commandKey)) invalid()
+    if (!['bind', 'status', 'players'].includes(commandKey))
+      invalid()
     return Object.freeze({ commandKey, isEnabled: boolean(source.isEnabled), remoteAllowed: boolean(source.remoteAllowed) })
   }))
 }
@@ -134,9 +169,16 @@ export async function getDiscordConfiguration(authorization: string, signal?: Ab
 }
 export async function saveDiscordConfiguration(authorization: string, draft: DiscordConfigurationDraft, signal?: AbortSignal): Promise<DiscordConfiguration> {
   const body = {
-    expectedVersion: draft.expectedVersion, isEnabled: draft.isEnabled, mode: draft.mode, applicationId: draft.applicationId,
-    guildId: draft.guildId, publicChannelId: draft.publicChannelId, bridgeGameToDiscord: draft.bridgeGameToDiscord,
-    bridgeDiscordToGame: draft.bridgeDiscordToGame, proxyEnabled: draft.proxy.isEnabled, proxyEndpoint: draft.proxy.endpoint,
+    expectedVersion: draft.expectedVersion,
+    isEnabled: draft.isEnabled,
+    mode: draft.mode,
+    applicationId: draft.applicationId,
+    guildId: draft.guildId,
+    publicChannelId: draft.publicChannelId,
+    bridgeGameToDiscord: draft.bridgeGameToDiscord,
+    bridgeDiscordToGame: draft.bridgeDiscordToGame,
+    proxyEnabled: draft.proxy.isEnabled,
+    proxyEndpoint: draft.proxy.endpoint,
     targets: draft.targets,
   }
   return parseDiscordConfiguration(await requestJson<unknown>('/api/v1/integrations/discord', { method: 'PUT', headers: headers(authorization, true), body: JSON.stringify(body), signal }))
@@ -166,8 +208,10 @@ export async function listDiscordCommands(authorization: string, signal?: AbortS
 }
 
 function parseHealthSection(value: unknown) {
-  const source = record(value); keys(source, ['state', 'errorCode', 'observedAtUtc'])
-  if (typeof source.state !== 'string' || !healthStates.has(source.state as DiscordHealthState)) invalid()
+  const source = record(value)
+  keys(source, ['state', 'errorCode', 'observedAtUtc'])
+  if (typeof source.state !== 'string' || !healthStates.has(source.state as DiscordHealthState))
+    invalid()
   return Object.freeze({ state: source.state as DiscordHealthState, errorCode: nullableText(source.errorCode), observedAtUtc: nullableUtc(source.observedAtUtc) })
 }
 
@@ -182,7 +226,8 @@ export async function getDiscordHealth(authorization: string, signal?: AbortSign
 }
 
 export async function updateDiscordSecret(authorization: string, secretKey: string, operation: SecretOperation, signal?: AbortSignal): Promise<void> {
-  if (operation.operation === 'Keep') return
+  if (operation.operation === 'Keep')
+    return
   await requestJson<void>(`/api/v1/integrations/discord/secrets/${encodeURIComponent(secretKey)}`, {
     method: operation.operation === 'Clear' ? 'DELETE' : 'PUT',
     headers: headers(authorization, operation.operation === 'Replace'),

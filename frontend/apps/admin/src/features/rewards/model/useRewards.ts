@@ -2,8 +2,8 @@ import type { DeepReadonly, ShallowRef } from 'vue'
 import type { GrantOperation, GrantRewardInput, RewardPackage, RewardPackageDraft } from '../api/rewards'
 
 import { onUnmounted, readonly, shallowRef } from 'vue'
-import { useAuthStore } from '../../auth/model/authStore'
 import { HttpError } from '../../../shared/api/http'
+import { useAuthStore } from '../../auth/model/authStore'
 import * as api from '../api/rewards'
 
 export type RewardsState = 'idle' | 'loading' | 'empty' | 'fresh' | 'stale' | 'failed' | 'forbidden'
@@ -33,8 +33,12 @@ export interface RewardOperationsController {
 }
 
 function failure(error: unknown, auth: Auth, stale: boolean): { state: RewardsState, code: string } {
-  if (error instanceof HttpError && error.status === 401) { auth.expireSession(); return { state: 'failed', code: 'session_expired' } }
-  if (error instanceof HttpError && error.status === 403) return { state: 'forbidden', code: 'forbidden' }
+  if (error instanceof HttpError && error.status === 401) {
+    auth.expireSession()
+    return { state: 'failed', code: 'session_expired' }
+  }
+  if (error instanceof HttpError && error.status === 403)
+    return { state: 'forbidden', code: 'forbidden' }
   return { state: stale ? 'stale' : 'failed', code: error instanceof HttpError ? (error.problemCode ?? error.code) : 'invalid_response' }
 }
 
@@ -56,32 +60,49 @@ export function useRewardPackages(options: { auth?: Auth } = {}): RewardPackages
       return Promise.resolve(false)
     controller = new AbortController()
     const current = controller
-    if (mutating) isMutating.value = true
+    if (mutating)
+      isMutating.value = true
     else state.value = 'loading'
     errorCode.value = null
     const pending = action(token, current.signal)
       .then((next) => {
-        if (disposed || current.signal.aborted) return false
+        if (disposed || current.signal.aborted)
+          return false
         rewardPackage.value = next
         state.value = 'fresh'
         return true
       })
       .catch((error: unknown) => {
-        if (disposed || current.signal.aborted) return false
+        if (disposed || current.signal.aborted)
+          return false
         const result = failure(error, auth, rewardPackage.value !== null)
-        state.value = result.state; errorCode.value = result.code
+        state.value = result.state
+        errorCode.value = result.code
         return false
       })
-      .finally(() => { if (request === pending) { request = null; controller = null; isMutating.value = false } })
+      .finally(() => {
+        if (request === pending) {
+          request = null
+          controller = null
+          isMutating.value = false
+        }
+      })
     request = pending
     return pending
   }
-  function dispose() { disposed = true; controller?.abort() }
+  function dispose() {
+    disposed = true
+    controller?.abort()
+  }
   onUnmounted(dispose)
   return {
-    state: readonly(state), rewardPackage: readonly(rewardPackage), isMutating: readonly(isMutating), errorCode: readonly(errorCode),
+    state: readonly(state),
+    rewardPackage: readonly(rewardPackage),
+    isMutating: readonly(isMutating),
+    errorCode: readonly(errorCode),
     load: packageId => run((token, signal) => api.fetchRewardPackage(token, packageId, signal), false),
-    save: draft => run((token, signal) => api.saveRewardPackage(token, draft, signal), true), dispose,
+    save: draft => run((token, signal) => api.saveRewardPackage(token, draft, signal), true),
+    dispose,
   }
 }
 
@@ -96,41 +117,78 @@ export function useRewardOperations(options: { auth?: Auth } = {}): RewardOperat
   let disposed = false
 
   function refresh(): Promise<void> {
-    if (refreshRequest !== null) return refreshRequest
+    if (refreshRequest !== null)
+      return refreshRequest
     const token = auth.authorizationHeader
-    if (disposed || token === null) return Promise.resolve()
-    controller = new AbortController(); const current = controller
-    if (operations.value.length === 0) state.value = 'loading'
+    if (disposed || token === null)
+      return Promise.resolve()
+    controller = new AbortController()
+    const current = controller
+    if (operations.value.length === 0)
+      state.value = 'loading'
     const pending = api.fetchPendingGrantOperations(token, 50, current.signal)
-      .then((next) => { if (!disposed && !current.signal.aborted) { operations.value = Object.freeze([...next]); state.value = next.length === 0 ? 'empty' : 'fresh'; errorCode.value = null } })
-      .catch((error: unknown) => { if (!disposed && !current.signal.aborted) { const result = failure(error, auth, operations.value.length > 0); state.value = result.state; errorCode.value = result.code } })
-      .finally(() => { if (refreshRequest === pending) { refreshRequest = null; controller = null } })
+      .then((next) => {
+        if (!disposed && !current.signal.aborted) {
+          operations.value = Object.freeze([...next])
+          state.value = next.length === 0 ? 'empty' : 'fresh'
+          errorCode.value = null
+        }
+      })
+      .catch((error: unknown) => {
+        if (!disposed && !current.signal.aborted) {
+          const result = failure(error, auth, operations.value.length > 0)
+          state.value = result.state
+          errorCode.value = result.code
+        }
+      })
+      .finally(() => {
+        if (refreshRequest === pending) {
+          refreshRequest = null
+          controller = null
+        }
+      })
     refreshRequest = pending
     return pending
   }
 
   async function mutate(id: string, action: (token: string, signal: AbortSignal) => Promise<GrantOperation>): Promise<boolean> {
     const token = auth.authorizationHeader
-    if (disposed || token === null || mutatingOperationId.value !== null) return false
-    controller = new AbortController(); const current = controller
-    mutatingOperationId.value = id; errorCode.value = null
+    if (disposed || token === null || mutatingOperationId.value !== null)
+      return false
+    controller = new AbortController()
+    const current = controller
+    mutatingOperationId.value = id
+    errorCode.value = null
     try {
       const operation = await action(token, current.signal)
-      if (disposed || current.signal.aborted) return false
+      if (disposed || current.signal.aborted)
+        return false
       operations.value = Object.freeze([operation, ...operations.value.filter(item => item.operationId !== operation.operationId)])
       state.value = 'fresh'
       return true
     }
     catch (error) {
-      const result = failure(error, auth, operations.value.length > 0); state.value = result.state; errorCode.value = result.code
+      const result = failure(error, auth, operations.value.length > 0)
+      state.value = result.state
+      errorCode.value = result.code
       return false
     }
-    finally { mutatingOperationId.value = null; controller = null }
+    finally {
+      mutatingOperationId.value = null
+      controller = null
+    }
   }
-  function dispose() { disposed = true; controller?.abort() }
+  function dispose() {
+    disposed = true
+    controller?.abort()
+  }
   onUnmounted(dispose)
   return {
-    state: readonly(state), operations: readonly(operations), mutatingOperationId: readonly(mutatingOperationId), errorCode: readonly(errorCode), refresh,
+    state: readonly(state),
+    operations: readonly(operations),
+    mutatingOperationId: readonly(mutatingOperationId),
+    errorCode: readonly(errorCode),
+    refresh,
     grant: input => mutate('new', (token, signal) => api.createGrantOperation(token, input, signal)),
     confirm: operation => mutate(operation.operationId, (token, signal) => api.confirmGrantOperation(token, operation.operationId, signal)),
     refund: operation => mutate(operation.operationId, (token, signal) => api.refundGrantOperation(token, operation.operationId, crypto.randomUUID(), signal)),

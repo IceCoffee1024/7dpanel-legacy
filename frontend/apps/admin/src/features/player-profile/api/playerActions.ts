@@ -61,12 +61,12 @@ export type ResetPlayerSkillsResult = RequiredContract<ResetSkillsHttpResponse>
 export type ClearPlayerInventoryResult = RequiredContract<ClearInventoryHttpResponse>
 export type ResetPlayerDataResult = RequiredContract<ResetPlayerDataHttpResponse>
 export type PlayerActionOperation = RequiredContract<PlayerActionOperationHttpResponse>
-export type PlayerActionSubmission =
-  | GrantPlayerItemResult
-  | RemovePlayerItemResult
-  | ResetPlayerSkillsResult
-  | ClearPlayerInventoryResult
-  | ResetPlayerDataResult
+export type PlayerActionSubmission
+  = | GrantPlayerItemResult
+    | RemovePlayerItemResult
+    | ResetPlayerSkillsResult
+    | ClearPlayerInventoryResult
+    | ResetPlayerDataResult
 
 function targetBody(target: PlayerActionTarget): PlayerActionTargetHttpRequest {
   return {

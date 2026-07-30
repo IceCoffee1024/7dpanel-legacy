@@ -28,8 +28,12 @@ function errorFor(kind: BackupPolicyUpdate['kind']) {
   <section class="space-y-4" :aria-label="t('backups.policies.title')">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h2 class="font-semibold">{{ t('backups.policies.title') }}</h2>
-        <p class="text-sm text-muted">{{ t('backups.policies.description') }}</p>
+        <h2 class="font-semibold">
+          {{ t('backups.policies.title') }}
+        </h2>
+        <p class="text-sm text-muted">
+          {{ t('backups.policies.description') }}
+        </p>
       </div>
       <UButton
         color="neutral"

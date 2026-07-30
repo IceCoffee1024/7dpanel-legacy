@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-07-28"
+last_updated: "2026-07-30"
 ---
 
 # 7DPanel 系统架构
@@ -96,6 +96,7 @@ last_updated: "2026-07-28"
 - 第四波使用平衡的经济账本、奖励发放状态机、商品/兑换/成就/在线奖励及 Community Store。登记式游戏命令通过现有唯一 `SevenDaysChatRuntime` 私发结果；`bal/pay/moneytop/daily/shop/buy/redeem`、家/城市/返回点、`tpa/tpaccept/tpreject` 和投票连接真实用例。私人家设置在 `teleport_settings` 中持久化设置费用、四个启动期命令名称和私发提示；省略名称时使用 `home`，列表返回世界与坐标，设置费用使用经济预留后捕获。`daily` 以稳定规则标识定位 `014_DailyRewardPolicies.sql` 中 Owner 配置的奖励包绑定，资格键为 `ruleId + crossplatformId + UTC yyyyMMdd`；缺失或禁用规则不创建 grant，同日重试复用既有奖励包快照。TPA 请求在 SQLite 中持久保存固定双方实体/世界快照与终态，接受通过条件更新竞争；生产组合根使用旧版默认的 30 秒有效期。Community Store 提供稳定排序的全量城市、好友记录、传送操作和投票轮次查询；`011_EconomyCommunity.sql` 在建表时直接初始化 Home、City、Friend、Return、Admin 五类传送设置及默认禁用的 Kick、Restart 投票配置，传送设置与投票配置更新把 `expectedRowVersion` 下沉到 SQLite 条件更新。
 - 第五波的 Automation 只接受固定 trigger、条件字段和类型化 action，保存 trigger snapshot、条件证据和逐动作结果；Discord 出站由专用 delivery worker 处理，Gateway runtime 负责连接、心跳、重连和停止，interaction HTTP transport 校验 Ed25519 签名并把持久 Slash 结果通过原 interaction token 私密 follow-up；`012_AutomationIntegrations.sql` 在建表时直接初始化启用的 `bind`/`status` 与禁用的 `players` Slash 命令设置；GeoIP 在加入边界执行固定策略。`RewardEvidenceRuntime` 订阅已持久化的玩家历史与证据写入完成入口，驱动成就与在线奖励评估；它不新增静态事件总线或逐事件 `Task.Run`。这些 Discord 链路尚未取得 sandbox 或真实环境往返证据。
 - 第六波把世界只读摘要、领地/车辆/无人机/容器、地图作业、类型化世界操作、change set/undo 与 17 个固定功能模块接入生产对象图。模块状态从 `IFeatureModuleStateStore` 读取并约束 Automation 与 Community 游戏命令；危险世界操作仍要求真实测试实例、备份与回滚目标后才能执行 smoke。
+- 阻塞型单消费者后台边界不占用共享线程池等待队列：控制台审计、游戏事件、玩家证据、游戏资源目录、近期活动、GeoIP 等 worker 通过 `TaskCreationOptions.LongRunning` 启动专用消费者，并使用启动就绪信号、完成事件和有界排空期限协调 `Start`、`Stop` 与 `Dispose`。SSE heartbeat、Discord 排空和地图元数据等待同样以事件或完成信号驱动，避免轮询和线程池饥饿改变生命周期时序。
 - Web Adapter 暴露固定 `/api/v1` Controller 和独立 DTO，OpenAPI snapshot 已刷新，Admin SDK 已由 `pnpm api:gen` 重新生成。Admin Feature 使用严格 parser、readonly composable、无乐观成功和 Owner-only route meta；页面入口由 `AppShell` 分组到服务器运维、经济与奖励、传送与投票、集成与访问策略。
 
 本节只提升当前代码结构和本轮可复查命令支持的事实。真实备份恢复、真实玩家和世界副作用、Discord/MaxMind sandbox、Playwright、publish 与 Windows/Linux 候选发布门禁仍未完成。

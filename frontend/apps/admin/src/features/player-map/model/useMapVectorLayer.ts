@@ -79,13 +79,13 @@ export interface TransientEntityMapFeature extends MapFeatureBase {
   readonly entityType: string
 }
 
-export type MapBusinessFeature =
-  | HistoricalPlayerMapFeature
-  | TraderMapFeature
-  | ClaimMapFeature
-  | VehicleMapFeature
-  | DroneMapFeature
-  | TransientEntityMapFeature
+export type MapBusinessFeature
+  = | HistoricalPlayerMapFeature
+    | TraderMapFeature
+    | ClaimMapFeature
+    | VehicleMapFeature
+    | DroneMapFeature
+    | TransientEntityMapFeature
 
 export interface MapLayerQuery {
   readonly worldId: string
@@ -453,8 +453,9 @@ export function createMapVectorLayerController(options: MapVectorLayerController
   const unsubscribeVisibility = visibility.subscribe(() => {
     if (disposed || !enabled.value)
       return
-    if (visibility.isVisible())
+    if (visibility.isVisible()) {
       void refresh()
+    }
     else {
       abortActive()
       state.value = 'paused'

@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.Local.Backups;
 using LSTY.SevenDPanel.Adapters.Local.Files;
 using Xunit;
@@ -113,7 +112,7 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
 
         [Fact]
-        public async Task Atomic_writer_never_writes_one_target_concurrently()
+        public void Atomic_writer_never_writes_one_target_concurrently()
         {
             using var directories = new TestDirectories();
             var writer = new AtomicFileWriter(directories.CreateRoots());
@@ -121,32 +120,60 @@ namespace LSTY.SevenDPanel.Tests.Local
             using var release = new ManualResetEventSlim(false);
             var secondEntered = false;
 
-            var first = Task.Run(() => writer.Write("world/single.zip", path =>
+            Exception? firstFailure = null;
+            var first = new Thread(() =>
             {
-                entered.Set();
-                release.Wait(TestContext.Current.CancellationToken);
-                File.WriteAllText(path, "first");
-                return true;
-            }));
+                try
+                {
+                    writer.Write("world/single.zip", path =>
+                    {
+                        entered.Set();
+                        release.Wait(TestContext.Current.CancellationToken);
+                        File.WriteAllText(path, "first");
+                        return true;
+                    });
+                }
+                catch (Exception exception)
+                {
+                    firstFailure = exception;
+                }
+            }) { IsBackground = true };
+            first.Start();
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
-            var second = Task.Run(() => Assert.Throws<IOException>(() =>
-                writer.Write("world/single.zip", path =>
+            using var secondStarted = new ManualResetEventSlim(false);
+            Exception? secondFailure = null;
+            var second = new Thread(() =>
+            {
+                secondStarted.Set();
+                try
                 {
-                    secondEntered = true;
-                    File.WriteAllText(path, "second");
-                    return true;
-                })));
+                    writer.Write("world/single.zip", path =>
+                    {
+                        secondEntered = true;
+                        File.WriteAllText(path, "second");
+                        return true;
+                    });
+                }
+                catch (Exception exception)
+                {
+                    secondFailure = exception;
+                }
+            }) { IsBackground = true };
+            second.Start();
 
-            await Task.Delay(50, TestContext.Current.CancellationToken);
+            Assert.True(secondStarted.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            Assert.True(WaitUntilBlocked(second));
             Assert.False(secondEntered);
             release.Set();
-            await first;
-            await second;
+            Assert.True(first.Join(TimeSpan.FromSeconds(5)));
+            Assert.True(second.Join(TimeSpan.FromSeconds(5)));
+            Assert.Null(firstFailure);
+            Assert.IsType<IOException>(secondFailure);
         }
 
         [Fact]
-        public async Task Failed_writer_does_not_release_a_target_lock_while_an_existing_waiter_is_active()
+        public void Failed_writer_does_not_release_a_target_lock_while_an_existing_waiter_is_active()
         {
             using var directories = new TestDirectories();
             var writer = new AtomicFileWriter(directories.CreateRoots());
@@ -156,7 +183,7 @@ namespace LSTY.SevenDPanel.Tests.Local
             using var releaseSecond = new ManualResetEventSlim(false);
             var thirdEntered = false;
 
-            var first = Task.Run(() =>
+            var first = new Thread(() =>
             {
                 try
                 {
@@ -170,7 +197,8 @@ namespace LSTY.SevenDPanel.Tests.Local
                 catch (IOException)
                 {
                 }
-            });
+            }) { IsBackground = true };
+            first.Start();
             Assert.True(firstEntered.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
             var second = new Thread(() =>
@@ -191,15 +219,16 @@ namespace LSTY.SevenDPanel.Tests.Local
             });
             second.IsBackground = true;
             second.Start();
-            Assert.True(SpinWait.SpinUntil(
-                () => (second.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0,
-                TimeSpan.FromSeconds(5)));
+            Assert.True(WaitUntilBlocked(second));
+            Assert.False(secondEntered.IsSet);
             releaseFirst.Set();
-            await first;
+            Assert.True(first.Join(TimeSpan.FromSeconds(5)));
             Assert.True(secondEntered.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
-            var third = Task.Run(() =>
+            using var thirdStarted = new ManualResetEventSlim(false);
+            var third = new Thread(() =>
             {
+                thirdStarted.Set();
                 try
                 {
                     writer.Write("world/retry.zip", path =>
@@ -212,15 +241,22 @@ namespace LSTY.SevenDPanel.Tests.Local
                 catch (IOException)
                 {
                 }
-            });
-            await Task.Delay(50, TestContext.Current.CancellationToken);
-            var overlapped = thirdEntered;
+            }) { IsBackground = true };
+            third.Start();
+            Assert.True(thirdStarted.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            Assert.True(WaitUntilBlocked(third));
+            Assert.False(thirdEntered);
             releaseSecond.Set();
             Assert.True(second.Join(TimeSpan.FromSeconds(5)));
-            await third;
+            Assert.True(third.Join(TimeSpan.FromSeconds(5)));
 
-            Assert.False(overlapped);
+            Assert.False(thirdEntered);
         }
+
+        private static bool WaitUntilBlocked(Thread thread) =>
+            SpinWait.SpinUntil(
+                () => (thread.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0,
+                TimeSpan.FromSeconds(5));
 
         private static void CreateJunction(string junction, string target)
         {

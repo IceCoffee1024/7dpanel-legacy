@@ -5,6 +5,8 @@ import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp } from 'vue'
 
+import { useBackups } from './useBackups'
+
 const api = vi.hoisted(() => ({
   createPanelDatabaseBackup: vi.fn(),
   createServerConfigurationBackup: vi.fn(),
@@ -17,8 +19,6 @@ const api = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../shared/api/generated', () => api)
-
-import { useBackups } from './useBackups'
 
 function deferred<T>() {
   let resolve!: (value: T) => void

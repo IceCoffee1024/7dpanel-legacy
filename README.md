@@ -22,8 +22,11 @@ is to reimplement its operator-visible capabilities through the current 7DPanel
 architecture and UI, without copying source code or preserving legacy routes,
 schemas, authentication, or page layouts. Backups and scheduling, complete
 player inventory/profile tracking, economics and rewards, teleport/voting,
-Discord/GeoIP, event automation, and the remaining world tools are target work,
-not completed features. The Marketing application has not been initialized.
+Discord/GeoIP, event automation, and world tools now have implementation
+slices in the current backend and Admin SPA. Their remaining real-game,
+external-service, browser, backup/restore, and release evidence is tracked in
+[the test strategy](docs/test.md); code presence does not mean release
+acceptance is complete. The Marketing application has not been initialized.
 
 ## Repository Layout
 

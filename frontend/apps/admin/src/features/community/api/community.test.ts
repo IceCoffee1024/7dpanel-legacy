@@ -34,6 +34,25 @@ const position = {
   yaw: 90,
 }
 
+const homeExperience = {
+  setFeeAmount: 10,
+  listCommandName: 'homes',
+  setCommandName: 'sethome',
+  deleteCommandName: 'delhome',
+  teleportCommandName: 'home',
+  noHomesMessage: 'You have no saved homes.',
+  limitMessage: 'Home limit reached.',
+  setSuccessMessage: 'Home saved.',
+  overwriteMessage: 'Home updated.',
+  deleteSuccessMessage: 'Home deleted.',
+  notFoundMessage: 'Home not found.',
+  cooldownMessage: 'Teleport cooldown is active.',
+  teleportSuccessMessage: 'Teleported home.',
+  setInsufficientFundsMessage: 'Not enough balance to set a home.',
+  teleportInsufficientFundsMessage: 'Not enough balance to teleport home.',
+  bloodMoonMessage: 'Home teleport is disabled during a blood moon.',
+}
+
 const teleportSetting = {
   kind: 'Home',
   enabled: true,
@@ -42,6 +61,7 @@ const teleportSetting = {
   globalCooldownMs: 5_000,
   denyDuringBloodMoon: true,
   feeAmount: 25,
+  homeExperience,
   updatedAtUtc: '2026-07-27T02:00:00Z',
   rowVersion: 4,
 }
@@ -268,6 +288,10 @@ describe('community transport', () => {
       globalCooldownMs: 2_000n,
       denyDuringBloodMoon: false,
       feeAmount: 5n,
+      homeExperience: {
+        ...homeExperience,
+        setFeeAmount: 10n,
+      },
     })
     const settlement = await settleVoteRound('Bearer owner', 'round/1')
 
@@ -282,6 +306,7 @@ describe('community transport', () => {
         globalCooldownMs: 2_000,
         denyDuringBloodMoon: false,
         feeAmount: 5,
+        homeExperience,
         expectedRowVersion: 4,
       }),
     }))

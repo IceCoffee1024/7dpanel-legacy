@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ConsoleCommandFeedbackCode } from '../model/useConsoleCommands'
 import type { ConsoleCommandCatalogEntry } from '../api/consoleCommands'
+import type { ConsoleCommandFeedbackCode } from '../model/useConsoleCommands'
 
 import { useToast } from '@nuxt/ui/composables'
 import { watch } from 'vue'
@@ -114,8 +114,8 @@ function handleKeydown(event: KeyboardEvent) {
 
     <div class="flex min-w-0 gap-2">
       <UInput
-        :aria-label="t('console.command.placeholder')"
         id="console-command"
+        :aria-label="t('console.command.placeholder')"
         class="min-w-0 flex-1 font-mono"
         :disabled="isSubmitting"
         icon="i-lucide-terminal"

@@ -25,7 +25,9 @@ const auth = {
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((complete) => { resolve = complete })
+  const promise = new Promise<T>((complete) => {
+    resolve = complete
+  })
   return { promise, resolve }
 }
 
@@ -106,7 +108,9 @@ const voteRound = Object.freeze<VoteRound>({
 describe('useCommunity', () => {
   it('exposes readonly state and coalesces concurrent loads', async () => {
     let release!: (value: readonly TeleportSettings[]) => void
-    const fetchTeleportSettings = vi.fn(() => new Promise<readonly TeleportSettings[]>((resolve) => { release = resolve }))
+    const fetchTeleportSettings = vi.fn(() => new Promise<readonly TeleportSettings[]>((resolve) => {
+      release = resolve
+    }))
     const controller = useCommunity({ auth, fetchTeleportSettings })
 
     const first = controller.loadTeleportSettings()
@@ -126,7 +130,9 @@ describe('useCommunity', () => {
 
   it('does not change a setting until the server returns its authoritative version', async () => {
     let release!: (value: TeleportSettings) => void
-    const updateTeleportSetting = vi.fn(() => new Promise<TeleportSettings>((resolve) => { release = resolve }))
+    const updateTeleportSetting = vi.fn(() => new Promise<TeleportSettings>((resolve) => {
+      release = resolve
+    }))
     const controller = useCommunity({
       auth,
       fetchTeleportSettings: vi.fn().mockResolvedValue([setting]),

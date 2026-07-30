@@ -52,6 +52,7 @@ namespace LSTY.SevenDPanel.Tests
 
             Assert.True(service.TryRecord(Draft(4)));
             Assert.True(service.TryRecord(Draft(5)));
+            WaitFor(store.SnapshotsPersisted);
             service.Stop();
 
             Assert.Equal(new[] { Utc(5) }, store.InventorySnapshots.Select(value => value.ObservedAtUtc));
@@ -101,6 +102,7 @@ namespace LSTY.SevenDPanel.Tests
 
             Assert.True(service.TryRecord(draft));
             Assert.True(service.TryRecord(draft));
+            WaitFor(store.SnapshotsPersisted);
             service.Stop();
 
             Assert.Single(store.InventorySnapshots);
@@ -202,6 +204,8 @@ namespace LSTY.SevenDPanel.Tests
             private readonly object sync = new object();
             private int activeCalls;
             private int maximumConcurrentCalls;
+            private int inventorySnapshotPersisted;
+            private int skillSnapshotPersisted;
             private readonly List<PlayerInventorySnapshot> inventorySnapshots = new List<PlayerInventorySnapshot>();
             private readonly List<PlayerSkillSnapshot> skillSnapshots = new List<PlayerSkillSnapshot>();
             private readonly List<PlayerEvidenceGap> inventoryGaps = new List<PlayerEvidenceGap>();
@@ -214,14 +218,24 @@ namespace LSTY.SevenDPanel.Tests
             public IReadOnlyList<PlayerEvidenceGap> SkillGaps { get { lock (sync) return skillGaps.ToArray(); } }
             public IReadOnlyList<PlayerSession> Sessions { get { lock (sync) return sessions.ToArray(); } }
             public int MaximumConcurrentCalls => Volatile.Read(ref maximumConcurrentCalls);
+            public ManualResetEventSlim SnapshotsPersisted { get; } = new ManualResetEventSlim(false);
 
             public virtual void AppendSession(PlayerSession session) =>
                 Call(() => { lock (sync) sessions.Add(session); });
             public virtual void AppendActivity(PlayerActivityEvent activity) => Call(() => { });
-            public virtual void AppendInventorySnapshot(PlayerInventorySnapshot snapshot) =>
+            public virtual void AppendInventorySnapshot(PlayerInventorySnapshot snapshot)
+            {
                 Call(() => { lock (sync) inventorySnapshots.Add(snapshot); });
-            public virtual void AppendSkillSnapshot(PlayerSkillSnapshot snapshot) =>
+                Interlocked.Exchange(ref inventorySnapshotPersisted, 1);
+                SignalSnapshotsPersisted();
+            }
+
+            public virtual void AppendSkillSnapshot(PlayerSkillSnapshot snapshot)
+            {
                 Call(() => { lock (sync) skillSnapshots.Add(snapshot); });
+                Interlocked.Exchange(ref skillSnapshotPersisted, 1);
+                SignalSnapshotsPersisted();
+            }
             public virtual void AppendInventoryGap(PlayerEvidenceGap gap) =>
                 Call(() => { lock (sync) inventoryGaps.Add(gap); });
             public virtual void AppendSkillGap(PlayerEvidenceGap gap) =>
@@ -243,6 +257,13 @@ namespace LSTY.SevenDPanel.Tests
                 UpdateMaximum(active);
                 try { action(); }
                 finally { Interlocked.Decrement(ref activeCalls); }
+            }
+
+            private void SignalSnapshotsPersisted()
+            {
+                if (Volatile.Read(ref inventorySnapshotPersisted) == 1 &&
+                    Volatile.Read(ref skillSnapshotPersisted) == 1)
+                    SnapshotsPersisted.Set();
             }
 
             private void UpdateMaximum(int active)

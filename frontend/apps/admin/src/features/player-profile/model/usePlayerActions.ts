@@ -128,7 +128,10 @@ export function usePlayerActions(options: UsePlayerActionsOptions): PlayerAction
   }
 
   async function poll(operationId: string, requestVersion: number, signal: AbortSignal): Promise<void> {
-    while (!disposed && requestVersion === version && !signal.aborted) {
+    while (true) {
+      if (disposed || requestVersion !== version || signal.aborted)
+        return
+
       await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
       if (disposed || requestVersion !== version || signal.aborted)
         return

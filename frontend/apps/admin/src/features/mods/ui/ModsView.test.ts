@@ -1,8 +1,8 @@
 import type { ModsController } from '../model/useMods'
 
 import { mount } from '@vue/test-utils'
-import { readonly, shallowRef } from 'vue'
 import { beforeEach, expect, it, vi } from 'vitest'
+import { readonly, shallowRef } from 'vue'
 
 import ModsView from './ModsView.vue'
 
@@ -31,8 +31,16 @@ vi.mock('vue-i18n', () => ({
 }))
 
 const mod = {
-  directoryId: 'Example', name: 'Example', displayName: 'Example', author: 'Author', version: '1',
-  website: null, description: 'Description', isLoadedNow: true, isEnabledNextStart: false, isProtected: false,
+  directoryId: 'Example',
+  name: 'Example',
+  displayName: 'Example',
+  author: 'Author',
+  version: '1',
+  website: null,
+  description: 'Description',
+  isLoadedNow: true,
+  isEnabledNextStart: false,
+  isProtected: false,
 }
 
 function mountView(overrides: Partial<ModsController> = {}) {
@@ -42,7 +50,10 @@ function mountView(overrides: Partial<ModsController> = {}) {
     feedback: readonly(shallowRef(null)),
     canMutate: readonly(shallowRef(true)),
     changingDirectoryId: readonly(shallowRef(null)),
-    refresh: vi.fn(), changeNextStart: vi.fn(), clearFeedback: vi.fn(), dispose: vi.fn(),
+    refresh: vi.fn(),
+    changeNextStart: vi.fn(),
+    clearFeedback: vi.fn(),
+    dispose: vi.fn(),
     ...overrides,
   } as ModsController
   useModsMock.mockReturnValue(controller)

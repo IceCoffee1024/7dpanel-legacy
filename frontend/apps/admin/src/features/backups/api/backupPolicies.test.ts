@@ -26,7 +26,7 @@ it('sends only the fixed policy update DTO with the expected row version', async
 
   expect(requestJson).toHaveBeenCalledWith('/api/v1/backups/policies/World', {
     method: 'PUT',
-    headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+    headers: { 'Authorization': 'Bearer token', 'Content-Type': 'application/json' },
     body: JSON.stringify({
       enabled: true,
       cronExpression: '0 4 * * *',

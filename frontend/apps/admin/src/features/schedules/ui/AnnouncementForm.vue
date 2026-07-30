@@ -41,7 +41,13 @@ function submit() {
         />
       </UFormField>
       <div class="flex justify-end">
-        <UButton data-testid="send-announcement" :disabled="disabled || invalid" icon="i-lucide-megaphone" :label="t('schedules.announcement.send')" type="submit" />
+        <UButton
+          data-testid="send-announcement"
+          :disabled="disabled || invalid"
+          icon="i-lucide-megaphone"
+          :label="t('schedules.announcement.send')"
+          type="submit"
+        />
       </div>
     </UForm>
   </UCard>

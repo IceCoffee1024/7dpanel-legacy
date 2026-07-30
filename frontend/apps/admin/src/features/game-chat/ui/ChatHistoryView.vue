@@ -127,7 +127,13 @@ function applyFilters() {
       :title="state === 'forbidden' ? t('gameChat.history.state.forbidden') : t('gameChat.history.state.failed')"
     >
       <template #actions>
-        <UButton v-if="state === 'failed'" color="neutral" variant="outline" :label="t('gameChat.common.retry')" @click="emit('retry')" />
+        <UButton
+          v-if="state === 'failed'"
+          color="neutral"
+          variant="outline"
+          :label="t('gameChat.common.retry')"
+          @click="emit('retry')"
+        />
       </template>
     </UAlert>
     <div v-else-if="state === 'empty'" class="rounded-lg border border-dashed border-default py-12 text-center text-sm text-muted">
@@ -147,7 +153,9 @@ function applyFilters() {
             <code class="break-all text-xs">{{ row.original.crossplatformId ?? '—' }}</code>
           </template>
           <template #message-cell="{ row }">
-            <p class="max-w-xl whitespace-pre-wrap wrap-break-word">{{ row.original.message }}</p>
+            <p class="max-w-xl whitespace-pre-wrap wrap-break-word">
+              {{ row.original.message }}
+            </p>
           </template>
         </UTable>
       </div>
@@ -159,14 +167,32 @@ function applyFilters() {
             <time class="text-xs text-muted">{{ message.occurredAtUtc }}</time>
           </div>
           <div class="flex flex-wrap gap-2 text-xs">
-            <UBadge color="neutral" variant="subtle">{{ t(`gameChat.channels.${message.chatType}`) }}</UBadge>
-            <UBadge color="neutral" variant="outline">{{ t(`gameChat.sources.${message.sourceKind}`) }}</UBadge>
+            <UBadge color="neutral" variant="subtle">
+              {{ t(`gameChat.channels.${message.chatType}`) }}
+            </UBadge>
+            <UBadge color="neutral" variant="outline">
+              {{ t(`gameChat.sources.${message.sourceKind}`) }}
+            </UBadge>
           </div>
           <dl class="grid gap-1 text-xs text-muted">
-            <div><dt class="inline">{{ t('gameChat.common.crossplatformId') }}：</dt><dd class="inline break-all">{{ message.crossplatformId ?? '—' }}</dd></div>
-            <div><dt class="inline">{{ t('gameChat.common.entityId') }}：</dt><dd class="inline">{{ message.entityId }}</dd></div>
+            <div>
+              <dt class="inline">
+                {{ t('gameChat.common.crossplatformId') }}：
+              </dt><dd class="inline break-all">
+                {{ message.crossplatformId ?? '—' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="inline">
+                {{ t('gameChat.common.entityId') }}：
+              </dt><dd class="inline">
+                {{ message.entityId }}
+              </dd>
+            </div>
           </dl>
-          <p class="whitespace-pre-wrap wrap-break-word text-sm text-default">{{ message.message }}</p>
+          <p class="whitespace-pre-wrap wrap-break-word text-sm text-default">
+            {{ message.message }}
+          </p>
         </li>
       </ul>
 

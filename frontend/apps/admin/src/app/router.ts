@@ -15,7 +15,7 @@ const forbiddenRoute: RouteRecordRaw = {
     setup() {
       const { t } = useI18n()
       return () => h('main', {
-        class: 'flex min-h-0 flex-1 items-center justify-center p-6 text-center',
+        'class': 'flex min-h-0 flex-1 items-center justify-center p-6 text-center',
         'data-testid': 'forbidden-page',
       }, [
         h('div', { class: 'max-w-md' }, [

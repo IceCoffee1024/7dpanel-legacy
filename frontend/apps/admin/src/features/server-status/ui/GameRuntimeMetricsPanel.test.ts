@@ -52,7 +52,7 @@ function render(
   })
 }
 
-describe('GameRuntimeMetricsPanel', () => {
+describe('gameRuntimeMetricsPanel', () => {
   it('renders all eleven typed metrics with value, unit, source, time and warning', () => {
     const wrapper = render()
 

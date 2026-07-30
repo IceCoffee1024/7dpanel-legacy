@@ -5,6 +5,8 @@ import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp } from 'vue'
 
+import { useSchedules } from './useSchedules'
+
 const api = vi.hoisted(() => ({
   createSchedule: vi.fn(),
   deleteSchedule: vi.fn(),
@@ -16,8 +18,6 @@ const api = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../shared/api/generated', () => api)
-
-import { useSchedules } from './useSchedules'
 
 function deferred<T>() {
   let resolve!: (value: T) => void

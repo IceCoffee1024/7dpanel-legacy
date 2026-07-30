@@ -48,9 +48,12 @@ function allSections(state: PlayerProfileSectionViewState): PlayerProfileSection
 }
 
 function sectionState(value: string | undefined): PlayerProfileSectionViewState {
-  if (value === 'Available') return 'available'
-  if (value === 'Partial') return 'partial'
-  if (value === 'Forbidden') return 'forbidden'
+  if (value === 'Available')
+    return 'available'
+  if (value === 'Partial')
+    return 'partial'
+  if (value === 'Forbidden')
+    return 'forbidden'
   return 'unavailable'
 }
 
@@ -67,8 +70,10 @@ function statesFromProfile(profile: PlayerProfile): PlayerProfileSectionStates {
 
 function aggregateState(states: PlayerProfileSectionStates): PlayerProfileViewState {
   const values = Object.values(states)
-  if (values.every(value => value === 'forbidden')) return 'forbidden'
-  if (values.some(value => value === 'partial' || value === 'unavailable')) return 'partial'
+  if (values.every(value => value === 'forbidden'))
+    return 'forbidden'
+  if (values.some(value => value === 'partial' || value === 'unavailable'))
+    return 'partial'
   return 'available'
 }
 
@@ -111,7 +116,8 @@ export function usePlayerProfile(
   }
 
   async function load(id: string): Promise<void> {
-    if (disposed) return
+    if (disposed)
+      return
     controller?.abort()
     const version = ++requestVersion
     const nextController = new AbortController()
@@ -129,7 +135,8 @@ export function usePlayerProfile(
     isRefreshing.value = true
     try {
       const next = await requestProfile(authorizationHeader, id, nextController.signal)
-      if (disposed || version !== requestVersion) return
+      if (disposed || version !== requestVersion)
+        return
       profile.value = next
       sectionStates.value = statesFromProfile(next)
       state.value = aggregateState(sectionStates.value)
@@ -137,8 +144,10 @@ export function usePlayerProfile(
       sessionExpiryNotified = false
     }
     catch (error) {
-      if (disposed || version !== requestVersion || (error instanceof HttpError && error.code === 'aborted')) return
-      if (error instanceof HttpError && error.status === 401) expireSession()
+      if (disposed || version !== requestVersion || (error instanceof HttpError && error.code === 'aborted'))
+        return
+      if (error instanceof HttpError && error.status === 401)
+        expireSession()
       if (error instanceof HttpError && error.status === 403) {
         profile.value = null
         sectionStates.value = allSections('forbidden')
@@ -180,7 +189,8 @@ export function usePlayerProfile(
   )
 
   function dispose() {
-    if (disposed) return
+    if (disposed)
+      return
     disposed = true
     requestVersion++
     stop()

@@ -624,14 +624,22 @@ namespace LSTY.SevenDPanel.Tests
             var stopAttempted = new ManualResetEventSlim();
             var stopReturned = new ManualResetEventSlim();
 
-            var start = Task.Run(subject.Start);
+            var start = Task.Factory.StartNew(
+                subject.Start,
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
             Assert.True(inner.StartEntered.Wait(TimeSpan.FromSeconds(5)));
-            var stop = Task.Run(() =>
-            {
-                stopAttempted.Set();
-                subject.Stop();
-                stopReturned.Set();
-            });
+            var stop = Task.Factory.StartNew(
+                () =>
+                {
+                    stopAttempted.Set();
+                    subject.Stop();
+                    stopReturned.Set();
+                },
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
             Assert.True(stopAttempted.Wait(TimeSpan.FromSeconds(5)));
             var returnedWhileStartWasBlocked = stopReturned.Wait(TimeSpan.FromMilliseconds(250));
 
@@ -676,14 +684,22 @@ namespace LSTY.SevenDPanel.Tests
 
             joined!("Amy");
             Assert.True(writer.WriteEntered.Wait(TimeSpan.FromSeconds(5)));
-            var dispose = Task.Run(runtime.Dispose);
-            var writerDisposedBeforeWriteFinished =
-                writer.Disposed.Wait(TimeSpan.FromMilliseconds(250));
+            var disposeStarted = new ManualResetEventSlim();
+            var dispose = Task.Factory.StartNew(
+                () =>
+                {
+                    disposeStarted.Set();
+                    runtime.Dispose();
+                },
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
+            Assert.True(disposeStarted.Wait(TimeSpan.FromSeconds(5)));
 
             writer.CompleteWrite.TrySetResult(true);
             await dispose;
 
-            Assert.False(writerDisposedBeforeWriteFinished);
+            Assert.False(writer.DisposedBeforeWriteFinished);
             Assert.True(writer.WriteFinished.IsSet);
             Assert.True(writer.Disposed.IsSet);
         }
@@ -724,14 +740,22 @@ namespace LSTY.SevenDPanel.Tests
                 new[] { "Recent activity drain timed out; runtime resources remain active." },
                 logs);
             Assert.DoesNotContain("Amy", Assert.Single(logs), StringComparison.Ordinal);
-            var retry = Task.Run(runtime.Dispose);
-            var writerDisposedBeforeWriteFinished =
-                writer.Disposed.Wait(TimeSpan.FromMilliseconds(250));
+            var retryStarted = new ManualResetEventSlim();
+            var retry = Task.Factory.StartNew(
+                () =>
+                {
+                    retryStarted.Set();
+                    runtime.Dispose();
+                },
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
+            Assert.True(retryStarted.Wait(TimeSpan.FromSeconds(5)));
 
             writer.CompleteWrite.TrySetResult(true);
             await retry;
 
-            Assert.False(writerDisposedBeforeWriteFinished);
+            Assert.False(writer.DisposedBeforeWriteFinished);
             Assert.True(writer.WriteFinished.IsSet);
             Assert.True(writer.Disposed.IsSet);
         }
@@ -984,7 +1008,8 @@ namespace LSTY.SevenDPanel.Tests
             public ManualResetEventSlim WriteFinished { get; } = new ManualResetEventSlim();
             public ManualResetEventSlim Disposed { get; } = new ManualResetEventSlim();
             public TaskCompletionSource<bool> CompleteWrite { get; } =
-                new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                new TaskCompletionSource<bool>();
+            public bool DisposedBeforeWriteFinished { get; private set; }
 
             public Task RecordPanelLoginSucceededAsync(string actorSubject, string actorDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -999,7 +1024,11 @@ namespace LSTY.SevenDPanel.Tests
             public Task RecordRestartScriptStartedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
             public Task RecordShutdownRequestedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
             public Task RecordServerOperationFailedAsync(string actorSubject, string operationCode, string failureCode, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
-            public void Dispose() => Disposed.Set();
+            public void Dispose()
+            {
+                DisposedBeforeWriteFinished = !WriteFinished.IsSet;
+                Disposed.Set();
+            }
         }
 
         private sealed class ScopeCaptureHandler : HttpMessageHandler

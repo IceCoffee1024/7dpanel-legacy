@@ -3,9 +3,12 @@ import type { AchievementDefinitionDraft, AchievementStatistic, EvidenceGapPolic
 import type { AchievementOnlineController } from '../model/useCommerce'
 import { computed, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-const props = defineProps<{ controller: AchievementOnlineController }>(); const emit = defineEmits<{ saveAchievement: [draft: AchievementDefinitionDraft], loadAchievementRecord: [id: string, player: string], saveRule: [draft: OnlineRewardRuleDraft], loadRecords: [id: string, player: string], manualGrant: [input: ManualOnlineRewardInput] }>()
+
+const props = defineProps<{ controller: AchievementOnlineController }>()
+const emit = defineEmits<{ saveAchievement: [draft: AchievementDefinitionDraft], loadAchievementRecord: [id: string, player: string], saveRule: [draft: OnlineRewardRuleDraft], loadRecords: [id: string, player: string], manualGrant: [input: ManualOnlineRewardInput] }>()
 const { t } = useI18n()
-const achievement = reactive({ achievementId: '', name: '', description: '', statistic: 'Level' as AchievementStatistic, thresholdValue: '1', rewardPackageId: '', enabled: true, sortOrder: 0, playerId: '' }); const rule = reactive({ ruleId: '', name: '', requiredOnlineSeconds: '3600', repeatIntervalSeconds: '', gapPolicy: 'Paused' as EvidenceGapPolicy, rewardPackageId: '', enabled: true, sortOrder: 0, playerId: '', expectedEntityId: 0, expectedWorldId: '' })
+const achievement = reactive({ achievementId: '', name: '', description: '', statistic: 'Level' as AchievementStatistic, thresholdValue: '1', rewardPackageId: '', enabled: true, sortOrder: 0, playerId: '' })
+const rule = reactive({ ruleId: '', name: '', requiredOnlineSeconds: '3600', repeatIntervalSeconds: '', gapPolicy: 'Paused' as EvidenceGapPolicy, rewardPackageId: '', enabled: true, sortOrder: 0, playerId: '', expectedEntityId: 0, expectedWorldId: '' })
 const statisticItems = computed(() => [
   { label: t('commerce.achievementOnline.statistic.Level'), value: 'Level' },
   { label: t('commerce.achievementOnline.statistic.ZombieKills'), value: 'ZombieKills' },
@@ -16,10 +19,147 @@ const gapPolicyItems = computed(() => [
   { label: t('commerce.achievementOnline.gapPolicy.Paused'), value: 'Paused' },
   { label: t('commerce.achievementOnline.gapPolicy.Incomplete'), value: 'Incomplete' },
 ])
-const achievementValid = computed(() => achievement.achievementId.trim() !== '' && achievement.name.trim() !== '' && /^\d+$/.test(achievement.thresholdValue) && achievement.rewardPackageId.trim() !== ''); const ruleValid = computed(() => rule.ruleId.trim() !== '' && rule.name.trim() !== '' && /^\d+$/.test(rule.requiredOnlineSeconds) && rule.rewardPackageId.trim() !== '')
-function saveAchievement() { if (achievementValid.value) emit('saveAchievement', { ...achievement, thresholdValue: BigInt(achievement.thresholdValue) }) }
-function saveRule() { if (ruleValid.value) emit('saveRule', { ruleId: rule.ruleId, name: rule.name, requiredOnlineSeconds: BigInt(rule.requiredOnlineSeconds), repeatIntervalSeconds: rule.repeatIntervalSeconds === '' ? null : BigInt(rule.repeatIntervalSeconds), gapPolicy: rule.gapPolicy, rewardPackageId: rule.rewardPackageId, enabled: rule.enabled, sortOrder: rule.sortOrder }) }
-function manualGrant() { emit('manualGrant', { ruleId: rule.ruleId, crossplatformId: rule.playerId, expectedEntityId: rule.expectedEntityId, expectedWorldId: rule.expectedWorldId, clientRequestKey: crypto.randomUUID() }) }
-function stateColor(state: string) { if (state === 'Granted') return 'success' as const; if (state === 'PendingReconciliation') return 'warning' as const; if (state === 'Failed') return 'error' as const; return 'neutral' as const }
+const achievementValid = computed(() => achievement.achievementId.trim() !== '' && achievement.name.trim() !== '' && /^\d+$/.test(achievement.thresholdValue) && achievement.rewardPackageId.trim() !== '')
+const ruleValid = computed(() => rule.ruleId.trim() !== '' && rule.name.trim() !== '' && /^\d+$/.test(rule.requiredOnlineSeconds) && rule.rewardPackageId.trim() !== '')
+function saveAchievement() {
+  if (achievementValid.value)
+    emit('saveAchievement', { ...achievement, thresholdValue: BigInt(achievement.thresholdValue) })
+}
+function saveRule() {
+  if (ruleValid.value)
+    emit('saveRule', { ruleId: rule.ruleId, name: rule.name, requiredOnlineSeconds: BigInt(rule.requiredOnlineSeconds), repeatIntervalSeconds: rule.repeatIntervalSeconds === '' ? null : BigInt(rule.repeatIntervalSeconds), gapPolicy: rule.gapPolicy, rewardPackageId: rule.rewardPackageId, enabled: rule.enabled, sortOrder: rule.sortOrder })
+}
+function manualGrant() {
+  emit('manualGrant', { ruleId: rule.ruleId, crossplatformId: rule.playerId, expectedEntityId: rule.expectedEntityId, expectedWorldId: rule.expectedWorldId, clientRequestKey: crypto.randomUUID() })
+}
+function stateColor(state: string) {
+  if (state === 'Granted')
+    return 'success' as const
+  if (state === 'PendingReconciliation')
+    return 'warning' as const
+  if (state === 'Failed')
+    return 'error' as const
+  return 'neutral' as const
+}
 </script>
-<template><UDashboardPanel id="achievement-online-rewards"><template #header><UDashboardNavbar :title="t('commerce.achievementOnline.title')"><template #leading><UDashboardSidebarCollapse /></template></UDashboardNavbar></template><template #body><UContainer class="space-y-5 py-5"><UAlert v-if="props.controller.errorCode.value" color="error" :title="t('commerce.common.operationIncomplete')" :description="props.controller.errorCode.value" /><UAlert color="warning" :title="t('commerce.achievementOnline.reconciliation.title')" :description="t('commerce.achievementOnline.reconciliation.description')" /><div class="grid gap-5 xl:grid-cols-2"><UCard><template #header><div><h2 class="font-semibold">{{ t('commerce.achievementOnline.achievement.title') }}</h2><p class="text-sm text-muted">{{ t('commerce.achievementOnline.achievement.description') }}</p></div></template><div class="grid gap-3 md:grid-cols-2"><UFormField :label="t('commerce.achievementOnline.achievement.id')"><UInput v-model="achievement.achievementId" class="w-full" /></UFormField><UFormField :label="t('commerce.common.name')"><UInput v-model="achievement.name" class="w-full" /></UFormField><UFormField :label="t('commerce.achievementOnline.achievement.statistic')"><USelect v-model="achievement.statistic" class="w-full" :items="statisticItems" /></UFormField><UFormField :label="t('commerce.achievementOnline.achievement.threshold')"><UInput v-model="achievement.thresholdValue" class="w-full" inputmode="numeric" /></UFormField><UFormField :label="t('commerce.common.rewardPackageId')"><UInput v-model="achievement.rewardPackageId" class="w-full" /></UFormField><UFormField :label="t('commerce.common.playerId')"><UInput v-model="achievement.playerId" class="w-full" /></UFormField><UFormField class="md:col-span-2" :label="t('commerce.common.description')"><UTextarea v-model="achievement.description" class="w-full" /></UFormField><UCheckbox v-model="achievement.enabled" :label="t('commerce.achievementOnline.achievement.enabled')" /></div><template #footer><div class="flex flex-wrap justify-end gap-2"><UButton color="neutral" :label="t('commerce.achievementOnline.achievement.loadProgress')" variant="outline" :disabled="!achievement.achievementId || !achievement.playerId" @click="emit('loadAchievementRecord', achievement.achievementId, achievement.playerId)" /><UButton :label="t('commerce.achievementOnline.achievement.save')" :disabled="!achievementValid" @click="saveAchievement" /></div></template><p v-if="props.controller.achievementRecord.value" class="mt-3 text-sm">{{ t('commerce.achievementOnline.achievement.currentValue', { value: props.controller.achievementRecord.value.currentValue, state: t(props.controller.achievementRecord.value.completedAtUtc ? 'commerce.achievementOnline.achievement.completed' : 'commerce.achievementOnline.achievement.incomplete') }) }}</p></UCard><UCard><template #header><div><h2 class="font-semibold">{{ t('commerce.achievementOnline.rule.title') }}</h2><p class="text-sm text-muted">{{ t('commerce.achievementOnline.rule.description') }}</p></div></template><div class="grid gap-3 md:grid-cols-2"><UFormField :label="t('commerce.achievementOnline.rule.id')"><UInput v-model="rule.ruleId" class="w-full" /></UFormField><UFormField :label="t('commerce.common.name')"><UInput v-model="rule.name" class="w-full" /></UFormField><UFormField :label="t('commerce.achievementOnline.rule.requiredOnlineSeconds')"><UInput v-model="rule.requiredOnlineSeconds" class="w-full" inputmode="numeric" /></UFormField><UFormField :label="t('commerce.achievementOnline.rule.repeatIntervalSeconds')"><UInput v-model="rule.repeatIntervalSeconds" class="w-full" inputmode="numeric" /></UFormField><UFormField :label="t('commerce.achievementOnline.rule.gapPolicy')"><USelect v-model="rule.gapPolicy" class="w-full" :items="gapPolicyItems" /></UFormField><UFormField :label="t('commerce.common.rewardPackageId')"><UInput v-model="rule.rewardPackageId" class="w-full" /></UFormField><UFormField :label="t('commerce.common.playerId')"><UInput v-model="rule.playerId" class="w-full" /></UFormField><UFormField :label="t('commerce.common.entityId')"><UInput v-model.number="rule.expectedEntityId" class="w-full" type="number" /></UFormField><UFormField :label="t('commerce.common.worldId')"><UInput v-model="rule.expectedWorldId" class="w-full" /></UFormField><UCheckbox v-model="rule.enabled" :label="t('commerce.achievementOnline.rule.enabled')" /></div><template #footer><div class="flex flex-wrap justify-end gap-2"><UButton color="neutral" :label="t('commerce.achievementOnline.rule.loadRecords')" variant="outline" :disabled="!rule.ruleId || !rule.playerId" @click="emit('loadRecords', rule.ruleId, rule.playerId)" /><UButton color="warning" :label="t('commerce.achievementOnline.rule.manualGrant')" variant="outline" :disabled="!rule.ruleId || !rule.playerId || !rule.expectedWorldId" @click="manualGrant" /><UButton :label="t('commerce.achievementOnline.rule.save')" :disabled="!ruleValid" @click="saveRule" /></div></template></UCard></div><div v-if="props.controller.records.value.length" class="space-y-2"><UCard v-for="record in props.controller.records.value" :key="record.eligibilityId"><div class="flex flex-wrap items-center justify-between gap-2"><div><p class="font-medium">{{ record.crossplatformId }} · {{ record.ruleId }}</p><p class="text-xs text-muted">{{ record.eligibilityKey }}</p></div><UBadge :color="stateColor(record.state)" variant="subtle">{{ record.state === 'PendingReconciliation' ? t('commerce.achievementOnline.reconciliation.statusLabel') : record.state }}</UBadge></div></UCard></div></UContainer></template></UDashboardPanel></template>
+
+<template>
+  <UDashboardPanel id="achievement-online-rewards">
+    <template #header>
+      <UDashboardNavbar :title="t('commerce.achievementOnline.title')">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+      </UDashboardNavbar>
+    </template><template #body>
+      <UContainer class="space-y-5 py-5">
+        <UAlert
+          v-if="props.controller.errorCode.value"
+          color="error"
+          :title="t('commerce.common.operationIncomplete')"
+          :description="props.controller.errorCode.value"
+        /><UAlert color="warning" :title="t('commerce.achievementOnline.reconciliation.title')" :description="t('commerce.achievementOnline.reconciliation.description')" /><div class="grid gap-5 xl:grid-cols-2">
+          <UCard>
+            <template #header>
+              <div>
+                <h2 class="font-semibold">
+                  {{ t('commerce.achievementOnline.achievement.title') }}
+                </h2><p class="text-sm text-muted">
+                  {{ t('commerce.achievementOnline.achievement.description') }}
+                </p>
+              </div>
+            </template><div class="grid gap-3 md:grid-cols-2">
+              <UFormField :label="t('commerce.achievementOnline.achievement.id')">
+                <UInput v-model="achievement.achievementId" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.common.name')">
+                <UInput v-model="achievement.name" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.achievementOnline.achievement.statistic')">
+                <USelect v-model="achievement.statistic" class="w-full" :items="statisticItems" />
+              </UFormField><UFormField :label="t('commerce.achievementOnline.achievement.threshold')">
+                <UInput v-model="achievement.thresholdValue" class="w-full" inputmode="numeric" />
+              </UFormField><UFormField :label="t('commerce.common.rewardPackageId')">
+                <UInput v-model="achievement.rewardPackageId" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.common.playerId')">
+                <UInput v-model="achievement.playerId" class="w-full" />
+              </UFormField><UFormField class="md:col-span-2" :label="t('commerce.common.description')">
+                <UTextarea v-model="achievement.description" class="w-full" />
+              </UFormField><UCheckbox v-model="achievement.enabled" :label="t('commerce.achievementOnline.achievement.enabled')" />
+            </div><template #footer>
+              <div class="flex flex-wrap justify-end gap-2">
+                <UButton
+                  color="neutral"
+                  :label="t('commerce.achievementOnline.achievement.loadProgress')"
+                  variant="outline"
+                  :disabled="!achievement.achievementId || !achievement.playerId"
+                  @click="emit('loadAchievementRecord', achievement.achievementId, achievement.playerId)"
+                /><UButton :label="t('commerce.achievementOnline.achievement.save')" :disabled="!achievementValid" @click="saveAchievement" />
+              </div>
+            </template><p v-if="props.controller.achievementRecord.value" class="mt-3 text-sm">
+              {{ t('commerce.achievementOnline.achievement.currentValue', { value: props.controller.achievementRecord.value.currentValue, state: t(props.controller.achievementRecord.value.completedAtUtc ? 'commerce.achievementOnline.achievement.completed' : 'commerce.achievementOnline.achievement.incomplete') }) }}
+            </p>
+          </UCard><UCard>
+            <template #header>
+              <div>
+                <h2 class="font-semibold">
+                  {{ t('commerce.achievementOnline.rule.title') }}
+                </h2><p class="text-sm text-muted">
+                  {{ t('commerce.achievementOnline.rule.description') }}
+                </p>
+              </div>
+            </template><div class="grid gap-3 md:grid-cols-2">
+              <UFormField :label="t('commerce.achievementOnline.rule.id')">
+                <UInput v-model="rule.ruleId" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.common.name')">
+                <UInput v-model="rule.name" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.achievementOnline.rule.requiredOnlineSeconds')">
+                <UInput v-model="rule.requiredOnlineSeconds" class="w-full" inputmode="numeric" />
+              </UFormField><UFormField :label="t('commerce.achievementOnline.rule.repeatIntervalSeconds')">
+                <UInput v-model="rule.repeatIntervalSeconds" class="w-full" inputmode="numeric" />
+              </UFormField><UFormField :label="t('commerce.achievementOnline.rule.gapPolicy')">
+                <USelect v-model="rule.gapPolicy" class="w-full" :items="gapPolicyItems" />
+              </UFormField><UFormField :label="t('commerce.common.rewardPackageId')">
+                <UInput v-model="rule.rewardPackageId" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.common.playerId')">
+                <UInput v-model="rule.playerId" class="w-full" />
+              </UFormField><UFormField :label="t('commerce.common.entityId')">
+                <UInput v-model.number="rule.expectedEntityId" class="w-full" type="number" />
+              </UFormField><UFormField :label="t('commerce.common.worldId')">
+                <UInput v-model="rule.expectedWorldId" class="w-full" />
+              </UFormField><UCheckbox v-model="rule.enabled" :label="t('commerce.achievementOnline.rule.enabled')" />
+            </div><template #footer>
+              <div class="flex flex-wrap justify-end gap-2">
+                <UButton
+                  color="neutral"
+                  :label="t('commerce.achievementOnline.rule.loadRecords')"
+                  variant="outline"
+                  :disabled="!rule.ruleId || !rule.playerId"
+                  @click="emit('loadRecords', rule.ruleId, rule.playerId)"
+                /><UButton
+                  color="warning"
+                  :label="t('commerce.achievementOnline.rule.manualGrant')"
+                  variant="outline"
+                  :disabled="!rule.ruleId || !rule.playerId || !rule.expectedWorldId"
+                  @click="manualGrant"
+                /><UButton :label="t('commerce.achievementOnline.rule.save')" :disabled="!ruleValid" @click="saveRule" />
+              </div>
+            </template>
+          </UCard>
+        </div><div v-if="props.controller.records.value.length" class="space-y-2">
+          <UCard v-for="record in props.controller.records.value" :key="record.eligibilityId">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p class="font-medium">
+                  {{ record.crossplatformId }} · {{ record.ruleId }}
+                </p><p class="text-xs text-muted">
+                  {{ record.eligibilityKey }}
+                </p>
+              </div><UBadge :color="stateColor(record.state)" variant="subtle">
+                {{ record.state === 'PendingReconciliation' ? t('commerce.achievementOnline.reconciliation.statusLabel') : record.state }}
+              </UBadge>
+            </div>
+          </UCard>
+        </div>
+      </UContainer>
+    </template>
+  </UDashboardPanel>
+</template>

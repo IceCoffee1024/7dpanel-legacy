@@ -10,8 +10,8 @@ import { computed, onUnmounted, readonly, shallowRef } from 'vue'
 import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
 import {
-  fetchWorldOperation as requestWorldOperation,
   submitWorldOperation as requestSubmitWorldOperation,
+  fetchWorldOperation as requestWorldOperation,
 } from '../api/worldTools'
 
 export type WorldOperationsState = 'idle' | 'submitting' | 'polling' | 'terminal' | 'failed'
@@ -47,7 +47,12 @@ export interface UseWorldOperationsOptions {
 }
 
 const terminalStatuses = new Set<WorldOperationRecord['status']>([
-  'Succeeded', 'Failed', 'Cancelled', 'Interrupted', 'ResultUnknown', 'RollbackFailed',
+  'Succeeded',
+  'Failed',
+  'Cancelled',
+  'Interrupted',
+  'ResultUnknown',
+  'RollbackFailed',
 ])
 
 function isAbortError(cause: unknown): boolean {
@@ -145,8 +150,9 @@ export function useWorldOperations(options: UseWorldOperationsOptions = {}): Wor
       operation.value = next
       errorCode.value = null
       sessionExpiryNotified = false
-      if (terminalStatuses.has(next.status))
+      if (terminalStatuses.has(next.status)) {
         state.value = 'terminal'
+      }
       else {
         state.value = 'polling'
         schedulePoll(operationId, currentGeneration)

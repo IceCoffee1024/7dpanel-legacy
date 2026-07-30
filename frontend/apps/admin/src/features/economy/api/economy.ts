@@ -127,7 +127,7 @@ function enumValue<T extends string>(value: unknown, values: readonly T[]): T {
 
 function utc(value: unknown): string {
   const candidate = text(value)
-  if (!/^(\d{4})-(\d{2})-(\d{2})T/.test(candidate) || !Number.isFinite(Date.parse(candidate)))
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(candidate) || !Number.isFinite(Date.parse(candidate)))
     throw new Error('Invalid economy response')
   return candidate
 }
@@ -136,7 +136,7 @@ function cursor(value: unknown): string | null {
   if (value === null)
     return null
   const candidate = text(value)
-  if (!/^[A-Za-z0-9_-]+$/.test(candidate))
+  if (!/^[\w-]+$/.test(candidate))
     throw new Error('Invalid economy response')
   return candidate
 }
@@ -243,7 +243,7 @@ export async function fetchEconomyTransactions(authorization: string, query: Tra
 export async function setEconomyAccountFrozen(authorization: string, account: EconomyAccount, isFrozen: boolean, signal?: AbortSignal): Promise<EconomyAccount> {
   const response = await requestJson<unknown>(`/api/v1/economy/accounts/${encodeURIComponent(account.accountId)}/freeze`, {
     method: 'POST',
-    headers: { Authorization: authorization, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': authorization, 'Content-Type': 'application/json' },
     body: JSON.stringify({ isFrozen, expectedRowVersion: wireInteger(account.rowVersion) }),
     signal,
   })
@@ -253,7 +253,7 @@ export async function setEconomyAccountFrozen(authorization: string, account: Ec
 export async function adjustEconomyBalance(authorization: string, input: BalanceAdjustmentInput, signal?: AbortSignal): Promise<LedgerTransaction> {
   const response = await requestJson<unknown>(`/api/v1/economy/accounts/${encodeURIComponent(input.crossplatformId)}/adjust`, {
     method: 'POST',
-    headers: { Authorization: authorization, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': authorization, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       playerSide: input.playerSide === 'Debit' ? 0 : 1,
       amount: wireInteger(input.amount),

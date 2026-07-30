@@ -22,7 +22,8 @@ function updateKind(kind: AutomationConditionKind) {
 }
 function updatePredicate(patch: Partial<AutomationPredicate>) {
   const current = props.condition.predicate
-  if (current === undefined) return
+  if (current === undefined)
+    return
   emit('update', Object.freeze({ ...props.condition, predicate: Object.freeze({ ...current, ...patch }) }))
 }
 function updateOperator(operator: AutomationConditionOperator) {
@@ -47,7 +48,8 @@ function removeChild(index: number) {
   emit('update', Object.freeze({ ...props.condition, children: Object.freeze((props.condition.children ?? []).filter((_, childIndex) => childIndex !== index)) }))
 }
 function addChild() {
-  if (!canAdd.value) return
+  if (!canAdd.value)
+    return
   emit('update', Object.freeze({ ...props.condition, children: Object.freeze([...(props.condition.children ?? []), createPredicateCondition()]) }))
 }
 </script>
@@ -59,7 +61,14 @@ function addChild() {
         <USelect :model-value="condition.kind" :items="kindItems" @update:model-value="updateKind($event as AutomationConditionKind)" />
       </UFormField>
       <UBadge color="neutral" variant="subtle" :label="condition.kind" />
-      <UButton v-if="removable" color="error" icon="i-lucide-trash-2" :label="t('automation.condition.remove')" variant="ghost" @click="emit('remove')" />
+      <UButton
+        v-if="removable"
+        color="error"
+        icon="i-lucide-trash-2"
+        :label="t('automation.condition.remove')"
+        variant="ghost"
+        @click="emit('remove')"
+      />
     </div>
 
     <template v-if="condition.kind === 'Predicate' && condition.predicate">
@@ -77,14 +86,34 @@ function addChild() {
           <UInput :model-value="condition.predicate.setValues?.join(', ') ?? ''" @update:model-value="updatePredicate({ setValues: String($event).split(',').map(value => value.trim()).filter(Boolean) })" />
         </UFormField>
         <template v-if="condition.predicate.operator === 'NumberRange'">
-          <UFormField :label="t('automation.condition.minimum')"><UInputNumber :model-value="condition.predicate.minimumInclusive" @update:model-value="updatePredicate({ minimumInclusive: Number($event) })" /></UFormField>
-          <UFormField :label="t('automation.condition.maximum')"><UInputNumber :model-value="condition.predicate.maximumInclusive" @update:model-value="updatePredicate({ maximumInclusive: Number($event) })" /></UFormField>
+          <UFormField :label="t('automation.condition.minimum')">
+            <UInputNumber :model-value="condition.predicate.minimumInclusive" @update:model-value="updatePredicate({ minimumInclusive: Number($event) })" />
+          </UFormField>
+          <UFormField :label="t('automation.condition.maximum')">
+            <UInputNumber :model-value="condition.predicate.maximumInclusive" @update:model-value="updatePredicate({ maximumInclusive: Number($event) })" />
+          </UFormField>
         </template>
         <template v-if="condition.predicate.operator === 'TimeWindow' && condition.predicate.window">
-          <UFormField :label="t('automation.condition.timeZone')"><UInput :model-value="condition.predicate.window.timeZoneId" @update:model-value="updatePredicate({ window: { ...condition.predicate!.window!, timeZoneId: String($event) } })" /></UFormField>
+          <UFormField :label="t('automation.condition.timeZone')">
+            <UInput :model-value="condition.predicate.window.timeZoneId" @update:model-value="updatePredicate({ window: { ...condition.predicate!.window!, timeZoneId: String($event) } })" />
+          </UFormField>
           <div class="grid grid-cols-2 gap-2">
-            <UFormField :label="t('automation.condition.startHour')"><UInputNumber :model-value="condition.predicate.window.startInclusive.hour" :min="0" :max="23" @update:model-value="updatePredicate({ window: { ...condition.predicate!.window!, startInclusive: { ...condition.predicate!.window!.startInclusive, hour: Number($event) } } })" /></UFormField>
-            <UFormField :label="t('automation.condition.endHour')"><UInputNumber :model-value="condition.predicate.window.endInclusive.hour" :min="0" :max="23" @update:model-value="updatePredicate({ window: { ...condition.predicate!.window!, endInclusive: { ...condition.predicate!.window!.endInclusive, hour: Number($event) } } })" /></UFormField>
+            <UFormField :label="t('automation.condition.startHour')">
+              <UInputNumber
+                :model-value="condition.predicate.window.startInclusive.hour"
+                :min="0"
+                :max="23"
+                @update:model-value="updatePredicate({ window: { ...condition.predicate!.window!, startInclusive: { ...condition.predicate!.window!.startInclusive, hour: Number($event) } } })"
+              />
+            </UFormField>
+            <UFormField :label="t('automation.condition.endHour')">
+              <UInputNumber
+                :model-value="condition.predicate.window.endInclusive.hour"
+                :min="0"
+                :max="23"
+                @update:model-value="updatePredicate({ window: { ...condition.predicate!.window!, endInclusive: { ...condition.predicate!.window!.endInclusive, hour: Number($event) } } })"
+              />
+            </UFormField>
           </div>
         </template>
       </div>
@@ -103,7 +132,14 @@ function addChild() {
           @remove="removeChild(index)"
         />
       </div>
-      <UButton color="neutral" icon="i-lucide-plus" :label="t('automation.condition.addChild')" variant="outline" :disabled="!canAdd" @click="addChild" />
+      <UButton
+        color="neutral"
+        icon="i-lucide-plus"
+        :label="t('automation.condition.addChild')"
+        variant="outline"
+        :disabled="!canAdd"
+        @click="addChild"
+      />
     </template>
   </div>
 </template>

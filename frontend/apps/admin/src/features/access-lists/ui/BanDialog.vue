@@ -5,13 +5,14 @@ import { reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ entry: BanEntry | null }>()
-const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ save: [input: BanInput] }>()
+const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
 const form = reactive({ playerId: '', displayName: '', bannedUntilUtc: '', reason: '' })
 
 watch(() => [open.value, props.entry] as const, ([isOpen, entry]) => {
-  if (!isOpen) return
+  if (!isOpen)
+    return
   Object.assign(form, entry
     ? { ...entry, bannedUntilUtc: entry.bannedUntilUtc ?? '', reason: entry.reason ?? '' }
     : { playerId: '', displayName: '', bannedUntilUtc: '', reason: '' })
@@ -31,12 +32,29 @@ function submit() {
   <UModal v-model:open="open" :title="t('accessLists.banDialog.title')">
     <template #body>
       <form class="space-y-3" @submit.prevent="submit">
-        <UFormField :label="t('accessLists.fields.playerId')"><UInput v-model="form.playerId" class="w-full" :disabled="entry !== null" /></UFormField>
-        <UFormField :label="t('accessLists.fields.displayName')"><UInput v-model="form.displayName" class="w-full" /></UFormField>
-        <UFormField :label="t('accessLists.fields.bannedUntil')"><UInput v-model="form.bannedUntilUtc" class="w-full" type="datetime-local" /></UFormField>
-        <UFormField :label="t('accessLists.fields.reason')"><UTextarea v-model="form.reason" class="w-full" :maxlength="200" /></UFormField>
-        <p class="text-sm text-muted">{{ t('accessLists.banDialog.consequence') }}</p>
-        <div class="flex justify-end gap-2"><UButton :label="t('common.cancel')" color="neutral" variant="outline" @click="open = false" /><UButton type="submit" :label="t('accessLists.action.confirmSave')" /></div>
+        <UFormField :label="t('accessLists.fields.playerId')">
+          <UInput v-model="form.playerId" class="w-full" :disabled="entry !== null" />
+        </UFormField>
+        <UFormField :label="t('accessLists.fields.displayName')">
+          <UInput v-model="form.displayName" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('accessLists.fields.bannedUntil')">
+          <UInput v-model="form.bannedUntilUtc" class="w-full" type="datetime-local" />
+        </UFormField>
+        <UFormField :label="t('accessLists.fields.reason')">
+          <UTextarea v-model="form.reason" class="w-full" :maxlength="200" />
+        </UFormField>
+        <p class="text-sm text-muted">
+          {{ t('accessLists.banDialog.consequence') }}
+        </p>
+        <div class="flex justify-end gap-2">
+          <UButton
+            :label="t('common.cancel')"
+            color="neutral"
+            variant="outline"
+            @click="open = false"
+          /><UButton type="submit" :label="t('accessLists.action.confirmSave')" />
+        </div>
       </form>
     </template>
   </UModal>

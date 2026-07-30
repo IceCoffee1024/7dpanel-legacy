@@ -14,11 +14,10 @@ import CommunityMutationAlert from './CommunityMutationAlert.vue'
 import CommunityStateAlert from './CommunityStateAlert.vue'
 import FriendshipRecordsList from './FriendshipRecordsList.vue'
 import GameCommandConfigurationForm from './GameCommandConfigurationForm.vue'
-import TeleportSettingForm from './TeleportSettingForm.vue'
 import TeleportOperationsList from './TeleportOperationsList.vue'
+import TeleportSettingForm from './TeleportSettingForm.vue'
 
 const props = defineProps<{ controller: CommunityController }>()
-const { t } = useI18n()
 const emit = defineEmits<{
   refresh: []
   saveGameCommands: [current: CommunityGameCommandConfiguration, input: CommunityGameCommandConfigurationInput]
@@ -28,7 +27,7 @@ const emit = defineEmits<{
   queryOperation: [operationId: string]
   dismissMutation: []
 }>()
-
+const { t } = useI18n()
 const homePlayerId = shallowRef('')
 const firstFriendId = shallowRef('')
 const secondFriendId = shallowRef('')
@@ -76,7 +75,9 @@ function operationColor(state: string) {
   <UDashboardPanel id="community-teleport">
     <template #header>
       <UDashboardNavbar :title="t('community.teleport.title')">
-        <template #leading><UDashboardSidebarCollapse /></template>
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
         <template #right>
           <UButton
             color="neutral"
@@ -124,14 +125,20 @@ function operationColor(state: string) {
 
         <section class="space-y-3" aria-labelledby="teleport-settings-heading">
           <div>
-            <h2 id="teleport-settings-heading" class="text-base font-semibold text-highlighted">{{ t('community.teleport.rulesTitle') }}</h2>
-            <p class="text-sm text-muted">{{ t('community.teleport.rulesDescription') }}</p>
+            <h2 id="teleport-settings-heading" class="text-base font-semibold text-highlighted">
+              {{ t('community.teleport.rulesTitle') }}
+            </h2>
+            <p class="text-sm text-muted">
+              {{ t('community.teleport.rulesDescription') }}
+            </p>
           </div>
           <div v-if="props.controller.teleportSettingsState.value === 'loading' && props.controller.teleportSettings.value.length === 0" class="space-y-3">
             <USkeleton v-for="row in 3" :key="row" class="h-64 w-full" />
           </div>
           <UCard v-else-if="props.controller.teleportSettingsState.value === 'empty'">
-            <p class="text-sm text-muted">{{ t('community.teleport.settingsEmpty') }}</p>
+            <p class="text-sm text-muted">
+              {{ t('community.teleport.settingsEmpty') }}
+            </p>
           </UCard>
           <div v-else-if="props.controller.teleportSettingsState.value !== 'forbidden' && props.controller.teleportSettingsState.value !== 'unavailable'" class="grid gap-4 xl:grid-cols-2">
             <TeleportSettingForm
@@ -158,47 +165,97 @@ function operationColor(state: string) {
 
         <section class="space-y-3" aria-labelledby="teleport-query-heading">
           <div>
-            <h2 id="teleport-query-heading" class="text-base font-semibold text-highlighted">{{ t('community.teleport.queriesTitle') }}</h2>
-            <p class="text-sm text-muted">{{ t('community.teleport.queriesDescription') }}</p>
+            <h2 id="teleport-query-heading" class="text-base font-semibold text-highlighted">
+              {{ t('community.teleport.queriesTitle') }}
+            </h2>
+            <p class="text-sm text-muted">
+              {{ t('community.teleport.queriesDescription') }}
+            </p>
           </div>
 
           <div class="grid gap-4 xl:grid-cols-3">
             <UCard>
-              <template #header><h3 class="font-semibold">{{ t('community.teleport.homesTitle') }}</h3></template>
+              <template #header>
+                <h3 class="font-semibold">
+                  {{ t('community.teleport.homesTitle') }}
+                </h3>
+              </template>
               <form class="flex min-w-0 flex-col gap-3 sm:flex-row" @submit.prevent="submitHomes">
                 <UFormField class="min-w-0 flex-1" :label="t('community.teleport.playerIdentity')" required>
                   <UInput v-model="homePlayerId" class="w-full" />
                 </UFormField>
-                <UButton class="self-end" :label="t('community.common.query')" :disabled="homePlayerId.trim() === ''" :loading="props.controller.homesState.value === 'loading'" type="submit" />
+                <UButton
+                  class="self-end"
+                  :label="t('community.common.query')"
+                  :disabled="homePlayerId.trim() === ''"
+                  :loading="props.controller.homesState.value === 'loading'"
+                  type="submit"
+                />
               </form>
             </UCard>
 
             <UCard>
-              <template #header><h3 class="font-semibold">{{ t('community.teleport.friendshipTitle') }}</h3></template>
+              <template #header>
+                <h3 class="font-semibold">
+                  {{ t('community.teleport.friendshipTitle') }}
+                </h3>
+              </template>
               <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="submitFriendship">
-                <UFormField :label="t('community.teleport.playerA')" required><UInput v-model="firstFriendId" class="w-full" /></UFormField>
-                <UFormField :label="t('community.teleport.playerB')" required><UInput v-model="secondFriendId" class="w-full" /></UFormField>
-                <UButton class="sm:col-span-2 sm:justify-self-end" :label="t('community.common.query')" :disabled="firstFriendId.trim() === '' || secondFriendId.trim() === ''" :loading="props.controller.friendshipState.value === 'loading'" type="submit" />
+                <UFormField :label="t('community.teleport.playerA')" required>
+                  <UInput v-model="firstFriendId" class="w-full" />
+                </UFormField>
+                <UFormField :label="t('community.teleport.playerB')" required>
+                  <UInput v-model="secondFriendId" class="w-full" />
+                </UFormField>
+                <UButton
+                  class="sm:col-span-2 sm:justify-self-end"
+                  :label="t('community.common.query')"
+                  :disabled="firstFriendId.trim() === '' || secondFriendId.trim() === ''"
+                  :loading="props.controller.friendshipState.value === 'loading'"
+                  type="submit"
+                />
               </form>
             </UCard>
 
             <UCard>
-              <template #header><h3 class="font-semibold">{{ t('community.teleport.operationTitle') }}</h3></template>
+              <template #header>
+                <h3 class="font-semibold">
+                  {{ t('community.teleport.operationTitle') }}
+                </h3>
+              </template>
               <form class="flex min-w-0 flex-col gap-3 sm:flex-row" @submit.prevent="submitOperation">
                 <UFormField class="min-w-0 flex-1" :label="t('community.teleport.operationId')" required>
                   <UInput v-model="operationId" class="w-full" />
                 </UFormField>
-                <UButton class="self-end" :label="t('community.common.query')" :disabled="operationId.trim() === ''" :loading="props.controller.teleportOperationState.value === 'loading'" type="submit" />
+                <UButton
+                  class="self-end"
+                  :label="t('community.common.query')"
+                  :disabled="operationId.trim() === ''"
+                  :loading="props.controller.teleportOperationState.value === 'loading'"
+                  type="submit"
+                />
               </form>
             </UCard>
           </div>
 
           <CommunityStateAlert :state="props.controller.homesState.value" :subject="t('community.teleport.homesSubject')" @retry="submitHomes" />
-          <div v-if="props.controller.homesState.value === 'empty'" class="text-sm text-muted">{{ t('community.teleport.homesEmpty') }}</div>
+          <div v-if="props.controller.homesState.value === 'empty'" class="text-sm text-muted">
+            {{ t('community.teleport.homesEmpty') }}
+          </div>
           <div v-else-if="props.controller.homesState.value !== 'forbidden' && props.controller.homes.value.length > 0" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <UCard v-for="home in props.controller.homes.value" :key="home.homeId">
-              <template #header><div><h3 class="font-semibold">{{ home.name }}</h3><p class="break-all text-xs text-muted">{{ home.crossplatformId }}</p></div></template>
-              <p class="text-sm">{{ home.position.worldId }} · {{ t('community.common.coordinates', { x: home.position.x, y: home.position.y, z: home.position.z }) }}</p>
+              <template #header>
+                <div>
+                  <h3 class="font-semibold">
+                    {{ home.name }}
+                  </h3><p class="break-all text-xs text-muted">
+                    {{ home.crossplatformId }}
+                  </p>
+                </div>
+              </template>
+              <p class="text-sm">
+                {{ home.position.worldId }} · {{ t('community.common.coordinates', { x: home.position.x, y: home.position.y, z: home.position.z }) }}
+              </p>
             </UCard>
           </div>
 
@@ -214,7 +271,13 @@ function operationColor(state: string) {
           <UCard v-if="props.controller.teleportOperationState.value !== 'forbidden' && props.controller.teleportOperation.value">
             <template #header>
               <div class="flex min-w-0 flex-wrap items-start justify-between gap-2">
-                <div class="min-w-0"><h3 class="break-all font-semibold">{{ props.controller.teleportOperation.value.operationId }}</h3><p class="text-xs text-muted">{{ props.controller.teleportOperation.value.kind }}</p></div>
+                <div class="min-w-0">
+                  <h3 class="break-all font-semibold">
+                    {{ props.controller.teleportOperation.value.operationId }}
+                  </h3><p class="text-xs text-muted">
+                    {{ props.controller.teleportOperation.value.kind }}
+                  </p>
+                </div>
                 <UBadge :color="operationColor(props.controller.teleportOperation.value.state)" variant="subtle">
                   {{ props.controller.teleportOperation.value.state === 'PendingReconciliation' ? t('community.teleport.pendingReconciliation') : props.controller.teleportOperation.value.state }}
                 </UBadge>
@@ -229,10 +292,34 @@ function operationColor(state: string) {
               :description="t('community.teleport.pendingReconciliationDescription')"
             />
             <dl class="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-              <div><dt class="text-muted">{{ t('community.teleport.player') }}</dt><dd class="mt-1 break-all">{{ props.controller.teleportOperation.value.crossplatformId }}</dd></div>
-              <div><dt class="text-muted">{{ t('community.teleport.updatedAt') }}</dt><dd class="mt-1 break-all">{{ props.controller.teleportOperation.value.updatedAtUtc }}</dd></div>
-              <div><dt class="text-muted">{{ t('community.teleport.destinationWorld') }}</dt><dd class="mt-1">{{ props.controller.teleportOperation.value.destination.worldId }}</dd></div>
-              <div><dt class="text-muted">{{ t('community.teleport.destinationCoordinates') }}</dt><dd class="mt-1">{{ t('community.common.coordinates', { x: props.controller.teleportOperation.value.destination.x, y: props.controller.teleportOperation.value.destination.y, z: props.controller.teleportOperation.value.destination.z }) }}</dd></div>
+              <div>
+                <dt class="text-muted">
+                  {{ t('community.teleport.player') }}
+                </dt><dd class="mt-1 break-all">
+                  {{ props.controller.teleportOperation.value.crossplatformId }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  {{ t('community.teleport.updatedAt') }}
+                </dt><dd class="mt-1 break-all">
+                  {{ props.controller.teleportOperation.value.updatedAtUtc }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  {{ t('community.teleport.destinationWorld') }}
+                </dt><dd class="mt-1">
+                  {{ props.controller.teleportOperation.value.destination.worldId }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  {{ t('community.teleport.destinationCoordinates') }}
+                </dt><dd class="mt-1">
+                  {{ t('community.common.coordinates', { x: props.controller.teleportOperation.value.destination.x, y: props.controller.teleportOperation.value.destination.y, z: props.controller.teleportOperation.value.destination.z }) }}
+                </dd>
+              </div>
             </dl>
           </UCard>
         </section>

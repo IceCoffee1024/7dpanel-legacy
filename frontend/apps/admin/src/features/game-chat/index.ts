@@ -34,14 +34,14 @@ export type {
   GameChatManagementState,
   PlayerColorTagPermission,
 } from './model/gameChatManagement'
-export { useLiveChat } from './model/useLiveChat'
-export type { LiveChatController, UseLiveChatOptions } from './model/useLiveChat'
 export { useChatHistory } from './model/useChatHistory'
 export type { ChatHistoryController, UseChatHistoryOptions } from './model/useChatHistory'
 export { useChatSettings } from './model/useChatSettings'
 export type { ChatSettingsController, UseChatSettingsOptions } from './model/useChatSettings'
 export { useColoredChat } from './model/useColoredChat'
 export type { ColoredChatController, UseColoredChatOptions } from './model/useColoredChat'
+export { useLiveChat } from './model/useLiveChat'
+export type { LiveChatController, UseLiveChatOptions } from './model/useLiveChat'
 export { useSendChat } from './model/useSendChat'
 export type { SendChatController, SendChatError, SendChatErrorCode, UseSendChatOptions } from './model/useSendChat'
 export { default as ChatHistoryView } from './ui/ChatHistoryView.vue'

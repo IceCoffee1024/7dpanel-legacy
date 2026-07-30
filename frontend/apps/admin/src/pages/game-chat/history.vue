@@ -27,7 +27,9 @@ const history = useChatHistory({
   <UDashboardPanel id="game-chat-history">
     <template #header>
       <UDashboardNavbar :title="t('gameChat.history.title')">
-        <template #leading><UDashboardSidebarCollapse /></template>
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
       </UDashboardNavbar>
     </template>
     <div class="overflow-y-auto p-4 sm:p-6">

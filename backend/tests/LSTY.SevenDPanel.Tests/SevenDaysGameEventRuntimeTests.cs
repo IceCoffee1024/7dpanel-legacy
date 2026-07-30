@@ -74,7 +74,11 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(store.GapEntered.Wait(WaitTimeout));
 
             var stopwatch = Stopwatch.StartNew();
-            var stopTask = Task.Run(() => writer.Stop());
+            var stopTask = Task.Factory.StartNew(
+                writer.Stop,
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                TaskScheduler.Default);
             var completedWithinBound = stopTask.Wait(TimeSpan.FromMilliseconds(500));
             stopwatch.Stop();
             var maximumConcurrentCalls = store.MaximumConcurrentCalls;

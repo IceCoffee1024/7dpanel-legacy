@@ -166,9 +166,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.GameResources
                 cancellationToken.ThrowIfCancellationRequested();
                 var draft = await readDraft(cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
-                var index = await Task.Run(
+                var index = await Task.Factory.StartNew(
                         () => buildIndex(draft, cancellationToken),
-                        cancellationToken)
+                        cancellationToken,
+                        TaskCreationOptions.DenyChildAttach | TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default)
                     .ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
 

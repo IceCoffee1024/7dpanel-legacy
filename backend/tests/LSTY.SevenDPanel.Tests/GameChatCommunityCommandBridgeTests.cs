@@ -26,6 +26,10 @@ namespace LSTY.SevenDPanel.Tests
     {
         private static readonly DateTimeOffset Now =
             new DateTimeOffset(2026, 7, 27, 5, 0, 0, TimeSpan.Zero);
+        private static readonly object GameAssemblyLoadSync = new object();
+        private static string? gameManagedDirectory;
+        private static bool gameAssemblyResolverInstalled;
+        private static Assembly? gameAssembly;
 
         [Fact]
         public void Daily_command_uses_the_fixed_daily_rule_id()
@@ -51,7 +55,34 @@ namespace LSTY.SevenDPanel.Tests
         [Fact]
         public void Incoming_global_daily_chat_invokes_the_community_daily_application_port()
         {
-            using var fixture = new DailyFixture("daily");
+            var setup = new AppDomainSetup
+            {
+                ApplicationBase = Path.GetDirectoryName(typeof(GameChatCommunityCommandBridgeTests).Assembly.Location)
+            };
+            var domain = AppDomain.CreateDomain(
+                "7dpanel-game-chat-" + Guid.NewGuid().ToString("N"),
+                null,
+                setup);
+            string execution;
+            try
+            {
+                var runner = (IsolatedGameChatRunner)domain.CreateInstanceFromAndUnwrap(
+                    typeof(GameChatCommunityCommandBridgeTests).Assembly.Location,
+                    typeof(IsolatedGameChatRunner).FullName);
+                execution = runner.ExecuteIncomingGlobalDailyChat();
+            }
+            finally
+            {
+                AppDomain.Unload(domain);
+            }
+
+            Assert.Equal("StopHandlersAndVanilla|1", execution);
+        }
+
+        private static string ExecuteIncomingGlobalDailyChat()
+        {
+            LoadGameAssembly();
+            using var fixture = new DailyFixture("daily", "Local_EOS-A");
             var catalog = new GameChatCommandCatalog(
                 CommunityGameChatCommandHandlerSet.Create(new CommunityGameCommandRouter(
                     CreateConsumers(fixture))));
@@ -69,10 +100,9 @@ namespace LSTY.SevenDPanel.Tests
                 catalog,
                 new SevenDaysGameChatCommandReplySender());
             var result = HandleIncomingGlobalChat(coordinator, "EOS-A", "/daily", "Alice");
-
-            Assert.Equal("StopHandlersAndVanilla", result.ToString());
-            Assert.Equal(1, fixture.Delivery.Calls);
             historyWriter.Dispose();
+
+            return result + "|" + fixture.Delivery.Calls;
         }
 
         private static IReadOnlyList<ICommunityGameCommandConsumer> CreateConsumers(
@@ -156,47 +186,81 @@ namespace LSTY.SevenDPanel.Tests
 
         private static Type GameType(string name)
         {
-            LoadGameAssembly();
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var type = assembly.GetType(name, false);
-                if (type != null) return type;
-            }
+            var type = LoadGameAssembly().GetType(name, false);
+            if (type != null) return type;
 
             throw new InvalidOperationException("The Seven Days game type was not loaded: " + name);
         }
 
-        private static void LoadGameAssembly()
+        private static Assembly LoadGameAssembly()
         {
-            if (AppDomain.CurrentDomain.GetAssemblies().Any(assembly =>
-                    string.Equals(assembly.GetName().Name, "Assembly-CSharp", StringComparison.Ordinal)))
-                return;
+            lock (GameAssemblyLoadSync)
+            {
+                gameManagedDirectory ??= FindGameManagedDirectory();
+                if (!gameAssemblyResolverInstalled)
+                {
+                    AppDomain.CurrentDomain.AssemblyResolve += ResolveGameAssembly;
+                    gameAssemblyResolverInstalled = true;
+                }
 
+                if (gameAssembly?.GetType("ModEvents+SChatMessageData", false) != null)
+                    return gameAssembly;
+
+                gameAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(assembly =>
+                    string.Equals(assembly.GetName().Name, "Assembly-CSharp", StringComparison.Ordinal)
+                    && assembly.GetType("ModEvents+SChatMessageData", false) != null);
+                if (gameAssembly == null)
+                    gameAssembly = Assembly.LoadFrom(
+                        Path.Combine(gameManagedDirectory, "Assembly-CSharp.dll"));
+                return gameAssembly;
+            }
+        }
+
+        private static Assembly? ResolveGameAssembly(object sender, ResolveEventArgs args)
+        {
+            var requestedName = new AssemblyName(args.Name).Name;
+            if (string.Equals(requestedName, "Assembly-CSharp", StringComparison.Ordinal)
+                && gameAssembly != null)
+                return gameAssembly;
+            var loaded = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, requestedName, StringComparison.Ordinal));
+            if (loaded != null) return loaded;
+
+            var assemblyPath = Path.Combine(gameManagedDirectory!, requestedName + ".dll");
+            return File.Exists(assemblyPath) ? Assembly.LoadFrom(assemblyPath) : null;
+        }
+
+        private static string FindGameManagedDirectory()
+        {
             for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
                  directory != null;
                  directory = directory.Parent)
             {
-                var assemblyPath = Path.Combine(
+                var managedDirectory = Path.Combine(
                     directory.FullName,
                     "7dtd-reference",
                     "v3.0.1-b4",
                     "runtime",
                     "7DaysToDieServer_Data",
-                    "Managed",
-                    "Assembly-CSharp.dll");
-                if (File.Exists(assemblyPath))
-                {
-                    Assembly.LoadFrom(assemblyPath);
-                    return;
-                }
+                    "Managed");
+                if (File.Exists(Path.Combine(managedDirectory, "Assembly-CSharp.dll")))
+                    return managedDirectory;
             }
+
+            throw new InvalidOperationException("The Seven Days managed assembly directory was not found.");
+        }
+
+        public sealed class IsolatedGameChatRunner : MarshalByRefObject
+        {
+            public string ExecuteIncomingGlobalDailyChat() =>
+                GameChatCommunityCommandBridgeTests.ExecuteIncomingGlobalDailyChat();
         }
 
         private sealed class DailyFixture : IDisposable
         {
             private readonly RewardTestDatabase database = new RewardTestDatabase();
 
-            public DailyFixture(string ruleId)
+            public DailyFixture(string ruleId, string crossplatformId = "EOS-A")
             {
                 var rewards = new SqliteRewardStore(database.ConnectionFactory);
                 var commerce = new SqliteCommerceStore(database.ConnectionFactory);
@@ -221,7 +285,7 @@ namespace LSTY.SevenDPanel.Tests
                 Players = new FixedPlayers(new CommunityPlayerCommandSnapshot(
                     "Alice",
                     new TeleportPlayerSnapshot(
-                        "EOS-A",
+                        crossplatformId,
                         7,
                         new WorldPosition("world-1", 1, 65, 2, 0),
                         true,

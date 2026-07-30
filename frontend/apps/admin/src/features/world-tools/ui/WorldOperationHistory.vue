@@ -28,10 +28,14 @@ const rows = computed(() => props.operation === null ? [] : [props.operation])
 const trackedOperationId = computed(() => props.operation?.operationId ?? props.receipt?.operationId ?? null)
 
 function statusColor(status: WorldOperationRecord['status']): 'neutral' | 'info' | 'success' | 'warning' | 'error' {
-  if (status === 'Succeeded') return 'success'
-  if (status === 'Queued' || status === 'Running') return 'info'
-  if (status === 'Interrupted' || status === 'ResultUnknown') return 'warning'
-  if (status === 'Failed' || status === 'RollbackFailed') return 'error'
+  if (status === 'Succeeded')
+    return 'success'
+  if (status === 'Queued' || status === 'Running')
+    return 'info'
+  if (status === 'Interrupted' || status === 'ResultUnknown')
+    return 'warning'
+  if (status === 'Failed' || status === 'RollbackFailed')
+    return 'error'
   return 'neutral'
 }
 
@@ -46,8 +50,12 @@ function progressLabel(operation: WorldOperationRecord): string {
   <section class="space-y-4" aria-labelledby="world-operation-history-title">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 id="world-operation-history-title" class="font-semibold text-highlighted">{{ t('worldTools.history.title') }}</h2>
-        <p class="text-sm text-muted">{{ t('worldTools.history.description') }}</p>
+        <h2 id="world-operation-history-title" class="font-semibold text-highlighted">
+          {{ t('worldTools.history.title') }}
+        </h2>
+        <p class="text-sm text-muted">
+          {{ t('worldTools.history.description') }}
+        </p>
       </div>
       <div v-if="trackedOperationId" class="flex flex-wrap gap-2">
         <UButton
@@ -58,7 +66,12 @@ function progressLabel(operation: WorldOperationRecord): string {
           :loading="props.state === 'polling'"
           @click="emit('refresh', trackedOperationId)"
         />
-        <UButton color="neutral" :label="t('worldTools.common.clear')" variant="ghost" @click="emit('clear')" />
+        <UButton
+          color="neutral"
+          :label="t('worldTools.common.clear')"
+          variant="ghost"
+          @click="emit('clear')"
+        />
       </div>
     </div>
 
@@ -98,25 +111,57 @@ function progressLabel(operation: WorldOperationRecord): string {
     <div class="hidden md:block">
       <UTable :columns="columns" :data="rows">
         <template #status-cell="{ row }">
-          <UBadge :color="statusColor(row.original.status)" variant="subtle">{{ row.original.status }}</UBadge>
+          <UBadge :color="statusColor(row.original.status)" variant="subtle">
+            {{ row.original.status }}
+          </UBadge>
         </template>
-        <template #createdAtUtc-cell="{ row }">{{ new Date(row.original.createdAtUtc).toLocaleString() }}</template>
-        <template #empty><p class="p-4 text-sm text-muted">{{ t('worldTools.history.empty') }}</p></template>
+        <template #createdAtUtc-cell="{ row }">
+          {{ new Date(row.original.createdAtUtc).toLocaleString() }}
+        </template>
+        <template #empty>
+          <p class="p-4 text-sm text-muted">
+            {{ t('worldTools.history.empty') }}
+          </p>
+        </template>
       </UTable>
     </div>
 
     <article v-if="props.operation" class="space-y-3 rounded-lg border border-default p-4 md:hidden">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <strong class="text-highlighted">{{ props.operation.kind }}</strong>
-        <UBadge :color="statusColor(props.operation.status)" variant="subtle">{{ props.operation.status }}</UBadge>
+        <UBadge :color="statusColor(props.operation.status)" variant="subtle">
+          {{ props.operation.status }}
+        </UBadge>
       </div>
       <dl class="grid gap-2 text-sm">
-        <div><dt class="text-xs text-muted">{{ t('worldTools.history.operationId') }}</dt><dd class="break-all">{{ props.operation.operationId }}</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('worldTools.history.table.worldVersion') }}</dt><dd class="break-all">{{ props.operation.worldVersion }}</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('worldTools.history.progress') }}</dt><dd>{{ progressLabel(props.operation) }}</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('worldTools.history.error') }}</dt><dd>{{ props.operation.errorCode ?? '—' }}</dd></div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('worldTools.history.operationId') }}
+          </dt><dd class="break-all">
+            {{ props.operation.operationId }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('worldTools.history.table.worldVersion') }}
+          </dt><dd class="break-all">
+            {{ props.operation.worldVersion }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('worldTools.history.progress') }}
+          </dt><dd>{{ progressLabel(props.operation) }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('worldTools.history.error') }}
+          </dt><dd>{{ props.operation.errorCode ?? '—' }}</dd>
+        </div>
       </dl>
     </article>
-    <p v-else-if="!props.receipt" class="text-sm text-muted md:hidden">{{ t('worldTools.history.empty') }}</p>
+    <p v-else-if="!props.receipt" class="text-sm text-muted md:hidden">
+      {{ t('worldTools.history.empty') }}
+    </p>
   </section>
 </template>

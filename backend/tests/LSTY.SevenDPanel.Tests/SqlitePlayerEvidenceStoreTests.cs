@@ -368,15 +368,25 @@ namespace LSTY.SevenDPanel.Tests
                 .SqliteDatabase(connectionFactory.ConnectionString)
                 .WithScriptsEmbeddedInAssembly(
                     typeof(SqliteDatabaseBootstrapper).Assembly,
-                    resourceName =>
-                        resourceName.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)
-                        && !resourceName.EndsWith(
-                            ".010_PlayerEvidenceActions.sql",
-                            StringComparison.OrdinalIgnoreCase))
+                    IsMigrationThrough009)
                 .WithTransactionPerScript()
                 .Build()
                 .PerformUpgrade();
             Assert.True(result.Successful, result.Error?.ToString());
+        }
+
+        private static bool IsMigrationThrough009(string resourceName)
+        {
+            const string marker = ".Migrations.";
+            if (!resourceName.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)) return false;
+
+            var markerIndex = resourceName.LastIndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (markerIndex < 0) return false;
+
+            var versionStart = markerIndex + marker.Length;
+            return resourceName.Length >= versionStart + 3
+                   && int.TryParse(resourceName.Substring(versionStart, 3), out var version)
+                   && version <= 9;
         }
 
         private sealed class IndexColumnRow

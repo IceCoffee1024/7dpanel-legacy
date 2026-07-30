@@ -1067,6 +1067,17 @@ export type DiscordTargetHttpResponse = {
     hasCredential?: boolean;
 };
 
+export type DiscordHealthHttpResponse = {
+    gateway?: DiscordHealthSectionHttpResponse;
+    inbound?: DiscordHealthSectionHttpResponse;
+};
+
+export type DiscordHealthSectionHttpResponse = {
+    state?: string;
+    errorCode?: string | null;
+    observedAtUtc?: string | null;
+};
+
 export type DiscordConfigurationUpdateHttpRequest = {
     expectedVersion?: number | null;
     isEnabled?: boolean | null;
@@ -3414,6 +3425,9 @@ export type DownloadBackupData = {
 };
 
 export type DownloadBackupResponses = {
+    /**
+     * The requested backup archive.
+     */
     200: Blob | File;
 };
 
@@ -4561,7 +4575,10 @@ export type CommunityDeleteHomeData = {
 };
 
 export type CommunityDeleteHomeResponses = {
-    200: Blob | File;
+    /**
+     * The resource was deleted.
+     */
+    204: void;
 };
 
 export type CommunityDeleteHomeResponse = CommunityDeleteHomeResponses[keyof CommunityDeleteHomeResponses];
@@ -4695,7 +4712,10 @@ export type CommunityDeleteFriendshipData = {
 };
 
 export type CommunityDeleteFriendshipResponses = {
-    200: Blob | File;
+    /**
+     * The resource was deleted.
+     */
+    204: void;
 };
 
 export type CommunityDeleteFriendshipResponse = CommunityDeleteFriendshipResponses[keyof CommunityDeleteFriendshipResponses];
@@ -5012,6 +5032,19 @@ export type DiscordIntegrationPutConfigurationResponses = {
 };
 
 export type DiscordIntegrationPutConfigurationResponse = DiscordIntegrationPutConfigurationResponses[keyof DiscordIntegrationPutConfigurationResponses];
+
+export type DiscordIntegrationGetHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/integrations/discord/health';
+};
+
+export type DiscordIntegrationGetHealthResponses = {
+    200: DiscordHealthHttpResponse;
+};
+
+export type DiscordIntegrationGetHealthResponse = DiscordIntegrationGetHealthResponses[keyof DiscordIntegrationGetHealthResponses];
 
 export type DiscordIntegrationTestData = {
     body?: DiscordTestHttpRequest | null;
@@ -7441,7 +7474,28 @@ export type ServerOperationsRestartResponses = {
     /**
      * The server operation request was accepted.
      */
-    202: RestartServerOperationHttpResponse;
+    202: {
+        /**
+         * Accepted operation identifier.
+         */
+        operationId: string;
+        /**
+         * Accepted operation status.
+         */
+        code: string;
+        /**
+         * Request time in UTC.
+         */
+        requestedAtUtc: string;
+        /**
+         * Acceptance time in UTC.
+         */
+        scriptStartedAtUtc: string;
+        /**
+         * Audit persistence status.
+         */
+        auditStatus: string;
+    };
 };
 
 export type ServerOperationsRestartResponse = ServerOperationsRestartResponses[keyof ServerOperationsRestartResponses];
@@ -7486,7 +7540,28 @@ export type ServerOperationsShutdownResponses = {
     /**
      * The server operation request was accepted.
      */
-    202: ShutdownServerOperationHttpResponse;
+    202: {
+        /**
+         * Accepted operation identifier.
+         */
+        operationId: string;
+        /**
+         * Accepted operation status.
+         */
+        code: string;
+        /**
+         * Request time in UTC.
+         */
+        requestedAtUtc: string;
+        /**
+         * Acceptance time in UTC.
+         */
+        acceptedAtUtc: string;
+        /**
+         * Audit persistence status.
+         */
+        auditStatus: string;
+    };
 };
 
 export type ServerOperationsShutdownResponse = ServerOperationsShutdownResponses[keyof ServerOperationsShutdownResponses];

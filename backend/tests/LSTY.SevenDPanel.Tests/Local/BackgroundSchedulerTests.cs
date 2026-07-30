@@ -82,16 +82,37 @@ namespace LSTY.SevenDPanel.Tests.Local
                 () => Utc(10),
                 TimeSpan.FromMilliseconds(1),
                 TimeSpan.FromMilliseconds(10));
-            var elapsed = Stopwatch.StartNew();
-
             await scheduler.RunAsync(cancellation.Token);
 
-            elapsed.Stop();
             Assert.Equal(12, store.ClaimCalls);
-            Assert.InRange(
-                elapsed.Elapsed,
-                TimeSpan.FromMilliseconds(40),
-                TimeSpan.FromSeconds(1));
+            Assert.Equal(
+                new[]
+                {
+                    TimeSpan.FromMilliseconds(2),
+                    TimeSpan.FromMilliseconds(4),
+                    TimeSpan.FromMilliseconds(8),
+                    TimeSpan.FromMilliseconds(10),
+                    TimeSpan.FromMilliseconds(10)
+                },
+                new[]
+                {
+                    InvokeIncreaseBackoff(scheduler, TimeSpan.FromMilliseconds(1)),
+                    InvokeIncreaseBackoff(scheduler, TimeSpan.FromMilliseconds(2)),
+                    InvokeIncreaseBackoff(scheduler, TimeSpan.FromMilliseconds(4)),
+                    InvokeIncreaseBackoff(scheduler, TimeSpan.FromMilliseconds(8)),
+                    InvokeIncreaseBackoff(scheduler, TimeSpan.FromMilliseconds(10))
+                });
+        }
+
+        private static TimeSpan InvokeIncreaseBackoff(
+            BackgroundScheduler scheduler,
+            TimeSpan current)
+        {
+            var method = typeof(BackgroundScheduler).GetMethod(
+                "IncreaseBackoff",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic);
+            return Assert.IsType<TimeSpan>(method!.Invoke(scheduler, new object[] { current }));
         }
 
         [Fact]

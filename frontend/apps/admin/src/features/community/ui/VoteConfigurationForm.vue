@@ -73,23 +73,50 @@ function submit() {
     <template #header>
       <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <h3 class="font-semibold text-highlighted">{{ configuration.kind }}</h3>
-          <p class="text-xs text-muted">{{ t('community.voteConfiguration.version', { version: configuration.rowVersion.toString() }) }} · {{ configuration.updatedAtUtc }}</p>
+          <h3 class="font-semibold text-highlighted">
+            {{ configuration.kind }}
+          </h3>
+          <p class="text-xs text-muted">
+            {{ t('community.voteConfiguration.version', { version: configuration.rowVersion.toString() }) }} · {{ configuration.updatedAtUtc }}
+          </p>
         </div>
         <USwitch v-model="enabled" :label="t('community.common.enabled')" />
       </div>
     </template>
 
     <form class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" @submit.prevent="submit">
-      <UFormField :label="t('community.voteConfiguration.durationMs')" required><UInput v-model="durationMs" class="w-full" inputmode="numeric" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.thresholdPercent')" required><UInputNumber v-model="thresholdPercent" class="w-full" :min="1" :max="100" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.minimumParticipants')" required><UInputNumber v-model="minimumParticipants" class="w-full" :min="1" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.initiatorMinimumOnlineMs')" required><UInput v-model="initiatorMinimumOnlineMs" class="w-full" inputmode="numeric" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.participantMinimumOnlineMs')" required><UInput v-model="participantMinimumOnlineMs" class="w-full" inputmode="numeric" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.initiatorCooldownMs')" required><UInput v-model="initiatorCooldownMs" class="w-full" inputmode="numeric" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.targetCooldownMs')" required><UInput v-model="targetCooldownMs" class="w-full" inputmode="numeric" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.globalCooldownMs')" required><UInput v-model="globalCooldownMs" class="w-full" inputmode="numeric" /></UFormField>
-      <UFormField :label="t('community.voteConfiguration.mutualExclusionScope')" required><UInput v-model="mutualExclusionScope" class="w-full" /></UFormField>
+      <UFormField :label="t('community.voteConfiguration.durationMs')" required>
+        <UInput v-model="durationMs" class="w-full" inputmode="numeric" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.thresholdPercent')" required>
+        <UInputNumber
+          v-model="thresholdPercent"
+          class="w-full"
+          :min="1"
+          :max="100"
+        />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.minimumParticipants')" required>
+        <UInputNumber v-model="minimumParticipants" class="w-full" :min="1" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.initiatorMinimumOnlineMs')" required>
+        <UInput v-model="initiatorMinimumOnlineMs" class="w-full" inputmode="numeric" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.participantMinimumOnlineMs')" required>
+        <UInput v-model="participantMinimumOnlineMs" class="w-full" inputmode="numeric" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.initiatorCooldownMs')" required>
+        <UInput v-model="initiatorCooldownMs" class="w-full" inputmode="numeric" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.targetCooldownMs')" required>
+        <UInput v-model="targetCooldownMs" class="w-full" inputmode="numeric" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.globalCooldownMs')" required>
+        <UInput v-model="globalCooldownMs" class="w-full" inputmode="numeric" />
+      </UFormField>
+      <UFormField :label="t('community.voteConfiguration.mutualExclusionScope')" required>
+        <UInput v-model="mutualExclusionScope" class="w-full" />
+      </UFormField>
       <UFormField :label="t('community.voteConfiguration.voteSelection')">
         <USwitch v-model="allowVoteChange" :label="t('community.voteConfiguration.allowVoteChange')" />
       </UFormField>
@@ -97,8 +124,19 @@ function submit() {
 
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
-        <UButton color="neutral" :label="t('community.common.restoreServerValue')" variant="outline" :disabled="saving" @click="reset(configuration)" />
-        <UButton :label="t('community.common.saveAndConfirm')" :disabled="!valid" :loading="saving" @click="submit" />
+        <UButton
+          color="neutral"
+          :label="t('community.common.restoreServerValue')"
+          variant="outline"
+          :disabled="saving"
+          @click="reset(configuration)"
+        />
+        <UButton
+          :label="t('community.common.saveAndConfirm')"
+          :disabled="!valid"
+          :loading="saving"
+          @click="submit"
+        />
       </div>
     </template>
   </UCard>

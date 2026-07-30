@@ -24,12 +24,12 @@ import * as api from '../api/community'
 
 export type CommunityViewState = 'idle' | 'loading' | 'empty' | 'ready' | 'stale' | 'unavailable' | 'forbidden'
 export type CommunityMutationState = 'idle' | 'saving' | 'confirmed' | 'failed' | 'unavailable' | 'forbidden'
-export type CommunityMutationTarget =
-  | { readonly kind: 'game-command-configuration', readonly id: string }
-  | { readonly kind: 'teleport-setting', readonly id: string }
-  | { readonly kind: 'city', readonly id: string }
-  | { readonly kind: 'vote-configuration', readonly id: string }
-  | { readonly kind: 'vote-settlement', readonly id: string }
+export type CommunityMutationTarget
+  = | { readonly kind: 'game-command-configuration', readonly id: string }
+    | { readonly kind: 'teleport-setting', readonly id: string }
+    | { readonly kind: 'city', readonly id: string }
+    | { readonly kind: 'vote-configuration', readonly id: string }
+    | { readonly kind: 'vote-settlement', readonly id: string }
 
 type MaybeRef<T> = T | Ref<T>
 

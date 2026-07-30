@@ -254,29 +254,31 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task Refresh_worker_is_bounded_skips_disabled_and_persists_ttl_and_version()
+        public void Refresh_worker_is_bounded_skips_disabled_and_persists_ttl_and_version()
         {
             var store = new MemoryGeoIpStore
             {
                 Settings = Settings(GeoIpFailureMode.FailOpen, provider: GeoIpProviderNames.MaxMindWebService)
             };
-            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var twoEntriesPersisted = new ManualResetEventSlim(false);
+            store.CacheEntryCountChanged = count =>
+            {
+                if (count >= 2) twoEntriesPersisted.Set();
+            };
+            using var entered = new ManualResetEventSlim(false);
+            var providerResult = new TaskCompletionSource<GeoIpLookupResult>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
             var provider = new DelegateGeoIpProvider(
                 new GeoIpProviderMetadata(
                     GeoIpProviderNames.MaxMindWebService,
                     true,
                     "service-version-digest",
                     null),
-                async (_, cancellationToken) =>
+                (_, cancellationToken) =>
                 {
-                    entered.TrySetResult(true);
-                    await release.Task.ConfigureAwait(false);
                     cancellationToken.ThrowIfCancellationRequested();
-                    return GeoIpLookupResult.Found(
-                        "US",
-                        GeoIpProviderNames.MaxMindWebService,
-                        "service-version-digest");
+                    entered.Set();
+                    return providerResult.Task;
                 });
             using var worker = new GeoIpRefreshWorker(
                 store,
@@ -289,11 +291,18 @@ namespace LSTY.SevenDPanel.Tests
             worker.Start();
 
             Assert.True(worker.TryWrite(Request("203.0.113.1")));
-            await entered.Task.ConfigureAwait(false);
+            Assert.True(entered.Wait(
+                TimeSpan.FromSeconds(2),
+                TestContext.Current.CancellationToken));
             Assert.True(worker.TryWrite(Request("203.0.113.2")));
             Assert.False(worker.TryWrite(Request("203.0.113.3")));
-            release.TrySetResult(true);
-            Assert.True(SpinWait.SpinUntil(() => store.CacheEntries.Count >= 2, TimeSpan.FromSeconds(2)));
+            providerResult.TrySetResult(GeoIpLookupResult.Found(
+                "US",
+                GeoIpProviderNames.MaxMindWebService,
+                "service-version-digest"));
+            Assert.True(twoEntriesPersisted.Wait(
+                TimeSpan.FromSeconds(2),
+                TestContext.Current.CancellationToken));
 
             worker.Stop();
             Assert.All(store.CacheEntries, entry =>
@@ -390,7 +399,7 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
-        public async Task SevenDays_join_callback_returns_and_rejects_before_external_lookup_completes()
+        public void SevenDays_join_callback_returns_and_rejects_before_external_lookup_completes()
         {
             var store = new MemoryGeoIpStore
             {
@@ -399,22 +408,19 @@ namespace LSTY.SevenDPanel.Tests
                     provider: GeoIpProviderNames.MaxMindWebService,
                     rejectionMessage: "此服务器不允许当前连接")
             };
-            var providerEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var providerRelease = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var providerEntered = new ManualResetEventSlim(false);
+            var providerResult = new TaskCompletionSource<GeoIpLookupResult>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
             var provider = new DelegateGeoIpProvider(
                 new GeoIpProviderMetadata(
                     GeoIpProviderNames.MaxMindWebService,
                     true,
                     null,
                     null),
-                async (_, _) =>
+                (_, _) =>
                 {
-                    providerEntered.TrySetResult(true);
-                    await providerRelease.Task.ConfigureAwait(false);
-                    return GeoIpLookupResult.Found(
-                        "US",
-                        GeoIpProviderNames.MaxMindWebService,
-                        null);
+                    providerEntered.Set();
+                    return providerResult.Task;
                 });
             using var worker = new GeoIpRefreshWorker(store, new[] { provider }, capacity: 4);
             worker.Start();
@@ -442,9 +448,14 @@ namespace LSTY.SevenDPanel.Tests
                 IsConfirmedNativeAdministrator: false));
 
             Assert.Equal("此服务器不允许当前连接", rejection);
-            Assert.False(providerRelease.Task.IsCompleted);
-            Assert.True(await WaitAsync(providerEntered.Task, TimeSpan.FromSeconds(2)));
-            providerRelease.TrySetResult(true);
+            Assert.False(providerResult.Task.IsCompleted);
+            Assert.True(providerEntered.Wait(
+                TimeSpan.FromSeconds(2),
+                TestContext.Current.CancellationToken));
+            providerResult.TrySetResult(GeoIpLookupResult.Found(
+                "US",
+                GeoIpProviderNames.MaxMindWebService,
+                null));
             worker.Stop();
         }
 
@@ -482,12 +493,6 @@ namespace LSTY.SevenDPanel.Tests
                 ip,
                 7,
                 Now);
-
-        private static async Task<bool> WaitAsync(Task task, TimeSpan timeout)
-        {
-            var completed = await Task.WhenAny(task, Task.Delay(timeout)).ConfigureAwait(false);
-            return ReferenceEquals(completed, task);
-        }
 
         private sealed class RecordingRefreshQueue : IGeoIpRefreshQueue
         {
@@ -552,6 +557,7 @@ namespace LSTY.SevenDPanel.Tests
             public GeoIpAccessPolicySettings? Settings { get; set; }
             public GeoIpCacheEntry? Cache { get; set; }
             public List<GeoIpCacheEntry> CacheEntries { get; } = new List<GeoIpCacheEntry>();
+            public Action<int>? CacheEntryCountChanged { get; set; }
             public List<GeoIpDecision> Decisions { get; } = new List<GeoIpDecision>();
             public IReadOnlyList<GeoIpNetworkRule> NetworkRules { get; set; } =
                 Array.Empty<GeoIpNetworkRule>();
@@ -616,11 +622,14 @@ namespace LSTY.SevenDPanel.Tests
 
             public void UpsertCache(GeoIpCacheEntry entry)
             {
+                int count;
                 lock (sync)
                 {
                     Cache = entry;
                     CacheEntries.Add(entry);
+                    count = CacheEntries.Count;
                 }
+                CacheEntryCountChanged?.Invoke(count);
             }
 
             public GeoIpCacheEntry? FindCache(string ipAddress)

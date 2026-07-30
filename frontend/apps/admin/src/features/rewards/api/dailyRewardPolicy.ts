@@ -42,7 +42,7 @@ function text(value: unknown): string {
 
 function utc(value: unknown): string {
   const candidate = text(value)
-  if (!Number.isFinite(Date.parse(candidate)) || !/Z$|[+]00:00$/.test(candidate))
+  if (!Number.isFinite(Date.parse(candidate)) || !/Z$|\+00:00$/.test(candidate))
     return invalid()
   return candidate
 }
@@ -65,7 +65,7 @@ function wire(value: bigint): number | string {
 
 function headers(authorization: string, json = false): Record<string, string> {
   return json
-    ? { Authorization: authorization, 'Content-Type': 'application/json' }
+    ? { 'Authorization': authorization, 'Content-Type': 'application/json' }
     : { Authorization: authorization }
 }
 

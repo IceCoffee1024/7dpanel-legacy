@@ -34,7 +34,9 @@ onBeforeRouteLeave(() => settings.canLeave())
   <UDashboardPanel id="game-chat-settings">
     <template #header>
       <UDashboardNavbar :title="t('gameChat.settings.title')">
-        <template #leading><UDashboardSidebarCollapse /></template>
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
       </UDashboardNavbar>
     </template>
     <div class="overflow-y-auto p-4 sm:p-6">
@@ -48,7 +50,13 @@ onBeforeRouteLeave(() => settings.canLeave())
         :title="settings.state.value === 'forbidden' ? t('gameChat.settings.forbidden') : t('gameChat.settings.failed')"
       >
         <template #actions>
-          <UButton v-if="settings.state.value === 'failed'" :label="t('common.reload')" color="neutral" variant="outline" @click="settings.load" />
+          <UButton
+            v-if="settings.state.value === 'failed'"
+            :label="t('common.reload')"
+            color="neutral"
+            variant="outline"
+            @click="settings.load"
+          />
         </template>
       </UAlert>
       <ChatSettingsView

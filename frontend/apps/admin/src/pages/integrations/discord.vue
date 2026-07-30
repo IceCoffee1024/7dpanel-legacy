@@ -10,4 +10,6 @@ const router = useRouter()
 const controller = useDiscord({ onSessionExpired: () => void router.replace({ path: '/login', query: { redirect: '/integrations/discord' } }) })
 </script>
 
-<template><DiscordView :controller="controller" /></template>
+<template>
+  <DiscordView :controller="controller" />
+</template>

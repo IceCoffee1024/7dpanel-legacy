@@ -209,28 +209,47 @@ export function parseGrantOperation(value: unknown): GrantOperation {
   if (!Array.isArray(source.entries))
     throw new Error('Invalid rewards response')
   return Object.freeze({
-    operationId: text(source.operationId)!, packageId: text(source.packageId)!, crossplatformId: text(source.crossplatformId)!,
-    expectedEntityId: number(source.expectedEntityId)!, expectedWorldId: text(source.expectedWorldId)!,
+    operationId: text(source.operationId)!,
+    packageId: text(source.packageId)!,
+    crossplatformId: text(source.crossplatformId)!,
+    expectedEntityId: number(source.expectedEntityId)!,
+    expectedWorldId: text(source.expectedWorldId)!,
     state: enumValue(source.state, ['Reserved', 'Dispatching', 'PendingReconciliation', 'Completed', 'Failed', 'Refunded', 'Compensated'])!,
-    sourceKind: text(source.sourceKind, true), sourceId: text(source.sourceId, true), actorKind: text(source.actorKind)!, actorId: text(source.actorId)!,
-    reservationId: text(source.reservationId, true), compensatesOperationId: text(source.compensatesOperationId, true), correlationId: text(source.correlationId, true), errorCode: text(source.errorCode, true),
-    createdAtUtc: utc(source.createdAtUtc)!, updatedAtUtc: utc(source.updatedAtUtc)!, completedAtUtc: utc(source.completedAtUtc, true), reconciledAtUtc: utc(source.reconciledAtUtc, true), reconciledBy: text(source.reconciledBy, true),
-    rowVersion: big(source.rowVersion)!, reused: bool(source.reused, true),
+    sourceKind: text(source.sourceKind, true),
+    sourceId: text(source.sourceId, true),
+    actorKind: text(source.actorKind)!,
+    actorId: text(source.actorId)!,
+    reservationId: text(source.reservationId, true),
+    compensatesOperationId: text(source.compensatesOperationId, true),
+    correlationId: text(source.correlationId, true),
+    errorCode: text(source.errorCode, true),
+    createdAtUtc: utc(source.createdAtUtc)!,
+    updatedAtUtc: utc(source.updatedAtUtc)!,
+    completedAtUtc: utc(source.completedAtUtc, true),
+    reconciledAtUtc: utc(source.reconciledAtUtc, true),
+    reconciledBy: text(source.reconciledBy, true),
+    rowVersion: big(source.rowVersion)!,
+    reused: bool(source.reused, true),
     entries: Object.freeze(source.entries.map((value): GrantOperationEntry => {
       const entry = record(value, grantEntryKeys)
       return Object.freeze({
-        operationEntryId: text(entry.operationEntryId)!, packageEntryId: text(entry.packageEntryId)!, ordinal: number(entry.ordinal)!,
+        operationEntryId: text(entry.operationEntryId)!,
+        packageEntryId: text(entry.packageEntryId)!,
+        ordinal: number(entry.ordinal)!,
         kind: enumValue(entry.kind, ['Item', 'Currency', 'RegisteredAction'])!,
         state: enumValue(entry.state, ['Reserved', 'Dispatching', 'PendingReconciliation', 'Completed', 'Failed', 'Refunded', 'Compensated'])!,
-        deliveryOperationId: text(entry.deliveryOperationId, true), ledgerTransactionId: text(entry.ledgerTransactionId, true), errorCode: text(entry.errorCode, true),
-        updatedAtUtc: utc(entry.updatedAtUtc)!, rowVersion: big(entry.rowVersion)!,
+        deliveryOperationId: text(entry.deliveryOperationId, true),
+        ledgerTransactionId: text(entry.ledgerTransactionId, true),
+        errorCode: text(entry.errorCode, true),
+        updatedAtUtc: utc(entry.updatedAtUtc)!,
+        rowVersion: big(entry.rowVersion)!,
       })
     })),
   })
 }
 
 function headers(authorization: string) {
-  return { Authorization: authorization, 'Content-Type': 'application/json' }
+  return { 'Authorization': authorization, 'Content-Type': 'application/json' }
 }
 
 function packageEntryBody(entry: RewardPackageEntryDraft) {
@@ -254,7 +273,9 @@ export async function fetchRewardPackage(authorization: string, packageId: strin
 
 export async function saveRewardPackage(authorization: string, draft: RewardPackageDraft, signal?: AbortSignal): Promise<RewardPackage> {
   const response = await requestJson<unknown>(`/api/v1/reward-packages/${encodeURIComponent(draft.packageId)}`, {
-    method: 'PUT', headers: headers(authorization), signal,
+    method: 'PUT',
+    headers: headers(authorization),
+    signal,
     body: JSON.stringify({ name: draft.name, description: draft.description, enabled: draft.enabled, sortOrder: draft.sortOrder, entries: draft.entries.map(packageEntryBody) }),
   })
   return parseRewardPackage(response)
@@ -275,7 +296,9 @@ export async function createGrantOperation(authorization: string, input: GrantRe
 
 async function mutateGrant(authorization: string, operationId: string, action: 'confirm' | 'refund' | 'compensate', clientRequestKey?: string, signal?: AbortSignal): Promise<GrantOperation> {
   const response = await requestJson<unknown>(`/api/v1/grant-operations/${encodeURIComponent(operationId)}/${action}`, {
-    method: 'POST', headers: headers(authorization), signal,
+    method: 'POST',
+    headers: headers(authorization),
+    signal,
     body: action === 'confirm' ? undefined : JSON.stringify({ clientRequestKey }),
   })
   return parseGrantOperation(response)

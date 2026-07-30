@@ -6,9 +6,18 @@ import { describe, expect, it } from 'vitest'
 import ServerConfigurationFieldEditor from './ServerConfigurationFieldEditor.vue'
 
 const baseField: ServerConfigurationField = {
-  key: 'Example', value: '', group: 'Advanced', valueType: 'text', editable: true,
-  advanced: false, sensitive: false, isSet: false, restartRequired: true,
-  allowedValues: [], minimum: null, maximum: null,
+  key: 'Example',
+  value: '',
+  group: 'Advanced',
+  valueType: 'text',
+  editable: true,
+  advanced: false,
+  sensitive: false,
+  isSet: false,
+  restartRequired: true,
+  allowedValues: [],
+  minimum: null,
+  maximum: null,
 }
 
 const stubs = {
@@ -24,7 +33,7 @@ function mountEditor(field: ServerConfigurationField) {
   })
 }
 
-describe('ServerConfigurationFieldEditor', () => {
+describe('serverConfigurationFieldEditor', () => {
   it('uses dedicated boolean and enum controls', () => {
     expect(mountEditor({ ...baseField, valueType: 'boolean', value: 'true' }).find('[data-testid="boolean-editor"]').exists()).toBe(true)
     expect(mountEditor({ ...baseField, valueType: 'enum', allowedValues: ['A', 'B'] }).find('[data-testid="enum-editor"]').exists()).toBe(true)

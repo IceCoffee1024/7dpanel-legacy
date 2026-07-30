@@ -62,7 +62,7 @@ function mountWorkspace(logs: ConsoleLogEntry[] = entries) {
   })
 }
 
-describe('ConsoleWorkspace', () => {
+describe('consoleWorkspace', () => {
   it('renders every log as escaped plain text with formatted fallback and subsequent trace', () => {
     const wrapper = mountWorkspace()
     const rows = wrapper.findAll('[data-testid="console-log-entry"]')

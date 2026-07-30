@@ -8,12 +8,12 @@ const props = defineProps<{
   city: City | null
   saving: boolean
 }>()
-const { t } = useI18n()
-
 const emit = defineEmits<{
   save: [input: CityInput]
   cancel: []
 }>()
+
+const { t } = useI18n()
 
 interface CityDraft {
   cityId: string
@@ -29,8 +29,16 @@ interface CityDraft {
 }
 
 const draft = reactive<CityDraft>({
-  cityId: '', name: '', description: '', enabled: true,
-  worldId: '', x: 0, y: 0, z: 0, yaw: 0, sortOrder: 0,
+  cityId: '',
+  name: '',
+  description: '',
+  enabled: true,
+  worldId: '',
+  x: 0,
+  y: 0,
+  z: 0,
+  yaw: 0,
+  sortOrder: 0,
 })
 
 function reset(city: City | null) {
@@ -78,8 +86,12 @@ function submit() {
   <UCard>
     <template #header>
       <div>
-        <h2 class="font-semibold text-highlighted">{{ city === null ? t('community.cityForm.createTitle') : t('community.cityForm.editTitle', { name: city.name }) }}</h2>
-        <p class="text-sm text-muted">{{ t('community.cityForm.description') }}</p>
+        <h2 class="font-semibold text-highlighted">
+          {{ city === null ? t('community.cityForm.createTitle') : t('community.cityForm.editTitle', { name: city.name }) }}
+        </h2>
+        <p class="text-sm text-muted">
+          {{ t('community.cityForm.description') }}
+        </p>
       </div>
     </template>
 
@@ -118,8 +130,19 @@ function submit() {
 
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
-        <UButton color="neutral" :label="t('community.common.clear')" variant="outline" :disabled="saving" @click="emit('cancel')" />
-        <UButton :label="t('community.common.saveAndConfirm')" :disabled="!valid" :loading="saving" @click="submit" />
+        <UButton
+          color="neutral"
+          :label="t('community.common.clear')"
+          variant="outline"
+          :disabled="saving"
+          @click="emit('cancel')"
+        />
+        <UButton
+          :label="t('community.common.saveAndConfirm')"
+          :disabled="!valid"
+          :loading="saving"
+          @click="submit"
+        />
       </div>
     </template>
   </UCard>

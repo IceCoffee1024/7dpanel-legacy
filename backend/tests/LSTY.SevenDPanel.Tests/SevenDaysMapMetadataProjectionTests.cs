@@ -172,11 +172,23 @@ namespace LSTY.SevenDPanel.Tests
                 () => ObservedAt,
                 TimeSpan.FromHours(1));
 
-            var ready = Task.Run(runtime.MarkGameReady);
+            var ready = Task.Factory.StartNew(
+                runtime.MarkGameReady,
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
             Assert.True(inner.ReadyEntered.Wait(TimeSpan.FromSeconds(5)));
-            var stop = Task.Run(runtime.Stop);
-
-            await Task.Delay(100, TestContext.Current.CancellationToken);
+            var stopAttempted = new ManualResetEventSlim();
+            var stop = Task.Factory.StartNew(
+                () =>
+                {
+                    stopAttempted.Set();
+                    runtime.Stop();
+                },
+                TestContext.Current.CancellationToken,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
+            Assert.True(stopAttempted.Wait(TimeSpan.FromSeconds(5)));
             Assert.False(inner.StopEntered.IsSet);
 
             inner.AllowReady.Set();

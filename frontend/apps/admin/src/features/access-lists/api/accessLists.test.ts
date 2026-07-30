@@ -41,7 +41,7 @@ it('uses stable URLs and safely encoded player identifiers', async () => {
   })
   expect(requestJson).toHaveBeenNthCalledWith(2, '/api/v1/access-lists/whitelist/EOS%20id%2F1', {
     method: 'PUT',
-    headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+    headers: { 'Authorization': 'Bearer token', 'Content-Type': 'application/json' },
     body: JSON.stringify({ displayName: 'Player' }),
     signal: undefined,
   })

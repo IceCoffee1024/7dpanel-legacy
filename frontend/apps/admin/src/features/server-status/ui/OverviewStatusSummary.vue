@@ -39,25 +39,77 @@ function uptime(seconds: number | null): string {
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <h2 class="font-semibold text-highlighted">{{ t('overview.status.title') }}</h2>
-          <UBadge :color="statusColor" variant="subtle">{{ t(`overview.status.${status}Title`) }}</UBadge>
+          <h2 class="font-semibold text-highlighted">
+            {{ t('overview.status.title') }}
+          </h2>
+          <UBadge :color="statusColor" variant="subtle">
+            {{ t(`overview.status.${status}Title`) }}
+          </UBadge>
         </div>
-        <UButton data-testid="overview-refresh" color="neutral" variant="outline" icon="i-lucide-refresh-cw" :label="t('overview.status.refresh')" @click="emit('refresh')" />
+        <UButton
+          data-testid="overview-refresh"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-refresh-cw"
+          :label="t('overview.status.refresh')"
+          @click="emit('refresh')"
+        />
       </div>
     </template>
 
     <div v-if="status === 'loading'" class="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <div v-for="index in 5" :key="index" data-testid="skeleton"><USkeleton class="h-14 rounded-md" /></div>
+      <div v-for="index in 5" :key="index" data-testid="skeleton">
+        <USkeleton class="h-14 rounded-md" />
+      </div>
     </div>
     <template v-else>
-      <UAlert v-if="status !== 'fresh'" class="mb-4" :color="status === 'offline' ? 'error' : 'warning'" variant="subtle" :title="t(`overview.status.${status}Title`)" :description="t(`overview.status.${status}Description`)" />
-      <p v-if="status === 'stale' && sampleLabel" class="mb-4 text-xs text-dimmed">{{ t('overview.status.lastSample', { time: sampleLabel }) }}</p>
+      <UAlert
+        v-if="status !== 'fresh'"
+        class="mb-4"
+        :color="status === 'offline' ? 'error' : 'warning'"
+        variant="subtle"
+        :title="t(`overview.status.${status}Title`)"
+        :description="t(`overview.status.${status}Description`)"
+      />
+      <p v-if="status === 'stale' && sampleLabel" class="mb-4 text-xs text-dimmed">
+        {{ t('overview.status.lastSample', { time: sampleLabel }) }}
+      </p>
       <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
-        <div><dt class="text-xs text-muted">{{ t('overview.metrics.players') }}</dt><dd class="mt-1 font-medium text-highlighted">{{ players }}</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('overview.metrics.fps') }}</dt><dd class="mt-1 font-medium text-highlighted">{{ formatNumber(framesPerSecond, locale) }} FPS</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('overview.metrics.worldSession') }}</dt><dd class="mt-1 font-medium text-highlighted">{{ uptime(game?.worldSessionUptimeSeconds ?? null) }}</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('overview.metrics.process') }}</dt><dd class="mt-1 font-medium text-highlighted">{{ uptime(host?.processUptimeSeconds ?? null) }}</dd></div>
-        <div><dt class="text-xs text-muted">{{ t('overview.metrics.gameTime') }}</dt><dd class="mt-1 font-medium text-highlighted">{{ gameDayTime ?? '—' }}</dd></div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('overview.metrics.players') }}
+          </dt><dd class="mt-1 font-medium text-highlighted">
+            {{ players }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('overview.metrics.fps') }}
+          </dt><dd class="mt-1 font-medium text-highlighted">
+            {{ formatNumber(framesPerSecond, locale) }} FPS
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('overview.metrics.worldSession') }}
+          </dt><dd class="mt-1 font-medium text-highlighted">
+            {{ uptime(game?.worldSessionUptimeSeconds ?? null) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('overview.metrics.process') }}
+          </dt><dd class="mt-1 font-medium text-highlighted">
+            {{ uptime(host?.processUptimeSeconds ?? null) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('overview.metrics.gameTime') }}
+          </dt><dd class="mt-1 font-medium text-highlighted">
+            {{ gameDayTime ?? '—' }}
+          </dd>
+        </div>
       </dl>
     </template>
   </UCard>

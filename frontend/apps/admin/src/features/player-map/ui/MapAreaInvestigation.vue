@@ -15,12 +15,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:mode': [mode: AreaGeometry['kind']]
   'update:limit': [limit: number]
-  drawGeometry: [mode: AreaGeometry['kind']]
-  modifyGeometry: [geometry: AreaGeometry]
-  clearGeometry: []
-  selectResult: [combinedId: string]
-  openHistoryProfile: [combinedId: string]
-  loadHistoryTrack: [combinedId: string]
+  'drawGeometry': [mode: AreaGeometry['kind']]
+  'modifyGeometry': [geometry: AreaGeometry]
+  'clearGeometry': []
+  'selectResult': [combinedId: string]
+  'openHistoryProfile': [combinedId: string]
+  'loadHistoryTrack': [combinedId: string]
 }>()
 
 const { locale } = useI18n()

@@ -40,9 +40,9 @@ function updateHidden(value: boolean | 'indeterminate') {
     <template #left>
       <div class="flex w-full flex-wrap items-center gap-2">
         <UInput
+          id="game-resource-search"
           :model-value="filters.search"
           :aria-label="t('gameResources.filters.searchPlaceholder')"
-          id="game-resource-search"
           class="min-w-56 flex-1 sm:max-w-sm"
           data-testid="game-resource-search"
           icon="i-lucide-search"

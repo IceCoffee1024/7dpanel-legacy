@@ -107,7 +107,9 @@ onMounted(() => {
   <UDashboardPanel id="world-tools">
     <template #header>
       <UDashboardNavbar icon="i-lucide-map-cog" :title="t('worldTools.title')">
-        <template #leading><UDashboardSidebarCollapse /></template>
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
         <template #right>
           <UButton
             color="neutral"

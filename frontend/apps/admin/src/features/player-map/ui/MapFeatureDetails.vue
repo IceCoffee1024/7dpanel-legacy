@@ -72,65 +72,125 @@ function traderBounds(feature: TraderMapFeature): string {
       </div>
 
       <dl class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-1">
-        <dt class="text-muted">{{ l('坐标', 'Coordinates') }}</dt>
-        <dd class="break-words font-mono">X {{ props.feature.x.toFixed(1) }} · Z {{ props.feature.z.toFixed(1) }}</dd>
-        <dt class="text-muted">{{ l('观察时间', 'Observed') }}</dt>
-        <dd class="break-words">{{ d(new Date(props.feature.observedAtUtc), 'playerObservation') }}</dd>
+        <dt class="text-muted">
+          {{ l('坐标', 'Coordinates') }}
+        </dt>
+        <dd class="break-words font-mono">
+          X {{ props.feature.x.toFixed(1) }} · Z {{ props.feature.z.toFixed(1) }}
+        </dd>
+        <dt class="text-muted">
+          {{ l('观察时间', 'Observed') }}
+        </dt>
+        <dd class="break-words">
+          {{ d(new Date(props.feature.observedAtUtc), 'playerObservation') }}
+        </dd>
 
         <template v-if="props.feature.kind === 'historical-player'">
-          <dt class="text-muted">{{ l('规范身份', 'Canonical identity') }}</dt>
-          <dd class="break-all">{{ props.feature.playerCombinedId }}</dd>
+          <dt class="text-muted">
+            {{ l('规范身份', 'Canonical identity') }}
+          </dt>
+          <dd class="break-all">
+            {{ props.feature.playerCombinedId }}
+          </dd>
         </template>
 
         <template v-else-if="props.feature.kind === 'trader'">
-          <dt class="text-muted">{{ l('营业状态', 'Trader status') }}</dt>
+          <dt class="text-muted">
+            {{ l('营业状态', 'Trader status') }}
+          </dt>
           <dd>{{ props.feature.isOpen === null ? l('未知', 'Unknown') : (props.feature.isOpen ? l('营业中', 'Open') : l('已关闭', 'Closed')) }}</dd>
-          <dt class="text-muted">Prefab</dt>
-          <dd class="break-words">{{ known(props.feature.prefab) }}</dd>
-          <dt class="text-muted">{{ l('Prefab 范围', 'Prefab bounds') }}</dt>
-          <dd class="break-words font-mono">{{ traderBounds(props.feature) }}</dd>
-          <dt class="text-muted">{{ l('保护半径', 'Protection radius') }}</dt>
+          <dt class="text-muted">
+            Prefab
+          </dt>
+          <dd class="break-words">
+            {{ known(props.feature.prefab) }}
+          </dd>
+          <dt class="text-muted">
+            {{ l('Prefab 范围', 'Prefab bounds') }}
+          </dt>
+          <dd class="break-words font-mono">
+            {{ traderBounds(props.feature) }}
+          </dd>
+          <dt class="text-muted">
+            {{ l('保护半径', 'Protection radius') }}
+          </dt>
           <dd>{{ known(props.feature.protectionRadius) }}</dd>
         </template>
 
         <template v-else-if="props.feature.kind === 'claim'">
-          <dt class="text-muted">{{ l('所有者', 'Owner') }}</dt>
-          <dd class="break-all">{{ known(props.feature.ownerCrossplatformId) }}</dd>
-          <dt class="text-muted">{{ l('保护半径', 'Protection radius') }}</dt>
+          <dt class="text-muted">
+            {{ l('所有者', 'Owner') }}
+          </dt>
+          <dd class="break-all">
+            {{ known(props.feature.ownerCrossplatformId) }}
+          </dd>
+          <dt class="text-muted">
+            {{ l('保护半径', 'Protection radius') }}
+          </dt>
           <dd>{{ known(props.feature.protectionRadius) }}</dd>
-          <dt class="text-muted">{{ l('有效', 'Valid') }}</dt>
+          <dt class="text-muted">
+            {{ l('有效', 'Valid') }}
+          </dt>
           <dd>{{ yesNoUnknown(props.feature.isValid) }}</dd>
-          <dt class="text-muted">{{ l('所有者最近登录', 'Owner last login') }}</dt>
+          <dt class="text-muted">
+            {{ l('所有者最近登录', 'Owner last login') }}
+          </dt>
           <dd>{{ props.feature.ownerLastLoginUtc ? d(new Date(props.feature.ownerLastLoginUtc), 'playerObservation') : l('未知', 'Unknown') }}</dd>
         </template>
 
         <template v-else-if="props.feature.kind === 'vehicle'">
-          <dt class="text-muted">{{ l('类型', 'Type') }}</dt>
+          <dt class="text-muted">
+            {{ l('类型', 'Type') }}
+          </dt>
           <dd>{{ known(props.feature.vehicleType) }}</dd>
-          <dt class="text-muted">{{ l('所有者', 'Owner') }}</dt>
-          <dd class="break-all">{{ known(props.feature.ownerCrossplatformId) }}</dd>
-          <dt class="text-muted">{{ l('加载状态', 'Load state') }}</dt>
+          <dt class="text-muted">
+            {{ l('所有者', 'Owner') }}
+          </dt>
+          <dd class="break-all">
+            {{ known(props.feature.ownerCrossplatformId) }}
+          </dd>
+          <dt class="text-muted">
+            {{ l('加载状态', 'Load state') }}
+          </dt>
           <dd>{{ props.feature.loadState === 'loaded' ? l('已加载', 'Loaded') : l('未加载', 'Unloaded') }}</dd>
-          <dt class="text-muted">{{ l('燃油', 'Fuel') }}</dt>
+          <dt class="text-muted">
+            {{ l('燃油', 'Fuel') }}
+          </dt>
           <dd>{{ props.feature.fuelPercentage === null ? l('未知', 'Unknown') : `${props.feature.fuelPercentage}%` }}</dd>
-          <dt class="text-muted">{{ l('品质', 'Quality') }}</dt>
+          <dt class="text-muted">
+            {{ l('品质', 'Quality') }}
+          </dt>
           <dd>{{ known(props.feature.quality) }}</dd>
-          <dt class="text-muted">{{ l('已锁定', 'Locked') }}</dt>
+          <dt class="text-muted">
+            {{ l('已锁定', 'Locked') }}
+          </dt>
           <dd>{{ yesNoUnknown(props.feature.isLocked) }}</dd>
-          <dt class="text-muted">{{ l('储物数量', 'Storage item count') }}</dt>
+          <dt class="text-muted">
+            {{ l('储物数量', 'Storage item count') }}
+          </dt>
           <dd>{{ known(props.feature.storageItemCount) }}</dd>
         </template>
 
         <template v-else-if="props.feature.kind === 'drone'">
-          <dt class="text-muted">{{ l('所有者', 'Owner') }}</dt>
-          <dd class="break-all">{{ known(props.feature.ownerCrossplatformId) }}</dd>
-          <dt class="text-muted">{{ l('加载状态', 'Load state') }}</dt>
+          <dt class="text-muted">
+            {{ l('所有者', 'Owner') }}
+          </dt>
+          <dd class="break-all">
+            {{ known(props.feature.ownerCrossplatformId) }}
+          </dd>
+          <dt class="text-muted">
+            {{ l('加载状态', 'Load state') }}
+          </dt>
           <dd>{{ props.feature.loadState === 'loaded' ? l('已加载', 'Loaded') : l('未加载', 'Unloaded') }}</dd>
         </template>
 
         <template v-else-if="props.feature.kind === 'animal' || props.feature.kind === 'hostile'">
-          <dt class="text-muted">{{ l('实体类型', 'Entity type') }}</dt>
-          <dd class="break-words">{{ props.feature.entityType }}</dd>
+          <dt class="text-muted">
+            {{ l('实体类型', 'Entity type') }}
+          </dt>
+          <dd class="break-words">
+            {{ props.feature.entityType }}
+          </dd>
         </template>
       </dl>
 

@@ -10,7 +10,7 @@ const model = defineModel<string>({ required: true })
 
 const booleanModel = computed({
   get: () => model.value === 'true',
-  set: value => {
+  set: (value) => {
     model.value = value ? 'true' : 'false'
   },
 })

@@ -108,7 +108,12 @@ function submit() {
           :hint="t('gameChat.common.optional')"
           :description="t('gameChat.colored.profileDialog.nameTemplateDescription')"
         >
-          <UInput v-model="draft.customName" data-testid="profile-custom-name" class="w-full" :disabled="isSubmitting" />
+          <UInput
+            v-model="draft.customName"
+            data-testid="profile-custom-name"
+            class="w-full"
+            :disabled="isSubmitting"
+          />
           <div class="mt-2 flex flex-wrap gap-2">
             <UButton
               v-for="variable in coloredChatTemplateVariables"
@@ -128,7 +133,12 @@ function submit() {
         <div class="grid gap-4 md:grid-cols-2">
           <UFormField :label="t('gameChat.colored.profiles.nameColor')" name="nameColor" :hint="t('gameChat.common.mayBeEmpty')">
             <div class="space-y-2">
-              <UColorPicker :model-value="toChatColorPickerValue(draft.nameColor)" format="hex" :disabled="isSubmitting" @update:model-value="draft.nameColor = $event ?? ''" />
+              <UColorPicker
+                :model-value="toChatColorPickerValue(draft.nameColor)"
+                format="hex"
+                :disabled="isSubmitting"
+                @update:model-value="draft.nameColor = $event ?? ''"
+              />
               <UInput
                 v-model="draft.nameColor"
                 data-testid="profile-name-color"
@@ -140,7 +150,12 @@ function submit() {
           </UFormField>
           <UFormField :label="t('gameChat.colored.profiles.textColor')" name="textColor" :hint="t('gameChat.common.mayBeEmpty')">
             <div class="space-y-2">
-              <UColorPicker :model-value="toChatColorPickerValue(draft.textColor)" format="hex" :disabled="isSubmitting" @update:model-value="draft.textColor = $event ?? ''" />
+              <UColorPicker
+                :model-value="toChatColorPickerValue(draft.textColor)"
+                format="hex"
+                :disabled="isSubmitting"
+                @update:model-value="draft.textColor = $event ?? ''"
+              />
               <UInput
                 v-model="draft.textColor"
                 data-testid="profile-text-color"
@@ -153,7 +168,12 @@ function submit() {
         </div>
 
         <UFormField :label="t('gameChat.colored.profileDialog.notes')" name="description" :hint="t('gameChat.colored.profileDialog.notesHint')">
-          <UTextarea v-model="draft.description" class="w-full" :rows="3" :disabled="isSubmitting" />
+          <UTextarea
+            v-model="draft.description"
+            class="w-full"
+            :rows="3"
+            :disabled="isSubmitting"
+          />
         </UFormField>
 
         <ColoredChatPreview
@@ -170,7 +190,9 @@ function submit() {
           {{ t(feedbackMessage) }}
         </p>
 
-        <button class="sr-only" type="submit">{{ t('gameChat.colored.profileDialog.submit') }}</button>
+        <button class="sr-only" type="submit">
+          {{ t('gameChat.colored.profileDialog.submit') }}
+        </button>
       </UForm>
     </template>
 

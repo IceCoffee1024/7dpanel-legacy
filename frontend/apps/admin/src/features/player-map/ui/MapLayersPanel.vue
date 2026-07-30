@@ -57,14 +57,14 @@ function layerLabel(layerId: MapLayerId): string {
 
 function stateLabel(state: MapVectorLayerState, minimumZoom: number): string {
   const labels: Record<MapVectorLayerState, string> = {
-    off: l('已关闭', 'Off'),
-    paused: l('页面隐藏，已暂停', 'Paused while the page is hidden'),
+    'off': l('已关闭', 'Off'),
+    'paused': l('页面隐藏，已暂停', 'Paused while the page is hidden'),
     'zoom-required': l(`请放大到缩放级别 ${minimumZoom}`, `Zoom to level ${minimumZoom}`),
-    loading: l('正在加载', 'Loading'),
-    ready: l('已就绪', 'Ready'),
-    empty: l('没有返回对象', 'No objects returned'),
-    stale: l('刷新失败，显示上次结果', 'Refresh failed; showing the last result'),
-    failed: l('加载失败', 'Load failed'),
+    'loading': l('正在加载', 'Loading'),
+    'ready': l('已就绪', 'Ready'),
+    'empty': l('没有返回对象', 'No objects returned'),
+    'stale': l('刷新失败，显示上次结果', 'Refresh failed; showing the last result'),
+    'failed': l('加载失败', 'Load failed'),
   }
   return labels[state]
 }

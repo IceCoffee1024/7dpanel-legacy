@@ -56,7 +56,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.GameEvents
             lock (sync)
             {
                 if (accepting || stopped) return;
-                consumer = Task.Factory.StartNew(ConsumeAsync, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default).Unwrap();
+                consumer = Task.Factory.StartNew(
+                    Consume,
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                    TaskScheduler.Default);
                 accepting = true;
             }
         }
@@ -121,11 +125,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Runtime.GameEvents
                 TaskScheduler.Default);
         }
 
-        private async Task ConsumeAsync()
+        private void Consume()
         {
             try
             {
-                while (await channel.Reader.WaitToReadAsync(cancellation.Token).ConfigureAwait(false))
+                while (channel.Reader.WaitToReadAsync(cancellation.Token).AsTask().GetAwaiter().GetResult())
                     while (channel.Reader.TryRead(out var record))
                     {
                         lock (sync)

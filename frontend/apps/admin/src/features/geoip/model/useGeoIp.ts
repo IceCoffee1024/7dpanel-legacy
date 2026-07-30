@@ -54,7 +54,8 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
     return error instanceof HttpError ? (error.problemCode ?? error.code) : 'protocol_error'
   }
   function fail(error: unknown) {
-    if (disposed || (error instanceof HttpError && error.code === 'aborted')) return
+    if (disposed || (error instanceof HttpError && error.code === 'aborted'))
+      return
     errorCode.value = stableErrorCode(error)
     if (error instanceof HttpError && error.status === 401) {
       auth.expireSession()
@@ -71,13 +72,16 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
   async function loadDiagnostics(authorizationHeader: string, signal: AbortSignal, current: number) {
     try {
       const next = await getGeoIpDiagnostics(authorizationHeader, signal)
-      if (disposed || current !== requestVersion) return
+      if (disposed || current !== requestVersion)
+        return
       diagnostics.value = next
       diagnosticsState.value = 'ready'
     }
     catch (error) {
-      if (disposed || current !== requestVersion || (error instanceof HttpError && error.code === 'aborted')) return
-      if (error instanceof HttpError && (error.status === 401 || error.status === 403)) fail(error)
+      if (disposed || current !== requestVersion || (error instanceof HttpError && error.code === 'aborted'))
+        return
+      if (error instanceof HttpError && (error.status === 401 || error.status === 403))
+        fail(error)
       diagnostics.value = null
       diagnosticsState.value = 'unavailable'
     }
@@ -85,31 +89,38 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
   async function loadCredentials(authorizationHeader: string, signal: AbortSignal, current: number) {
     try {
       const next = await getGeoIpCredentials(authorizationHeader, signal)
-      if (disposed || current !== requestVersion) return
+      if (disposed || current !== requestVersion)
+        return
       credentials.value = next
       credentialsState.value = 'ready'
     }
     catch (error) {
-      if (disposed || current !== requestVersion || (error instanceof HttpError && error.code === 'aborted')) return
-      if (error instanceof HttpError && (error.status === 401 || error.status === 403)) fail(error)
+      if (disposed || current !== requestVersion || (error instanceof HttpError && error.code === 'aborted'))
+        return
+      if (error instanceof HttpError && (error.status === 401 || error.status === 403))
+        fail(error)
       credentials.value = null
       credentialsState.value = 'unavailable'
     }
   }
   async function refresh() {
-    if (disposed) return
+    if (disposed)
+      return
     const authorizationHeader = authorization()
-    if (authorizationHeader === null) return
+    if (authorizationHeader === null)
+      return
     loadController?.abort()
     const current = ++requestVersion
     const controller = new AbortController()
     loadController = controller
-    if (policy.value === null) state.value = 'loading'
+    if (policy.value === null)
+      state.value = 'loading'
     diagnosticsState.value = 'loading'
     credentialsState.value = 'loading'
     try {
       const next = await getGeoIpPolicy(authorizationHeader, controller.signal)
-      if (disposed || current !== requestVersion) return
+      if (disposed || current !== requestVersion)
+        return
       policy.value = next
       errorCode.value = null
       state.value = 'ready'
@@ -119,25 +130,31 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
       ])
     }
     catch (error) {
-      if (current === requestVersion) fail(error)
+      if (current === requestVersion)
+        fail(error)
     }
     finally {
-      if (current === requestVersion) loadController = null
+      if (current === requestVersion)
+        loadController = null
     }
   }
 
   async function mutate(operation: (authorizationHeader: string, signal: AbortSignal) => Promise<void>, refreshAfter = false) {
-    if (disposed || isMutating.value) return false
+    if (disposed || isMutating.value)
+      return false
     const authorizationHeader = authorization()
-    if (authorizationHeader === null) return false
+    if (authorizationHeader === null)
+      return false
     isMutating.value = true
     errorCode.value = null
     const controller = new AbortController()
     mutationController = controller
     try {
       await operation(authorizationHeader, controller.signal)
-      if (disposed) return false
-      if (refreshAfter) await refresh()
+      if (disposed)
+        return false
+      if (refreshAfter)
+        await refresh()
       return !disposed
     }
     catch (error) {
@@ -145,15 +162,20 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
       return false
     }
     finally {
-      if (mutationController === controller) mutationController = null
+      if (mutationController === controller)
+        mutationController = null
       isMutating.value = false
     }
   }
   function save(draft: GeoIpPolicyDraft) {
-    return mutate(async (authorizationHeader, signal) => { await saveGeoIpPolicy(authorizationHeader, draft, signal) }, true)
+    return mutate(async (authorizationHeader, signal) => {
+      await saveGeoIpPolicy(authorizationHeader, draft, signal)
+    }, true)
   }
   function test(ipAddress: string) {
-    return mutate(async (authorizationHeader, signal) => { testResult.value = await testGeoIpPolicy(authorizationHeader, ipAddress.trim(), signal) })
+    return mutate(async (authorizationHeader, signal) => {
+      testResult.value = await testGeoIpPolicy(authorizationHeader, ipAddress.trim(), signal)
+    })
   }
   function updateCredentials(draft: GeoIpCredentialsDraft) {
     return mutate(async (authorizationHeader, signal) => {
@@ -162,7 +184,8 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
     })
   }
   function dispose() {
-    if (disposed) return
+    if (disposed)
+      return
     disposed = true
     requestVersion++
     loadController?.abort()
@@ -173,7 +196,19 @@ export function useGeoIp(options: { onSessionExpired?: () => void } = {}): GeoIp
   onMounted(() => void refresh())
   onUnmounted(dispose)
   return {
-    state: readonly(state), policy: readonly(policy), diagnostics: readonly(diagnostics), diagnosticsState: readonly(diagnosticsState),
-    credentials: readonly(credentials), credentialsState: readonly(credentialsState), testResult: readonly(testResult), isMutating: readonly(isMutating), errorCode: readonly(errorCode), refresh, save, test, updateCredentials, dispose,
+    state: readonly(state),
+    policy: readonly(policy),
+    diagnostics: readonly(diagnostics),
+    diagnosticsState: readonly(diagnosticsState),
+    credentials: readonly(credentials),
+    credentialsState: readonly(credentialsState),
+    testResult: readonly(testResult),
+    isMutating: readonly(isMutating),
+    errorCode: readonly(errorCode),
+    refresh,
+    save,
+    test,
+    updateCredentials,
+    dispose,
   }
 }

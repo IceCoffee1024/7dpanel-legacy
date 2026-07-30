@@ -1,5 +1,9 @@
-import { createApp, nextTick, shallowRef } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createApp, nextTick, shallowRef } from 'vue'
+
+import { usePlayerActions } from './usePlayerActions'
+import { usePlayerEvidence } from './usePlayerEvidence'
+import { usePlayerProfile } from './usePlayerProfile'
 
 const evidenceApi = vi.hoisted(() => ({
   fetchPlayerProfile: vi.fn(),
@@ -19,10 +23,6 @@ const actionsApi = vi.hoisted(() => ({
 vi.mock('../api/playerEvidence', () => evidenceApi)
 vi.mock('../api/playerActions', () => actionsApi)
 
-import { usePlayerActions } from './usePlayerActions'
-import { usePlayerEvidence } from './usePlayerEvidence'
-import { usePlayerProfile } from './usePlayerProfile'
-
 function mountComposable<T>(factory: () => T) {
   let result!: T
   const app = createApp({
@@ -37,7 +37,9 @@ function mountComposable<T>(factory: () => T) {
 
 function pending<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((next) => { resolve = next })
+  const promise = new Promise<T>((next) => {
+    resolve = next
+  })
   return { promise, resolve }
 }
 

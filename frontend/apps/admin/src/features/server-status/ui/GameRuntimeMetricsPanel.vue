@@ -123,17 +123,28 @@ function testId(key: RuntimeMetricKey): string {
           <div class="mt-1 flex min-w-0 flex-wrap items-baseline gap-2">
             <strong class="break-words text-lg text-highlighted">{{ valueLabel(row.metric) }}</strong>
             <span class="text-xs text-muted" data-testid="runtime-unit">{{ unitLabel(row.metric.unit) }}</span>
-            <UBadge v-if="row.metric.warning" color="warning" size="xs" variant="subtle">
+            <UBadge
+              v-if="row.metric.warning"
+              color="warning"
+              size="xs"
+              variant="subtle"
+            >
               {{ warningLabel(row.metric) }}
             </UBadge>
           </div>
           <dl class="mt-3 min-w-0 space-y-1 text-xs text-dimmed">
             <div class="min-w-0">
-              <dt class="inline">{{ t('overview.runtimeMetrics.source') }}：</dt>
-              <dd class="inline break-all font-mono">{{ row.metric.source }}</dd>
+              <dt class="inline">
+                {{ t('overview.runtimeMetrics.source') }}：
+              </dt>
+              <dd class="inline break-all font-mono">
+                {{ row.metric.source }}
+              </dd>
             </div>
             <div class="min-w-0">
-              <dt class="inline">{{ t('overview.runtimeMetrics.observedAt') }}：</dt>
+              <dt class="inline">
+                {{ t('overview.runtimeMetrics.observedAt') }}：
+              </dt>
               <dd class="inline break-words">
                 <time :datetime="row.metric.observedAtUtc">{{ observedAtLabel(row.metric) }}</time>
               </dd>

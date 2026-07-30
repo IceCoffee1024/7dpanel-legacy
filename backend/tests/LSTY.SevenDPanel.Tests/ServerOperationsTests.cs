@@ -148,7 +148,12 @@ namespace LSTY.SevenDPanel.Tests
             using var entered = new ManualResetEventSlim(false);
             var fixture = new RestartFixture(
                 new BlockingLauncher(entered, release));
-            var first = Task.Run(() => fixture.UseCase.ExecuteAsync("owner", true, CancellationToken.None));
+            var first = Task.Factory.StartNew(
+                    () => fixture.UseCase.ExecuteAsync("owner", true, CancellationToken.None),
+                    TestContext.Current.CancellationToken,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default)
+                .Unwrap();
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
             var exception = await Assert.ThrowsAsync<ServerOperationBusyException>(() =>
@@ -314,8 +319,12 @@ namespace LSTY.SevenDPanel.Tests
                 new NoopRecentActivityWriter(),
                 () => Guid.NewGuid().ToString("N"),
                 () => DateTimeOffset.UtcNow);
-            var first = Task.Run(() =>
-                useCase.ExecuteAsync("owner", true, CancellationToken.None));
+            var first = Task.Factory.StartNew(
+                    () => useCase.ExecuteAsync("owner", true, CancellationToken.None),
+                    TestContext.Current.CancellationToken,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default)
+                .Unwrap();
             Assert.True(entered.Wait(
                 TimeSpan.FromSeconds(5),
                 TestContext.Current.CancellationToken));

@@ -81,11 +81,14 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             lock (sync)
             {
                 if (accepting || stopped) return;
+                var ready = new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
                 consumer = Task.Factory.StartNew(
-                    ConsumeAsync,
+                    () => Consume(ready),
                     CancellationToken.None,
-                    TaskCreationOptions.DenyChildAttach,
-                    TaskScheduler.Default).Unwrap();
+                    TaskCreationOptions.DenyChildAttach | TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default);
+                ready.Task.GetAwaiter().GetResult();
                 accepting = true;
             }
         }
@@ -182,11 +185,15 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             }
         }
 
-        private async Task ConsumeAsync()
+        private void Consume(TaskCompletionSource<bool> ready)
         {
+            ready.TrySetResult(true);
             try
             {
-                while (await channel.Reader.WaitToReadAsync(cancellation.Token).ConfigureAwait(false))
+                while (channel.Reader.WaitToReadAsync(cancellation.Token)
+                           .AsTask()
+                           .GetAwaiter()
+                           .GetResult())
                 {
                     while (channel.Reader.TryRead(out var envelope))
                     {

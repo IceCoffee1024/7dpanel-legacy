@@ -3,8 +3,8 @@ import type { AuthRole } from '../../auth/model/authSession'
 import type { BanEntry, BanInput, WhitelistEntry, WhitelistInput } from '../api/accessLists'
 
 import { computed, readonly, shallowRef, unref } from 'vue'
-import { useAuthStore } from '../../auth/model/authStore'
 import { HttpError } from '../../../shared/api/http'
+import { useAuthStore } from '../../auth/model/authStore'
 import * as api from '../api/accessLists'
 
 export type AccessListState = 'loading' | 'empty' | 'fresh' | 'stale' | 'failed' | 'forbidden' | 'game-not-ready'
@@ -63,20 +63,35 @@ export function useAccessLists(options: UseAccessListsOptions = {}): AccessLists
     request: (authorizationHeader: string) => Promise<readonly T[]>,
   ) {
     const token = authorization()
-    if (token === null) { state.value = 'failed'; return }
+    if (token === null) {
+      state.value = 'failed'
+      return
+    }
     if (current.value.length === 0)
       state.value = 'loading'
     try {
       const next = await request(token)
-      if (disposed) return
+      if (disposed)
+        return
       current.value = next
       state.value = next.length === 0 ? 'empty' : 'fresh'
     }
     catch (error) {
-      if (disposed) return
-      if (error instanceof HttpError && error.status === 401) { auth.expireSession(); state.value = 'failed'; return }
-      if (error instanceof HttpError && error.status === 403) { state.value = 'forbidden'; return }
-      if (error instanceof HttpError && (error.status === 503 || error.problemCode === 'game_not_ready')) { state.value = 'game-not-ready'; return }
+      if (disposed)
+        return
+      if (error instanceof HttpError && error.status === 401) {
+        auth.expireSession()
+        state.value = 'failed'
+        return
+      }
+      if (error instanceof HttpError && error.status === 403) {
+        state.value = 'forbidden'
+        return
+      }
+      if (error instanceof HttpError && (error.status === 503 || error.problemCode === 'game_not_ready')) {
+        state.value = 'game-not-ready'
+        return
+      }
       state.value = current.value.length === 0 ? 'failed' : 'stale'
     }
   }
@@ -97,7 +112,8 @@ export function useAccessLists(options: UseAccessListsOptions = {}): AccessLists
     mutationTarget.value = target
     try {
       await request(token)
-      if (disposed) return false
+      if (disposed)
+        return false
       await refresh()
       return true
     }
@@ -114,14 +130,20 @@ export function useAccessLists(options: UseAccessListsOptions = {}): AccessLists
   }
 
   return {
-    banState: readonly(banState), whitelistState: readonly(whitelistState),
-    bans: readonly(bans), whitelist: readonly(whitelist), canMutate,
+    banState: readonly(banState),
+    whitelistState: readonly(whitelistState),
+    bans: readonly(bans),
+    whitelist: readonly(whitelist),
+    canMutate,
     mutationTarget: readonly(mutationTarget),
-    refreshBans, refreshWhitelist,
+    refreshBans,
+    refreshWhitelist,
     saveBan: input => mutate({ list: 'ban', playerId: input.playerId }, token => (options.upsertBan ?? api.upsertBan)(token, input), refreshBans),
     removeBan: playerId => mutate({ list: 'ban', playerId }, token => (options.removeBan ?? api.removeBan)(token, playerId), refreshBans),
     saveWhitelist: input => mutate({ list: 'whitelist', playerId: input.playerId }, token => (options.upsertWhitelist ?? api.upsertWhitelist)(token, input), refreshWhitelist),
     removeWhitelist: playerId => mutate({ list: 'whitelist', playerId }, token => (options.removeWhitelist ?? api.removeWhitelist)(token, playerId), refreshWhitelist),
-    dispose: () => { disposed = true },
+    dispose: () => {
+      disposed = true
+    },
   }
 }

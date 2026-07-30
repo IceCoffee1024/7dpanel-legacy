@@ -75,8 +75,9 @@ export function useMods(options: UseModsOptions = {}): ModsController {
       .catch((cause: unknown) => {
         if (disposed || (cause instanceof HttpError && cause.code === 'aborted'))
           return
-        if (cause instanceof HttpError && cause.status === 401)
+        if (cause instanceof HttpError && cause.status === 401) {
           sessionExpired()
+        }
         else {
           state.value = 'failed'
           feedback.value = { code: cause instanceof HttpError && cause.status === 403 ? 'forbidden' : 'load-failed' }
@@ -110,14 +111,16 @@ export function useMods(options: UseModsOptions = {}): ModsController {
       .catch(async (cause: unknown) => {
         if (disposed || (cause instanceof HttpError && cause.code === 'aborted'))
           return false
-        if (cause instanceof HttpError && cause.status === 401)
+        if (cause instanceof HttpError && cause.status === 401) {
           sessionExpired()
+        }
         else if (cause instanceof HttpError && cause.status === 409) {
           await refresh()
           feedback.value = { code: 'conflict' }
         }
-        else
+        else {
           feedback.value = { code: cause instanceof HttpError && cause.status === 403 ? 'forbidden' : 'change-failed' }
+        }
         return false
       })
       .finally(() => {
@@ -138,7 +141,14 @@ export function useMods(options: UseModsOptions = {}): ModsController {
   onMounted(() => void refresh())
   onUnmounted(dispose)
   return {
-    state: readonly(state), mods: readonly(mods), feedback: readonly(feedback), canMutate,
-    changingDirectoryId: readonly(changingDirectoryId), refresh, changeNextStart, clearFeedback, dispose,
+    state: readonly(state),
+    mods: readonly(mods),
+    feedback: readonly(feedback),
+    canMutate,
+    changingDirectoryId: readonly(changingDirectoryId),
+    refresh,
+    changeNextStart,
+    clearFeedback,
+    dispose,
   }
 }

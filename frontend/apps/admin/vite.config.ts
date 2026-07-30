@@ -49,6 +49,7 @@ export default defineConfig(({ mode }) => {
       setupFiles: ['./src/shared/testing/setup.ts'],
       clearMocks: true,
       restoreMocks: true,
+      unstubGlobals: true,
     },
   }
 })

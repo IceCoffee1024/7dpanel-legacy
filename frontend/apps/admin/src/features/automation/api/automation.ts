@@ -134,16 +134,24 @@ const truthValues = new Set<AutomationTruth>(['Matched', 'NotMatched', 'Unknown'
 const executionStatuses = new Set<AutomationExecutionStatus>(['Pending', 'Running', 'Queued', 'Skipped', 'Succeeded', 'Failed', 'ResultUnknown'])
 const actionResultStatuses = new Set<AutomationActionResultStatus>(['Pending', 'Running', 'Succeeded', 'Failed', 'ResultUnknown'])
 
-function invalid(): never { throw new Error('Invalid server protocol') }
+function invalid(): never {
+  throw new Error('Invalid server protocol')
+}
 function record(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) invalid()
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    invalid()
   return value as Record<string, unknown>
 }
 function keys(value: Record<string, unknown>, allowed: readonly string[]) {
-  if (Object.keys(value).some(key => !allowed.includes(key))) invalid()
+  if (Object.keys(value).some(key => !allowed.includes(key)))
+    invalid()
 }
-function text(value: unknown): string { return typeof value === 'string' ? value : invalid() }
-function boolean(value: unknown): boolean { return typeof value === 'boolean' ? value : invalid() }
+function text(value: unknown): string {
+  return typeof value === 'string' ? value : invalid()
+}
+function boolean(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : invalid()
+}
 function integer(value: unknown, minimum = 0): number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum ? value : invalid()
 }
@@ -151,25 +159,35 @@ function utc(value: unknown): string {
   const result = text(value)
   return Number.isFinite(Date.parse(result)) && /(?:Z|[+-]00:00)$/.test(result) ? result : invalid()
 }
-function nullableText(value: unknown): string | null { return value === null ? null : text(value) }
-function nullableUtc(value: unknown): string | null { return value === null ? null : utc(value) }
+function nullableText(value: unknown): string | null {
+  return value === null ? null : text(value)
+}
+function nullableUtc(value: unknown): string | null {
+  return value === null ? null : utc(value)
+}
 function parseTrigger(value: unknown): AutomationTrigger {
-  const source = record(value); keys(source, ['type'])
-  if (typeof source.type !== 'string' || !triggerTypes.has(source.type as AutomationTriggerType)) invalid()
+  const source = record(value)
+  keys(source, ['type'])
+  if (typeof source.type !== 'string' || !triggerTypes.has(source.type as AutomationTriggerType))
+    invalid()
   return Object.freeze({ type: source.type as AutomationTriggerType })
 }
 
 function parseTimeOfDay(value: unknown): AutomationTimeOfDay {
-  const source = record(value); keys(source, ['hour', 'minute'])
-  const hour = integer(source.hour); const minute = integer(source.minute)
-  if (hour > 23 || minute > 59) invalid()
+  const source = record(value)
+  keys(source, ['hour', 'minute'])
+  const hour = integer(source.hour)
+  const minute = integer(source.minute)
+  if (hour > 23 || minute > 59)
+    invalid()
   return Object.freeze({ hour, minute })
 }
 
 function parsePredicate(value: unknown): AutomationPredicate {
   const source = record(value)
   keys(source, ['fieldKey', 'operator', 'scalarValue', 'minimumInclusive', 'maximumInclusive', 'setValues', 'window'])
-  if (typeof source.operator !== 'string' || !conditionOperators.has(source.operator as AutomationConditionOperator)) invalid()
+  if (typeof source.operator !== 'string' || !conditionOperators.has(source.operator as AutomationConditionOperator))
+    invalid()
   const predicate: AutomationPredicate = {
     fieldKey: text(source.fieldKey),
     operator: source.operator as AutomationConditionOperator,
@@ -183,63 +201,82 @@ function parsePredicate(value: unknown): AutomationPredicate {
 }
 
 function parseWindow(value: unknown): AutomationTimeWindow {
-  const source = record(value); keys(source, ['timeZoneId', 'startInclusive', 'endInclusive'])
+  const source = record(value)
+  keys(source, ['timeZoneId', 'startInclusive', 'endInclusive'])
   return Object.freeze({ timeZoneId: text(source.timeZoneId), startInclusive: parseTimeOfDay(source.startInclusive), endInclusive: parseTimeOfDay(source.endInclusive) })
 }
 
 function parseCondition(value: unknown, depth = 0): AutomationCondition {
-  if (depth > 5) invalid()
-  const source = record(value); keys(source, ['nodeId', 'kind', 'predicate', 'children'])
-  if (typeof source.kind !== 'string' || !conditionKinds.has(source.kind as AutomationConditionKind)) invalid()
+  if (depth > 5)
+    invalid()
+  const source = record(value)
+  keys(source, ['nodeId', 'kind', 'predicate', 'children'])
+  if (typeof source.kind !== 'string' || !conditionKinds.has(source.kind as AutomationConditionKind))
+    invalid()
   const kind = source.kind as AutomationConditionKind
   const children = source.children === undefined ? undefined : Object.freeze((Array.isArray(source.children) ? source.children : invalid()).map(child => parseCondition(child, depth + 1)))
   const predicate = source.predicate === undefined ? undefined : parsePredicate(source.predicate)
-  if ((kind === 'Predicate') !== (predicate !== undefined) || (kind === 'Predicate') === (children !== undefined)) invalid()
+  if ((kind === 'Predicate') !== (predicate !== undefined) || (kind === 'Predicate') === (children !== undefined))
+    invalid()
   return Object.freeze({ nodeId: text(source.nodeId), kind, ...(predicate === undefined ? {} : { predicate }), ...(children === undefined ? {} : { children }) })
 }
 
 function parseTarget(value: unknown): AutomationTarget {
-  const source = record(value); keys(source, ['kind', 'referenceId'])
-  if (typeof source.kind !== 'string' || !targetKinds.has(source.kind as AutomationTargetKind)) invalid()
+  const source = record(value)
+  keys(source, ['kind', 'referenceId'])
+  if (typeof source.kind !== 'string' || !targetKinds.has(source.kind as AutomationTargetKind))
+    invalid()
   const target = Object.freeze({ kind: source.kind as AutomationTargetKind, ...(source.referenceId === undefined ? {} : { referenceId: text(source.referenceId) }) })
-  if ((target.kind === 'StablePlayer' || target.kind === 'DiscordTarget') !== ('referenceId' in target)) invalid()
+  if ((target.kind === 'StablePlayer' || target.kind === 'DiscordTarget') !== ('referenceId' in target))
+    invalid()
   return target
 }
 
 function body(value: unknown, allowed: readonly string[]): Record<string, unknown> {
-  const source = record(value); keys(source, allowed); return source
+  const source = record(value)
+  keys(source, allowed)
+  return source
 }
 
 function parseAction(value: unknown): AutomationAction {
   const source = record(value)
   const payloadKeys = ['broadcastMessage', 'privateMessage', 'announcement', 'grantItem', 'grantRewardPackage', 'adjustEconomy', 'kickPlayer', 'mutePlayer', 'restrictedCommand', 'discordMessage'] as const
   keys(source, ['id', 'type', 'target', ...payloadKeys])
-  if (typeof source.type !== 'string' || !actionTypes.has(source.type as AutomationActionType)) invalid()
+  if (typeof source.type !== 'string' || !actionTypes.has(source.type as AutomationActionType))
+    invalid()
   const actionType = source.type as AutomationActionType
   const expectedKey = `${actionType[0]!.toLowerCase()}${actionType.slice(1)}`
-  if (payloadKeys.filter(key => source[key] !== undefined).length !== 1 || source[expectedKey] === undefined) invalid()
+  if (payloadKeys.filter(key => source[key] !== undefined).length !== 1 || source[expectedKey] === undefined)
+    invalid()
   const result: Record<string, unknown> = { id: text(source.id), type: actionType, target: parseTarget(source.target) }
   const payload = source[expectedKey]
   if (['BroadcastMessage', 'PrivateMessage', 'Announcement', 'DiscordMessage'].includes(actionType)) {
-    const parsed = body(payload, ['message']); result[expectedKey] = Object.freeze({ message: text(parsed.message) })
+    const parsed = body(payload, ['message'])
+    result[expectedKey] = Object.freeze({ message: text(parsed.message) })
   }
   else if (actionType === 'GrantItem') {
-    const parsed = body(payload, ['resourceId', 'amount']); result[expectedKey] = Object.freeze({ resourceId: text(parsed.resourceId), amount: integer(parsed.amount, 1) })
+    const parsed = body(payload, ['resourceId', 'amount'])
+    result[expectedKey] = Object.freeze({ resourceId: text(parsed.resourceId), amount: integer(parsed.amount, 1) })
   }
   else if (actionType === 'GrantRewardPackage') {
-    const parsed = body(payload, ['rewardPackageId']); result[expectedKey] = Object.freeze({ rewardPackageId: text(parsed.rewardPackageId) })
+    const parsed = body(payload, ['rewardPackageId'])
+    result[expectedKey] = Object.freeze({ rewardPackageId: text(parsed.rewardPackageId) })
   }
   else if (actionType === 'AdjustEconomy') {
-    const parsed = body(payload, ['amount']); result[expectedKey] = Object.freeze({ amount: integer(parsed.amount, Number.MIN_SAFE_INTEGER) })
+    const parsed = body(payload, ['amount'])
+    result[expectedKey] = Object.freeze({ amount: integer(parsed.amount, Number.MIN_SAFE_INTEGER) })
   }
   else if (actionType === 'KickPlayer') {
-    const parsed = body(payload, ['reason']); result[expectedKey] = Object.freeze({ reason: text(parsed.reason) })
+    const parsed = body(payload, ['reason'])
+    result[expectedKey] = Object.freeze({ reason: text(parsed.reason) })
   }
   else if (actionType === 'MutePlayer') {
-    const parsed = body(payload, ['durationSeconds', 'reason']); result[expectedKey] = Object.freeze({ durationSeconds: integer(parsed.durationSeconds, 1), reason: text(parsed.reason) })
+    const parsed = body(payload, ['durationSeconds', 'reason'])
+    result[expectedKey] = Object.freeze({ durationSeconds: integer(parsed.durationSeconds, 1), reason: text(parsed.reason) })
   }
   else if (actionType === 'RestrictedCommand') {
-    const parsed = body(payload, ['commandCatalogKey']); result[expectedKey] = Object.freeze({ commandCatalogKey: text(parsed.commandCatalogKey) })
+    const parsed = body(payload, ['commandCatalogKey'])
+    result[expectedKey] = Object.freeze({ commandCatalogKey: text(parsed.commandCatalogKey) })
   }
   return Object.freeze(result) as unknown as AutomationAction
 }
@@ -250,49 +287,74 @@ function parseRule(value: unknown): AutomationRule {
   if (!Array.isArray(source.actions)
     || typeof source.cooldownScope !== 'string' || !cooldownScopes.has(source.cooldownScope as AutomationCooldownScope)
     || typeof source.concurrencyPolicy !== 'string' || !concurrencyPolicies.has(source.concurrencyPolicy as AutomationConcurrencyPolicy)
-    || typeof source.failurePolicy !== 'string' || !failurePolicies.has(source.failurePolicy as AutomationFailurePolicy)) invalid()
+    || typeof source.failurePolicy !== 'string' || !failurePolicies.has(source.failurePolicy as AutomationFailurePolicy)) {
+    invalid()
+  }
   return Object.freeze({
-    id: text(source.id), version: integer(source.version, 1), name: text(source.name), isEnabled: boolean(source.isEnabled),
-    trigger: parseTrigger(source.trigger), condition: parseCondition(source.condition), actions: Object.freeze(source.actions.map(parseAction)),
-    cooldownSeconds: integer(source.cooldownSeconds), cooldownScope: source.cooldownScope as AutomationCooldownScope,
-    concurrencyPolicy: source.concurrencyPolicy as AutomationConcurrencyPolicy, failurePolicy: source.failurePolicy as AutomationFailurePolicy,
-    createdAtUtc: utc(source.createdAtUtc), updatedAtUtc: utc(source.updatedAtUtc),
+    id: text(source.id),
+    version: integer(source.version, 1),
+    name: text(source.name),
+    isEnabled: boolean(source.isEnabled),
+    trigger: parseTrigger(source.trigger),
+    condition: parseCondition(source.condition),
+    actions: Object.freeze(source.actions.map(parseAction)),
+    cooldownSeconds: integer(source.cooldownSeconds),
+    cooldownScope: source.cooldownScope as AutomationCooldownScope,
+    concurrencyPolicy: source.concurrencyPolicy as AutomationConcurrencyPolicy,
+    failurePolicy: source.failurePolicy as AutomationFailurePolicy,
+    createdAtUtc: utc(source.createdAtUtc),
+    updatedAtUtc: utc(source.updatedAtUtc),
   })
 }
 
 export function parseAutomationRules(value: unknown): readonly AutomationRule[] {
-  if (!Array.isArray(value)) invalid()
+  if (!Array.isArray(value))
+    invalid()
   return Object.freeze(value.map(parseRule))
 }
 
 function parseValidation(value: unknown): AutomationValidation {
-  const source = record(value); keys(source, ['isValid', 'issues'])
-  if (!Array.isArray(source.issues)) invalid()
+  const source = record(value)
+  keys(source, ['isValid', 'issues'])
+  if (!Array.isArray(source.issues))
+    invalid()
   return Object.freeze({ isValid: boolean(source.isValid), issues: Object.freeze(source.issues.map((item) => {
-    const issue = record(item); keys(issue, ['code', 'path']); return Object.freeze({ code: text(issue.code), path: text(issue.path) })
+    const issue = record(item)
+    keys(issue, ['code', 'path'])
+    return Object.freeze({ code: text(issue.code), path: text(issue.path) })
   })) })
 }
 
 function parseDryRun(value: unknown): AutomationDryRunResult {
-  const source = record(value); keys(source, ['validation', 'evaluation', 'plannedActions'])
-  if (!Array.isArray(source.plannedActions)) invalid()
+  const source = record(value)
+  keys(source, ['validation', 'evaluation', 'plannedActions'])
+  if (!Array.isArray(source.plannedActions))
+    invalid()
   let evaluation: AutomationDryRunResult['evaluation']
   if (source.evaluation !== undefined && source.evaluation !== null) {
-    const item = record(source.evaluation); keys(item, ['truth', 'trace'])
-    if (typeof item.truth !== 'string' || !truthValues.has(item.truth as AutomationTruth) || !Array.isArray(item.trace)) invalid()
+    const item = record(source.evaluation)
+    keys(item, ['truth', 'trace'])
+    if (typeof item.truth !== 'string' || !truthValues.has(item.truth as AutomationTruth) || !Array.isArray(item.trace))
+      invalid()
     evaluation = Object.freeze({ truth: item.truth as AutomationTruth, trace: Object.freeze(item.trace.map((entry) => {
-      const trace = record(entry); keys(trace, ['nodeId', 'fieldKey', 'truth', 'isValueKnown'])
-      if (typeof trace.truth !== 'string' || !truthValues.has(trace.truth as AutomationTruth)) invalid()
+      const trace = record(entry)
+      keys(trace, ['nodeId', 'fieldKey', 'truth', 'isValueKnown'])
+      if (typeof trace.truth !== 'string' || !truthValues.has(trace.truth as AutomationTruth))
+        invalid()
       return Object.freeze({ nodeId: text(trace.nodeId), ...(trace.fieldKey === undefined ? {} : { fieldKey: text(trace.fieldKey) }), truth: trace.truth as AutomationTruth, isValueKnown: boolean(trace.isValueKnown) })
     })) })
   }
   const plannedActions = Object.freeze(source.plannedActions.map((entry) => {
-    const item = record(entry); keys(item, ['ordinal', 'actionId', 'actionType', 'dependency', 'target', 'wouldExecute'])
-    if (typeof item.actionType !== 'string' || !actionTypes.has(item.actionType as AutomationActionType)) invalid()
+    const item = record(entry)
+    keys(item, ['ordinal', 'actionId', 'actionType', 'dependency', 'target', 'wouldExecute'])
+    if (typeof item.actionType !== 'string' || !actionTypes.has(item.actionType as AutomationActionType))
+      invalid()
     const dependency = body(item.dependency, ['status', 'errorCode'])
     const target = body(item.target, ['isResolved', 'errorCode'])
     return Object.freeze({
-      ordinal: integer(item.ordinal), actionId: text(item.actionId), actionType: item.actionType as AutomationActionType,
+      ordinal: integer(item.ordinal),
+      actionId: text(item.actionId),
+      actionType: item.actionType as AutomationActionType,
       dependency: Object.freeze({ status: text(dependency.status), ...(dependency.errorCode === undefined ? {} : { errorCode: text(dependency.errorCode) }) }),
       target: Object.freeze({ isResolved: boolean(target.isResolved), ...(target.errorCode === undefined ? {} : { errorCode: text(target.errorCode) }) }),
       wouldExecute: boolean(item.wouldExecute),
@@ -312,7 +374,11 @@ export async function listAutomationRules(authorization: string, signal?: AbortS
 export async function saveAutomationRule(authorization: string, draft: AutomationRuleDraft, signal?: AbortSignal): Promise<AutomationRule> {
   const creating = draft.expectedVersion === undefined
   const value = await requestJson<unknown>(creating ? '/api/v1/automations' : `/api/v1/automations/${encodeURIComponent(draft.id)}`, {
-    method: creating ? 'POST' : 'PUT', headers: headers(authorization, true), body: JSON.stringify(draft), expectedStatus: creating ? 201 : 200, signal,
+    method: creating ? 'POST' : 'PUT',
+    headers: headers(authorization, true),
+    body: JSON.stringify(draft),
+    expectedStatus: creating ? 201 : 200,
+    signal,
   })
   return parseAutomationRules([value])[0]!
 }
@@ -332,24 +398,42 @@ export async function dryRunAutomationRule(authorization: string, draft: Automat
 function parseExecution(value: unknown): AutomationExecution {
   const source = record(value)
   keys(source, ['executionId', 'ruleId', 'triggerId', 'status', 'correlationId', 'startedAtUtc', 'completedAtUtc', 'errorCode', 'conditions', 'actions'])
-  if (typeof source.status !== 'string' || !executionStatuses.has(source.status as AutomationExecutionStatus) || !Array.isArray(source.conditions) || !Array.isArray(source.actions)) invalid()
+  if (typeof source.status !== 'string' || !executionStatuses.has(source.status as AutomationExecutionStatus) || !Array.isArray(source.conditions) || !Array.isArray(source.actions))
+    invalid()
   const conditions = Object.freeze(source.conditions.map((entry) => {
-    const item = record(entry); keys(item, ['nodeId', 'truth'])
-    if (typeof item.truth !== 'string' || !truthValues.has(item.truth as AutomationTruth)) invalid()
+    const item = record(entry)
+    keys(item, ['nodeId', 'truth'])
+    if (typeof item.truth !== 'string' || !truthValues.has(item.truth as AutomationTruth))
+      invalid()
     return Object.freeze({ nodeId: text(item.nodeId), truth: item.truth as AutomationTruth })
   }))
   const actions = Object.freeze(source.actions.map((entry) => {
-    const item = record(entry); keys(item, ['ordinal', 'actionType', 'status', 'errorCode', 'startedAtUtc', 'completedAtUtc'])
+    const item = record(entry)
+    keys(item, ['ordinal', 'actionType', 'status', 'errorCode', 'startedAtUtc', 'completedAtUtc'])
     if (typeof item.actionType !== 'string' || !actionTypes.has(item.actionType as AutomationActionType)
-      || typeof item.status !== 'string' || !actionResultStatuses.has(item.status as AutomationActionResultStatus)) invalid()
+      || typeof item.status !== 'string' || !actionResultStatuses.has(item.status as AutomationActionResultStatus)) {
+      invalid()
+    }
     return Object.freeze({
-      ordinal: integer(item.ordinal), actionType: item.actionType as AutomationActionType, status: item.status as AutomationActionResultStatus,
-      errorCode: nullableText(item.errorCode), startedAtUtc: utc(item.startedAtUtc), completedAtUtc: nullableUtc(item.completedAtUtc),
+      ordinal: integer(item.ordinal),
+      actionType: item.actionType as AutomationActionType,
+      status: item.status as AutomationActionResultStatus,
+      errorCode: nullableText(item.errorCode),
+      startedAtUtc: utc(item.startedAtUtc),
+      completedAtUtc: nullableUtc(item.completedAtUtc),
     })
   }))
   return Object.freeze({
-    executionId: text(source.executionId), ruleId: text(source.ruleId), triggerId: text(source.triggerId), status: source.status as AutomationExecutionStatus,
-    correlationId: text(source.correlationId), startedAtUtc: nullableUtc(source.startedAtUtc), completedAtUtc: nullableUtc(source.completedAtUtc), errorCode: nullableText(source.errorCode), conditions, actions,
+    executionId: text(source.executionId),
+    ruleId: text(source.ruleId),
+    triggerId: text(source.triggerId),
+    status: source.status as AutomationExecutionStatus,
+    correlationId: text(source.correlationId),
+    startedAtUtc: nullableUtc(source.startedAtUtc),
+    completedAtUtc: nullableUtc(source.completedAtUtc),
+    errorCode: nullableText(source.errorCode),
+    conditions,
+    actions,
   })
 }
 

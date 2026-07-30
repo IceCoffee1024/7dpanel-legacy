@@ -160,7 +160,7 @@ async function setFeatureModuleState(
     `/api/v1/modules/${encodeURIComponent(moduleIdValue)}/${action}`,
     {
       method: 'POST',
-      headers: { Authorization: authorizationHeader, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': authorizationHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ expectedRowVersion }),
       signal,
     },

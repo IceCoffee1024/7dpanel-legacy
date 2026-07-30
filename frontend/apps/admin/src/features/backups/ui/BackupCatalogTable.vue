@@ -65,9 +65,31 @@ function formatBytes(value: number): string {
       </template>
       <template #actions-cell="{ row }">
         <div class="flex flex-wrap justify-end gap-2">
-          <UButton :disabled="disabled" icon="i-lucide-download" :label="t('backups.action.download')" size="sm" variant="outline" @click="emit('download', row.original)" />
-          <UButton :disabled="disabled" icon="i-lucide-rotate-ccw" :label="t('backups.action.restore')" size="sm" variant="outline" @click="emit('restore', row.original)" />
-          <UButton color="error" :disabled="disabled" icon="i-lucide-trash-2" :label="t('backups.action.delete')" size="sm" variant="soft" @click="emit('remove', row.original)" />
+          <UButton
+            :disabled="disabled"
+            icon="i-lucide-download"
+            :label="t('backups.action.download')"
+            size="sm"
+            variant="outline"
+            @click="emit('download', row.original)"
+          />
+          <UButton
+            :disabled="disabled"
+            icon="i-lucide-rotate-ccw"
+            :label="t('backups.action.restore')"
+            size="sm"
+            variant="outline"
+            @click="emit('restore', row.original)"
+          />
+          <UButton
+            color="error"
+            :disabled="disabled"
+            icon="i-lucide-trash-2"
+            :label="t('backups.action.delete')"
+            size="sm"
+            variant="soft"
+            @click="emit('remove', row.original)"
+          />
         </div>
       </template>
       <template #empty>

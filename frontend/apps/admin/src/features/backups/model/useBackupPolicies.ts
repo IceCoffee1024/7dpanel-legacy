@@ -179,16 +179,19 @@ export function useBackupPolicies(options: UseBackupPoliciesOptions = {}): Backu
       const code = saveFailureCode(cause)
       saveError.value = Object.freeze({ kind, code })
       errorCode.value = failureCode(cause)
-      if (cause instanceof HttpError && cause.status === 401)
+      if (cause instanceof HttpError && cause.status === 401) {
         expireSession()
+      }
       else if (cause instanceof HttpError && cause.status === 403) {
         policies.value = Object.freeze([])
         state.value = 'forbidden'
       }
-      else if (code === 'conflict')
+      else if (code === 'conflict') {
         state.value = 'stale'
-      else if (errorCode.value === 'protocol_error')
+      }
+      else if (errorCode.value === 'protocol_error') {
         state.value = 'protocol-error'
+      }
       return false
     }
     finally {

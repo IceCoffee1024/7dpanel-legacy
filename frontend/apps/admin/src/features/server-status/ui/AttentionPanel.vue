@@ -13,8 +13,22 @@ const messages = computed(() => props.attention.map(({ code }) => {
 
 <template>
   <UCard class="rounded-md">
-    <template #header><h2 class="font-semibold text-highlighted">{{ t('overview.attention.title') }}</h2></template>
-    <p v-if="messages.length === 0" class="text-sm text-muted">{{ t('overview.attention.none') }}</p>
-    <div v-else class="space-y-2"><UAlert v-for="(message, index) in messages" :key="index" color="warning" variant="subtle" :description="message" /></div>
+    <template #header>
+      <h2 class="font-semibold text-highlighted">
+        {{ t('overview.attention.title') }}
+      </h2>
+    </template>
+    <p v-if="messages.length === 0" class="text-sm text-muted">
+      {{ t('overview.attention.none') }}
+    </p>
+    <div v-else class="space-y-2">
+      <UAlert
+        v-for="(message, index) in messages"
+        :key="index"
+        color="warning"
+        variant="subtle"
+        :description="message"
+      />
+    </div>
   </UCard>
 </template>

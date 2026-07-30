@@ -23,7 +23,9 @@ vi.mock('../../auth', () => ({ useAuthStore: () => auth }))
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((resolvePromise) => { resolve = resolvePromise })
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise
+  })
   return { promise, resolve }
 }
 
@@ -33,7 +35,12 @@ function rule(id: string) {
 
 function mountComposable() {
   let result!: ReturnType<typeof useAutomation>
-  const app = createApp({ setup() { result = useAutomation(); return () => null } })
+  const app = createApp({
+    setup() {
+      result = useAutomation()
+      return () => null
+    },
+  })
   app.mount(document.createElement('div'))
   return { app, result }
 }
@@ -56,7 +63,8 @@ describe('useAutomation', () => {
     const first = deferred<readonly ReturnType<typeof rule>[]>()
     const second = deferred<readonly ReturnType<typeof rule>[]>()
     api.listAutomationRules.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
-    const mounted = mountComposable(); apps.push(mounted.app)
+    const mounted = mountComposable()
+    apps.push(mounted.app)
     await flushPromises()
 
     const latest = mounted.result.refresh()
@@ -71,15 +79,26 @@ describe('useAutomation', () => {
   it('aborts rule, execution, and dry-run requests when disposed', async () => {
     const signals: AbortSignal[] = []
     const pending = new Promise<never>(() => {})
-    api.listAutomationRules.mockImplementation((_auth: string, signal: AbortSignal) => { signals.push(signal); return pending })
-    api.queryAutomationExecutions.mockImplementation((_auth: string, signal: AbortSignal) => { signals.push(signal); return pending })
-    api.dryRunAutomationRule.mockImplementation((_auth: string, _draft: unknown, _snapshot: unknown, signal: AbortSignal) => { signals.push(signal); return pending })
-    const mounted = mountComposable(); apps.push(mounted.app)
+    api.listAutomationRules.mockImplementation((_auth: string, signal: AbortSignal) => {
+      signals.push(signal)
+      return pending
+    })
+    api.queryAutomationExecutions.mockImplementation((_auth: string, signal: AbortSignal) => {
+      signals.push(signal)
+      return pending
+    })
+    api.dryRunAutomationRule.mockImplementation((_auth: string, _draft: unknown, _snapshot: unknown, signal: AbortSignal) => {
+      signals.push(signal)
+      return pending
+    })
+    const mounted = mountComposable()
+    apps.push(mounted.app)
     await flushPromises()
     void mounted.result.dryRun({} as never, {} as never)
     await flushPromises()
 
-    mounted.app.unmount(); apps.pop()
+    mounted.app.unmount()
+    apps.pop()
 
     expect(signals).toHaveLength(3)
     expect(signals.every(signal => signal.aborted)).toBe(true)
@@ -87,7 +106,8 @@ describe('useAutomation', () => {
 
   it('exposes a stable server problem code for forbidden responses', async () => {
     api.listAutomationRules.mockRejectedValue(new HttpError('http', 'forbidden', { status: 403, problemCode: 'owner_required' }))
-    const mounted = mountComposable(); apps.push(mounted.app)
+    const mounted = mountComposable()
+    apps.push(mounted.app)
     await flushPromises()
 
     expect(mounted.result.state.value).toBe('forbidden')

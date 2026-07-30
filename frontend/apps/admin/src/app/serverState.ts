@@ -2,12 +2,13 @@ import type { MutationCache, QueryCache } from '@pinia/colada'
 import type { Pinia } from 'pinia'
 import type { WatchStopHandle } from 'vue'
 
+import type { ServerEventsLifecycle } from './serverEvents'
 import { useMutationCache, useQueryCache } from '@pinia/colada'
-import { watch } from 'vue'
 
+import { watch } from 'vue'
 import { useAuthStore } from '../features/auth'
 import { configureGeneratedClient } from '../shared/api/generatedClient'
-import { serverEvents, type ServerEventsLifecycle } from './serverEvents'
+import { serverEvents } from './serverEvents'
 
 export function clearServerStateCache(
   queryCache: QueryCache,

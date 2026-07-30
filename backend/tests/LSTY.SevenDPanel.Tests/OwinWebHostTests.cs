@@ -468,6 +468,13 @@ namespace LSTY.SevenDPanel.Tests
                     "status",
                     "target");
                 AssertSuccessResponsesDescribeContent(document);
+                var backupDownloadContent = Assert.IsType<JObject>(
+                    document["paths"]?["/api/v1/backups/{backupId}/download"]?["get"]?
+                        ["responses"]?["200"]?["content"]);
+                var backupDownloadMediaType = Assert.Single(backupDownloadContent.Properties());
+                Assert.Equal("application/zip", backupDownloadMediaType.Name);
+                Assert.Equal("string", (string?)backupDownloadMediaType.Value["schema"]?["type"]);
+                Assert.Equal("binary", (string?)backupDownloadMediaType.Value["schema"]?["format"]);
             }
         }
 

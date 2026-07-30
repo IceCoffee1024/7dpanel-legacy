@@ -3,12 +3,12 @@ import type { ServerConfigurationSnapshot } from '../api/serverConfiguration'
 
 import { onMounted, onUnmounted, readonly, shallowRef } from 'vue'
 
-import { useAuthStore } from '../../auth'
 import { HttpError } from '../../../shared/api/http'
+import { useAuthStore } from '../../auth'
 import { fetchServerConfiguration, updateServerConfigurationField } from '../api/serverConfiguration'
 
 export type ServerConfigurationState = 'loading' | 'empty' | 'fresh' | 'stale' | 'failed' | 'forbidden'
-export type ServerConfigurationFeedback = { code: 'session-expired' | 'forbidden' | 'conflict' | 'invalid-value' | 'update-failed' }
+export interface ServerConfigurationFeedback { code: 'session-expired' | 'forbidden' | 'conflict' | 'invalid-value' | 'update-failed' }
 
 export interface ServerConfigurationController {
   state: DeepReadonly<ShallowRef<ServerConfigurationState>>
@@ -152,8 +152,14 @@ export function useServerConfiguration(options: Options = {}): ServerConfigurati
   onUnmounted(dispose)
 
   return {
-    state: readonly(state), snapshot: readonly(snapshot), feedback: readonly(feedback),
-    isRefreshing: readonly(isRefreshing), updatingKey: readonly(updatingKey),
-    refresh, update, clearFeedback: () => { feedback.value = null }, dispose,
+    state: readonly(state),
+    snapshot: readonly(snapshot),
+    feedback: readonly(feedback),
+    isRefreshing: readonly(isRefreshing),
+    updatingKey: readonly(updatingKey),
+    refresh,
+    update,
+    clearFeedback: () => { feedback.value = null },
+    dispose,
   }
 }

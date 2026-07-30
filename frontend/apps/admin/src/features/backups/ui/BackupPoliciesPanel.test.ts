@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
-import { readonly, shallowRef } from 'vue'
 import { expect, it, vi } from 'vitest'
+import { readonly, shallowRef } from 'vue'
 
 import BackupPoliciesPanel from './BackupPoliciesPanel.vue'
 

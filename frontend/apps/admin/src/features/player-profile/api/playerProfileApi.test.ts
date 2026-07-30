@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { grantPlayerItem } from './playerActions'
+import { fetchPlayerInventoryDiffs } from './playerEvidence'
+
 const sdk = vi.hoisted(() => ({
   playerActionsGet: vi.fn(),
   playerActionsGrantItem: vi.fn(),
@@ -14,9 +17,6 @@ const sdk = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../shared/api/generated', () => sdk)
-
-import { grantPlayerItem } from './playerActions'
-import { fetchPlayerInventoryDiffs } from './playerEvidence'
 
 describe('player profile API wrappers', () => {
   beforeEach(() => vi.clearAllMocks())

@@ -6,7 +6,7 @@ const requestJson = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../shared/api/http', () => ({ requestJson }))
 
-describe('Discord API parser', () => {
+describe('discord API parser', () => {
   beforeEach(() => requestJson.mockReset())
 
   it('keeps only credential-presence metadata and rejects secret values', () => {
@@ -37,8 +37,14 @@ describe('Discord API parser', () => {
 
   it('rejects unknown delivery statuses and secret-like delivery fields', async () => {
     const delivery = {
-      deliveryId: 'delivery-1', businessKey: 'business-1', targetKey: 'public', status: 'RetryScheduled',
-      nextAttemptAtUtc: '2026-07-27T00:01:00+00:00', retryCount: 2, createdAtUtc: '2026-07-27T00:00:00+00:00', completedAtUtc: null,
+      deliveryId: 'delivery-1',
+      businessKey: 'business-1',
+      targetKey: 'public',
+      status: 'RetryScheduled',
+      nextAttemptAtUtc: '2026-07-27T00:01:00+00:00',
+      retryCount: 2,
+      createdAtUtc: '2026-07-27T00:00:00+00:00',
+      completedAtUtc: null,
     }
     requestJson.mockResolvedValueOnce([delivery])
     await expect(listDiscordDeliveries('Bearer owner')).resolves.toMatchObject([{ status: 'RetryScheduled' }])

@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import type { LocationQueryRaw } from 'vue-router'
 
+import type { AreaGeometry } from '../model/useAreaInvestigation'
+import type { MapBusinessFeature, MapLayerId } from '../model/useMapVectorLayer'
+import type { MapTilePanelState, MapVectorPanelState } from './MapLayersPanel.vue'
+
+import type { AreaInteractionMode, MapLayersRuntime } from './openLayersGameMapRuntime'
 import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-
 import { useAuthStore } from '../../auth'
 import PlayersSectionNavigation from '../../players/ui/PlayersSectionNavigation.vue'
-import type { MapBusinessFeature, MapLayerId } from '../model/useMapVectorLayer'
-import type { AreaGeometry } from '../model/useAreaInvestigation'
 import {
   AREA_INVESTIGATION_URL_KEYS,
   createAreaInvestigationController,
   DEFAULT_AREA_INVESTIGATION_LIMIT,
 } from '../model/useAreaInvestigation'
-import { usePlayerMap } from '../model/usePlayerMap'
-import type { AreaInteractionMode, MapLayersRuntime } from './openLayersGameMapRuntime'
 
+import { usePlayerMap } from '../model/usePlayerMap'
 import MapAreaInvestigation from './MapAreaInvestigation.vue'
 import MapFeatureDetails from './MapFeatureDetails.vue'
 import MapLayersPanel from './MapLayersPanel.vue'
-import type { MapTilePanelState, MapVectorPanelState } from './MapLayersPanel.vue'
 import OnlinePlayerMapList from './OnlinePlayerMapList.vue'
 import OpenLayersGameMap from './OpenLayersGameMap.vue'
 import PlayerTrackObservations from './PlayerTrackObservations.vue'
@@ -295,8 +295,8 @@ async function applyTrackFilters() {
           <label class="min-w-0 text-sm">
             <span class="mb-1 block font-medium">{{ t('players.map.searchPlayers') }}</span>
             <input
-              :value="controller.playerSearch.value"
               id="player-map-search"
+              :value="controller.playerSearch.value"
               class="w-full min-w-0 rounded-md border border-default bg-default px-2 py-2"
               data-testid="player-search"
               name="player-map-search"

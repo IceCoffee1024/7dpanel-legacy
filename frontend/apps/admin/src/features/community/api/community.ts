@@ -5,10 +5,25 @@ export const TELEPORT_OPERATION_STATES = ['Reserved', 'Dispatching', 'PendingRec
 export const VOTE_KINDS = ['Kick', 'Restart'] as const
 export const VOTE_ROUND_STATES = ['Open', 'Passed', 'Rejected', 'Expired', 'Cancelled', 'ActionQueued', 'ActionSucceeded', 'ActionFailed', 'ActionResultUnknown'] as const
 export const COMMUNITY_GAME_COMMAND_IDS = [
-  'Balance', 'Pay', 'MoneyTop', 'Daily', 'Shop', 'Buy', 'Redeem',
-  'Homes', 'SetHome', 'DeleteHome', 'Home', 'Cities', 'City',
-  'TeleportAsk', 'TeleportAccept', 'TeleportReject', 'Back',
-  'VoteKick', 'VoteRestart',
+  'Balance',
+  'Pay',
+  'MoneyTop',
+  'Daily',
+  'Shop',
+  'Buy',
+  'Redeem',
+  'Homes',
+  'SetHome',
+  'DeleteHome',
+  'Home',
+  'Cities',
+  'City',
+  'TeleportAsk',
+  'TeleportAccept',
+  'TeleportReject',
+  'Back',
+  'VoteKick',
+  'VoteRestart',
 ] as const
 
 export type TeleportKind = typeof TELEPORT_KINDS[number]
@@ -298,7 +313,7 @@ function enumValue<T extends string>(value: unknown, values: readonly T[]): T {
 function utc(value: unknown): string {
   if (typeof value !== 'string')
     return invalid()
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(?:Z|[+]00:00)$/.exec(value)
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(?:Z|\+00:00)$/.exec(value)
   if (match === null)
     return invalid()
   const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number)
@@ -312,8 +327,9 @@ function utc(value: unknown): string {
     || parsed.getUTCHours() !== hour
     || parsed.getUTCMinutes() !== minute
     || parsed.getUTCSeconds() !== second
-    || parsed.getUTCMilliseconds() !== milliseconds)
+    || parsed.getUTCMilliseconds() !== milliseconds) {
     return invalid()
+  }
   return value
 }
 
@@ -339,7 +355,7 @@ function wireInteger(value: bigint): number | string {
 
 function headers(authorization: string, json = false): Record<string, string> {
   return json
-    ? { Authorization: authorization, 'Content-Type': 'application/json' }
+    ? { 'Authorization': authorization, 'Content-Type': 'application/json' }
     : { Authorization: authorization }
 }
 
@@ -397,8 +413,9 @@ export function parseGameCommandConfiguration(value: unknown): CommunityGameComm
   const source = record(value, gameCommandConfigurationKeys)
   const commands = collection(source.commands, parseGameCommandSetting)
   if (commands.length !== COMMUNITY_GAME_COMMAND_IDS.length
-    || new Set(commands.map(command => command.commandId)).size !== COMMUNITY_GAME_COMMAND_IDS.length)
+    || new Set(commands.map(command => command.commandId)).size !== COMMUNITY_GAME_COMMAND_IDS.length) {
     return invalid()
+  }
   return Object.freeze({
     commands,
     updatedAtUtc: utc(source.updatedAtUtc),
@@ -597,8 +614,9 @@ export async function fetchTeleportSettings(authorization: string, signal?: Abor
     signal,
   }), parseTeleportSettings)
   if (settings.length !== TELEPORT_KINDS.length
-    || new Set(settings.map(value => value.kind)).size !== TELEPORT_KINDS.length)
+    || new Set(settings.map(value => value.kind)).size !== TELEPORT_KINDS.length) {
     return invalid()
+  }
   return settings
 }
 
@@ -731,8 +749,9 @@ export async function fetchFriendship(
   })
   const authoritative = parseFriendshipStatus(response)
   if (authoritative.firstCrossplatformId !== firstCrossplatformId
-    || authoritative.secondCrossplatformId !== secondCrossplatformId)
+    || authoritative.secondCrossplatformId !== secondCrossplatformId) {
     return invalid()
+  }
   return authoritative
 }
 

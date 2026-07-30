@@ -10,8 +10,12 @@ describe('permissions parsers', () => {
 
   it('rejects password material in a panel user response', () => {
     expect(() => parsePanelUser({
-      subject: 'owner', username: 'admin', role: 'Owner', enabled: true,
-      updatedAtUtc: '2026-07-26T00:00:00Z', passwordHash: 'secret',
+      subject: 'owner',
+      username: 'admin',
+      role: 'Owner',
+      enabled: true,
+      updatedAtUtc: '2026-07-26T00:00:00Z',
+      passwordHash: 'secret',
     })).toThrow('Invalid panel user response')
   })
 })

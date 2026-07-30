@@ -3,8 +3,8 @@ import type { DailyRewardPolicy, DailyRewardPolicyUpdateRequest } from '../api/d
 
 import { onUnmounted, readonly, shallowRef } from 'vue'
 
-import { useAuthStore } from '../../auth/model/authStore'
 import { HttpError } from '../../../shared/api/http'
+import { useAuthStore } from '../../auth/model/authStore'
 import * as api from '../api/dailyRewardPolicy'
 
 export type DailyRewardPolicyState = 'loading' | 'ready' | 'not-configured' | 'stale' | 'failed' | 'forbidden'

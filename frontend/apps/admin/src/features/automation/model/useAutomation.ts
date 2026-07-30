@@ -66,7 +66,8 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
   }
 
   function fail(error: unknown) {
-    if (disposed || (error instanceof HttpError && error.code === 'aborted')) return
+    if (disposed || (error instanceof HttpError && error.code === 'aborted'))
+      return
     errorCode.value = stableErrorCode(error)
     if (error instanceof HttpError && error.status === 401) {
       auth.expireSession()
@@ -81,31 +82,38 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
   }
 
   async function refresh() {
-    if (disposed) return
+    if (disposed)
+      return
     const authorizationHeader = authorization()
-    if (authorizationHeader === null) return
+    if (authorizationHeader === null)
+      return
     loadController?.abort()
     const current = ++requestVersion
     const controller = new AbortController()
     loadController = controller
-    if (rules.value.length === 0) state.value = 'loading'
+    if (rules.value.length === 0)
+      state.value = 'loading'
     executionState.value = 'loading'
 
     const executionPromise = queryAutomationExecutions(authorizationHeader, controller.signal)
       .then((next) => {
-        if (disposed || current !== requestVersion) return
+        if (disposed || current !== requestVersion)
+          return
         executions.value = next
         executionState.value = 'available'
       })
       .catch((error: unknown) => {
-        if (disposed || current !== requestVersion || (error instanceof HttpError && error.code === 'aborted')) return
-        if (error instanceof HttpError && (error.status === 401 || error.status === 403)) fail(error)
+        if (disposed || current !== requestVersion || (error instanceof HttpError && error.code === 'aborted'))
+          return
+        if (error instanceof HttpError && (error.status === 401 || error.status === 403))
+          fail(error)
         executionState.value = 'unavailable'
       })
 
     try {
       const next = await listAutomationRules(authorizationHeader, controller.signal)
-      if (disposed || current !== requestVersion) return
+      if (disposed || current !== requestVersion)
+        return
       rules.value = next
       selected.value = selected.value === null ? null : next.find(rule => rule.id === selected.value?.id) ?? null
       errorCode.value = null
@@ -113,17 +121,21 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
       await executionPromise
     }
     catch (error) {
-      if (current === requestVersion) fail(error)
+      if (current === requestVersion)
+        fail(error)
     }
     finally {
-      if (current === requestVersion) loadController = null
+      if (current === requestVersion)
+        loadController = null
     }
   }
 
   async function loadExecution(executionId: string) {
-    if (disposed) return
+    if (disposed)
+      return
     const authorizationHeader = authorization()
-    if (authorizationHeader === null) return
+    if (authorizationHeader === null)
+      return
     detailController?.abort()
     const current = ++detailVersion
     const controller = new AbortController()
@@ -131,32 +143,39 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
     executionDetailState.value = 'loading'
     try {
       const next = await getAutomationExecution(authorizationHeader, executionId, controller.signal)
-      if (disposed || current !== detailVersion) return
+      if (disposed || current !== detailVersion)
+        return
       selectedExecution.value = next
       executionDetailState.value = 'ready'
     }
     catch (error) {
-      if (disposed || current !== detailVersion || (error instanceof HttpError && error.code === 'aborted')) return
+      if (disposed || current !== detailVersion || (error instanceof HttpError && error.code === 'aborted'))
+        return
       errorCode.value = stableErrorCode(error)
       executionDetailState.value = 'unavailable'
     }
     finally {
-      if (current === detailVersion) detailController = null
+      if (current === detailVersion)
+        detailController = null
     }
   }
 
   async function mutate(operation: (authorizationHeader: string, signal: AbortSignal) => Promise<unknown>, refreshAfter = false) {
-    if (disposed || isMutating.value) return false
+    if (disposed || isMutating.value)
+      return false
     const authorizationHeader = authorization()
-    if (authorizationHeader === null) return false
+    if (authorizationHeader === null)
+      return false
     isMutating.value = true
     errorCode.value = null
     const controller = new AbortController()
     mutationController = controller
     try {
       await operation(authorizationHeader, controller.signal)
-      if (disposed) return false
-      if (refreshAfter) await refresh()
+      if (disposed)
+        return false
+      if (refreshAfter)
+        await refresh()
       return !disposed
     }
     catch (error) {
@@ -164,7 +183,8 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
       return false
     }
     finally {
-      if (mutationController === controller) mutationController = null
+      if (mutationController === controller)
+        mutationController = null
       isMutating.value = false
     }
   }
@@ -176,10 +196,14 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
     return mutate((authorizationHeader, signal) => deleteAutomationRule(authorizationHeader, rule, signal), true)
   }
   function validate(draft: AutomationRuleDraft) {
-    return mutate(async (authorizationHeader, signal) => { validation.value = await validateAutomationRule(authorizationHeader, draft, signal) })
+    return mutate(async (authorizationHeader, signal) => {
+      validation.value = await validateAutomationRule(authorizationHeader, draft, signal)
+    })
   }
   function dryRun(draft: AutomationRuleDraft, snapshot: AutomationTriggerSnapshot) {
-    return mutate(async (authorizationHeader, signal) => { dryRunResult.value = await dryRunAutomationRule(authorizationHeader, draft, snapshot, signal) })
+    return mutate(async (authorizationHeader, signal) => {
+      dryRunResult.value = await dryRunAutomationRule(authorizationHeader, draft, snapshot, signal)
+    })
   }
   function select(rule: AutomationRule | null) {
     selected.value = rule
@@ -187,7 +211,8 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
     dryRunResult.value = null
   }
   function dispose() {
-    if (disposed) return
+    if (disposed)
+      return
     disposed = true
     requestVersion++
     detailVersion++
@@ -202,8 +227,24 @@ export function useAutomation(options: { onSessionExpired?: () => void } = {}): 
   onMounted(() => void refresh())
   onUnmounted(dispose)
   return {
-    state: readonly(state), rules: readonly(rules), selected: readonly(selected), executions: readonly(executions), selectedExecution: readonly(selectedExecution),
-    executionState: readonly(executionState), executionDetailState: readonly(executionDetailState), isMutating: readonly(isMutating), errorCode: readonly(errorCode),
-    validation: readonly(validation), dryRunResult: readonly(dryRunResult), select, refresh, loadExecution, save, remove, validate, dryRun, dispose,
+    state: readonly(state),
+    rules: readonly(rules),
+    selected: readonly(selected),
+    executions: readonly(executions),
+    selectedExecution: readonly(selectedExecution),
+    executionState: readonly(executionState),
+    executionDetailState: readonly(executionDetailState),
+    isMutating: readonly(isMutating),
+    errorCode: readonly(errorCode),
+    validation: readonly(validation),
+    dryRunResult: readonly(dryRunResult),
+    select,
+    refresh,
+    loadExecution,
+    save,
+    remove,
+    validate,
+    dryRun,
+    dispose,
   }
 }

@@ -2,8 +2,8 @@ import type { DeepReadonly, ShallowRef } from 'vue'
 import type { AccountQuery, BalanceAdjustmentInput, EconomyAccount, LedgerTransaction, TransactionQuery } from '../api/economy'
 
 import { onUnmounted, readonly, shallowRef } from 'vue'
-import { useAuthStore } from '../../auth/model/authStore'
 import { HttpError } from '../../../shared/api/http'
+import { useAuthStore } from '../../auth/model/authStore'
 import * as api from '../api/economy'
 
 export type EconomyViewState = 'loading' | 'empty' | 'fresh' | 'stale' | 'failed' | 'forbidden'
@@ -153,9 +153,14 @@ export function useEconomyAccounts(options: AccountOptions = {}): EconomyAccount
   onUnmounted(dispose)
 
   return {
-    state: readonly(state), accounts: readonly(accounts), nextCursor: readonly(nextCursor),
-    isLoading: readonly(isLoading), mutationAccountId: readonly(mutationAccountId), errorCode: readonly(errorCode),
-    refresh, loadNext,
+    state: readonly(state),
+    accounts: readonly(accounts),
+    nextCursor: readonly(nextCursor),
+    isLoading: readonly(isLoading),
+    mutationAccountId: readonly(mutationAccountId),
+    errorCode: readonly(errorCode),
+    refresh,
+    loadNext,
     setFrozen: (account, isFrozen) => mutate(account.accountId, (token, signal) => freeze(token, account, isFrozen, signal)),
     adjust: input => mutate(input.crossplatformId, (token, signal) => adjust(token, input, signal)),
     dispose,
@@ -216,10 +221,19 @@ export function useEconomyTransactions(options: TransactionOptions = {}): Econom
 
   const refresh = (query: TransactionQuery = activeQuery) => load({ ...query, cursor: undefined }, false)
   const loadNext = () => nextCursor.value === null ? Promise.resolve() : load({ ...activeQuery, cursor: nextCursor.value }, true)
-  function dispose() { disposed = true; controller?.abort() }
+  function dispose() {
+    disposed = true
+    controller?.abort()
+  }
   onUnmounted(dispose)
   return {
-    state: readonly(state), transactions: readonly(transactions), nextCursor: readonly(nextCursor),
-    isLoading: readonly(isLoading), errorCode: readonly(errorCode), refresh, loadNext, dispose,
+    state: readonly(state),
+    transactions: readonly(transactions),
+    nextCursor: readonly(nextCursor),
+    isLoading: readonly(isLoading),
+    errorCode: readonly(errorCode),
+    refresh,
+    loadNext,
+    dispose,
   }
 }

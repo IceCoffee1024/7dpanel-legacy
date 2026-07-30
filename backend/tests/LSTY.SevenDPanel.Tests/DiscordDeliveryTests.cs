@@ -429,14 +429,31 @@ namespace LSTY.SevenDPanel.Tests
             var delivery = Enqueue(database.Store, "business-bounded-drain", "public", "hello drain");
             var release = new TaskCompletionSource<DiscordApiResult>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
-            var api = new DelegateDiscordApiClient((_, _) => release.Task);
+            var sendStarted = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = new DelegateDiscordApiClient((_, _) =>
+            {
+                sendStarted.TrySetResult(true);
+                return release.Task;
+            });
             using var worker = new DiscordDeliveryWorker(
                 database.Store, api, () => Now, TimeSpan.FromMilliseconds(1));
             var stopwatch = Stopwatch.StartNew();
-            var drain = worker.DrainAsync(TimeSpan.FromMilliseconds(50), CancellationToken.None);
+            var drain = Task.Factory.StartNew(
+                    () => worker.DrainAsync(
+                        TimeSpan.FromMilliseconds(50),
+                        CancellationToken.None),
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default)
+                .Unwrap();
 
             try
             {
+                var started = await Task.WhenAny(
+                    sendStarted.Task,
+                    Task.Delay(TimeSpan.FromSeconds(1)));
+                Assert.Same(sendStarted.Task, started);
                 var completed = await Task.WhenAny(drain, Task.Delay(TimeSpan.FromSeconds(1)));
                 Assert.Same(drain, completed);
                 Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1));

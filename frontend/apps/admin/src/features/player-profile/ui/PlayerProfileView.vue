@@ -91,32 +91,79 @@ onUnmounted(() => {
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
         <div>
-          <h1 class="text-lg font-semibold text-highlighted">{{ profile?.summary.value?.latestName ?? t('players.profile.title') }}</h1>
-          <p class="break-all text-xs text-muted">{{ crossplatformId }}</p>
+          <h1 class="text-lg font-semibold text-highlighted">
+            {{ profile?.summary.value?.latestName ?? t('players.profile.title') }}
+          </h1>
+          <p class="break-all text-xs text-muted">
+            {{ crossplatformId }}
+          </p>
         </div>
-        <UButton color="neutral" icon="i-lucide-refresh-cw" variant="outline" :label="t('common.reload')" :loading="profileController.isRefreshing.value" @click="refreshAll" />
+        <UButton
+          color="neutral"
+          icon="i-lucide-refresh-cw"
+          variant="outline"
+          :label="t('common.reload')"
+          :loading="profileController.isRefreshing.value"
+          @click="refreshAll"
+        />
       </div>
     </template>
     <template #body>
       <div class="space-y-6 p-3 sm:p-4 lg:p-6">
-        <div v-if="profileController.state.value === 'loading'" class="space-y-3"><USkeleton class="h-24 w-full" /><USkeleton class="h-48 w-full" /></div>
+        <div v-if="profileController.state.value === 'loading'" class="space-y-3">
+          <USkeleton class="h-24 w-full" /><USkeleton class="h-48 w-full" />
+        </div>
         <UAlert v-else-if="profileController.state.value === 'forbidden'" color="warning" :title="t('players.profile.state.forbiddenTitle')" />
         <UAlert v-else-if="profileController.state.value === 'unavailable' || !profile" color="error" :title="t('players.profile.state.failedTitle')" />
         <template v-else>
           <UAlert v-if="profileController.state.value === 'stale' || profileController.state.value === 'partial'" color="warning" :title="t('players.profile.state.staleTitle')" />
           <PlayerProfileSummary :profile="profile" />
           <UCard>
-            <template #header><div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-semibold">{{ t('players.profile.actions.title') }}</h2><UBadge :color="canOpenActions ? 'success' : 'neutral'" variant="subtle">{{ canOpenActions ? t('players.profile.actions.freshTarget') : t('players.profile.readOnlyNotice') }}</UBadge></div></template>
-            <UAlert v-if="!canOpenActions" color="neutral" :title="t('players.profile.readOnlyNotice')" :description="t('players.profile.actions.freshRequired')" />
+            <template #header>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="font-semibold">
+                  {{ t('players.profile.actions.title') }}
+                </h2><UBadge :color="canOpenActions ? 'success' : 'neutral'" variant="subtle">
+                  {{ canOpenActions ? t('players.profile.actions.freshTarget') : t('players.profile.readOnlyNotice') }}
+                </UBadge>
+              </div>
+            </template>
+            <UAlert
+              v-if="!canOpenActions"
+              color="neutral"
+              :title="t('players.profile.readOnlyNotice')"
+              :description="t('players.profile.actions.freshRequired')"
+            />
             <div v-else class="flex flex-wrap gap-2">
               <UButton icon="i-lucide-package-plus" :label="t('players.profile.actions.grant.title')" @click="openDialog('grant')" />
-              <UButton color="error" variant="soft" icon="i-lucide-package-minus" :label="t('players.profile.actions.remove.title')" @click="openDialog('remove')" />
-              <UButton color="error" variant="soft" :label="t('players.profile.actions.resetSkills.title')" @click="openDialog('reset-skills')" />
-              <UButton color="error" variant="soft" :label="t('players.profile.actions.resetPartial.title')" @click="openDialog('reset-partial')" />
+              <UButton
+                color="error"
+                variant="soft"
+                icon="i-lucide-package-minus"
+                :label="t('players.profile.actions.remove.title')"
+                @click="openDialog('remove')"
+              />
+              <UButton
+                color="error"
+                variant="soft"
+                :label="t('players.profile.actions.resetSkills.title')"
+                @click="openDialog('reset-skills')"
+              />
+              <UButton
+                color="error"
+                variant="soft"
+                :label="t('players.profile.actions.resetPartial.title')"
+                @click="openDialog('reset-partial')"
+              />
               <UButton color="error" :label="t('players.profile.actions.resetFull.title')" @click="openDialog('reset-full')" />
             </div>
           </UCard>
-          <PlayerInventoryPanel :section="profile.inventory" :diffs="evidenceController.inventoryDiffs.items.value" :gaps="evidenceController.inventoryDiffs.gaps.value" @load-more="evidenceController.inventoryDiffs.loadMore" />
+          <PlayerInventoryPanel
+            :section="profile.inventory"
+            :diffs="evidenceController.inventoryDiffs.items.value"
+            :gaps="evidenceController.inventoryDiffs.gaps.value"
+            @load-more="evidenceController.inventoryDiffs.loadMore"
+          />
           <PlayerSkillsPanel :section="profile.skills" :snapshots="evidenceController.skills.items.value" @load-more="evidenceController.skills.loadMore" />
           <PlayerActivityPanel :sessions="profile.sessions" :activity="profile.activity" :daily-activity="profile.dailyActivity" />
         </template>
@@ -124,9 +171,51 @@ onUnmounted(() => {
     </template>
   </UDashboardPanel>
 
-  <GrantItemDialog :open="activeDialog === 'grant'" :target="actions.target.value" :target-valid="actions.targetValid.value" :pending="actions.isSubmitting.value" :feedback="actions.feedback.value" :catalog-version="catalogVersion" @close="closeDialog" @submit="actions.grantItem" />
-  <RemoveItemDialog :open="activeDialog === 'remove'" :target="actions.target.value" :target-valid="actions.targetValid.value" :pending="actions.isSubmitting.value" :feedback="actions.feedback.value" :catalog-version="catalogVersion" @close="closeDialog" @submit="actions.removeItem" />
-  <ResetSkillsDialog :open="activeDialog === 'reset-skills'" :target="actions.target.value" :target-valid="actions.targetValid.value" :pending="actions.isSubmitting.value" :feedback="actions.feedback.value" @close="closeDialog" @submit="actions.resetSkills" />
-  <ResetPartialDialog :open="activeDialog === 'reset-partial'" :target="actions.target.value" :target-valid="actions.targetValid.value" :pending="actions.isSubmitting.value" :feedback="actions.feedback.value" @close="closeDialog" @submit="actions.clearInventory" />
-  <ResetFullDialog :open="activeDialog === 'reset-full'" :target="actions.target.value" :target-valid="actions.targetValid.value" :pending="actions.isSubmitting.value" :feedback="actions.feedback.value" @close="closeDialog" @submit="actions.resetPlayerData" />
+  <GrantItemDialog
+    :open="activeDialog === 'grant'"
+    :target="actions.target.value"
+    :target-valid="actions.targetValid.value"
+    :pending="actions.isSubmitting.value"
+    :feedback="actions.feedback.value"
+    :catalog-version="catalogVersion"
+    @close="closeDialog"
+    @submit="actions.grantItem"
+  />
+  <RemoveItemDialog
+    :open="activeDialog === 'remove'"
+    :target="actions.target.value"
+    :target-valid="actions.targetValid.value"
+    :pending="actions.isSubmitting.value"
+    :feedback="actions.feedback.value"
+    :catalog-version="catalogVersion"
+    @close="closeDialog"
+    @submit="actions.removeItem"
+  />
+  <ResetSkillsDialog
+    :open="activeDialog === 'reset-skills'"
+    :target="actions.target.value"
+    :target-valid="actions.targetValid.value"
+    :pending="actions.isSubmitting.value"
+    :feedback="actions.feedback.value"
+    @close="closeDialog"
+    @submit="actions.resetSkills"
+  />
+  <ResetPartialDialog
+    :open="activeDialog === 'reset-partial'"
+    :target="actions.target.value"
+    :target-valid="actions.targetValid.value"
+    :pending="actions.isSubmitting.value"
+    :feedback="actions.feedback.value"
+    @close="closeDialog"
+    @submit="actions.clearInventory"
+  />
+  <ResetFullDialog
+    :open="activeDialog === 'reset-full'"
+    :target="actions.target.value"
+    :target-valid="actions.targetValid.value"
+    :pending="actions.isSubmitting.value"
+    :feedback="actions.feedback.value"
+    @close="closeDialog"
+    @submit="actions.resetPlayerData"
+  />
 </template>
