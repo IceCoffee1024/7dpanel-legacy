@@ -36,7 +36,7 @@ do {
                 throw "Expected $HealthUrl to be unavailable, but received HTTP $statusCode."
             }
             Write-Host "Health endpoint is unavailable as expected: $HealthUrl"
-            exit 0
+            return
         }
         Start-Sleep -Milliseconds 500
         continue
@@ -47,7 +47,7 @@ do {
     }
     Write-Host "HTTP $($response.StatusCode) $HealthUrl"
     Write-Host $response.Content
-    exit 0
+    return
 } while ((Get-Date) -lt $deadline)
 
 throw "Health endpoint did not respond within $TimeoutSeconds seconds: $lastError"

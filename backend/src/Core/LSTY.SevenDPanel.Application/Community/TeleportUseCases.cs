@@ -37,15 +37,16 @@ namespace LSTY.SevenDPanel.Application.Community
             if (!settings.Enabled)
                 throw new TeleportRejectedException(TeleportFailureCodes.TeleportDisabled);
             var now = RequireUtc(utcNow());
+            var existing = store.FindHome(player.CrossplatformId, name);
             return store.SaveHome(
                 new PlayerHome(
                     homeId,
                     player.CrossplatformId,
                     name,
                     player.Position,
+                    existing?.CreatedAtUtc ?? now,
                     now,
-                    now,
-                    0),
+                    existing?.RowVersion ?? 0),
                 settings.MaxHomes ?? int.MaxValue);
         }
 

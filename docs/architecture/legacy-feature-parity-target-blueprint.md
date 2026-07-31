@@ -159,12 +159,11 @@ last_updated: "2026-07-26"
 
 六波次的 migration、主要 Domain/Application/Adapter/Web/DI 和 Admin 页面已经在当前工作树形成代码切片，已采用结构不再由本 Target 文档重复定义。以下条目仍保留为目标或验收缺口：
 
-- `daily/claim`、`shop`、`tpa/tpaccept/tpreject` 需要先补专用持久合同，不能用浏览器状态、测试 Stub 或控制台原文冒充；
-- Community 全量城市、好友、传送操作和投票轮次查询，以及底层原子 expected-version Store 合同仍不完整；
-- Discord Gateway 网络连接、interaction Ed25519 transport、真实 sandbox 往返，以及 GeoIP/MaxMind 真实加入决策仍未完成；
-- 奖励、成就和在线奖励 evidence runtime 尚未接入生产 `PlayerSnapshot`/`PlayerSession` 观察源；
+- `daily/claim`、`shop`、`tpa/tpaccept/tpreject` 的专用持久合同、Community 全量查询、传送设置/投票配置 `expectedRowVersion` 和私人家覆盖 CAS 已提升为 Current；其他可变 Community 记录仍需在存在丢失更新风险时逐项补明确版本语义，不能用通用仓储抽象代替；
+- Discord Gateway 网络连接和 interaction Ed25519 transport 已提升为 Current；仍缺真实 sandbox 往返，以及 GeoIP/MaxMind 真实加入决策；
+- 奖励、成就和在线奖励 evidence runtime 已接入生产持久观察完成入口；真实奖励发放与补偿恢复仍需环境证据；
 - 真实备份恢复、玩家动作、经济/传送/投票、世界 change set/undo 和危险世界工具必须在受控 `v3.0.1-b4` 实例取得证据；危险操作前必须确认备份与回滚目标；
-- 最终 Admin typecheck、AppShell/router/i18n/Community 聚焦 Vitest 和 JSON key audit 已按[测试策略](../test.md#六波次功能对齐当前工作树证据)执行并通过；world-tools/modules/player-map 完整聚焦组合、定向 lint、全量门禁、Playwright、publish 和 Windows/Linux 候选发布证据仍未闭合，当前精简实现不能替代这些边界。
+- 最终 Admin typecheck、AppShell/router/i18n/Community、world-tools 和 player-map 聚焦测试及 JSON key audit 已按[测试策略](../test.md#六波次功能对齐当前工作树证据)取得代码侧证据；modules 完整聚焦、定向 lint、全量门禁、完整 Playwright 页面矩阵和 Linux 候选发布证据仍未闭合，当前精简实现不能替代这些边界。
 
 连续实施固定占用 `008_EvidenceFoundation.sql`、`009_JobsBackupsSchedules.sql`、`010_PlayerEvidenceActions.sql`、`011_EconomyCommunity.sql`、`012_AutomationIntegrations.sql` 和 `013_WorldToolsAndFeatureModules.sql`。每个后续 migration 在保留专用权威记录的同时重新创建第一波只读 `unified_audit_projection`，只增加新波次稳定摘要；不得复制业务正文、Secret、路径或大字段，也不得把 gap 投影为已发生动作。
 

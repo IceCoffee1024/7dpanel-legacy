@@ -90,6 +90,9 @@ namespace LSTY.SevenDPanel.Application.Chat
         public static GameChatCommandResult Failed() =>
             Handled("chat.command.failed", Array.Empty<string>());
 
+        public static GameChatCommandResult AuditUnavailable() =>
+            Handled("chat.command.audit_unavailable", Array.Empty<string>());
+
         private static GameChatCommandResult Handled(string code, IEnumerable<string> messages) =>
             new GameChatCommandResult(true, code, messages ?? throw new ArgumentNullException(nameof(messages)));
     }
@@ -134,10 +137,22 @@ namespace LSTY.SevenDPanel.Application.Chat
 
         public GameChatCommandResult Handle(string commandName, GameChatCommandContext context)
         {
+            return Handle(commandName, context, _ => { });
+        }
+
+        public GameChatCommandResult Handle(
+            string commandName,
+            GameChatCommandContext context,
+            Action<GameChatCommandDescriptor?> beforeHandle)
+        {
             if (context == null) throw new ArgumentNullException(nameof(context));
+            if (beforeHandle == null) throw new ArgumentNullException(nameof(beforeHandle));
             var current = Volatile.Read(ref snapshot);
-            if (string.IsNullOrWhiteSpace(commandName) ||
-                !current.HandlersByName.TryGetValue(commandName.Trim(), out var handler))
+            IGameChatCommandHandler? handler = null;
+            if (!string.IsNullOrWhiteSpace(commandName))
+                current.HandlersByName.TryGetValue(commandName.Trim(), out handler);
+            beforeHandle(handler?.Descriptor);
+            if (handler == null)
                 return GameChatCommandResult.Unhandled();
             try
             {

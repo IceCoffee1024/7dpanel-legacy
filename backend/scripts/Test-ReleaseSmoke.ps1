@@ -13,10 +13,113 @@ param(
     [ValidateRange(1, 600)]
     [int] $HealthTimeoutSeconds = 90,
     [string] $EnvironmentFile,
-    [string] $PublishDirectory
+    [string] $PublishDirectory,
+    [string] $EvidenceDirectory
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Protect-SmokeEvidenceText {
+    param(
+        [AllowEmptyString()]
+        [string] $Text,
+        [string[]] $SecretValues = @()
+    )
+
+    $redacted = $Text
+    foreach ($secretValue in $SecretValues) {
+        if (-not [string]::IsNullOrEmpty($secretValue)) {
+            $redacted = $redacted.Replace($secretValue, '<redacted>')
+        }
+    }
+
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?i)\b(Bearer|Basic)\s+[A-Za-z0-9+/_=.-]+',
+        '$1 <redacted>')
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?i)([?&](?:api[_-]?key|authorization|password|secret|access[_-]?token|refresh[_-]?token)=)[^&\s]+',
+        '$1<redacted>')
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?i)("(?:authorization|proxy-authorization|x-api-key|api[_-]?key|password|secret|access[_-]?token|refresh[_-]?token)"\s*:\s*)"(?:\\.|[^"\\])*"',
+        '$1"<redacted>"')
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?im)(\b(?:Authorization|Proxy-Authorization|X-Api-Key|Api[-_ ]?Key|Password|Secret|Access[-_ ]?Token|Refresh[-_ ]?Token)\b\s*[:=]\s*)(?:"[^"\r\n]*"|''[^''\r\n]*''|[^\s,;}\r\n]+)',
+        '$1<redacted>')
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?i)(-(?:Password|ApiKey|Secret|AccessToken|RefreshToken)\s+)(?:"[^"\r\n]*"|''[^''\r\n]*''|\S+)',
+        '$1<redacted>')
+
+    return $redacted
+}
+
+function Write-SmokeEvidenceSummary {
+    param(
+        [Parameter(Mandatory = $true)] [System.Collections.IDictionary] $Summary,
+        [Parameter(Mandatory = $true)] [string] $Path
+    )
+
+    $Summary | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Path -Encoding UTF8
+}
+
+function Invoke-SmokeEvidenceStep {
+    param(
+        [Parameter(Mandatory = $true)] [string] $Name,
+        [Parameter(Mandatory = $true)] [string] $ScriptPath,
+        [Parameter(Mandatory = $true)] [hashtable] $Parameters,
+        [Parameter(Mandatory = $true)] [string] $LogFile,
+        [Parameter(Mandatory = $true)] [System.Collections.IDictionary] $Summary,
+        [Parameter(Mandatory = $true)] [string] $SummaryPath,
+        [string[]] $SecretValues = @()
+    )
+
+    $startedAt = [DateTimeOffset]::UtcNow
+    $records = @()
+    $failure = $null
+
+    try {
+        $records = @(& $ScriptPath @Parameters *>&1)
+        $status = 'Passed'
+        $exitCode = 0
+    }
+    catch {
+        $failure = $_
+        $records += $_
+        $status = 'Failed'
+        $exitCode = 1
+    }
+
+    $endedAt = [DateTimeOffset]::UtcNow
+    $logText = Protect-SmokeEvidenceText -Text ($records | Out-String -Width 4096) -SecretValues $SecretValues
+    Set-Content -LiteralPath $LogFile -Value $logText.TrimEnd() -Encoding UTF8
+
+    $Summary.steps += [ordered]@{
+        name = $Name
+        startedAtUtc = $startedAt.ToString('o')
+        endedAtUtc = $endedAt.ToString('o')
+        durationMilliseconds = [long]($endedAt - $startedAt).TotalMilliseconds
+        status = $status
+        exitCode = $exitCode
+        logFile = Split-Path $LogFile -Leaf
+    }
+    $Summary.endedAtUtc = $endedAt.ToString('o')
+    $Summary.durationMilliseconds = [long]($endedAt - [DateTimeOffset]::Parse($Summary.startedAtUtc)).TotalMilliseconds
+    $Summary.status = if ($failure) { 'Failed' } else { 'Running' }
+    $Summary.exitCode = if ($failure) { 1 } else { $null }
+    Write-SmokeEvidenceSummary -Summary $Summary -Path $SummaryPath
+
+    foreach ($record in $records) {
+        Write-Output $record
+    }
+
+    if ($failure) {
+        throw $failure
+    }
+}
 
 if ($Local -and $ComputerName) {
     throw 'ComputerName cannot be combined with Local.'
@@ -64,8 +167,56 @@ if ($PSBoundParameters.ContainsKey('Credential')) {
     $startParameters.Credential = $Credential
 }
 
+$evidenceEnabled = $PSBoundParameters.ContainsKey('EvidenceDirectory')
+$evidenceSummary = $null
+$evidenceSummaryPath = $null
+$evidenceRunDirectory = $null
+$secretValues = @()
+if ($evidenceEnabled) {
+    if ([string]::IsNullOrWhiteSpace($EvidenceDirectory)) {
+        throw 'EvidenceDirectory cannot be empty when specified.'
+    }
+
+    $evidenceRoot = [System.IO.Path]::GetFullPath($EvidenceDirectory)
+    New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
+    $runName = 'release-smoke-{0}-{1}' -f
+        [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssZ'),
+        [Guid]::NewGuid().ToString('N').Substring(0, 8)
+    $evidenceRunDirectory = Join-Path $evidenceRoot $runName
+    New-Item -ItemType Directory -Path $evidenceRunDirectory | Out-Null
+    $evidenceSummaryPath = Join-Path $evidenceRunDirectory 'summary.json'
+    $startedAt = [DateTimeOffset]::UtcNow
+    $evidenceSummary = [ordered]@{
+        schemaVersion = 1
+        runId = $runName
+        script = 'Test-ReleaseSmoke.ps1'
+        startedAtUtc = $startedAt.ToString('o')
+        endedAtUtc = $null
+        durationMilliseconds = $null
+        status = 'Running'
+        exitCode = $null
+        steps = @()
+    }
+    if ($PSBoundParameters.ContainsKey('Credential')) {
+        $secretValues += $Credential.GetNetworkCredential().Password
+    }
+    Write-SmokeEvidenceSummary -Summary $evidenceSummary -Path $evidenceSummaryPath
+    Write-Host "Smoke evidence directory: $evidenceRunDirectory"
+}
+
 Write-Host 'Stopping 7DTD before publishing...'
-& (Join-Path $PSScriptRoot 'Stop-Server.ps1') @stopParameters
+if ($evidenceEnabled) {
+    Invoke-SmokeEvidenceStep -Name 'Stop-Server' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Stop-Server.ps1') `
+        -Parameters $stopParameters `
+        -LogFile (Join-Path $evidenceRunDirectory '01-stop-server.log') `
+        -Summary $evidenceSummary `
+        -SummaryPath $evidenceSummaryPath `
+        -SecretValues $secretValues
+}
+else {
+    & (Join-Path $PSScriptRoot 'Stop-Server.ps1') @stopParameters
+}
 
 Write-Host 'Publishing the 7DPanel Mod...'
 $publishParameters = @{}
@@ -75,10 +226,32 @@ foreach ($entry in $environmentParameters.GetEnumerator()) {
 if ($PSBoundParameters.ContainsKey('PublishDirectory')) {
     $publishParameters.PublishDirectory = $PublishDirectory
 }
-& (Join-Path $PSScriptRoot 'Publish-Mod.ps1') @publishParameters
+if ($evidenceEnabled) {
+    Invoke-SmokeEvidenceStep -Name 'Publish-Mod' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Publish-Mod.ps1') `
+        -Parameters $publishParameters `
+        -LogFile (Join-Path $evidenceRunDirectory '02-publish-mod.log') `
+        -Summary $evidenceSummary `
+        -SummaryPath $evidenceSummaryPath `
+        -SecretValues $secretValues
+}
+else {
+    & (Join-Path $PSScriptRoot 'Publish-Mod.ps1') @publishParameters
+}
 
 Write-Host 'Starting 7DTD...'
-& (Join-Path $PSScriptRoot 'Start-Server.ps1') @startParameters
+if ($evidenceEnabled) {
+    Invoke-SmokeEvidenceStep -Name 'Start-Server' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Start-Server.ps1') `
+        -Parameters $startParameters `
+        -LogFile (Join-Path $evidenceRunDirectory '03-start-server.log') `
+        -Summary $evidenceSummary `
+        -SummaryPath $evidenceSummaryPath `
+        -SecretValues $secretValues
+}
+else {
+    & (Join-Path $PSScriptRoot 'Start-Server.ps1') @startParameters
+}
 
 $healthParameters = @{ TimeoutSeconds = $HealthTimeoutSeconds }
 foreach ($entry in $environmentParameters.GetEnumerator()) {
@@ -89,4 +262,21 @@ if ($PSBoundParameters.ContainsKey('HealthUrl')) {
 }
 
 Write-Host 'Waiting for the 7DPanel health endpoint...'
-& (Join-Path $PSScriptRoot 'Test-HealthEndpoint.ps1') @healthParameters
+if ($evidenceEnabled) {
+    Invoke-SmokeEvidenceStep -Name 'Test-HealthEndpoint' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Test-HealthEndpoint.ps1') `
+        -Parameters $healthParameters `
+        -LogFile (Join-Path $evidenceRunDirectory '04-health-endpoint.log') `
+        -Summary $evidenceSummary `
+        -SummaryPath $evidenceSummaryPath `
+        -SecretValues $secretValues
+    $evidenceSummary.status = 'Passed'
+    $evidenceSummary.exitCode = 0
+    $endedAt = [DateTimeOffset]::UtcNow
+    $evidenceSummary.endedAtUtc = $endedAt.ToString('o')
+    $evidenceSummary.durationMilliseconds = [long]($endedAt - [DateTimeOffset]::Parse($evidenceSummary.startedAtUtc)).TotalMilliseconds
+    Write-SmokeEvidenceSummary -Summary $evidenceSummary -Path $evidenceSummaryPath
+}
+else {
+    & (Join-Path $PSScriptRoot 'Test-HealthEndpoint.ps1') @healthParameters
+}

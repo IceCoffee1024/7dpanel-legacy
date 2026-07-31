@@ -5,34 +5,29 @@ namespace LSTY.SevenDPanel.Application.Chat
 {
     public interface IGameChatCommandAuditTrail
     {
-        void Record(GameChatCommandAuditEntry entry);
+        long Begin(GameChatCommandAuditIntent intent);
+        void Complete(long auditId, GameChatCommandAuditCompletion completion);
     }
 
-    public sealed class GameChatCommandAuditEntry
+    public sealed class GameChatCommandAuditIntent
     {
-        public GameChatCommandAuditEntry(
+        public GameChatCommandAuditIntent(
             string actorSubject,
             string commandName,
             string invokedName,
-            string resultCode,
-            bool isHandled,
             DateTimeOffset occurredAtUtc)
         {
             ActorSubject = Require(actorSubject, nameof(actorSubject));
             CommandName = RequireToken(commandName, nameof(commandName));
             InvokedName = RequireToken(invokedName, nameof(invokedName));
-            ResultCode = Require(resultCode, nameof(resultCode));
             if (occurredAtUtc.Offset != TimeSpan.Zero)
                 throw new ArgumentException("A UTC timestamp is required.", nameof(occurredAtUtc));
-            IsHandled = isHandled;
             OccurredAtUtc = occurredAtUtc;
         }
 
         public string ActorSubject { get; }
         public string CommandName { get; }
         public string InvokedName { get; }
-        public string ResultCode { get; }
-        public bool IsHandled { get; }
         public DateTimeOffset OccurredAtUtc { get; }
 
         private static string Require(string value, string parameterName)
@@ -49,5 +44,19 @@ namespace LSTY.SevenDPanel.Application.Chat
                 throw new ArgumentException("A command token cannot contain whitespace.", parameterName);
             return normalized;
         }
+    }
+
+    public sealed class GameChatCommandAuditCompletion
+    {
+        public GameChatCommandAuditCompletion(string resultCode, bool isHandled)
+        {
+            if (string.IsNullOrWhiteSpace(resultCode))
+                throw new ArgumentException("A non-empty result code is required.", nameof(resultCode));
+            ResultCode = resultCode.Trim();
+            IsHandled = isHandled;
+        }
+
+        public string ResultCode { get; }
+        public bool IsHandled { get; }
     }
 }

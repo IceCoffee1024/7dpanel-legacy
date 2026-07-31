@@ -26,7 +26,7 @@ document_role: Target
 
 ### 六波次提升状态
 
-旧版本功能对齐六波次的主要项目边界、migration `008` 至 `013`、生产组合根和 runtime 已形成当前代码，并已提升到[系统架构](../architecture.md#六波次功能对齐当前代码状态)。与这些 Current 事实重复的目录和链路不再具有 Target 权威；下文只在解释未完成目标时保留必要上下文。后续目标包括 Community 缺失持久合同与部分原子版本写入、Discord Gateway/interaction transport、奖励证据生产观察源，以及真实恢复/玩家/世界副作用和外部服务边界；发布与跨平台进程证据由[测试策略](../test.md#六波次功能对齐当前工作树证据)拥有。
+旧版本功能对齐六波次的主要项目边界、migration `008` 至 `015`、生产组合根和 runtime 已形成当前代码，并已提升到[系统架构](../architecture.md#六波次功能对齐当前代码状态)。与这些 Current 事实重复的目录和链路不再具有 Target 权威；下文只在解释未完成目标时保留必要上下文。Community 的传送设置、投票配置和私人家覆盖已经使用原子版本条件，Discord Gateway/interaction transport 与奖励证据生产观察源也已成为 Current；后续目标只保留其他 Community 可变记录的明确版本语义，以及真实恢复、玩家/世界副作用、外部服务和跨平台发布证据。精确缺口由[测试策略](../test.md#已知缺口)拥有。
 
 ## 架构定位
 

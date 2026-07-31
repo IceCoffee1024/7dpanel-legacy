@@ -110,6 +110,50 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Home_use_case_carries_the_current_version_when_overwriting_a_home()
+        {
+            using var database = new TemporaryDatabase();
+            var store = new SqliteCommunityStore(database.Factory);
+            store.SaveTeleportSettings(Settings(TeleportKind.Home, maxHomes: 2));
+            var homes = new HomeUseCases(store, () => Now);
+
+            var created = homes.Save("home-1", "Base", Player(position: Position(10, 70, 20)));
+            var updated = homes.Save("home-1", "Base", Player(position: Position(30, 70, 40)));
+
+            Assert.Equal(0, created.RowVersion);
+            Assert.Equal(1, updated.RowVersion);
+            Assert.Equal(created.CreatedAtUtc, updated.CreatedAtUtc);
+            Assert.Equal(30, updated.Position.X);
+            Assert.Equal(40, updated.Position.Z);
+        }
+
+        [Fact]
+        public void Home_overwrite_rejects_a_stale_version_without_losing_the_first_update()
+        {
+            using var database = new TemporaryDatabase();
+            var store = new SqliteCommunityStore(database.Factory);
+            var created = store.SaveHome(
+                new PlayerHome("home-1", "EOS-A", "Base", Position(10, 70, 20), Now, Now, 0),
+                2);
+            var firstWriter = new PlayerHome(
+                created.HomeId, created.CrossplatformId, created.Name, Position(30, 70, 40),
+                created.CreatedAtUtc, Now.AddSeconds(1), created.RowVersion);
+            var staleWriter = new PlayerHome(
+                created.HomeId, created.CrossplatformId, created.Name, Position(50, 70, 60),
+                created.CreatedAtUtc, Now.AddSeconds(2), created.RowVersion);
+
+            var updated = store.SaveHome(firstWriter, 2);
+            var conflict = Assert.Throws<CommunityConflictException>(() => store.SaveHome(staleWriter, 2));
+
+            Assert.Equal("community_conflict", conflict.Code);
+            Assert.Equal(1, updated.RowVersion);
+            var persisted = Assert.IsType<PlayerHome>(store.FindHome("EOS-A", "Base"));
+            Assert.Equal(updated.RowVersion, persisted.RowVersion);
+            Assert.Equal(30, persisted.Position.X);
+            Assert.Equal(40, persisted.Position.Z);
+        }
+
+        [Fact]
         public async Task Confirmed_teleport_captures_fee_and_atomically_updates_cooldowns_and_return_point()
         {
             using var database = new TemporaryDatabase();

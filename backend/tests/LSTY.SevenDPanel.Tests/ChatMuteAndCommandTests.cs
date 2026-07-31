@@ -84,6 +84,54 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains(log, entry => entry.IndexOf("reply failed", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
+        [Fact]
+        public void Audit_intent_failure_rejects_without_executing_the_command()
+        {
+            var handler = new CountingCommandHandler();
+            var audit = new RecordingCommandAudit { FailBegin = true };
+            var log = new List<string>();
+
+            var result = SevenDaysChatMessageCoordinator.ExecuteAuditedCommand(
+                new GameChatCommandCatalog(new[] { handler }),
+                audit,
+                "EOS_1",
+                "claim",
+                Context(),
+                log.Add);
+
+            Assert.True(result.IsHandled);
+            Assert.Equal("chat.command.audit_unavailable", result.Code);
+            Assert.Equal(0, handler.CallCount);
+            Assert.Equal(1, audit.BeginCount);
+            Assert.Equal(0, audit.CompleteCount);
+            Assert.Contains(log, entry => entry.IndexOf("audit intent failed", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        [Fact]
+        public void Audit_completion_failure_leaves_pending_without_replaying_or_faking_the_result()
+        {
+            var handler = new CountingCommandHandler();
+            var audit = new RecordingCommandAudit { FailComplete = true };
+            var log = new List<string>();
+
+            var result = SevenDaysChatMessageCoordinator.ExecuteAuditedCommand(
+                new GameChatCommandCatalog(new[] { handler }),
+                audit,
+                "EOS_1",
+                "CLAIM",
+                Context(),
+                log.Add);
+
+            Assert.Equal("chat.command.help.succeeded", result.Code);
+            Assert.Equal(1, handler.CallCount);
+            Assert.Equal(1, audit.BeginCount);
+            Assert.Equal(1, audit.CompleteCount);
+            Assert.Equal("DailyReward", audit.Intent!.CommandName);
+            Assert.Equal("CLAIM", audit.Intent.InvokedName);
+            Assert.Null(audit.Completion);
+            Assert.Contains(log, entry => entry.IndexOf("audit completion failed", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
         private static GameChatCommandContext Context(params string[] arguments) =>
             new GameChatCommandContext("EOS_1", "Alice", arguments);
 
@@ -101,6 +149,53 @@ namespace LSTY.SevenDPanel.Tests
 
             public GameChatCommandResult Handle(GameChatCommandContext context) =>
                 GameChatCommandResult.HelpSucceeded(new[] { Descriptor.Name });
+        }
+
+        private sealed class CountingCommandHandler : IGameChatCommandHandler
+        {
+            public CountingCommandHandler()
+            {
+                Descriptor = new GameChatCommandDescriptor(
+                    "DailyReward",
+                    "daily",
+                    new[] { "claim" },
+                    true);
+            }
+
+            public GameChatCommandDescriptor Descriptor { get; }
+            public int CallCount { get; private set; }
+
+            public GameChatCommandResult Handle(GameChatCommandContext context)
+            {
+                CallCount++;
+                return GameChatCommandResult.HelpSucceeded(new[] { "claimed" });
+            }
+        }
+
+        private sealed class RecordingCommandAudit : IGameChatCommandAuditTrail
+        {
+            public bool FailBegin { get; set; }
+            public bool FailComplete { get; set; }
+            public int BeginCount { get; private set; }
+            public int CompleteCount { get; private set; }
+            public GameChatCommandAuditIntent? Intent { get; private set; }
+            public GameChatCommandAuditCompletion? Completion { get; private set; }
+
+            public long Begin(GameChatCommandAuditIntent intent)
+            {
+                BeginCount++;
+                Intent = intent;
+                if (FailBegin) throw new InvalidOperationException("store unavailable");
+                return 17;
+            }
+
+            public void Complete(long auditId, GameChatCommandAuditCompletion completion)
+            {
+                CompleteCount++;
+                Assert.Equal(17, auditId);
+                if (FailComplete) throw new InvalidOperationException("store unavailable");
+                Completion = completion;
+            }
         }
     }
 }

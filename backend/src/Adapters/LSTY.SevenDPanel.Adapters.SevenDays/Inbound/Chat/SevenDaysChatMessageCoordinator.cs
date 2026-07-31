@@ -260,39 +260,70 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Chat
         {
             if (commands == null || replySender == null || clientInfo == null || string.IsNullOrWhiteSpace(crossplatformId))
                 return false;
-            var result = commands.Handle(command.Name,
-                new GameChatCommandContext(crossplatformId!, displayName, command.Arguments));
-            TryAuditCommand(crossplatformId!, command.Name, result);
+            var context = new GameChatCommandContext(crossplatformId!, displayName, command.Arguments);
+            var result = commandAudit == null
+                ? commands.Handle(command.Name, context)
+                : ExecuteAuditedCommand(
+                    commands,
+                    commandAudit,
+                    crossplatformId!,
+                    command.Name,
+                    context,
+                    log);
             return DeliverHandledCommand(
                 result,
                 messages => replySender.Send(clientInfo, messages),
                 log);
         }
 
-        private void TryAuditCommand(
+        internal static GameChatCommandResult ExecuteAuditedCommand(
+            GameChatCommandCatalog commands,
+            IGameChatCommandAuditTrail commandAudit,
             string crossplatformId,
             string invokedName,
-            GameChatCommandResult result)
+            GameChatCommandContext context,
+            Action<string> log)
         {
-            if (commandAudit == null || commands == null) return;
-            var descriptor = commands.Commands.FirstOrDefault(command =>
-                string.Equals(command.Name, invokedName, StringComparison.OrdinalIgnoreCase)
-                || command.Aliases.Any(alias =>
-                    string.Equals(alias, invokedName, StringComparison.OrdinalIgnoreCase)));
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
+            if (commandAudit == null) throw new ArgumentNullException(nameof(commandAudit));
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (log == null) throw new ArgumentNullException(nameof(log));
+
+            long auditId;
+            GameChatCommandResult result;
             try
             {
-                commandAudit.Record(new GameChatCommandAuditEntry(
-                    "player:" + crossplatformId,
-                    descriptor?.CommandId ?? "Unknown",
-                    invokedName,
-                    result.Code ?? "chat.command.unhandled",
-                    result.IsHandled,
-                    DateTimeOffset.UtcNow));
+                auditId = 0;
+                result = commands.Handle(invokedName, context, descriptor =>
+                {
+                    auditId = commandAudit.Begin(new GameChatCommandAuditIntent(
+                        "player:" + crossplatformId,
+                        descriptor?.CommandId ?? "Unknown",
+                        invokedName,
+                        DateTimeOffset.UtcNow));
+                    if (auditId <= 0)
+                        throw new InvalidOperationException("The game chat command audit intent has no stable identifier.");
+                });
             }
             catch (Exception exception)
             {
-                try { log("Chat command audit failed: " + exception.GetType().Name + "."); } catch { }
+                try { log("Chat command audit intent failed: " + exception.GetType().Name + "."); } catch { }
+                return GameChatCommandResult.AuditUnavailable();
             }
+
+            try
+            {
+                commandAudit.Complete(
+                    auditId,
+                    new GameChatCommandAuditCompletion(
+                        result.Code ?? "chat.command.unhandled",
+                        result.IsHandled));
+            }
+            catch (Exception exception)
+            {
+                try { log("Chat command audit completion failed: " + exception.GetType().Name + "."); } catch { }
+            }
+            return result;
         }
 
         private sealed class ParsedCommand

@@ -307,6 +307,34 @@ started during a failed attempt, restore the previous publication, or perform
 any other automatic rollback. Diagnose and recover the actual failed state
 before rerunning it.
 
+Evidence archival is explicitly opt-in. Pass `-EvidenceDirectory` to create a
+unique `release-smoke-<UTC>-<id>` run directory beneath the selected path:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/Test-ReleaseSmoke.ps1 -EvidenceDirectory <EvidenceRoot>
+```
+
+Each run contains `summary.json` plus one log for every attempted step. The
+summary records UTC start/end times, duration, status, and exit code for the
+overall run and each step. It is rewritten after every completed step, so a
+failed step remains reviewable and later steps are not reported as attempted.
+Logs retain child-script diagnostics while redacting credential values and
+common Authorization, API key, password, secret, and token representations,
+including headers, JSON properties, query parameters, and command arguments.
+Invocation parameters are not written to evidence. Treat the directory as
+release evidence, review it before sharing, and keep secrets out of custom
+child-script output that has no identifying label.
+
+Run the self-contained smoke evidence tests from the repository root:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Test-ReleaseSmoke.Tests.ps1
+```
+
+The tests copy the orchestrator to a temporary directory and replace all four
+child scripts with local stubs. They do not publish, start, stop, or contact a
+real server.
+
 A successful cycle has all of these results:
 
 - The initial stop returns `Stopped` or `AlreadyStopped`; remote mode leaves

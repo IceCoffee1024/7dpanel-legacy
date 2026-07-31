@@ -329,14 +329,15 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             }
             else
             {
-                connection.Execute(
+                var changed = connection.Execute(
                     @"UPDATE player_homes
                       SET name = @Name, world_id = @WorldId, x = @X, y = @Y, z = @Z,
                           yaw = @Yaw, updated_at_utc = @UpdatedAtUtc,
                           row_version = row_version + 1
-                      WHERE home_id = @HomeId;",
+                      WHERE home_id = @HomeId AND row_version = @RowVersion;",
                     HomeParameters(home),
                     transaction);
+                if (changed != 1) throw new CommunityConflictException();
             }
 
             var stored = connection.QuerySingle<HomeRow>(
@@ -1038,7 +1039,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             home.Position.Z,
             home.Position.Yaw,
             CreatedAtUtc = home.CreatedAtUtc.ToUnixTimeMilliseconds(),
-            UpdatedAtUtc = home.UpdatedAtUtc.ToUnixTimeMilliseconds()
+            UpdatedAtUtc = home.UpdatedAtUtc.ToUnixTimeMilliseconds(),
+            home.RowVersion
         };
 
         private static object OperationParameters(TeleportOperationDraft draft) => new
