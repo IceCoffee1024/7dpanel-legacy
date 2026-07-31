@@ -53,6 +53,7 @@ namespace LSTY.SevenDPanel.Configuration
                 var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(configPath))!, "data");
                 var overview = CreateOverviewOptions(config.Overview, log);
                 var playerEvidence = CreatePlayerEvidenceOptions(config.PlayerEvidence, log);
+                var chatCommandTesting = CreateChatCommandTestingOptions(config.ChatCommandTesting, log);
                 var restart = CreateRestartScriptOptions(config.Restart, dataDirectory, log);
                 var configDirectory = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
                 var serverConfigurationPath = Path.GetFullPath(Path.Combine(
@@ -73,7 +74,8 @@ namespace LSTY.SevenDPanel.Configuration
                     restart,
                     serverConfigurationPath,
                     playerEvidence,
-                    geoIpDatabasePath);
+                    geoIpDatabasePath,
+                    chatCommandTesting);
             }
             catch (Exception ex)
             {
@@ -134,6 +136,26 @@ namespace LSTY.SevenDPanel.Configuration
             {
                 log?.Invoke("Invalid 7DPanel player evidence configuration; using safe defaults: " + ex.Message);
                 return PanelPlayerEvidenceOptions.Default;
+            }
+        }
+
+        private static PanelChatCommandTestingOptions CreateChatCommandTestingOptions(
+            ChatCommandTestingConfig? config,
+            Action<string>? log)
+        {
+            config ??= ChatCommandTestingConfig.CreateDefault();
+            try
+            {
+                return PanelChatCommandTestingOptions.FromBinding(
+                    config.Enabled,
+                    config.TestPlayerId,
+                    config.AllowTeleport,
+                    config.AllowRewardDelivery);
+            }
+            catch (ArgumentException ex)
+            {
+                log?.Invoke("Invalid chat-command testing configuration; testing disabled: " + ex.Message);
+                return PanelChatCommandTestingOptions.Disabled;
             }
         }
 

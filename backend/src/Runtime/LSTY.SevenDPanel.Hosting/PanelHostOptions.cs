@@ -18,6 +18,7 @@ namespace LSTY.SevenDPanel.Hosting
                 PanelAuthenticationOptions.Disabled,
                 PanelOverviewOptions.Disabled,
                 PanelPlayerEvidenceOptions.Default,
+                PanelChatCommandTestingOptions.Disabled,
                 RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")),
                 Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"),
                 Path.Combine(AppContext.BaseDirectory, DefaultGeoIpDatabaseRelativePath))
@@ -30,6 +31,7 @@ namespace LSTY.SevenDPanel.Hosting
             PanelAuthenticationOptions authentication,
             PanelOverviewOptions overview,
             PanelPlayerEvidenceOptions playerEvidence,
+            PanelChatCommandTestingOptions chatCommandTesting,
             RestartScriptOptions restart,
             string serverConfigurationPath,
             string geoIpDatabasePath)
@@ -47,6 +49,7 @@ namespace LSTY.SevenDPanel.Hosting
                 Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
                 Overview = overview ?? throw new ArgumentNullException(nameof(overview));
                 PlayerEvidence = playerEvidence ?? throw new ArgumentNullException(nameof(playerEvidence));
+                ChatCommandTesting = chatCommandTesting ?? throw new ArgumentNullException(nameof(chatCommandTesting));
                 Restart = restart ?? throw new ArgumentNullException(nameof(restart));
                 ServerConfigurationPath = Path.GetFullPath(serverConfigurationPath);
                 GeoIpDatabasePath = Path.GetFullPath(geoIpDatabasePath);
@@ -65,6 +68,7 @@ namespace LSTY.SevenDPanel.Hosting
             Authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
             Overview = overview ?? throw new ArgumentNullException(nameof(overview));
             PlayerEvidence = playerEvidence ?? throw new ArgumentNullException(nameof(playerEvidence));
+            ChatCommandTesting = chatCommandTesting ?? throw new ArgumentNullException(nameof(chatCommandTesting));
             Restart = restart ?? throw new ArgumentNullException(nameof(restart));
             ServerConfigurationPath = Path.GetFullPath(serverConfigurationPath);
             GeoIpDatabasePath = Path.GetFullPath(geoIpDatabasePath);
@@ -74,6 +78,7 @@ namespace LSTY.SevenDPanel.Hosting
         public PanelAuthenticationOptions Authentication { get; }
         public PanelOverviewOptions Overview { get; }
         public PanelPlayerEvidenceOptions PlayerEvidence { get; }
+        public PanelChatCommandTestingOptions ChatCommandTesting { get; }
         public RestartScriptOptions Restart { get; }
         public string ServerConfigurationPath { get; }
         public string GeoIpDatabasePath { get; }
@@ -87,7 +92,8 @@ namespace LSTY.SevenDPanel.Hosting
             RestartScriptOptions? restart = null,
             string? serverConfigurationPath = null,
             PanelPlayerEvidenceOptions? playerEvidence = null,
-            string? geoIpDatabasePath = null)
+            string? geoIpDatabasePath = null,
+            PanelChatCommandTestingOptions? chatCommandTesting = null)
         {
             if (port < 1 || port > 65535)
             {
@@ -110,6 +116,7 @@ namespace LSTY.SevenDPanel.Hosting
                 authentication ?? PanelAuthenticationOptions.Disabled,
                 overview ?? PanelOverviewOptions.Disabled,
                 playerEvidence ?? PanelPlayerEvidenceOptions.Default,
+                chatCommandTesting ?? PanelChatCommandTestingOptions.Disabled,
                 restart ?? RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")),
                 string.IsNullOrWhiteSpace(serverConfigurationPath)
                     ? Path.Combine(AppContext.BaseDirectory, "serverconfig.xml")

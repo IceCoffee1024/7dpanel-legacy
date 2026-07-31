@@ -21,6 +21,12 @@
     "serverId": "local",
     "timeZoneId": "UTC"
   },
+  "chatCommandTesting": {
+    "enabled": false,
+    "testPlayerId": null,
+    "allowTeleport": false,
+    "allowRewardDelivery": false
+  },
   "serverConfigurationPath": "../../serverconfig.xml",
   "geoIpDatabasePath": "data/GeoLite2-Country.mmdb",
   "restart": {

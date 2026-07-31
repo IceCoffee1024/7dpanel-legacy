@@ -30,6 +30,7 @@ last_updated: "2026-07-31"
 | 发布证据、聊天审计与 Home CAS 收口 | 脚本合成门禁通过；后端聚焦及扩大 Chat/Community 组合 `76/76`；Home 删除语义聚焦 `19/19` | smoke 脱敏步骤归档、命令审计意图失败不执行、完成失败不重放、SQLite `pending` 恢复、私人家覆盖版本冲突，以及删除后新实例重建时拒绝陈旧 writer 复活 | 真实 smoke 证据包、真实命令回调、玩家传送与经济副作用 |
 | City CAS、Discord 轮换与跨平台证据收口 | 后端 Community/Discord 组合 `69/69`；Windows PowerShell 5.1 与 PowerShell 7 的 smoke/artifact 合成门禁通过 | 城市陈旧 writer 冲突、Bot Token 轮换重启诊断、Secret/指纹不回显、原生退出码 fail-fast 与无 BOM UTF-8 摘要 | 真实 Discord/MaxMind sandbox、Windows 候选证据包、Linux artifact 与 Unity Mono smoke |
 | 发布物独立布局门禁 | PowerShell 合成夹具通过 | 八个产品 DLL、依赖/配置/Admin/双 RID native 的必需项，以及禁止程序集、路径和私有参考内容拒绝；根目录与 reparse point 拒绝另有代码复核 | 实际 `dotnet publish` 输出、Unity Mono 加载和 Windows/Linux 真实进程 |
+| 聊天命令混合诊断 | 本轮受影响聚焦 `24/24`；虚拟子切片此前独立 `3/3` | 虚拟身份/别名/结果传递、SQLite 余额与转账、配置安全默认值、运行时门禁、DI、`ClientInfo` 精确匹配优先级、每探针重解析及 `Passed`/`Failed`/`Skipped` | 真实在线玩家、真实私发包、传送、奖励、踢人和重启均未执行 |
 | Admin Chat Mutes 收口 | `5` 个文件、`49/49`；typecheck 通过 | 中英 locale、桌面表格/移动列表、loading 语义、目标化可访问名称、解除确认与提交锁定 | 真实浏览器视觉、OWIN 和真实禁言副作用 |
 | Admin Automation/Discord/GeoIP parser | `3/3` | 严格响应解析与敏感字段拒绝 | 最终整站 typecheck、浏览器交互和外部服务 |
 | Admin World Tools 定向单元 | `62/62` | 世界工具 API/composable、撤销预检并发取消、错误分类、只读预检结果和页面阻断合同 | 真实 undo 与其他危险世界副作用 |
@@ -175,6 +176,20 @@ last_updated: "2026-07-31"
 已记录的聚焦执行中，Application 25 项、事件窗口/SSE 28 项、聊天运行时 5 项、HTTP/发送器 8 项、实时 UI 5 项、管理 UI 12 项、Admin 实时/发送 12 项、管理 composable 4 项以及 App Shell/router 27 项均通过。后端组合检查仍有两项未闭环：受控 Admin OpenAPI 快照在生成前曾漂移，`SqliteChatStoreTests.History_uses_stable_descending_keyset_and_returns_overlapping_gaps` 仍失败；生成文件现已更新，但未执行一次最终 `api:check` 或后端聚合复跑。因此本轮只把实现和聚焦证据提升为当前事实，不宣称聚合门禁通过。
 
 后续只需在实现稳定后运行一次受影响后端聚合检查和 Admin typecheck、lint、unit、build；浏览器保留一条 Owner 主路径和一条非 Owner 拒绝路径，真实 7DTD 只执行一次聊天边界人工验收。聊天以外的发布、备份、玩家动作或控制台真实流程不因本变更重复执行。
+
+### 聊天命令混合诊断
+
+[聊天命令混合测试设计规格](superpowers/specs/2026-07-31-chat-command-mixed-testing-design.md)采用“虚拟为主、真实边界补充”。当前自动化以隔离 SQLite 和虚拟标量身份验证命令目录、别名、身份/参数传递及代表性余额/转账状态；运行时 `virtual` 模式只承担无副作用的目录 smoke，不能替代测试项目中的状态型矩阵。
+
+真实通道必须显式启用并配置稳定玩家 ID，然后由管理员在 `GameReady` 后执行 `7dp-test chat boundary` 或 `7dp-test chat all`。每个 identity、current-position、private-reply 探针都重新解析当前连接；目标不存在、歧义、正在断开或游戏未 ready 时必须返回 `Skipped`，不得改选其他玩家。
+
+本轮最终运行以下受影响过滤，结果 `24/24` 通过：
+
+```powershell
+dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --no-build --filter "FullyQualifiedName~ChatCommandMixedTestRuntimeTests|FullyQualifiedName~ChatCommandTestingOptionsTests|FullyQualifiedName~ClientInfoBoundaryProbeContractTests|FullyQualifiedName~VirtualCommunityChatCommandVerificationTests|FullyQualifiedName~DependencyInjectionTests"
+```
+
+该命令同时完成 Debug `net48` 产品与测试项目编译；输出仍包含既有测试源码 warning，本轮没有新增编译错误。没有运行 publish、真实 7DTD、真实玩家、浏览器或外部服务。当前真实通道只验证身份、位置读取和私发调用边界；teleport/reward opt-in 尚未连接真实动作，kick/restart 始终不可达，因此这些副作用继续保留为未验证缺口。
 
 ### 架构风险追踪
 

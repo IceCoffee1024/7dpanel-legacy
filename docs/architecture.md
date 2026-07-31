@@ -60,6 +60,17 @@ last_updated: "2026-07-31"
 
 当前聚焦证据和未执行的真实游戏边界见[测试策略](test.md#聊天命令动态配置与热更新对齐)。
 
+### 聊天命令混合诊断边界
+
+当前实现依据[聊天命令混合测试设计规格](superpowers/specs/2026-07-31-chat-command-mixed-testing-design.md)，把业务正确性和真实游戏对象兼容性拆成两个边界：
+
+- 测试项目使用纯标量虚拟身份、生产 `GameChatCommandCatalog`/Community router、隔离 SQLite 和记录型 Adapter；新增矩阵固定验证完整命令描述与别名、身份/参数传递，以及代表性的余额和转账持久状态，不构造或缓存 `ClientInfo`。
+- `PanelChatCommandTestingOptions` 默认禁用；启用时必须配置稳定 `TestPlayerId`，且 teleport/reward 开关仍分别默认关闭。无效启用配置整体回退为禁用。
+- 管理员控制台命令 `7dp-test chat <status|virtual|boundary|all>` 由 Mod 生命周期注册。`virtual` 只执行无副作用的运行时目录/身份 smoke；完整状态型虚拟矩阵仍在隔离测试进程执行。
+- `boundary` 仅在 `GameReady` 后运行 identity、current-position 和 private-reply 三个探针。每个探针都通过 `GameThreadDispatcher` 重新枚举连接，优先精确匹配 `CrossplatformId`，再精确回退 `PlatformId`；不按名称、entity ID 或首玩家猜测，也不把 `ClientInfo` 带出游戏线程操作。
+- 当前真实窄通道不会执行 teleport、reward、kick 或 restart；两个危险操作边界固定不可达。配置中的 teleport/reward opt-in 尚无真实动作消费者，不能作为这些副作用已验证的证据。
+- 该能力未增加聊天事件订阅、HTTP 管理面、数据库表或 Harmony patch。真实 `v3.0.1-b4` 玩家在线 smoke 尚未执行，详见[测试策略](test.md#聊天命令混合诊断)。
+
 ### 证据基础第一波
 
 第一波把 `CAP-01`、`CAP-05` 和 `CAP-07` 的底层证据链实现为当前项目边界内的完整切片，没有以目标蓝图或旧项目源码作为当前实现证据：

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Dapper;
 using LSTY.SevenDPanel.Adapters.Local.Backups;
 using LSTY.SevenDPanel.Adapters.Local.Discord;
@@ -46,6 +47,7 @@ using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleCommands;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Community;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.ConsoleLogs;
+using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Diagnostics;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.GameEvents;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Rewards;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
@@ -77,6 +79,7 @@ using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 using LSTY.SevenDPanel.Mods;
 using LSTY.SevenDPanel.ServerConfiguration;
+using LSTY.SevenDPanel.Diagnostics;
 
 namespace LSTY.SevenDPanel.DependencyInjection
 {
@@ -1040,10 +1043,15 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<IWorldOperationRecoveryStore>(),
                     serviceProvider.GetRequiredService<CommunityVoteRuntime>(),
                     () => DateTimeOffset.UtcNow));
+                services.AddSingleton(serviceProvider => new ChatCommandMixedTestRuntime(
+                    options.ChatCommandTesting,
+                    serviceProvider.GetRequiredService<GameChatCommandCatalog>(),
+                    RunClientInfoBoundaryProbes,
+                    serviceProvider.GetRequiredService<WorldOperationRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<WorldOperationRuntime>());
+                    serviceProvider.GetRequiredService<ChatCommandMixedTestRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {
@@ -1135,6 +1143,29 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 default:
                     throw new InvalidOperationException("community_command_has_no_runtime_module");
             }
+        }
+
+        private static IReadOnlyList<string> RunClientInfoBoundaryProbes(string stableIdentity)
+        {
+            var probe = new ClientInfoBoundaryProbe(stableIdentity);
+            var results = new[]
+            {
+                probe.ProbeIdentityAsync().GetAwaiter().GetResult(),
+                probe.ProbeCurrentPositionAsync().GetAwaiter().GetResult(),
+                probe.ProbePrivateReplyAsync(
+                    "[7DPanel] Chat-command boundary probe succeeded.")
+                    .GetAwaiter()
+                    .GetResult()
+            };
+            return results.Select(result =>
+            {
+                var detail = string.IsNullOrWhiteSpace(result.Detail)
+                    ? string.Empty
+                    : " - " + result.Detail;
+                return "boundary/" + result.ProbeName + ": " +
+                       result.Status.ToString().ToUpperInvariant() +
+                       " (" + result.Code + ")" + detail;
+            }).ToArray();
         }
 
         private static ApprovedStorageRoots CreateApprovedStorageRoots(

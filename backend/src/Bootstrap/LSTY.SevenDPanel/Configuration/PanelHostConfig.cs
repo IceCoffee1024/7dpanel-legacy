@@ -10,6 +10,7 @@ namespace LSTY.SevenDPanel.Configuration
         public PanelAuthenticationConfig? Authentication { get; set; }
         public PanelOverviewConfig? Overview { get; set; }
         public PanelPlayerEvidenceConfig? PlayerEvidence { get; set; }
+        public ChatCommandTestingConfig? ChatCommandTesting { get; set; }
         public RestartScriptConfig? Restart { get; set; }
         public string? ServerConfigurationPath { get; set; }
         public string? GeoIpDatabasePath { get; set; }
@@ -24,9 +25,29 @@ namespace LSTY.SevenDPanel.Configuration
                 Authentication = PanelAuthenticationConfig.CreateDefault(),
                 Overview = PanelOverviewConfig.CreateDefault(),
                 PlayerEvidence = PanelPlayerEvidenceConfig.CreateDefault(),
+                ChatCommandTesting = ChatCommandTestingConfig.CreateDefault(),
                 Restart = RestartScriptConfig.CreateDefault(),
                 ServerConfigurationPath = "../../serverconfig.xml",
                 GeoIpDatabasePath = PanelHostOptions.DefaultGeoIpDatabaseRelativePath
+            };
+        }
+    }
+
+    public sealed class ChatCommandTestingConfig
+    {
+        public bool Enabled { get; set; }
+        public string? TestPlayerId { get; set; }
+        public bool AllowTeleport { get; set; }
+        public bool AllowRewardDelivery { get; set; }
+
+        public static ChatCommandTestingConfig CreateDefault()
+        {
+            return new ChatCommandTestingConfig
+            {
+                Enabled = false,
+                TestPlayerId = null,
+                AllowTeleport = false,
+                AllowRewardDelivery = false
             };
         }
     }
