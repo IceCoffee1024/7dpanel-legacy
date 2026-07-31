@@ -103,7 +103,10 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
             }
 
             if (marker.BackupKind == BackupKind.World &&
-                !worldTimingGate.IsApproved(roots.GameVersion))
+                !worldTimingGate.IsApproved(
+                    roots.CurrentWorldName,
+                    roots.CurrentWorldDirectory,
+                    roots.GameVersion))
             {
                 return CompleteWithoutMutation(marker, WorldRestoreTimingGate.UnverifiedError);
             }

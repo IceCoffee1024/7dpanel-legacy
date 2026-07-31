@@ -18,6 +18,8 @@ namespace LSTY.SevenDPanel.Application.Backups
         public const string BackupNotFoundError = "backup_not_found";
         public const string BackupIntegrityFailedError = "backup_integrity_failed";
         public const string JobStateConflictError = "job_state_conflict";
+        public const string StrongConfirmationRequiredError =
+            "restore_strong_confirmation_required";
 
         private readonly IBackupCatalog catalog;
         private readonly IJobStore jobs;
@@ -39,9 +41,11 @@ namespace LSTY.SevenDPanel.Application.Backups
             this.utcNow = utcNow ?? throw new ArgumentNullException(nameof(utcNow));
         }
 
-        public JobRecord Execute(Guid jobId, RestorePayload payload)
+        public JobRecord Execute(Guid jobId, RestorePayload payload, bool strongConfirmed)
         {
             if (payload == null) throw new ArgumentNullException(nameof(payload));
+            if (!strongConfirmed)
+                throw new StageRestoreException(StrongConfirmationRequiredError);
             var job = ReadJob(jobId);
             if (job.Kind != JobKind.Restore || job.Status != JobStatus.Queued)
                 throw new StageRestoreException(JobStateConflictError);

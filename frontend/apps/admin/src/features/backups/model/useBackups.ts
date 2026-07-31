@@ -374,7 +374,7 @@ export function useBackups(options: { onSessionExpired?: () => void } = {}): Bac
   async function restore(backup: BackupRecord, restartAfterStage: boolean) {
     const job = await mutate(signal => restoreBackup({
       path: { backupId: backup.id },
-      body: { idempotencyKey: idempotencyKey(), restartAfterStage },
+      body: { idempotencyKey: idempotencyKey(), restartAfterStage, strongConfirmed: true },
       signal,
     }))
     if (job === null)

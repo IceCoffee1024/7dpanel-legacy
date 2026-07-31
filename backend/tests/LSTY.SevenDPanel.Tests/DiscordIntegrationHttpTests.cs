@@ -37,6 +37,8 @@ namespace LSTY.SevenDPanel.Tests
             AssertRoute(type, "GetConfiguration", "", typeof(HttpGetAttribute));
             AssertRoute(type, "GetHealth", "health", typeof(HttpGetAttribute));
             AssertRoute(type, "PutConfiguration", "", typeof(HttpPutAttribute));
+            AssertRoute(type, "PutSecret", "secrets/{secretKey}", typeof(HttpPutAttribute));
+            AssertRoute(type, "DeleteSecret", "secrets/{secretKey}", typeof(HttpDeleteAttribute));
             AssertRoute(type, "Test", "test", typeof(HttpPostAttribute));
             AssertRoute(type, "GetDeliveries", "deliveries", typeof(HttpGetAttribute));
             AssertRoute(
@@ -224,6 +226,104 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(8, (long?)payload["version"]);
             Assert.False(store.Settings!.IsEnabled);
             Assert.Equal("application-2", store.Settings.ApplicationId);
+        }
+
+        [Theory]
+        [InlineData("Owner", HttpStatusCode.NoContent)]
+        [InlineData("Admin", HttpStatusCode.Forbidden)]
+        [InlineData("Viewer", HttpStatusCode.Forbidden)]
+        [InlineData(null, HttpStatusCode.Unauthorized)]
+        public async Task Secret_put_is_owner_only_and_never_returns_the_secret(
+            string? role,
+            HttpStatusCode expectedStatus)
+        {
+            var store = ConfiguredStore();
+            using var host = CreateHost(role, store);
+            const string secret = "replacement-secret-value";
+
+            using var response = await PutJsonAsync(
+                host.Client,
+                "api/v1/integrations/discord/secrets/botToken",
+                "{\"value\":\"" + secret + "\"}");
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(expectedStatus, response.StatusCode);
+            Assert.DoesNotContain(secret, body, StringComparison.Ordinal);
+            if (role == "Owner")
+            {
+                Assert.Equal(string.Empty, body);
+                Assert.Equal(secret, store.GetSecret(DiscordSecretKeys.BotToken)?.SecretValue);
+            }
+            else
+            {
+                Assert.Null(store.GetSecret(DiscordSecretKeys.BotToken));
+            }
+        }
+
+        [Fact]
+        public async Task Secret_delete_clears_the_value_without_returning_metadata()
+        {
+            var store = ConfiguredStore();
+            store.SetSecret(new DiscordSecretValue(
+                DiscordSecretKeys.BotToken,
+                "secret-to-delete",
+                "fingerprint-to-delete",
+                FixedNow));
+            using var host = CreateHost("Owner", store);
+
+            using var response = await host.Client.DeleteAsync(
+                "api/v1/integrations/discord/secrets/botToken",
+                TestContext.Current.CancellationToken);
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            Assert.Equal(string.Empty, body);
+            Assert.Null(store.GetSecret(DiscordSecretKeys.BotToken));
+        }
+
+        [Fact]
+        public async Task Secret_put_rejects_an_empty_value_without_clearing_the_existing_secret()
+        {
+            var store = ConfiguredStore();
+            store.SetSecret(new DiscordSecretValue(
+                DiscordSecretKeys.BotToken,
+                "existing-secret",
+                "existing-fingerprint",
+                FixedNow));
+            using var host = CreateHost("Owner", store);
+
+            using var response = await PutJsonAsync(
+                host.Client,
+                "api/v1/integrations/discord/secrets/botToken",
+                "{\"value\":\"   \"}");
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.DoesNotContain("existing-secret", body, StringComparison.Ordinal);
+            Assert.Equal(
+                "existing-secret",
+                store.GetSecret(DiscordSecretKeys.BotToken)?.SecretValue);
+        }
+
+        [Fact]
+        public async Task Secret_put_fails_closed_without_echoing_the_secret_when_storage_fails()
+        {
+            var store = ConfiguredStore();
+            store.ThrowOnSecretMutation = true;
+            using var host = CreateHost("Owner", store);
+            const string secret = "storage-failure-secret";
+
+            using var response = await PutJsonAsync(
+                host.Client,
+                "api/v1/integrations/discord/secrets/botToken",
+                "{\"value\":\"" + secret + "\"}");
+            var body = await response.Content.ReadAsStringAsync();
+            var problem = JObject.Parse(body);
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal("discord_secret_update_unavailable", (string?)problem["code"]);
+            Assert.DoesNotContain(secret, body, StringComparison.Ordinal);
+            Assert.Null(store.GetSecret(DiscordSecretKeys.BotToken));
         }
 
         [Fact]
@@ -761,6 +861,7 @@ namespace LSTY.SevenDPanel.Tests
             public DiscordInteraction? AcceptedInteraction { get; private set; }
             public string? AcceptedInteractionToken { get; private set; }
             public bool ThrowOnHealthRead { get; set; }
+            public bool ThrowOnSecretMutation { get; set; }
             public DiscordHealthSnapshot Health { get; set; } = new DiscordHealthSnapshot(
                 new DiscordHealthSection(
                     DiscordHealthState.Unavailable,
@@ -784,8 +885,17 @@ namespace LSTY.SevenDPanel.Tests
                 Settings = settings;
             }
 
-            public void SetSecret(DiscordSecretValue secret) => secrets[secret.SecretKey] = secret;
-            public void DeleteSecret(string secretKey) => secrets.Remove(secretKey);
+            public void SetSecret(DiscordSecretValue secret)
+            {
+                if (ThrowOnSecretMutation) throw new InvalidOperationException("secret store unavailable");
+                secrets[secret.SecretKey] = secret;
+            }
+
+            public void DeleteSecret(string secretKey)
+            {
+                if (ThrowOnSecretMutation) throw new InvalidOperationException("secret store unavailable");
+                secrets.Remove(secretKey);
+            }
 
             public DiscordSecretValue? GetSecret(string secretKey) =>
                 secrets.TryGetValue(secretKey, out var value) ? value : null;

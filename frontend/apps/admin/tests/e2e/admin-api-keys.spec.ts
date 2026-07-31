@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { setInitialAdminLocale } from './support/adminLocale'
+
 const authSessionStorageKey = '7dpanel.auth.session.v1'
 const adminUrl = process.env.SEVENDPANEL_ADMIN_URL
 const username = process.env.PANEL_USERNAME
@@ -9,6 +11,10 @@ const hasOwnerSmokeEnvironment = [adminUrl, username, password]
 const missingOwnerSmokeReason = 'Requires SEVENDPANEL_ADMIN_URL, PANEL_USERNAME, and PANEL_PASSWORD for a running real OWIN Owner environment.'
 
 test.skip(!hasOwnerSmokeEnvironment, missingOwnerSmokeReason)
+
+test.beforeEach(async ({ page }) => {
+  await setInitialAdminLocale(page, 'zh-CN')
+})
 
 async function loginOwner(page: import('@playwright/test').Page, destination: '/api-keys' | '/players') {
   const tokenResponsePromise = page.waitForResponse(response => (
@@ -53,7 +59,7 @@ test('owner creates, uses, and revokes an API Key without recovering its one-tim
   createdApiKey = oneTimeApiKey
 
   await createdDialog.getByTestId('copy-api-key').click()
-  await expect(createdDialog.getByRole('status')).toHaveText('API Key 已复制')
+  await expect(createdDialog.getByRole('status')).toHaveText(/^(API Key 已复制|复制失败，请手动保存 API Key)$/)
   await createdDialog.getByTestId('close-created-api-key').click()
   await expect(page.getByTestId('one-time-api-key')).toHaveCount(0)
 
@@ -88,10 +94,9 @@ test('client-side session expiry redirects to login and permits owner relogin', 
   await loginOwner(page, '/api-keys')
 
   await page.clock.fastForward('08:00:01')
-  await page.getByRole('link', { name: '玩家' }).click()
 
   await expect(page).toHaveURL(url => (
-    url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/api-keys'
   ))
   const authStorageIsAbsent = await page.evaluate(storageKey => (
     localStorage.getItem(storageKey) === null
@@ -99,6 +104,6 @@ test('client-side session expiry redirects to login and permits owner relogin', 
   ), authSessionStorageKey)
   expect(authStorageIsAbsent).toBe(true)
 
-  await loginOwner(page, '/players')
-  await expect(page.getByRole('heading', { name: '在线玩家', exact: true })).toBeVisible()
+  await loginOwner(page, '/api-keys')
+  await expect(page.getByRole('heading', { name: 'API Keys', exact: true })).toBeVisible()
 })

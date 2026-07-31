@@ -320,4 +320,29 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             return code;
         }
     }
+
+    public sealed class UndoWorldChangeSetPreflightHttpResponse
+    {
+        internal UndoWorldChangeSetPreflightHttpResponse(UndoWorldChangeSetPreflight preflight)
+        {
+            if (preflight == null) throw new ArgumentNullException(nameof(preflight));
+            SourceOperationId = preflight.SourceOperationId;
+            ChangeSetId = preflight.ChangeSetId;
+            WorldId = preflight.WorldId;
+            WorldVersion = preflight.WorldVersion;
+            AfterHash = preflight.AfterHash;
+            CurrentRegionHash = preflight.CurrentRegionHash;
+            CurrentHashMatches = preflight.CurrentHashMatches;
+            Status = preflight.Status;
+        }
+
+        public string SourceOperationId { get; }
+        public string ChangeSetId { get; }
+        public string WorldId { get; }
+        public string WorldVersion { get; }
+        public string AfterHash { get; }
+        public string? CurrentRegionHash { get; }
+        public bool? CurrentHashMatches { get; }
+        public string Status { get; }
+    }
 }

@@ -95,7 +95,40 @@ namespace LSTY.SevenDPanel.Tests.Local
         {
             var gate = new WorldRestoreTimingGate();
 
-            Assert.False(gate.IsApproved(gameVersion));
+            Assert.False(gate.IsApproved("world", Path.GetTempPath(), gameVersion));
+        }
+
+        [Fact]
+        public void World_restore_timing_gate_requires_complete_matching_runtime_evidence()
+        {
+            var worldDirectory = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "world-safe"));
+            var approved = new WorldRestoreTimingGate(new RuntimeEvidenceSource(
+                new WorldRestoreRuntimeEvidence(
+                    true,
+                    true,
+                    true,
+                    false,
+                    "world",
+                    worldDirectory + Path.DirectorySeparatorChar,
+                    "v3.0.1-b4")));
+            var worldOpen = new WorldRestoreTimingGate(new RuntimeEvidenceSource(
+                new WorldRestoreRuntimeEvidence(
+                    true,
+                    true,
+                    true,
+                    true,
+                    "world",
+                    worldDirectory,
+                    "v3.0.1-b4")));
+
+            Assert.True(approved.IsApproved("world", worldDirectory, "v3.0.1-b4"));
+            Assert.False(worldOpen.IsApproved("world", worldDirectory, "v3.0.1-b4"));
+            Assert.False(approved.IsApproved("other-world", worldDirectory, "v3.0.1-b4"));
+            Assert.False(approved.IsApproved("world", worldDirectory, "v3.0.1-b5"));
+            Assert.False(approved.IsApproved(
+                "world",
+                Path.Combine(worldDirectory, "other"),
+                "v3.0.1-b4"));
         }
 
         [Theory]
@@ -581,6 +614,16 @@ namespace LSTY.SevenDPanel.Tests.Local
                 "7dpanel.sqlite",
                 limits ?? RestoreArchiveLimits.Default);
             return new RestoreFixture(applier, store, marker, archivePath);
+        }
+
+        private sealed class RuntimeEvidenceSource : IWorldRestoreRuntimeEvidenceSource
+        {
+            private readonly WorldRestoreRuntimeEvidence evidence;
+
+            internal RuntimeEvidenceSource(WorldRestoreRuntimeEvidence evidence) =>
+                this.evidence = evidence;
+
+            public WorldRestoreRuntimeEvidence Capture() => evidence;
         }
 
         private static string ComputeContentSha256(string content)

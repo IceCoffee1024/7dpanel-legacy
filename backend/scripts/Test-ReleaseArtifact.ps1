@@ -74,14 +74,14 @@ function Assert-UniqueRelativePaths {
 }
 
 $resolvedManifest = Resolve-Path -LiteralPath $ManifestPath -ErrorAction Stop
-if (-not (Test-Path -LiteralPath $resolvedManifest.Path -PathType Leaf)) {
+if (-not (Test-Path -LiteralPath $resolvedManifest.ProviderPath -PathType Leaf)) {
     throw "Release manifest path is not a file: $ManifestPath"
 }
 try {
-    $manifest = Get-Content -LiteralPath $resolvedManifest.Path -Raw | ConvertFrom-Json
+    $manifest = Get-Content -LiteralPath $resolvedManifest.ProviderPath -Raw | ConvertFrom-Json
 }
 catch {
-    throw "Release manifest is not valid JSON: $($resolvedManifest.Path)"
+    throw "Release manifest is not valid JSON: $($resolvedManifest.ProviderPath)"
 }
 if ($manifest.schemaVersion -ne 1) {
     throw "Unsupported release manifest schema version: $($manifest.schemaVersion)"
@@ -123,10 +123,10 @@ foreach ($entry in @(
 }
 
 $resolvedArtifact = Resolve-Path -LiteralPath $ArtifactPath -ErrorAction Stop
-if (-not (Test-Path -LiteralPath $resolvedArtifact.Path -PathType Container)) {
+if (-not (Test-Path -LiteralPath $resolvedArtifact.ProviderPath -PathType Container)) {
     throw "Release artifact path is not a directory: $ArtifactPath"
 }
-$resolvedArtifactRoot = [System.IO.Path]::GetFullPath($resolvedArtifact.Path)
+$resolvedArtifactRoot = [System.IO.Path]::GetFullPath($resolvedArtifact.ProviderPath)
 $artifactVolumeRoot = [System.IO.Path]::GetPathRoot($resolvedArtifactRoot)
 if ($resolvedArtifactRoot.TrimEnd(
         [System.IO.Path]::DirectorySeparatorChar,

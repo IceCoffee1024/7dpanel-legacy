@@ -23,6 +23,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public string? IdempotencyKey { get; set; }
         public string? CorrelationId { get; set; }
         public bool RestartAfterStage { get; set; }
+        public bool StrongConfirmed { get; set; }
     }
 
     public sealed class BackupHttpResponse

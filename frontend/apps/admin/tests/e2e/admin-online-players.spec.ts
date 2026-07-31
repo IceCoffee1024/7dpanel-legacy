@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { setInitialAdminLocale } from './support/adminLocale'
+
 const authSessionStorageKey = '7dpanel.auth.session.v1'
 const adminUrl = process.env.SEVENDPANEL_ADMIN_URL
 const username = process.env.PANEL_USERNAME
@@ -9,6 +11,10 @@ const hasOwnerSmokeEnvironment = [adminUrl, username, password]
 const missingOwnerSmokeReason = 'Requires SEVENDPANEL_ADMIN_URL, PANEL_USERNAME, and PANEL_PASSWORD for a running real OWIN Owner environment.'
 
 test.skip(!hasOwnerSmokeEnvironment, missingOwnerSmokeReason)
+
+test.beforeEach(async ({ page }) => {
+  await setInitialAdminLocale(page, 'zh-CN')
+})
 
 async function loginOwner(
   page: import('@playwright/test').Page,
@@ -109,6 +115,12 @@ function onlinePlayersResponse(stage: OnlinePlayerStage) {
     health: 93,
     maxHealth: 100,
     level: 18,
+    playGroup: null,
+    lastLoginUtc: null,
+    gameStage: null,
+    expToNextLevel: null,
+    skillPoints: null,
+    bedroll: null,
     score: stage === 'updated' ? 900 : 827,
     zombieKills: 317,
     playerKills: 2,
@@ -141,6 +153,12 @@ function onlinePlayersResponse(stage: OnlinePlayerStage) {
     health: 0,
     maxHealth: 100,
     level: 1,
+    playGroup: null,
+    lastLoginUtc: null,
+    gameStage: null,
+    expToNextLevel: null,
+    skillPoints: null,
+    bedroll: null,
     score: 0,
     zombieKills: 0,
     playerKills: 0,
@@ -239,8 +257,9 @@ test('owner login uses a Bearer header and confines authentication to the approv
 
   await expectSessionStorage(page, 'tab')
   await page.getByTestId('account-menu-trigger').click()
-  await expect(page.getByText(username!, { exact: true })).toBeVisible()
-  await expect(page.getByText('Owner', { exact: true })).toBeVisible()
+  const accountMenu = page.getByRole('menu')
+  await expect(accountMenu.getByText(username!, { exact: true })).toBeVisible()
+  await expect(accountMenu.getByText('Owner', { exact: true })).toBeVisible()
 
   const browserPersistenceContainsSensitiveMaterial = await page.evaluate(
     ({ expectedPassword, storageKey }) => {
@@ -315,7 +334,9 @@ test('a remembered session restores after browser restart and logout clears auth
 
   await page.getByTestId('account-menu-trigger').click()
   await page.getByRole('menuitem', { name: '退出登录' }).click()
-  await expect(page).toHaveURL(/\/login$/)
+  await expect(page).toHaveURL(url => (
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
+  ))
   await expect(secondPage).toHaveURL(url => (
     url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
   ))
@@ -358,18 +379,18 @@ test('synthetic complete observations render in the details slideover and lock u
 
   stage = 'updated'
   await page.getByRole('button', { name: '刷新在线玩家' }).click()
-  await expect(dialog.getByText('Player Updated')).toBeVisible()
+  await expect(dialog.getByText('Player Updated', { exact: true })).toBeVisible()
 
   stage = 'missing'
   await page.getByRole('button', { name: '刷新在线玩家' }).click()
   await expect(dialog.getByRole('alert')).toContainText('该玩家观察已不可用')
-  await expect(dialog.getByText('Player Updated')).toBeVisible()
+  await expect(dialog.getByText('Player Updated', { exact: true })).toBeVisible()
   await expect(dialog.getByRole('button', { name: '踢出玩家' })).toHaveCount(0)
 
   stage = 'reappeared'
   await page.getByRole('button', { name: '刷新在线玩家' }).click()
   await expect(dialog.getByRole('alert')).toBeVisible()
-  await expect(dialog.getByText('Player Updated')).toBeVisible()
+  await expect(dialog.getByText('Player Updated', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: '取消' }).click()
   const reappearedDetailsButton = page.getByRole('button', { name: '查看玩家详情：Player Reappeared' })
@@ -394,8 +415,8 @@ for (const viewport of [
     await detailsButton.click()
     const dialog = page.getByRole('dialog')
 
-    await expect(dialog.getByText('未知', { exact: true })).toHaveCount(4)
-    await expect(dialog.getByText('-101, 51, -200')).toBeVisible()
+    await expect(dialog.getByText('未知', { exact: true })).toHaveCount(9)
+    await expect(dialog.getByText('-100, 51, -200')).toBeVisible()
     await expect(dialog.getByText('9,876,543')).toBeVisible()
     await expect(dialog.getByRole('button', { name: '复制跨平台身份' })).toHaveCount(0)
     await expect(dialog.getByRole('button', { name: '复制 Discord 用户 ID' })).toHaveCount(0)

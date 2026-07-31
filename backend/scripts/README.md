@@ -19,6 +19,14 @@ backend\scripts\Test-HealthEndpoint.cmd
 The matching `.ps1` files expose PowerShell parameters for automation. Explicit
 parameters take precedence over values loaded from the environment file.
 
+`Test-ReleaseSmoke.ps1` runs the release smoke sequence as one PowerShell
+command. It intentionally has no `.cmd` wrapper because its local, remote, and
+timeout options are automation parameters:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/Test-ReleaseSmoke.ps1
+```
+
 `Test-ReleaseArtifact.ps1` is the publish-independent release layout gate. It
 validates an existing artifact directory against `release-manifest.json` and
 does not build, publish, start, or modify a 7DTD server.
@@ -68,7 +76,8 @@ backend/src/Bootstrap/LSTY.SevenDPanel/bin/Release/net48/publish/
 ```
 
 When `SEVENDPANEL_PUBLISH_DIR` is set, `dotnet publish` writes directly to that
-directory. Publishing is incremental: it does not clear the target and does not
+directory. An explicit `Publish-Mod.ps1 -PublishDirectory <ModDirectory>` takes
+precedence over the environment value. Publishing is incremental: it does not clear the target and does not
 overwrite the server-owned `config.json` or `data/`. It replaces only the
 published `wwwroot/` directory with `frontend/apps/admin/dist/`, producing this
 runtime layout:
@@ -278,16 +287,30 @@ For the default remote workflow, configure the remote computer, remote server
 root, publish directory, health URL, and Telnet port in `.env.local`. Then run
 from the repository root:
 
-```bat
-backend\scripts\Publish-Mod.cmd
-backend\scripts\Start-Server.cmd
-backend\scripts\Test-HealthEndpoint.cmd -TimeoutSeconds 90
-backend\scripts\Stop-Server.cmd
-backend\scripts\Test-HealthEndpoint.cmd -ExpectUnavailable -TimeoutSeconds 5
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/Test-ReleaseSmoke.ps1
 ```
+
+The orchestrator runs `Stop-Server.ps1`, `Publish-Mod.ps1`, `Start-Server.ps1`,
+and `Test-HealthEndpoint.ps1` in that order. It forwards an explicitly selected
+`-EnvironmentFile` to every step. Use `-Local` to force local lifecycle
+selection, or pass `-ComputerName`, `-ServerRoot`, `-TelnetPort`, `-HealthUrl`,
+and the three timeout parameters to override individual environment values and
+defaults. `-Local`, `-ComputerName`, or `-ServerRoot` also requires an explicit
+`-PublishDirectory`; this prevents stopping and starting one server while the
+artifact is written to another configured target. A successful smoke leaves
+the server running.
+
+The sequence is fail-fast and does not catch or replace errors from an owning
+script. It does not continue after a failed step, stop a server that may have
+started during a failed attempt, restore the previous publication, or perform
+any other automatic rollback. Diagnose and recover the actual failed state
+before rerunning it.
 
 A successful cycle has all of these results:
 
+- The initial stop returns `Stopped` or `AlreadyStopped`; remote mode leaves
+  the scheduled task registered in the `Ready` state before publication.
 - Publish completes with Dapper, DbUp, `Microsoft.Data.Sqlite`, SQLitePCLRaw
   Batteries/core/dynamic provider, the five Framework64 compatibility
   assemblies, `Microsoft.Bcl.AsyncInterfaces.dll`,
@@ -298,17 +321,11 @@ A successful cycle has all of these results:
   `SQLite.Interop.dll` remains in the Mod root.
 - Start returns `Started` or `AlreadyRunning` with the game process ID.
 - The running health check returns HTTP 200.
-- Stop returns `Stopped` or `AlreadyStopped`; remote mode leaves the scheduled
-  task registered in the `Ready` state.
-- The final unavailable check succeeds because the health listener is closed.
 
 For a configured local server, force local selection on the lifecycle commands:
 
-```bat
-backend\scripts\Start-Server.cmd -Local
-backend\scripts\Test-HealthEndpoint.cmd -TimeoutSeconds 90
-backend\scripts\Stop-Server.cmd -Local
-backend\scripts\Test-HealthEndpoint.cmd -ExpectUnavailable -TimeoutSeconds 5
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/Test-ReleaseSmoke.ps1 -Local -PublishDirectory <ModDirectory>
 ```
 
 The test strategy defines when these helpers are required and what evidence a

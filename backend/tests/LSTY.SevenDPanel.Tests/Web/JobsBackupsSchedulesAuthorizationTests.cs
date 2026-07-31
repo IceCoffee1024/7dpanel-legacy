@@ -61,13 +61,29 @@ namespace LSTY.SevenDPanel.Tests.Web
 
             using var response = await host.Client.PostAsync(
                 "api/v1/backups/" + host.Store.Artifact.Id + "/restore",
-                Json("{\"idempotencyKey\":\"restore-1\",\"restartAfterStage\":false}"));
+                Json("{\"idempotencyKey\":\"restore-1\",\"restartAfterStage\":false,\"strongConfirmed\":true}"));
             var json = JObject.Parse(await response.Content.ReadAsStringAsync());
 
             Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
             Assert.Equal("Restore", (string?)json["kind"]);
             Assert.Equal("PendingRestart", (string?)json["status"]);
             Assert.True(host.Store.MarkerCreated);
+        }
+
+        [Fact]
+        public async Task Restore_without_strong_confirmation_is_rejected_before_enqueue()
+        {
+            using var host = CreateHost("Owner");
+
+            using var response = await host.Client.PostAsync(
+                "api/v1/backups/" + host.Store.Artifact.Id + "/restore",
+                Json("{\"idempotencyKey\":\"restore-unconfirmed\",\"restartAfterStage\":false}"));
+            var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal((HttpStatusCode)422, response.StatusCode);
+            Assert.Equal(StageRestore.StrongConfirmationRequiredError, (string?)json["code"]);
+            Assert.Equal(0, host.Store.JobCount);
+            Assert.False(host.Store.MarkerCreated);
         }
 
         [Theory]
@@ -214,6 +230,8 @@ namespace LSTY.SevenDPanel.Tests.Web
                     Guid.NewGuid(),
                     StageRestore.SupportedManifestVersion);
             }
+
+            public int JobCount => jobs.Count;
 
             public byte[] ArchiveBytes { get; }
             public BackupArtifact Artifact { get; }

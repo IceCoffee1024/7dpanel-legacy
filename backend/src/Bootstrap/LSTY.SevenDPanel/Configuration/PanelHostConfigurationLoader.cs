@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security;
 using LSTY.SevenDPanel.Hosting;
 using Newtonsoft.Json;
 
@@ -59,6 +60,10 @@ namespace LSTY.SevenDPanel.Configuration
                     string.IsNullOrWhiteSpace(config.ServerConfigurationPath)
                         ? "../../serverconfig.xml"
                         : config.ServerConfigurationPath));
+                var geoIpDatabasePath = CreateGeoIpDatabasePath(
+                    configDirectory,
+                    config.GeoIpDatabasePath,
+                    log);
                 return PanelHostOptions.FromBinding(
                     config.Port,
                     config.BindAddress,
@@ -67,7 +72,8 @@ namespace LSTY.SevenDPanel.Configuration
                     overview,
                     restart,
                     serverConfigurationPath,
-                    playerEvidence);
+                    playerEvidence,
+                    geoIpDatabasePath);
             }
             catch (Exception ex)
             {
@@ -85,6 +91,32 @@ namespace LSTY.SevenDPanel.Configuration
                 PanelHostOptions.DefaultScheme,
                 restart: RestartScriptOptions.CreateDefault(dataDirectory),
                 serverConfigurationPath: Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"));
+        }
+
+        private static string CreateGeoIpDatabasePath(
+            string configDirectory,
+            string? configuredPath,
+            Action<string>? log)
+        {
+            try
+            {
+                return Path.GetFullPath(Path.Combine(
+                    configDirectory,
+                    string.IsNullOrWhiteSpace(configuredPath)
+                        ? PanelHostOptions.DefaultGeoIpDatabaseRelativePath
+                        : configuredPath));
+            }
+            catch (Exception ex) when (
+                ex is ArgumentException ||
+                ex is NotSupportedException ||
+                ex is PathTooLongException ||
+                ex is SecurityException)
+            {
+                log?.Invoke("Invalid 7DPanel GeoIP database path; using the default path.");
+                return Path.GetFullPath(Path.Combine(
+                    configDirectory,
+                    PanelHostOptions.DefaultGeoIpDatabaseRelativePath));
+            }
         }
 
         private static PanelPlayerEvidenceOptions CreatePlayerEvidenceOptions(

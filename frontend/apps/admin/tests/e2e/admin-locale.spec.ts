@@ -29,6 +29,7 @@ async function selectLocale(page: Page, locale: 'en' | 'zh-CN') {
   await page.getByTestId('locale-menu-trigger').click()
   const nativeName = locale === 'en' ? 'English' : '简体中文'
   await page.getByRole('menuitemcheckbox', { name: nativeName }).click()
+  await expect(page.getByRole('menu')).toBeHidden()
   await expect(page.locator('html')).toHaveAttribute('lang', locale)
 }
 
@@ -102,11 +103,14 @@ test('keeps the selected locale and technical identity through login and logout'
 
   await expect(page.getByRole('heading', { name: 'Online players', exact: true })).toBeVisible()
   await page.getByTestId('account-menu-trigger').click()
-  await expect(page.getByText(username!, { exact: true })).toBeVisible()
-  await expect(page.getByText('Owner', { exact: true })).toBeVisible()
+  const accountMenu = page.getByRole('menu')
+  await expect(accountMenu.getByText(username!, { exact: true })).toBeVisible()
+  await expect(accountMenu.getByText('Owner', { exact: true })).toBeVisible()
   await page.getByRole('menuitem', { name: 'Sign out' }).click()
 
-  await expect(page).toHaveURL(/\/login$/)
+  await expect(page).toHaveURL(url => (
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/players'
+  ))
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByRole('heading', { name: 'Sign in to the admin panel' })).toBeVisible()
   await expectStoredLocale(page, 'en')

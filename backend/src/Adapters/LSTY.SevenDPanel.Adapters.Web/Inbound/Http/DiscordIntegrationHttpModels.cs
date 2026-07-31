@@ -19,6 +19,11 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public DiscordTargetUpdateHttpRequest[]? Targets { get; set; }
     }
 
+    public sealed class DiscordSecretUpdateHttpRequest
+    {
+        public string? Value { get; set; }
+    }
+
     public sealed class DiscordTargetUpdateHttpRequest
     {
         public string? TargetKey { get; set; }

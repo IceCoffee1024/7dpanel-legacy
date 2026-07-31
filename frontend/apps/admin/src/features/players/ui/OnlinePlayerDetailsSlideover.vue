@@ -9,11 +9,14 @@ const props = defineProps<{
   unavailable: boolean
   canKick: boolean
   canOpenProfile: boolean
+  canRefresh?: boolean
+  isRefreshing?: boolean
 }>()
 const emit = defineEmits<{
   copyValue: [value: string]
   kickPlayer: [player: OnlinePlayer]
   openProfile: [crossplatformId: string]
+  refresh: []
 }>()
 const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
@@ -35,6 +38,7 @@ function copy(value: string | null) {
       <div v-if="player" class="space-y-4">
         <UAlert
           v-if="unavailable"
+          role="alert"
           color="warning"
           :title="t('players.details.unavailableTitle')"
           :description="t('players.details.unavailableDescription')"
@@ -75,6 +79,15 @@ function copy(value: string | null) {
       </div>
     </template>
     <template #footer>
+      <UButton
+        v-if="canRefresh"
+        color="neutral"
+        :label="t('players.refresh')"
+        icon="i-lucide-refresh-cw"
+        :loading="isRefreshing"
+        variant="soft"
+        @click="emit('refresh')"
+      />
       <UButton
         color="neutral"
         :label="t('common.cancel')"

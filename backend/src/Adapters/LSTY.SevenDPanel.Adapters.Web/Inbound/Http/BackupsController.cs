@@ -179,6 +179,9 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             try
             {
                 var request = body ?? throw new ArgumentException("restore_request_invalid");
+                if (!request.StrongConfirmed)
+                    throw new StageRestoreException(
+                        StageRestore.StrongConfirmationRequiredError);
                 var artifact = backups.Get(backupId);
                 var now = DateTimeOffset.UtcNow;
                 var payload = new RestorePayload(backupId, artifact.Kind, request.RestartAfterStage);
@@ -191,7 +194,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                         Normalize(request.CorrelationId),
                         now),
                     payload);
-                var staged = stageRestore.Execute(queued.Id, payload);
+                var staged = stageRestore.Execute(queued.Id, payload, request.StrongConfirmed);
                 return Request.CreateResponse(HttpStatusCode.Accepted, new JobHttpResponse(staged));
             }
             catch (KeyNotFoundException)
@@ -248,6 +251,13 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         private HttpResponseMessage RestoreProblem(string errorCode)
         {
             if (errorCode == StageRestore.BackupNotFoundError) return NotFoundProblem();
+            if (errorCode == StageRestore.StrongConfirmationRequiredError)
+            {
+                return Problem(
+                    (HttpStatusCode)422,
+                    errorCode,
+                    "Explicit strong confirmation is required to stage a restore.");
+            }
             return Problem(
                 HttpStatusCode.Conflict,
                 errorCode,

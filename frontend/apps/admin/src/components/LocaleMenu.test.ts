@@ -55,6 +55,7 @@ describe('localeMenu', () => {
     expect(runtime.locale.value).toBe('zh-CN')
     expect(repository.save).toHaveBeenCalledExactlyOnceWith('zh-CN')
     expect(wrapper.get('[data-testid="locale-menu-trigger"]').text()).toBe('简体中文')
+    expect(document.body.querySelector('[role="menu"]')).toBeNull()
     runtime.dispose()
   })
 

@@ -410,6 +410,7 @@ export type RestoreBackupHttpRequest = {
     idempotencyKey?: string | null;
     correlationId?: string | null;
     restartAfterStage?: boolean;
+    strongConfirmed?: boolean;
 };
 
 export type RecentChatMessagesResponse = {
@@ -1097,6 +1098,10 @@ export type DiscordTargetUpdateHttpRequest = {
     deliveryMode?: string | null;
     channelId?: string | null;
     isEnabled?: boolean | null;
+};
+
+export type DiscordSecretUpdateHttpRequest = {
+    value?: string | null;
 };
 
 export type DiscordDeliveryHttpResponse = {
@@ -2777,6 +2782,17 @@ export type UndoWorldChangeSetOperationHttpRequest = StrongConfirmedWorldHttpReq
     sourceOperationId?: string | null;
     changeSetId?: string | null;
     currentRegionHash?: string | null;
+};
+
+export type UndoWorldChangeSetPreflightHttpResponse = {
+    sourceOperationId?: string;
+    changeSetId?: string;
+    worldId?: string;
+    worldVersion?: string;
+    afterHash?: string;
+    currentRegionHash?: string | null;
+    currentHashMatches?: boolean | null;
+    status?: string;
 };
 
 export type WorldOperationHttpResponse = {
@@ -5045,6 +5061,42 @@ export type DiscordIntegrationGetHealthResponses = {
 };
 
 export type DiscordIntegrationGetHealthResponse = DiscordIntegrationGetHealthResponses[keyof DiscordIntegrationGetHealthResponses];
+
+export type DiscordIntegrationDeleteSecretData = {
+    body?: never;
+    path: {
+        secretKey: string;
+    };
+    query?: never;
+    url: '/api/v1/integrations/discord/secrets/{secretKey}';
+};
+
+export type DiscordIntegrationDeleteSecretResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type DiscordIntegrationDeleteSecretResponse = DiscordIntegrationDeleteSecretResponses[keyof DiscordIntegrationDeleteSecretResponses];
+
+export type DiscordIntegrationPutSecretData = {
+    body?: DiscordSecretUpdateHttpRequest | null;
+    path: {
+        secretKey: string;
+    };
+    query?: never;
+    url: '/api/v1/integrations/discord/secrets/{secretKey}';
+};
+
+export type DiscordIntegrationPutSecretResponses = {
+    /**
+     * The operation completed successfully.
+     */
+    204: void;
+};
+
+export type DiscordIntegrationPutSecretResponse = DiscordIntegrationPutSecretResponses[keyof DiscordIntegrationPutSecretResponses];
 
 export type DiscordIntegrationTestData = {
     body?: DiscordTestHttpRequest | null;
@@ -7877,6 +7929,21 @@ export type WorldOperationsUndoResponses = {
 };
 
 export type WorldOperationsUndoResponse = WorldOperationsUndoResponses[keyof WorldOperationsUndoResponses];
+
+export type WorldOperationsUndoPreflightData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/world-operations/{operationId}/undo-preflight';
+};
+
+export type WorldOperationsUndoPreflightResponses = {
+    200: UndoWorldChangeSetPreflightHttpResponse;
+};
+
+export type WorldOperationsUndoPreflightResponse = WorldOperationsUndoPreflightResponses[keyof WorldOperationsUndoPreflightResponses];
 
 export type WorldOperationsGetData = {
     body?: never;

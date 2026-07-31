@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Errors;
@@ -359,6 +361,48 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     body.Confirmed,
                     body.StrongConfirmed,
                     now)));
+
+        [HttpGet]
+        [Route("{operationId}/undo-preflight")]
+        [ResponseType(typeof(UndoWorldChangeSetPreflightHttpResponse))]
+        public async Task<HttpResponseMessage> UndoPreflight(
+            string operationId,
+            CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(operationId))
+                return InvalidRequest();
+
+            try
+            {
+                var preflight = await undo.PreflightAsync(
+                        operationId,
+                        DateTimeOffset.UtcNow,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    new UndoWorldChangeSetPreflightHttpResponse(preflight));
+            }
+            catch (WorldOperationConflictException exception)
+            {
+                return Problem(
+                    HttpStatusCode.Conflict,
+                    SafeConflictCode(exception.Code),
+                    "The undo preflight could not be completed.");
+            }
+            catch (ArgumentException)
+            {
+                return InvalidRequest();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                return Unavailable();
+            }
+        }
 
         [HttpGet]
         [Route("{operationId}")]

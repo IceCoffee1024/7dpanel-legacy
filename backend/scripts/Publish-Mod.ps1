@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string] $EnvironmentFile
+    [string] $EnvironmentFile,
+    [string] $PublishDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,7 +28,15 @@ if (-not (Test-Path -LiteralPath $adminIndexPath -PathType Leaf) -or
     throw 'Admin build output is missing or incomplete. Run pnpm build in frontend/apps/admin before publishing.'
 }
 
-$configuredPublishPath = $environment['SEVENDPANEL_PUBLISH_DIR']
+$configuredPublishPath = if ($PSBoundParameters.ContainsKey('PublishDirectory')) {
+    if ([string]::IsNullOrWhiteSpace($PublishDirectory)) {
+        throw 'PublishDirectory cannot be empty when explicitly provided.'
+    }
+    $PublishDirectory
+}
+else {
+    $environment['SEVENDPANEL_PUBLISH_DIR']
+}
 if ($configuredPublishPath) {
     $publishPath = if ([System.IO.Path]::IsPathRooted($configuredPublishPath)) {
         [System.IO.Path]::GetFullPath($configuredPublishPath)

@@ -7,7 +7,7 @@ last_updated: "2026-07-31"
 
 ## 范围与可追踪性
 
-本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-30 当前工作树的后端 Release 聚合 xUnit `1787/1787` 通过；测试程序集使用 xUnit v3 `conservative` 算法并把并发线程固定为 4，避免大量后台生命周期测试同时创建专用消费者时形成测试基础设施饥饿。Admin 全量 Vitest `887/887`、ESLint、typecheck 和 Vite 8 生产构建通过，测试默认阻止真实网络，图标夹具使用本地数据，未再出现 Happy DOM `AbortError`、外部图标请求或 worker 退出噪声。OpenAPI 快照与 Hey API 客户端已按当前运行时合同重新生成；未提交工作树中的 `api:check` 会按设计把预期生成差异视为 Git 漂移，提交后仍需再执行该基线门禁。Playwright、publish、真实 7DTD、Discord/GeoIP sandbox、备份恢复演练与 Windows/Linux 候选发布 smoke 本轮未执行，不能由本地自动化替代。
+本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-30 当前工作树的后端 Release 聚合 xUnit `1787/1787` 通过；测试程序集使用 xUnit v3 `conservative` 算法并把并发线程固定为 4，避免大量后台生命周期测试同时创建专用消费者时形成测试基础设施饥饿。Admin 全量 Vitest `887/887`、ESLint、typecheck 和 Vite 8 生产构建通过，测试默认阻止真实网络，图标夹具使用本地数据，未再出现 Happy DOM `AbortError`、外部图标请求或 worker 退出噪声。OpenAPI 快照与 Hey API 客户端已按当前运行时合同重新生成；未提交工作树中的 `api:check` 会按设计把预期生成差异视为 Git 漂移，提交后仍需再执行该基线门禁。2026-07-31 已执行 Windows 真实发布、7DTD 启停/健康、当前认证 OWIN 浏览器主路径；Discord/GeoIP sandbox、备份恢复演练、危险世界副作用和 Linux 候选发布 smoke 仍未执行，不能由本地自动化替代。
 
 2026-07-26 游戏资源目录第一切片完成后，后端 `GameResource` 聚焦过滤 `55/55`、组合根 `12/12`、OpenAPI 快照语义与刷新后复验 `1/1` 通过；Admin 游戏资源、导航、路由和 i18n 共 `12` 个文件、`99/99` 项断言通过，修正请求生命周期后又以 `2` 个文件、`8/8` 项完成干净定向复验。Admin typecheck、聚焦 ESLint、Vite 生产构建和 Hey API 客户端生成通过。没有重复后端全量、Admin 全量、Playwright、publish、真实 7DTD 或跨平台 smoke。
 
@@ -25,8 +25,8 @@ last_updated: "2026-07-31"
 | Discord Gateway/interaction 收口 | 持久 Slash `/status` 私密 follow-up 回归 `1/1` | 运行时组装后的持久交互使用原 interaction token 发出私密回执 | Discord Gateway WebSocket、Ed25519 请求和投递限流在 sandbox 或真实环境的往返 |
 | 本轮运行时可靠性收口 | canonical `net48` 聚焦组合 `56/56` | 恢复回滚中断续作、Discord heartbeat 失效重连、背包 `CosmeticMods` 标量合并、奖励 grant 并发补偿和发布依赖规则 | 真实文件占用、Discord sandbox、真实游戏字段与经济副作用 |
 | 第二批运行时与交付收口 | Restore `82/82`、Discord/GeoIP `118/118`、世界操作 `64/64`；主工作区合并过滤 `159/160` 后修正结构门禁并复验 `1/1` | 恢复启动阶段与可重试失败、Discord/GeoIP transport 故障、世界 descriptor 防伪/取消/undo/回滚失败、实际发布物清理规则 | 真实文件占用、Discord/MaxMind sandbox、真实游戏线程和世界 API |
-| Admin 本地浏览器门禁 | 首轮桌面与 `390x844` 共 `154/160`；修复权限元数据、API mock 和超时边界后定向复验 `4/4`，typecheck 通过 | 全主要路由可达、无水平溢出、Owner/Admin/Viewer 路由边界、登录重定向、Chat Mutes 确认与刷新 | 尚未在受控真实 OWIN 执行；首轮完整矩阵修复后未整体重跑 |
-| 实际八项目发布目录 | Admin build、`net48` `dotnet publish`、清理和实际 `wwwroot` 组装后 validator 通过；Windows PowerShell 5.1 合成夹具通过 | 精确八项目、托管闭包、游戏 JSON 排除、目标双 RID native 和 Admin 产物 | 未写入真实 `Mods/7DPanel`，未启动 Unity Mono |
+| Admin 浏览器门禁 | 本地 mock 首轮桌面与 `390x844` 共 `154/160`，修复后定向 `4/4`；2026-07-31 当前认证真实 OWIN 的 API Key、locale、导航和在线玩家共 17 个场景均取得通过结果 | 登录/会话/登出、API Key 生命周期、语言协商与切换、主要导航、在线玩家详情刷新、不可用锁存、320/390/桌面溢出和 CSP 无违规 | 未覆盖全部六波次页面、Discord/GeoIP 外部服务或危险世界操作 |
+| 实际八项目发布目录 | Admin build、`net48` `dotnet publish`、UNC 清理、真实 `Mods/7DPanel` 组装和 validator 通过；新编排完成关服、发布、启服与健康 200 | 精确八项目、托管闭包、游戏 JSON 排除、目标双 RID native、Admin 产物和当前 Windows Unity Mono 启动 | Linux Unity Mono、Discord/MaxMind sandbox、恢复与危险世界副作用 |
 | 发布物独立布局门禁 | PowerShell 合成夹具通过 | 八个产品 DLL、依赖/配置/Admin/双 RID native 的必需项，以及禁止程序集、路径和私有参考内容拒绝；根目录与 reparse point 拒绝另有代码复核 | 实际 `dotnet publish` 输出、Unity Mono 加载和 Windows/Linux 真实进程 |
 | Admin Chat Mutes 收口 | `5` 个文件、`49/49`；typecheck 通过 | 中英 locale、桌面表格/移动列表、loading 语义、目标化可访问名称、解除确认与提交锁定 | 真实浏览器视觉、OWIN 和真实禁言副作用 |
 | Admin Automation/Discord/GeoIP parser | `3/3` | 严格响应解析与敏感字段拒绝 | 最终整站 typecheck、浏览器交互和外部服务 |
@@ -43,6 +43,8 @@ last_updated: "2026-07-31"
 2026-07-31 可靠性收口以 canonical `net48` 过滤运行 `PendingRestoreApplierTests`、`DiscordTransportTests`、`PlayerEvidenceScalarAdapterTests`、`RewardGrantUseCaseTests` 和 `DependencyRulesTests`，结果 `56/56`；发布物 validator 的自包含合成夹具通过；Admin Chat Mutes 与 locale 聚焦为 `49/49` 且 typecheck 通过。本轮没有运行 publish、真实 7DTD、Discord sandbox、OWIN 或浏览器 smoke。
 
 2026-07-31 第二批收口完成一次临时目录实际 `dotnet publish` 和 Admin `wwwroot` 组装；清理禁止 DLL 与非目标 RID native 后，实际 artifact 通过同一 validator。Restore、Discord/GeoIP 与世界操作分别取得 `82/82`、`118/118`、`64/64` 的隔离聚焦证据；主工作区受影响组合为 `159/160`，唯一旧结构断言修正后 `1/1` 通过。Admin 本地 mock Playwright 首轮为 `154/160`，据此修复 `/players/map`、`/access-lists` 权限元数据、Chat Mutes query mock 和玩家 Profile 非法响应处理，定向桌面/`390x844` 复验 `4/4` 通过。没有运行真实 7DTD、Discord/MaxMind sandbox、真实 OWIN、恢复演练或危险世界副作用。
+
+2026-07-31 当前工作树进一步完成世界恢复强确认、真实 timing evidence gate、undo preflight、Discord secret HTTP 和 GeoIP MMDB 路径传递；后端受影响组合 `158/158`、OpenAPI snapshot `1/1`、Admin 两组相关单元分别 `4/4` 与 `33/33`、typecheck 和生产构建通过。真实 Windows 编排多次完成优雅关服、UNC 发布物清理/校验、启服和健康 200；最新日志中 7DPanel Mod 创建、类型加载和缺失程序集错误均为 0。真实 OWIN 的 API Key、locale、导航和在线玩家 17 个场景在修复内联脚本 CSP、语言菜单关闭、详情内刷新与 alert 语义后均取得通过结果。Discord 与 GeoIP readiness API 可访问但当前未启用，因此未发送外部消息；未执行恢复、undo 或其他危险世界副作用。
 
 2026-07-28 私人家体验对齐完成后，Debug 后端产品编译和 Admin typecheck 通过；`EconomyCommunityMigrationTests` 为 `3/3`，Community 命令聚焦测试为 `13/13`，OpenAPI snapshot 为 `1/1` 并完成客户端再生成。额外执行的聊天桥接组合过滤共 `15` 项，其中 `13` 项通过，另 `2` 项分别因测试进程未加载 `ModEvents+SChatMessageData` 和 Daily handler 集合断言为空而失败；未将其计为本次功能通过证据，也未扩大到全量测试或真实 7DTD。
 
@@ -304,9 +306,9 @@ last_updated: "2026-07-31"
 
 - 覆盖引导 `Owner` 登录、未来用户与角色管理、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
 - 覆盖 loading、empty、offline、stale、forbidden、failed、unknown 和 draining 状态，确保界面不会把未知结果渲染为成功。
-- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示服务器正常状态、`7DPanel`、版本和成功采样时间；仅 `/favicon.ico` 保持既有 404。当前登录/玩家/API Key/locale Playwright suite 共 12 项，覆盖真实登录、API Key 生命周期、玩家页面、深链接、两种浏览器会话、身份显示、登出/到期/损坏记录清理、Authorization Header、URL/Storage/Cookie/控制台泄漏、浏览器语言首选/回退、双语切换与 `390x844` 布局。它尚未在当前认证实现的受控真实 OWIN 环境执行；历史 Edge 结果不能替代这些合同。
+- 当前 Admin 健康切片已用 Chromium 手工验证桌面和 `390x844` 窄视口。开发期 Vite 同源代理配合本地响应 stub 验证了 offline、fresh 和成功采样 60 秒后的 stale 状态；真实 7DTD 生产 URL 另验证 `/`、三个哈希资源和 `/api/v1/health` 均返回 200，Overview 显示服务器正常状态、`7DPanel`、版本和成功采样时间；仅 `/favicon.ico` 保持既有 404。2026-07-31 当前认证受控真实 OWIN 的 API Key、locale、导航和在线玩家共 17 个场景通过，覆盖登录/API Key 生命周期/登出、语言协商与切换、主要导航、详情刷新、不可用锁存、320/390/桌面溢出和 CSP；异常持久会话、全部六波次页面及真实危险动作仍按对应门禁单独验证。
 - 控制台工作台增加一条聚焦浏览器路径：Owner 进入页面后看到最近日志并接收一条实时日志，向上滚动后新日志不抢回位置，点击“回到最新”恢复跟随，Tab 补全动态命令并提交；同时验证清空只影响页面、原始文本不执行 HTML、桌面与 `390x844` 无遮挡。Viewer 深链接必须显示权限拒绝且网络层不能收到最近日志、命令目录或 `console-log`。真实 7DTD 仅用于证明注册命令元数据提取和原生日志回显，不为纯滚动或键盘交互重复启动游戏进程。
-- 在线玩家详情 Playwright 门禁使用合成 25 字段响应分别在桌面、`390x844` 和 320 CSS 像素宽度打开抽屉，验证四个分区、整数坐标/距离、可读分钟值、统一“未知”、复制按钮可访问名称、焦点进入与返回、抽屉内滚动和页面无水平溢出；再通过连续响应验证同身份更新、离线保留与身份复用不偷换目标。该 suite 已定义但尚未在受控 OWIN 环境执行；2026-07-24 远程 Owner 浏览器仅人工确认详情抽屉能显示当前响应。真实字段值兼容仍由 7DTD 进程测试负责，浏览器 stub 或人工查看不替代该证据。
+- 在线玩家详情 Playwright 门禁使用合成 25 字段响应分别在桌面、`390x844` 和 320 CSS 像素宽度打开抽屉，验证四个分区、整数坐标/距离、可读分钟值、统一“未知”、复制按钮可访问名称、焦点进入与返回、抽屉内滚动和页面无水平溢出；再通过连续响应验证同身份更新、离线保留与身份复用不偷换目标。2026-07-31 该门禁已在受控真实 OWIN 页面执行，合成响应仍只验证浏览器交互合同；真实字段值兼容和踢出副作用继续由 7DTD 进程门禁负责。
 - 对全部 P0 流程和表单分别以 `zh-CN` 与 `en` 运行关键 E2E；覆盖受支持浏览器语言首访、不支持语言回退 `en`、未认证与已认证入口切换、刷新后偏好持久化，以及切换时当前路由、筛选和安全表单输入保持。
 - 验证产品文案、Nuxt UI 内置文案、Valibot 内置错误、日期与数字格式和稳定服务端错误码映射始终使用同一当前语言；缺失键、空白文案、翻译键泄漏和原始服务端异常文本均使测试失败。
 - 验证 Steam ID、玩家名、服务器名、IP、坐标、路径、日志原文、审计标识和协议标识在语言切换前后保持原值，并在 320 CSS 像素宽度下检查英文文本扩展不会遮挡关键操作。
@@ -397,12 +399,12 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 | 聊天命令动态配置与热更新真实边界待验收 | 旧版对齐项 1、2、3、5 已形成可编译纵向切片，并取得目录/SQLite `9/9`、OpenAPI `1/1` 和 Admin typecheck 证据；尚未验证真实 `v3.0.1-b4` 中的自定义别名、无前缀普通聊天放行、参数分隔符、单次执行与 SQLite 审计关联，也未执行审计 Store 故障注入或浏览器 E2E。`discordbind` 不属于该缺口。 |
 | 游戏聊天组件双语尚未闭环 | 页面壳、导航和 locale 文件已经接线，但 `LiveChatView`、历史、设置和彩色聊天组件仍有直接写入的中文或英文可见文案；在迁移到 `app/i18n` 并补充双语断言前，不得把任务 10 的本地化条目或 `NFR-03` 视为完成。 |
 | 证据基础第一波真实环境门禁未闭环 | 定向证据及 2026-07-30 后端/Admin 全量自动化已通过。真实 `v3.0.1-b4`、Playwright 与人工浏览器验收仍未执行；不得据此宣称真实指标来源、事件字段、禁言/到期、`help` 私发、响应式布局或双语已经通过。按既有分级策略在共享合同稳定或候选发布时补齐。 |
-| Windows 动态命令闭环 smoke 尚未自动归档 | `a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；但流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行，当前认证二进制也尚未复验。 |
+| Windows 动态命令闭环 smoke 尚未自动归档 | `a98ad6b` 的 Windows `v3.0.1-b4` 人工 smoke 已覆盖内置/第三方命令、HTTP/非 HTTP 审计、原文参数、多行输出、并发输出隔离、原生异步队列、真实 SQLite 写锁 fail-open/gap 恢复、正常关服排空和重复启停；2026-07-31 当前认证二进制已复验启停与健康，但未重跑动态命令矩阵。流程和日志仍需自动归档，真实容量饱和及 Linux 对应门禁仍未执行。 |
 | Owner 踢出自动化已通过但真实游戏动作未执行 | 后端与 Admin 自动化覆盖类型化端口、主线程身份重验、审计状态、HTTP/Problem Details、固定目标确认和未知结果；2026-07-24 远程浏览器只验证了详情展示，未对玩家执行踢出。Windows `v3.0.1-b4` 的拒绝原因、约 0.5 秒断开、在线列表更新、SQLite 审计一致性和关服竞态仍不可宣称通过。 |
-| 当前浏览器持久会话、双语、详情与踢出真实门禁未执行 | Playwright 已定义默认标签页会话、显式浏览器会话、身份显示、登出/到期/损坏记录清理、API Key/玩家合同、浏览器语言首选/回退、登录前后切换、刷新与登出保留、技术身份稳定、英文窄屏及合成 25 字段详情抽屉场景，但没有 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 的受控 OWIN 环境，只有测试发现证据。2026-07-24 的远程人工查看仅确认当前详情抽屉可显示，不能证明 `390x844`/320 布局、焦点、遮罩关闭锁定、同身份刷新、unavailable、真实踢出、CSP 控制台或成功刷新。 |
+| 当前浏览器危险动作与完整页面矩阵仍待验收 | 2026-07-31 受控真实 OWIN 已使用 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 完成 API Key、locale、导航和在线玩家 17 个场景，覆盖当前认证、语言切换、详情刷新、unavailable 锁存、320/390/桌面溢出和 CSP。尚未执行真实踢出副作用、全部持久会话异常路径和其余六波次页面矩阵；这些边界仍不得宣称通过。 |
 | 历史玩家真实进程与浏览器门禁未执行 | 历史玩家已通过 parser、页面状态、组件、路由、Application/SQLite/Channel 和 Web 合同的定向自动化；本轮未运行真实 7DTD、Playwright，且本机 .NET Framework `HttpListener` 不支持直接执行新增 OWIN 历史路由用例。因此 Save 来源、排空、Owner 浏览器列表/详情与窄屏不构成已验证证据。 |
 | 当前认证版本尚无 Swagger Unity Mono 复验证据 | 公开 JSON/UI、路由、安全、SSE、Problem Details、无业务副作用、依赖所有权和隔离发布布局已通过 Windows Katana/本地门禁；`a98ad6b` 已在 Windows `v3.0.1-b4` Unity Mono 加载 NSwag/NJsonSchema/Namotion 并访问 `/swagger`，但本轮未在当前认证发布物复验。Linux 支持仍需对应 Linux smoke。 |
-| 当前八项目发布物尚未进入真实游戏 | 已完成临时目录 `dotnet publish`、禁止内容清理、实际 Admin 组装和 validator，但未写入真实 `Mods/7DPanel`，也未由 Windows/Linux Unity Mono 加载；候选发布前仍需对最终目录运行同一 validator 并执行真实进程 smoke。 |
+| 当前八项目发布物缺少 Linux 候选证据 | 2026-07-31 发布物已写入 Windows `Mods/7DPanel`，并通过清理、validator、Unity Mono 启停和健康 200；Linux Unity Mono 尚未加载当前发布物，候选发布前仍需在最终 Linux 目录运行同一 validator 并执行真实进程 smoke。 |
 | 静态 `ModEvents` wrapper 没有进程内自动化测试 | 可替换事件边界已经执行三个 Adapter 回调及失败路径，Windows 真实 smoke 也已越过 `GameStartDone` 并完成正常关服；但调用程序集识别和官方 delegate 兼容性仍依赖人工真实进程证据。 |
 | 主线程每帧预算、队列容量和性能阈值未量化 | 无法客观判定性能门槛；先在官方 Windows/Linux 进程建立空载与典型负载基线，再由架构和测试文档共同记录决定值。 |
 | 在线保存后的快照一致性尚未证明 | 可能生成校验通过但语义不一致的存档；必须在实现备份前完成持续写入故障测试，否则采用维护窗口或平台快照。 |

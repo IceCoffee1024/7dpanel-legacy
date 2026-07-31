@@ -40,13 +40,13 @@ function Get-ArtifactFilePath {
 }
 
 $resolvedManifest = Resolve-Path -LiteralPath $ManifestPath -ErrorAction Stop
-$manifest = Get-Content -LiteralPath $resolvedManifest.Path -Raw | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath $resolvedManifest.ProviderPath -Raw | ConvertFrom-Json
 $resolvedArtifact = Resolve-Path -LiteralPath $ArtifactPath -ErrorAction Stop
-if (-not (Test-Path -LiteralPath $resolvedArtifact.Path -PathType Container)) {
+if (-not (Test-Path -LiteralPath $resolvedArtifact.ProviderPath -PathType Container)) {
     throw "Release artifact path is not a directory: $ArtifactPath"
 }
 
-$artifactRoot = [System.IO.Path]::GetFullPath($resolvedArtifact.Path).TrimEnd(
+$artifactRoot = [System.IO.Path]::GetFullPath($resolvedArtifact.ProviderPath).TrimEnd(
     [System.IO.Path]::DirectorySeparatorChar,
     [System.IO.Path]::AltDirectorySeparatorChar)
 $volumeRoot = [System.IO.Path]::GetPathRoot($artifactRoot).TrimEnd(
@@ -117,4 +117,3 @@ foreach ($nativeAssetName in @($requiredNativeAssets | ForEach-Object {
 if ($removed.Count -gt 0) {
     Write-Output "Removed forbidden release artifact content: $($removed -join ', ')"
 }
-

@@ -69,7 +69,9 @@ namespace LSTY.SevenDPanel.Tests
         {
             Assert.Equal(WorldGetRoutes.OrderBy(value => value), Routes<WorldController, HttpGetAttribute>());
             Assert.Equal(WorldOperationPostRoutes.OrderBy(value => value), Routes<WorldOperationsController, HttpPostAttribute>());
-            Assert.Equal(new[] { "{operationId}" }, Routes<WorldOperationsController, HttpGetAttribute>());
+            Assert.Equal(
+                new[] { "{operationId}", "{operationId}/undo-preflight" },
+                Routes<WorldOperationsController, HttpGetAttribute>());
             Assert.Equal(MapJobPostRoutes.OrderBy(value => value), Routes<MapJobsController, HttpPostAttribute>());
             Assert.Equal(new[] { "resource-version" }, Routes<MapJobsController, HttpGetAttribute>());
 
@@ -390,6 +392,7 @@ namespace LSTY.SevenDPanel.Tests
             services.AddSingleton<IWorldOperationJobBridge>(bridge);
             services.AddSingleton<IWorldChangeSetMetadataStore>(changeSets);
             services.AddSingleton<IWorldChangeSetBlobStore>(blobs);
+            services.AddSingleton<IWorldChangeSetPreflightGateway, StubPreflightGateway>();
             services.AddSingleton<QueryWorldUseCase>();
             services.AddSingleton<QueryWorldToolCatalogUseCase>();
             services.AddSingleton<DeleteLandClaimUseCase>();
@@ -597,6 +600,15 @@ namespace LSTY.SevenDPanel.Tests
                 throw new NotSupportedException();
             public WorldChangeSetBlobReadResult Read(string storageResourceId, string expectedHash) =>
                 throw new KeyNotFoundException();
+        }
+
+        private sealed class StubPreflightGateway : IWorldChangeSetPreflightGateway
+        {
+            public Task<WorldChangeSetRuntimeHashResult> ReadCurrentRegionHashAsync(
+                WorldChangeSetDescriptor descriptor,
+                CancellationToken cancellationToken) =>
+                Task.FromResult(WorldChangeSetRuntimeHashResult.Unavailable(
+                    "undo_preflight_runtime_unavailable"));
         }
 
         private sealed class PrincipalHandler : DelegatingHandler

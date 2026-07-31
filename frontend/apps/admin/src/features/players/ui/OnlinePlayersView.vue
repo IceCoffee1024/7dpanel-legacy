@@ -248,8 +248,11 @@ async function confirmKick(reason: string) {
     :unavailable="detailsUnavailable"
     :can-kick="detailsCanKick"
     :can-open-profile="detailsCanOpenProfile"
+    :can-refresh="!sessionExpired"
+    :is-refreshing="isRefreshing"
     @copy-value="copyValue"
     @kick-player="openDetailsKickDialog"
     @open-profile="openProfile"
+    @refresh="refresh"
   />
 </template>

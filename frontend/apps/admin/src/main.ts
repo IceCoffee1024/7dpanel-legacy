@@ -12,6 +12,13 @@ import { connectServerState } from './app/serverState'
 
 import './assets/css/main.css'
 
+const colorMode = localStorage.getItem('vueuse-color-scheme') || 'auto'
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+if (colorMode === 'dark' || (colorMode === 'auto' && prefersDark)) {
+  document.documentElement.classList.add('dark')
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', '#18181b')
+}
+
 const app = createApp(App)
 
 const head = createHead()

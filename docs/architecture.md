@@ -99,7 +99,7 @@ last_updated: "2026-07-31"
 - 阻塞型单消费者后台边界不占用共享线程池等待队列：控制台审计、游戏事件、玩家证据、游戏资源目录、近期活动、GeoIP 等 worker 通过 `TaskCreationOptions.LongRunning` 启动专用消费者，并使用启动就绪信号、完成事件和有界排空期限协调 `Start`、`Stop` 与 `Dispose`。SSE heartbeat、Discord 排空和地图元数据等待同样以事件或完成信号驱动，避免轮询和线程池饥饿改变生命周期时序。
 - Web Adapter 暴露固定 `/api/v1` Controller 和独立 DTO，OpenAPI snapshot 已刷新，Admin SDK 已由 `pnpm api:gen` 重新生成。Admin Feature 使用严格 parser、readonly composable、无乐观成功和 Owner-only route meta；页面入口由 `AppShell` 分组到服务器运维、经济与奖励、传送与投票、集成与访问策略。
 
-本节只提升当前代码结构和本轮可复查命令支持的事实。当前八项目已完成一次临时目录 `dotnet publish`、Admin 产物组装和 manifest 布局校验；本地 Playwright mock 已覆盖桌面与 `390x844` 路由、权限和 Chat Mutes 关键交互。真实备份恢复、真实玩家和世界副作用、Discord/MaxMind sandbox、受控真实 OWIN Playwright、向 `Mods/7DPanel` 发布以及 Windows/Linux 候选发布门禁仍未完成。
+本节只提升当前代码结构和本轮可复查命令支持的事实。当前八项目已完成 `dotnet publish`、Admin 产物组装和 manifest 布局校验，并已写入 Windows `Mods/7DPanel` 后通过 Unity Mono 启停与健康检查；当前认证真实 OWIN Playwright 已覆盖 API Key、locale、导航和在线玩家主路径，本地 Playwright mock 另覆盖桌面与 `390x844` 路由、权限和 Chat Mutes 关键交互。真实备份恢复、真实玩家和世界危险副作用、Discord/MaxMind sandbox、其余六波次页面以及 Linux 候选发布门禁仍未完成。
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据来自根目录只读私有子模块 `7dtd-reference/`；该子模块不是产品源码或发布内容。
 
@@ -309,12 +309,12 @@ GET /
 | `GET /api/v1/map/tiles/{worldId}/{z}/{x}/{y}` | `MapController` | Owner-only Header Bearer 瓦片读取；受控路径、ETag/304、private cache、404/503 和错误脱敏 |
 | `GET /api/v1/map/layers/{layerId}` | `MapController` | Owner-only 有界业务图层；支持历史最后位置、商人、领地、载具、无人机、动物和敌对实体，并独立返回 availability、观察时间和缩放状态 |
 | `GET /api/v1/map/players/area` | `MapController` | Owner-only 矩形或圆形历史观察反查；UTC 范围、候选观察和玩家结果有界，命中不表示持续停留 |
-| `/api/v1/jobs`、`/api/v1/backups`、`/api/v1/schedules`、`/api/v1/announcements` | `JobsController`、`BackupsController`、`SchedulesController`、`AnnouncementsController` | Owner-only 持久作业、备份/恢复、Cron 调度和公告管理；排队、执行、终态与未知结果分离 |
+| `/api/v1/jobs`、`/api/v1/backups`、`/api/v1/schedules`、`/api/v1/announcements` | `JobsController`、`BackupsController`、`SchedulesController`、`AnnouncementsController` | Owner-only 持久作业、备份/恢复、Cron 调度和公告管理；恢复请求必须携带强确认，Application 再次校验，排队、执行、终态与未知结果分离 |
 | `/api/v1/player-evidence`、`/api/v1/player-actions` | `PlayerEvidenceController`、`PlayerActionsController` | Owner-only 玩家 Profile/证据查询和类型化物品/重置动作；稳定身份、操作状态和结果未知显式保留 |
 | `/api/v1/economy`、`/api/v1/rewards`、`/api/v1/commerce`、`/api/v1/achievements`、`/api/v1/online-rewards` | 对应 Controller | Owner-only 经济账本、奖励发放、商品/兑换、成就和在线奖励管理；`daily` 规则读写与领取资格从持久策略和观察运行时消费，不把未知结果伪装为完成 |
 | `/api/v1/community` | `CommunityController` | Owner-only 传送设置、城市、好友、传送操作和投票管理；全量列表端点稳定排序，传送设置/投票配置的版本冲突由底层条件更新和 HTTP 409 表达 |
-| `/api/v1/automations`、`/api/v1/integrations/discord`、`/api/v1/access-policies/geoip` | 对应 Controller | Owner-only 固定自动化规则、Discord 配置/投递/绑定/命令、Gateway 和 interaction Ed25519 签名入口，以及 GeoIP 策略；`GET /api/v1/integrations/discord/health` 从同一 `DiscordInboundRuntime` 返回 Gateway/Inbound 的真实状态、错误码与观察时间，运行时状态源不可用时返回 503 `discord_health_unavailable`；不表示 Discord sandbox/真实往返或真实 MaxMind 已验证 |
-| `/api/v1/world`、`/api/v1/world-operations`、`/api/v1/map-jobs`、`/api/v1/modules` | 对应 Controller | Owner-only 世界只读、持久世界/地图操作和固定功能模块；HTTP 接受或作业入队不表示危险副作用成功 |
+| `/api/v1/automations`、`/api/v1/integrations/discord`、`/api/v1/access-policies/geoip` | 对应 Controller | Owner-only 固定自动化规则、Discord 配置/脱敏 secret 更新/投递/绑定/命令、Gateway 和 interaction Ed25519 签名入口，以及 GeoIP 策略；`GET /api/v1/integrations/discord/health` 从同一 `DiscordInboundRuntime` 返回 Gateway/Inbound 的真实状态、错误码与观察时间，运行时状态源不可用时返回 503 `discord_health_unavailable`；自定义 MMDB 路径相对 `config.json` 解析并传入运行时；不表示 Discord sandbox/真实往返或真实 MaxMind 已验证 |
+| `/api/v1/world`、`/api/v1/world-operations`、`/api/v1/map-jobs`、`/api/v1/modules` | 对应 Controller | Owner-only 世界只读、持久世界/地图操作和固定功能模块；undo preflight 只读计算当前区域哈希并返回匹配状态，避免调用者猜测 `currentRegionHash`；HTTP 接受或作业入队不表示危险副作用成功 |
 | `GET /` | StaticFiles | 返回 Admin `index.html` |
 | `GET/HEAD` 无扩展名、非 API 且非 `/assets` 路径 | SPA fallback + StaticFiles | 服务端返回 `index.html`；客户端是否存在该路由由 Vue Router 决定 |
 | `/assets/*` | StaticFiles | 返回构建资源；缺失资源保持 404 |
@@ -340,7 +340,7 @@ GET /
 | Mod 内存程序集定位 | 游戏提供的 `0_TFP_Harmony/0Harmony.dll`，程序集 `2.13.0.0` | Release 构建、源码顺序规则、本地发布排除和 Windows `v3.0.1-b4` 真实进程通过；Linux 待验证 | Bootstrap 以 `Private=false` 编译引用且 7DPanel 不发布 Harmony；补丁只修正当前 Mod 内原值为空的 `Assembly.Location`，必须先于 SQLite/OWIN 组合 |
 | Web API 2 | Core/Owin `5.3.0`，Client `6.0.0` | 健康、Problem Details 和认证命名 SSE 通过 Katana 自动化与 Windows 真实进程 | 实现健康、统一错误和生产事件流；Linux Mono 仍待验证 |
 | Katana/OWIN | `Microsoft.Owin`、Hosting、HttpListener、StaticFiles `4.2.3` | 静态托管、路由、认证、流式响应和启停通过 Katana 自动化与 Windows 真实进程 | 认证位于受保护 Web API 前，静态 Admin 和健康端点保持匿名 |
-| OWIN 认证 | `Microsoft.Owin.Security.OAuth 4.2.3` + 自有持久 Bearer provider | password grant、严格 Access Token/API Key 分流、当前身份/角色重建、API Key 撤销/到期/禁用用户和 SSE 周期复验通过定向自动化；当前版本尚未在 Windows Mono 真实进程执行认证 smoke | 显式拒绝 authorization-code/refresh/self-contained ticket format；不支持 Basic、refresh token、JWT、QueryString Token、Cookie 或通配 CORS |
+| OWIN 认证 | `Microsoft.Owin.Security.OAuth 4.2.3` + 自有持久 Bearer provider | password grant、严格 Access Token/API Key 分流、当前身份/角色重建、API Key 撤销/到期/禁用用户和 SSE 周期复验通过定向自动化；2026-07-31 当前 Windows Unity Mono 发布物完成真实 OWIN 登录、API Key 生命周期和登出浏览器 smoke | 显式拒绝 authorization-code/refresh/self-contained ticket format；不支持 Basic、refresh token、JWT、QueryString Token、Cookie 或通配 CORS |
 | OpenAPI | `NSwag.AspNet.Owin 14.7.1`，传递依赖 NJsonSchema `11.6.1` 与 Namotion.Reflection `3.5.0` | 公开 JSON/UI、Controller 与 OWIN token 路由、唯一 Bearer scheme、API Key 操作、SSE、Problem Details 和无业务副作用通过 Katana 自动化；精确运行时闭包通过本地发布脚本。`a98ad6b` 的旧二进制已在 Windows `v3.0.1-b4` Unity Mono 加载全部闭包并访问 JSON/UI；当前认证版本尚未复验 | 仅 Web Adapter 直接引用 NSwag；不安装 `NSwag.Annotations`；Linux Mono 仍待验证 |
 | 组合根依赖注入 | `Microsoft.Extensions.DependencyInjection 10.0.10`、Abstractions `10.0.10` | Provider 验证、scope/bridge/释放自动化、net48 Release Rebuild 和隔离发布清单通过；二者的 net462 资产声明 Bcl AsyncInterfaces `10.0.10` 与 Tasks.Extensions `4.6.3` 最低依赖，当前发布闭包解析为这组已验证版本；升级发布物已在 Windows `v3.0.1-b4` 启动、提供健康/OpenAPI 并释放进程与 listener | implementation 只属于 Bootstrap，Web Adapter 只直接引用 Abstractions；根 Provider 后于 OWIN/运行时释放 |
 | JSON | 游戏提供的 `Newtonsoft.Json 13.0.2` | 精确 camelCase 响应已在集成测试和真实进程验证 | 不随 Mod 发布另一份 `Newtonsoft.Json.dll` |
@@ -362,6 +362,7 @@ GET /
 - 同日标准 Batteries/SQLitePCLRaw `2.1.12` 二进制完成 Windows `v3.0.1-b4` 真实进程 smoke：游戏从独立 `0_TFP_Harmony` 加载 `0Harmony`，`Assembly.Location` 补丁在 `3.071s` 成功并先于 `3.388s` database upgrade，OWIN 在 `7.775s` 启动，`StartGame done` 在 `65.392s` 出现。健康端点返回精确三字段 200；移除 Basic 前的 Bearer SSE 以 Welcome 开始，replay 包含 `console-log` 和 `game-ready`，关服连接收到 `server-stopping`。正常停止摘要为 `accepted=188`、`consumed=188`、无丢弃或 consumer failure，OWIN 停止、进程退出且端点不可达；兼容性错误扫描为 0。该历史 smoke 不涵盖当前 API Key 认证，Linux 真实进程仍待验证。
 - 2026-07-23 合并提交 `a98ad6b` 的 Windows `v3.0.1-b4` 发布物再次完成动态命令与 Swagger 真实进程 smoke：Namotion.Reflection、NJsonSchema 和 NSwag 运行时程序集均从 Mod 目录加载，`/swagger` 返回 UI，`/swagger/v1/swagger.json` 返回有效 OpenAPI 3 文档并包含 token 与动态命令路由；日志没有 `FileNotFoundException`、`TypeLoadException`、ModEvent 或 OWIN 启停错误。受控 SQLite 写锁验证命令执行 fail-open 与后续 `store_failure` gap 恢复，正常关服时没有 unrecovered gap；进程退出、端点不可达并可再次启动和关服。该记录是开发期历史证据，发生在当前认证变更前，未归档为候选发布证据，也不证明当前 API Key 认证。
 - 开发期发布、启停和健康检查入口见[后端脚本指南](../backend/scripts/README.md)。辅助脚本不属于产品运行时。
+- 2026-07-31 当前八项目发布物通过新 `Stop → Publish → Start → Health` 编排真实写入 Windows `Mods/7DPanel`；UNC artifact 清理和 validator 通过，游戏启动日志出现 OWIN 与 `StartGame done`，7DPanel Mod 创建、类型加载和缺失程序集错误均为 0，健康端点返回 200。该证据不包含 Discord/MaxMind sandbox、恢复或危险世界副作用。
 - 当前生产关服流程先停止 `ModHost`/console-log，再停止 HTTP 命令 FIFO 并拒绝未开始项，最后排空命令审计；各阶段失败聚合且后续阶段仍执行。命令 Harmony 随后只卸载自身 id，根 Provider 在所有内部运行时成功停止后才释放并清空 SQLite 连接池；审计排空超时会保留 Provider 所有权并允许后续 Stop 重试，避免 consumer 访问已释放 Store。`GameThreadDispatcher` 没有独立生命周期；等待中的 HTTP 命令可取消，已经开始的同步命令返回真实结果。通用游戏动作排空和可观察 HTTP draining 仍未实现。
 
 ## 质量属性
@@ -377,7 +378,7 @@ GET /
 - 历史玩家自动化覆盖 31 字段快照与 UTC/null/安全整数 parser、Owner-only Web 合同、cursor、Store 事务与降采样、Channel fail-open、页面局部状态的取消/stale/分页去重、历史只读详情与认证路由。当前环境未运行新的 OWIN `HttpListener` 历史路由用例、真实 7DTD 或浏览器 E2E，因此这些边界不能视为真实进程/浏览器证据。
 - `DependencyRulesTests` 用源码规则保护当前项目依赖、Adapter 方向、唯一 `IModApi` 和 Bootstrap candidate 发布顺序。
 - SQLite 集成测试覆盖 migration 幂等、WAL、引导 Owner 同步、PBKDF2-HMAC-SHA256 1000 次迭代、凭据轮换撤销、Access Token 跨 Store/connection factory 重建、到期、严格 128 容量、API Key 一次性完整值、SHA-256 摘要、到期/撤销/容量与明文不落盘，以及命令原文、ordinal 参数、逐行输出和幂等 gap 的事务往返；SSE 可控时钟测试覆盖失效后停止写出。
-- 本地确定性测试覆盖恢复回滚中断续作与启动阶段诊断、Discord 重复签名头/请求体上限/follow-up 429 和不确定结果、MaxMind timeout/503 与失败缓存、世界 descriptor 防伪/取消/undo 竞争/回滚失败持久化、同一奖励 grant 并发补偿唯一冲正，以及玩家背包功能/外观 Mod 合并；这些测试不替代真实文件占用、Discord/MaxMind sandbox、游戏线程和世界 API、游戏物品字段或玩家经济副作用。
+- 本地确定性测试覆盖恢复回滚中断续作与启动阶段诊断、Discord 重复签名头/请求体上限/follow-up 429 和不确定结果、MaxMind timeout/503 与失败缓存、世界 descriptor 防伪/取消/undo preflight/回滚失败持久化、同一奖励 grant 并发补偿唯一冲正，以及玩家背包功能/外观 Mod 合并；恢复 timing gate 只在专服主线程、`GameManager` 已存在、`World == null` 且世界名、版本和批准保存路径全部匹配时放行，缺少证据时安全拒绝。这些测试不替代真实文件占用、Discord/MaxMind sandbox、真实恢复时序、游戏线程和世界 API、游戏物品字段或玩家经济副作用。
 - 健康客户端保留最后成功样本并明确标记 stale/offline，不把失败或过期结果显示为 fresh。
 
 ### 安全性
@@ -423,7 +424,7 @@ GET /
 - 当前 SQLitePCLRaw `2.1.12` 标准 Batteries/`e_sqlite3` 布局和进程期 `Assembly.Location` 补丁已通过 Windows 官方 7DTD 进程 smoke；Microsoft.Data.Sqlite `10.0.10`、DbUp Core `6.1.1`、Microsoft DI `10.0.10` 和 Channels `10.0.10` 已通过本地 net48 构建、测试、双平台发布清单及 Windows `v3.0.1-b4` 启动/健康/OpenAPI smoke，shutdown 后进程与 listener 已释放，但 acknowledgement 超时后的任务清理由第二次无进程调用完成。当前升级组合仍缺少 Windows 认证存储、命令与写锁恢复复验，以及 Linux 官方进程证据。
 - Linux x64 已有本地发布布局证据，但没有本项目官方进程运行证据。
 - 公开 Swagger JSON/UI 已通过 Windows Katana 自动化、本地发布清单和 `a98ad6b` 的 Windows `v3.0.1-b4` Unity Mono 真实进程验证；NSwag/NJsonSchema/Namotion 程序集从 Mod 目录加载，真实服务器可访问 UI 与 OpenAPI 3 JSON。当前认证版本尚未复验这些组件，也未在 Linux Unity Mono 验证兼容性。
-- 当前 Access Token/API Key 实现尚未获得数据库重置后的 Windows `v3.0.1-b4` 真实进程或真实 OWIN 浏览器验收；不得从定向自动化、历史 smoke 或移除的 PBKDF2 探针推导高频认证延迟、真实 REST/SSE 兼容性或发布物行为已经通过。
+- 当前 Access Token/API Key 实现已在 2026-07-31 Windows `v3.0.1-b4` 发布物完成真实 OWIN 登录、API Key 生命周期和登出浏览器 smoke；该窄门禁不覆盖数据库重置、高频认证延迟、全部 REST/SSE 路由或异常持久会话，因此仍不得把这些边界推导为已通过。
 - 编译使用的 publicized `Assembly-CSharp.dll` 与官方运行时材料职责不同；升级游戏版本时必须重新验证构建和真实进程行为。
 ## 服务器治理当前实现
 

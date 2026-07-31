@@ -1,5 +1,7 @@
 using System;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LSTY.SevenDPanel.Application.WorldOperations
 {
@@ -58,15 +60,92 @@ namespace LSTY.SevenDPanel.Application.WorldOperations
         private readonly IWorldOperationJobBridge bridge;
         private readonly IWorldChangeSetMetadataStore changeSets;
         private readonly IWorldChangeSetBlobStore blobs;
+        private readonly IWorldChangeSetPreflightGateway preflightGateway;
 
         public UndoWorldChangeSetUseCase(
             IWorldOperationJobBridge bridge,
             IWorldChangeSetMetadataStore changeSets,
-            IWorldChangeSetBlobStore blobs)
+            IWorldChangeSetBlobStore blobs,
+            IWorldChangeSetPreflightGateway preflightGateway)
         {
             this.bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
             this.changeSets = changeSets ?? throw new ArgumentNullException(nameof(changeSets));
             this.blobs = blobs ?? throw new ArgumentNullException(nameof(blobs));
+            this.preflightGateway = preflightGateway ??
+                throw new ArgumentNullException(nameof(preflightGateway));
+        }
+
+        public async Task<UndoWorldChangeSetPreflight> PreflightAsync(
+            string sourceOperationId,
+            DateTimeOffset requestedAtUtc,
+            CancellationToken cancellationToken)
+        {
+            sourceOperationId = MapWorldOperationValidation.RequireText(
+                sourceOperationId,
+                nameof(sourceOperationId));
+            MapWorldOperationValidation.RequireUtc(requestedAtUtc, nameof(requestedAtUtc));
+
+            WorldOperationRecord source;
+            try { source = bridge.Get(sourceOperationId); }
+            catch { throw Conflict(SourceOperationMismatch); }
+            if (source == null || source.Kind == WorldOperationKind.UndoChangeSet ||
+                !source.IsReversible || source.Status != WorldOperationStatus.Succeeded ||
+                string.IsNullOrWhiteSpace(source.ChangeSetId))
+            {
+                throw Conflict(SourceOperationMismatch);
+            }
+
+            var descriptor = ReadDescriptor(source.ChangeSetId!);
+            if (!ValidDescriptor(descriptor) || descriptor == null)
+                throw Conflict(ChangeSetInvalid);
+            ValidateSourceOperation(source, descriptor);
+            if (descriptor.ExpiresAtUtc <= requestedAtUtc)
+                throw Conflict(ChangeSetExpired);
+            if (string.Equals(descriptor.BeforeHash, descriptor.AfterHash, StringComparison.Ordinal))
+                throw Conflict(AlreadyUndone);
+            ValidateBlob(descriptor);
+            RejectExistingUndo(descriptor.ChangeSetId);
+
+            WorldChangeSetRuntimeHashResult runtime;
+            try
+            {
+                runtime = await preflightGateway
+                    .ReadCurrentRegionHashAsync(descriptor, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch
+            {
+                runtime = WorldChangeSetRuntimeHashResult.Unavailable(
+                    "undo_preflight_runtime_unavailable");
+            }
+
+            if (runtime == null || string.IsNullOrWhiteSpace(runtime.CurrentRegionHash))
+            {
+                return new UndoWorldChangeSetPreflight(
+                    descriptor.SourceOperationId,
+                    descriptor.ChangeSetId,
+                    descriptor.WorldId,
+                    descriptor.WorldVersion,
+                    descriptor.AfterHash,
+                    null,
+                    null,
+                    runtime?.ErrorCode ?? "undo_preflight_runtime_unavailable");
+            }
+
+            var matches = string.Equals(
+                descriptor.AfterHash,
+                runtime.CurrentRegionHash,
+                StringComparison.Ordinal);
+            return new UndoWorldChangeSetPreflight(
+                descriptor.SourceOperationId,
+                descriptor.ChangeSetId,
+                descriptor.WorldId,
+                descriptor.WorldVersion,
+                descriptor.AfterHash,
+                runtime.CurrentRegionHash,
+                matches,
+                matches ? "ready" : CurrentRegionChanged);
         }
 
         public WorldOperationReceipt Execute(UndoWorldChangeSetRequest request)
@@ -77,9 +156,8 @@ namespace LSTY.SevenDPanel.Application.WorldOperations
                 throw new WorldOperationStrongConfirmationRequiredException();
 
             var descriptor = ReadDescriptor(request.ChangeSetId);
-            if (descriptor == null || descriptor.Region == null ||
-                !string.Equals(descriptor.ChangeSetId, request.ChangeSetId, StringComparison.Ordinal) ||
-                !GeneratedStorageResourceId(descriptor.StorageResourceId))
+            if (!ValidDescriptor(descriptor) || descriptor == null ||
+                !string.Equals(descriptor.ChangeSetId, request.ChangeSetId, StringComparison.Ordinal))
             {
                 throw Conflict(ChangeSetInvalid);
             }
@@ -147,6 +225,23 @@ namespace LSTY.SevenDPanel.Application.WorldOperations
                 throw Conflict(SourceOperationMismatch);
             }
         }
+
+        private static void ValidateSourceOperation(
+            WorldOperationRecord source,
+            WorldChangeSetDescriptor descriptor)
+        {
+            if (!string.Equals(source.OperationId, descriptor.SourceOperationId, StringComparison.Ordinal) ||
+                !string.Equals(source.ChangeSetId, descriptor.ChangeSetId, StringComparison.Ordinal) ||
+                !string.Equals(source.WorldId, descriptor.WorldId, StringComparison.Ordinal) ||
+                !string.Equals(source.WorldVersion, descriptor.WorldVersion, StringComparison.Ordinal))
+            {
+                throw Conflict(SourceOperationMismatch);
+            }
+        }
+
+        private static bool ValidDescriptor(WorldChangeSetDescriptor? descriptor) =>
+            descriptor != null && descriptor.Region != null &&
+            GeneratedStorageResourceId(descriptor.StorageResourceId);
 
         private void ValidateBlob(WorldChangeSetDescriptor descriptor)
         {

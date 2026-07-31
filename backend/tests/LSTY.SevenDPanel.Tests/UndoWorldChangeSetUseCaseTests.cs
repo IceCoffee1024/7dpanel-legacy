@@ -37,6 +37,29 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Preflight_exposes_only_the_required_hash_match_state_without_enqueuing()
+        {
+            var fixture = new Fixture();
+
+            var result = await fixture.UseCase.PreflightAsync(
+                fixture.Descriptor.SourceOperationId,
+                Utc(),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(fixture.Descriptor.AfterHash, result.AfterHash);
+            Assert.Equal(fixture.Descriptor.AfterHash, result.CurrentRegionHash);
+            Assert.True(result.CurrentHashMatches);
+            Assert.Equal("ready", result.Status);
+            Assert.Null(fixture.Bridge.Enqueued);
+            Assert.DoesNotContain(
+                typeof(UndoWorldChangeSetPreflight).GetProperties(),
+                property => string.Equals(
+                    property.Name,
+                    "BeforeHash",
+                    StringComparison.Ordinal));
+        }
+
+        [Fact]
         public async Task Handler_persists_rollback_evidence_and_applies_the_before_snapshot_in_batches()
         {
             var fixture = new HandlerFixture(257);
@@ -270,13 +293,19 @@ namespace LSTY.SevenDPanel.Tests
                 Metadata = new RecordingMetadataStore(Descriptor);
                 Blobs = new RecordingBlobStore(Descriptor, content);
                 Bridge = new RecordingBridge(SourceRecord(Descriptor));
-                UseCase = new UndoWorldChangeSetUseCase(Bridge, Metadata, Blobs);
+                Preflight = new RecordingPreflightGateway(Descriptor.AfterHash);
+                UseCase = new UndoWorldChangeSetUseCase(
+                    Bridge,
+                    Metadata,
+                    Blobs,
+                    Preflight);
             }
 
             internal WorldChangeSetDescriptor Descriptor { get; }
             internal RecordingBridge Bridge { get; }
             internal RecordingMetadataStore Metadata { get; }
             internal RecordingBlobStore Blobs { get; }
+            internal RecordingPreflightGateway Preflight { get; }
             internal UndoWorldChangeSetUseCase UseCase { get; }
 
             internal UndoWorldChangeSetRequest Request() =>
@@ -311,6 +340,19 @@ namespace LSTY.SevenDPanel.Tests
                     Utc().AddDays(-1),
                     Utc().AddDays(-1),
                     Utc().AddDays(-1));
+        }
+
+        private sealed class RecordingPreflightGateway : IWorldChangeSetPreflightGateway
+        {
+            private readonly string currentHash;
+
+            internal RecordingPreflightGateway(string currentHash) =>
+                this.currentHash = currentHash;
+
+            public Task<WorldChangeSetRuntimeHashResult> ReadCurrentRegionHashAsync(
+                WorldChangeSetDescriptor descriptor,
+                CancellationToken cancellationToken) =>
+                Task.FromResult(WorldChangeSetRuntimeHashResult.Available(currentHash));
         }
 
         private sealed class RecordingBridge : IWorldOperationJobBridge

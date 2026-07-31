@@ -49,6 +49,9 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.True(options.Authentication.AllowInsecureHttp);
                 Assert.Equal("local", options.PlayerEvidence.ServerId);
                 Assert.Equal("UTC", options.PlayerEvidence.TimeZone.Id);
+                Assert.Equal(
+                    Path.Combine(directory, "data", "GeoLite2-Country.mmdb"),
+                    options.GeoIpDatabasePath);
                 Assert.True(File.Exists(path));
             }
             finally
@@ -81,6 +84,69 @@ namespace LSTY.SevenDPanel.Tests
             finally
             {
                 File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Config_file_resolves_the_geoip_database_path_from_its_directory()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-config-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "config.json");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19090,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"GeoIpDatabasePath\":\"geoip/custom-country.mmdb\"}");
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+
+                Assert.Equal(
+                    Path.Combine(directory, "geoip", "custom-country.mmdb"),
+                    options.GeoIpDatabasePath);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [Fact]
+        public void Invalid_geoip_database_path_falls_back_without_replacing_host_or_authentication()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-config-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "config.json");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19097,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"Authentication\":{\"Enabled\":true,\"Username\":\"admin\",\"Password\":\"password\"," +
+                "\"AccessTokenLifetimeMinutes\":30,\"AllowInsecureHttp\":true}," +
+                "\"GeoIpDatabasePath\":\"geoip\\u0000country.mmdb\"}");
+            string? message = null;
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path, value => message = value);
+
+                Assert.Equal("http://127.0.0.1:19097/", options.Url);
+                Assert.True(options.Authentication.Enabled);
+                Assert.Equal("admin", options.Authentication.Username);
+                Assert.Equal("password", options.Authentication.Password);
+                Assert.Equal(
+                    Path.Combine(directory, "data", "GeoLite2-Country.mmdb"),
+                    options.GeoIpDatabasePath);
+                Assert.Contains("GeoIP database path", message, StringComparison.Ordinal);
+                Assert.DoesNotContain("country.mmdb", message ?? string.Empty, StringComparison.Ordinal);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
             }
         }
 

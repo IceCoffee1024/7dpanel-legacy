@@ -5420,6 +5420,78 @@
         ]
       }
     },
+    "/api/v1/integrations/discord/secrets/{secretKey}": {
+      "put": {
+        "tags": [
+          "DiscordIntegration"
+        ],
+        "operationId": "DiscordIntegration_PutSecret",
+        "parameters": [
+          {
+            "name": "secretKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/DiscordSecretUpdateHttpRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "DiscordIntegration"
+        ],
+        "operationId": "DiscordIntegration_DeleteSecret",
+        "parameters": [
+          {
+            "name": "secretKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The operation completed successfully."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/integrations/discord/test": {
       "post": {
         "tags": [
@@ -12411,6 +12483,42 @@
         ]
       }
     },
+    "/api/v1/world-operations/{operationId}/undo-preflight": {
+      "get": {
+        "tags": [
+          "WorldOperations"
+        ],
+        "operationId": "WorldOperations_UndoPreflight",
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UndoWorldChangeSetPreflightHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/world-operations/{operationId}": {
       "get": {
         "tags": [
@@ -14118,6 +14226,9 @@
             "nullable": true
           },
           "restartAfterStage": {
+            "type": "boolean"
+          },
+          "strongConfirmed": {
             "type": "boolean"
           }
         }
@@ -16475,6 +16586,16 @@
           },
           "isEnabled": {
             "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "DiscordSecretUpdateHttpRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
             "nullable": true
           }
         }
@@ -22516,6 +22637,38 @@
             }
           }
         ]
+      },
+      "UndoWorldChangeSetPreflightHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sourceOperationId": {
+            "type": "string"
+          },
+          "changeSetId": {
+            "type": "string"
+          },
+          "worldId": {
+            "type": "string"
+          },
+          "worldVersion": {
+            "type": "string"
+          },
+          "afterHash": {
+            "type": "string"
+          },
+          "currentRegionHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentHashMatches": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          }
+        }
       },
       "WorldOperationHttpResponse": {
         "type": "object",

@@ -21,8 +21,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   icon: 'i-lucide-languages',
   type: 'checkbox',
   checked: locale.value === 'en',
-  onSelect(event: Event) {
-    event.preventDefault()
+  onSelect() {
     setLocale('en')
   },
 }, {
@@ -30,8 +29,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   icon: 'i-lucide-languages',
   type: 'checkbox',
   checked: locale.value === 'zh-CN',
-  onSelect(event: Event) {
-    event.preventDefault()
+  onSelect() {
     setLocale('zh-CN')
   },
 }]])

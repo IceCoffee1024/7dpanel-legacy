@@ -18,7 +18,7 @@ namespace LSTY.SevenDPanel.Tests.Application
         {
             var fixture = new Fixture();
 
-            var result = fixture.Stage.Execute(fixture.Job.Id, fixture.Payload);
+            var result = fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, true);
 
             Assert.Equal(JobStatus.PendingRestart, result.Status);
             Assert.Equal(fixture.Job.RowVersion + 1, result.RowVersion);
@@ -47,7 +47,7 @@ namespace LSTY.SevenDPanel.Tests.Application
             };
 
             var error = Assert.Throws<StageRestoreException>(() =>
-                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload));
+                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, true));
 
             Assert.Equal(StageRestore.BackupIntegrityFailedError, error.ErrorCode);
             Assert.DoesNotContain("marker", fixture.Events);
@@ -61,7 +61,7 @@ namespace LSTY.SevenDPanel.Tests.Application
             var fixture = new Fixture { BackupMissing = true };
 
             var error = Assert.Throws<StageRestoreException>(() =>
-                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload));
+                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, true));
 
             Assert.Equal(StageRestore.BackupNotFoundError, error.ErrorCode);
             Assert.Equal(new[] { "job:get", "catalog:get" }, fixture.Events);
@@ -73,7 +73,7 @@ namespace LSTY.SevenDPanel.Tests.Application
             var fixture = new Fixture { MarkerCreated = false };
 
             var error = Assert.Throws<StageRestoreException>(() =>
-                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload));
+                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, true));
 
             Assert.Equal(StageRestore.AlreadyPendingError, error.ErrorCode);
             Assert.Contains("marker", fixture.Events);
@@ -87,7 +87,7 @@ namespace LSTY.SevenDPanel.Tests.Application
             var fixture = new Fixture { CasResult = false };
 
             var error = Assert.Throws<StageRestoreException>(() =>
-                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload));
+                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, true));
 
             Assert.Equal(StageRestore.JobStateConflictError, error.ErrorCode);
             Assert.True(fixture.MarkerPersisted);
@@ -103,12 +103,24 @@ namespace LSTY.SevenDPanel.Tests.Application
             };
 
             var error = Assert.Throws<InvalidOperationException>(() =>
-                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload));
+                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, true));
 
             Assert.Equal("launcher failed", error.Message);
             Assert.True(fixture.MarkerPersisted);
             Assert.True(fixture.CasCompleted);
             Assert.Equal(JobStatus.PendingRestart, fixture.CurrentJob.Status);
+        }
+
+        [Fact]
+        public void Missing_strong_confirmation_is_rejected_before_any_read_or_write()
+        {
+            var fixture = new Fixture();
+
+            var error = Assert.Throws<StageRestoreException>(() =>
+                fixture.Stage.Execute(fixture.Job.Id, fixture.Payload, false));
+
+            Assert.Equal(StageRestore.StrongConfirmationRequiredError, error.ErrorCode);
+            Assert.Empty(fixture.Events);
         }
 
         [Fact]

@@ -15,16 +15,6 @@
         background-color: #18181b;
       }
     </style>
-    <script>
-      ;(function () {
-        var mode = localStorage.getItem('vueuse-color-scheme') || 'auto'
-        var dark = mode === 'dark' || (mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        if (dark) {
-          document.documentElement.classList.add('dark')
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#18181b')
-        }
-      })()
-    </script>
   </head>
 
   <body>

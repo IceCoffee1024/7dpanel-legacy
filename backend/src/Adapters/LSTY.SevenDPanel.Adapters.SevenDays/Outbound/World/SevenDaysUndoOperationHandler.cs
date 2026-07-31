@@ -95,7 +95,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
             new SevenDaysUndoOperationResult(outcome, errorCode, changeSetId, current, total);
     }
 
-    public sealed class SevenDaysUndoOperationHandler
+    public sealed class SevenDaysUndoOperationHandler : IWorldChangeSetPreflightGateway
     {
         private static readonly TimeSpan ChangeSetRetention = TimeSpan.FromDays(30);
 
@@ -136,6 +136,61 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
                 throw new ArgumentNullException(nameof(createStorageResourceId));
             batchExecutor = new WorldOperationBatchExecutor(
                 dispatcher ?? throw new ArgumentNullException(nameof(dispatcher)));
+        }
+
+        public async Task<WorldChangeSetRuntimeHashResult> ReadCurrentRegionHashAsync(
+            WorldChangeSetDescriptor descriptor,
+            CancellationToken cancellationToken)
+        {
+            if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
+            if (descriptor.Region == null)
+                return WorldChangeSetRuntimeHashResult.Unavailable("undo_preflight_region_invalid");
+
+            WorldOperationBatchLease? lease;
+            try { lease = await batchExecutor.TryEnterAsync(cancellationToken).ConfigureAwait(false); }
+            catch (OperationCanceledException) { throw; }
+            catch
+            {
+                return WorldChangeSetRuntimeHashResult.Unavailable(
+                    "undo_preflight_runtime_unavailable");
+            }
+            if (lease == null)
+                return WorldChangeSetRuntimeHashResult.Unavailable("undo_preflight_busy");
+
+            using (lease)
+            {
+                var region = descriptor.Region;
+                var intent = new WorldOperationIntent(
+                    "undo-preflight",
+                    WorldOperationKind.UndoChangeSet,
+                    descriptor.WorldId,
+                    descriptor.WorldVersion,
+                    null,
+                    "undo-preflight",
+                    "Inspect undo change set",
+                    true,
+                    new WorldRegionOperationTarget(
+                        MinimumX(region),
+                        MinimumY(region),
+                        MinimumZ(region),
+                        MaximumX(region),
+                        MaximumY(region),
+                        MaximumZ(region),
+                        descriptor.ChangeSetId,
+                        null),
+                    descriptor.CreatedAtUtc);
+                var captured = await CaptureHashAsync(intent, region, cancellationToken)
+                    .ConfigureAwait(false);
+                if (captured.Status == WorldOperationBatchExecutionStatus.Completed &&
+                    captured.Hash != null)
+                {
+                    return WorldChangeSetRuntimeHashResult.Available(captured.Hash);
+                }
+                if (captured.Status == WorldOperationBatchExecutionStatus.Cancelled)
+                    throw new OperationCanceledException(cancellationToken);
+                return WorldChangeSetRuntimeHashResult.Unavailable(
+                    captured.ErrorCode ?? "undo_preflight_runtime_unavailable");
+            }
         }
 
         public Task<SevenDaysUndoOperationResult> HandleAsync(
@@ -272,7 +327,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
                     apply.CompletedBlocks,
                     total);
 
-            var verified = await CaptureHashAsync(execution.Intent, region).ConfigureAwait(false);
+            var verified = await CaptureHashAsync(
+                    execution.Intent,
+                    region,
+                    CancellationToken.None)
+                .ConfigureAwait(false);
             if (verified.Status != WorldOperationBatchExecutionStatus.Completed ||
                 !string.Equals(verified.Hash, source.Descriptor.BeforeHash, StringComparison.Ordinal))
             {
@@ -310,7 +369,8 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
                     .ConfigureAwait(false);
                 if (rollback.Status != WorldOperationBatchExecutionStatus.Completed)
                     return SevenDaysUndoOperationResult.RollbackFailure(changeSetId, completed, total);
-                var verified = await CaptureHashAsync(intent, region).ConfigureAwait(false);
+                var verified = await CaptureHashAsync(intent, region, CancellationToken.None)
+                    .ConfigureAwait(false);
                 return verified.Status == WorldOperationBatchExecutionStatus.Completed &&
                        string.Equals(verified.Hash, currentHash, StringComparison.Ordinal)
                     ? SevenDaysUndoOperationResult.InterruptedResult(changeSetId, completed, total)
@@ -366,20 +426,24 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
                 context!.ApplyBlock(index, RegionSnapshot.ReadBlock(current, index)));
         }
 
-        private async Task<(WorldOperationBatchExecutionStatus Status, string? Hash)> CaptureHashAsync(
+        private async Task<(
+            WorldOperationBatchExecutionStatus Status,
+            string? Hash,
+            string? ErrorCode)> CaptureHashAsync(
             WorldOperationIntent intent,
-            WorldRegion region)
+            WorldRegion region,
+            CancellationToken cancellationToken)
         {
             var content = RegionSnapshot.Create(region);
             var result = await batchExecutor.ExecuteAsync(
                     region.Volume,
                     () => OpenCaptureBatch(intent, region, content),
                     null,
-                    CancellationToken.None)
+                    cancellationToken)
                 .ConfigureAwait(false);
             return (result.Status, result.Status == WorldOperationBatchExecutionStatus.Completed
                 ? Hash(content)
-                : null);
+                : null, result.ErrorCode);
         }
 
         private (SourceChangeSet? Source, string? ErrorCode) LoadSource(

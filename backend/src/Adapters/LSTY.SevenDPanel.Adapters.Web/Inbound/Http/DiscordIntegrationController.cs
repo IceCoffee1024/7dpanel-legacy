@@ -145,6 +145,26 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             }
         }
 
+        [HttpPut]
+        [Route("secrets/{secretKey}")]
+        [ResponseType(typeof(void))]
+        public HttpResponseMessage PutSecret(
+            string secretKey,
+            DiscordSecretUpdateHttpRequest? request)
+        {
+            if (!ModelState.IsValid || request == null ||
+                string.IsNullOrWhiteSpace(request.Value))
+                return ApiProblemDetailsFactory.CreateInvalidRequestBodyResponse(Request);
+
+            return UpdateSecret(secretKey, request.Value);
+        }
+
+        [HttpDelete]
+        [Route("secrets/{secretKey}")]
+        [ResponseType(typeof(void))]
+        public HttpResponseMessage DeleteSecret(string secretKey) =>
+            UpdateSecret(secretKey, null);
+
         [HttpPost]
         [Route("test")]
         [ResponseType(typeof(DiscordDeliveryHttpResponse))]
@@ -673,6 +693,30 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         private static string? NormalizeOptional(string? value) =>
             string.IsNullOrWhiteSpace(value) ? null : value!.Trim();
+
+        private HttpResponseMessage UpdateSecret(string secretKey, string? value)
+        {
+            try
+            {
+                new SetDiscordSecretUseCase(store, () => DateTimeOffset.UtcNow)
+                    .Execute(secretKey, value);
+                return Request.CreateResponse(HttpStatusCode.NoContent);
+            }
+            catch (ArgumentException)
+            {
+                return Problem(
+                    HttpStatusCode.BadRequest,
+                    "invalid_discord_secret",
+                    "The Discord integration secret is invalid.");
+            }
+            catch (Exception)
+            {
+                return Problem(
+                    HttpStatusCode.ServiceUnavailable,
+                    "discord_secret_update_unavailable",
+                    "The Discord integration secret could not be updated.");
+            }
+        }
 
         private static string CreateOneTimeCode()
         {

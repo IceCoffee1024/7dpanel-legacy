@@ -355,6 +355,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     () => DateTimeOffset.UtcNow));
                 services.AddSingleton<ScheduleService>();
                 services.AddSingleton<AnnouncementService>();
+                services.AddSingleton<IWorldRestoreRuntimeEvidenceSource,
+                    SevenDaysWorldRestoreRuntimeEvidenceSource>();
                 services.AddSingleton<WorldRestoreTimingGate>();
                 services.AddSingleton(serviceProvider => new PanelDatabaseBackupJobHandler(
                     serviceProvider.GetRequiredService<ApprovedStorageRoots>(),
@@ -684,6 +686,8 @@ namespace LSTY.SevenDPanel.DependencyInjection
                         .GetRequiredService<LocalMapResourcePublisher>()
                         .Current?.MapResourceVersion));
                 services.AddSingleton<SevenDaysUndoOperationHandler>();
+                services.AddSingleton<IWorldChangeSetPreflightGateway>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SevenDaysUndoOperationHandler>());
                 services.AddSingleton(serviceProvider => new WorldOperationJobHandler(
                     serviceProvider.GetRequiredService<IWorldOperationExecutionStore>(),
                     serviceProvider.GetRequiredService<SevenDaysMapWorldOperationHandler>(),
