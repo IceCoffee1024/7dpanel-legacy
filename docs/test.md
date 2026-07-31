@@ -30,7 +30,7 @@ last_updated: "2026-07-31"
 | 发布物独立布局门禁 | PowerShell 合成夹具通过 | 八个产品 DLL、依赖/配置/Admin/双 RID native 的必需项，以及禁止程序集、路径和私有参考内容拒绝；根目录与 reparse point 拒绝另有代码复核 | 实际 `dotnet publish` 输出、Unity Mono 加载和 Windows/Linux 真实进程 |
 | Admin Chat Mutes 收口 | `5` 个文件、`49/49`；typecheck 通过 | 中英 locale、桌面表格/移动列表、loading 语义、目标化可访问名称、解除确认与提交锁定 | 真实浏览器视觉、OWIN 和真实禁言副作用 |
 | Admin Automation/Discord/GeoIP parser | `3/3` | 严格响应解析与敏感字段拒绝 | 最终整站 typecheck、浏览器交互和外部服务 |
-| Admin World Tools API/composable | `51` 项通过 | 世界工具 API/composable 的局部状态与请求合同 | 最终页面整合、危险世界动作和恢复 |
+| Admin World Tools 定向单元 | `62/62` | 世界工具 API/composable、撤销预检并发取消、错误分类、只读预检结果和页面阻断合同 | 真实 undo 与其他危险世界副作用 |
 | OpenAPI | snapshot `1/1`；`pnpm api:gen` 成功 | 当前运行时合同与生成 SDK 来自同一 snapshot | 干净 Git 基线上的 `api:check` |
 | Admin 最终静态与聚焦组合 | typecheck 通过；`6` 个文件、`74/74`；i18n 单文件复验 `6/6` | AppShell、Owner-only 路由、双语资源合同、Community 页面与当前 TypeScript 边界 | world-tools/modules/player-map 完整聚焦组合、lint、浏览器与发布 |
 | 第四波 Daily/Community 收口 | 后端受影响过滤 `32/32`；Admin Daily/Community/i18n 聚焦 `7` 个文件、`37/37`；Admin typecheck 通过；`pnpm api:schema` `1/1` 与 `pnpm api:gen` 成功；2026-07-28 默认配置相关聚焦测试 `18/18` 通过 | 每日规则绑定和领取资格、奖励观察、Community 全量查询/原子版本、Owner HTTP 边界、Admin 全量列表和生成合同；新库由 `011`/`012` 直接初始化固定传送、投票和 Discord Slash 命令配置 | 真实奖励发放、传送/投票副作用、Discord interaction、浏览器 E2E、真实 7DTD、发布与跨平台 smoke |
@@ -44,7 +44,7 @@ last_updated: "2026-07-31"
 
 2026-07-31 第二批收口完成一次临时目录实际 `dotnet publish` 和 Admin `wwwroot` 组装；清理禁止 DLL 与非目标 RID native 后，实际 artifact 通过同一 validator。Restore、Discord/GeoIP 与世界操作分别取得 `82/82`、`118/118`、`64/64` 的隔离聚焦证据；主工作区受影响组合为 `159/160`，唯一旧结构断言修正后 `1/1` 通过。Admin 本地 mock Playwright 首轮为 `154/160`，据此修复 `/players/map`、`/access-lists` 权限元数据、Chat Mutes query mock 和玩家 Profile 非法响应处理，定向桌面/`390x844` 复验 `4/4` 通过。没有运行真实 7DTD、Discord/MaxMind sandbox、真实 OWIN、恢复演练或危险世界副作用。
 
-2026-07-31 当前工作树进一步完成世界恢复强确认、真实 timing evidence gate、undo preflight、Discord secret HTTP 和 GeoIP MMDB 路径传递；后端受影响组合 `158/158`、OpenAPI snapshot `1/1`、Admin 两组相关单元分别 `4/4` 与 `33/33`、typecheck 和生产构建通过。真实 Windows 编排多次完成优雅关服、UNC 发布物清理/校验、启服和健康 200；最新日志中 7DPanel Mod 创建、类型加载和缺失程序集错误均为 0。真实 OWIN 的 API Key、locale、导航和在线玩家 17 个场景在修复内联脚本 CSP、语言菜单关闭、详情内刷新与 alert 语义后均取得通过结果。Discord 与 GeoIP readiness API 可访问但当前未启用，因此未发送外部消息；未执行恢复、undo 或其他危险世界副作用。
+2026-07-31 当前工作树进一步完成世界恢复强确认、真实 timing evidence gate、undo preflight、Admin 的“撤销预检 → 强确认”闭环、Discord secret HTTP 和 GeoIP MMDB 路径传递；后端受影响组合 `158/158`、OpenAPI snapshot `1/1`、Admin World Tools 定向单元 `62/62`、typecheck 和生产构建通过。Admin 撤销界面不再接受手填 `changeSetId` 或 `currentRegionHash`，并覆盖来源变化清理、并发取消、哈希不匹配和运行时不可用阻断。真实 Windows 编排多次完成优雅关服、UNC 发布物清理/校验、启服和健康 200；最新日志中 7DPanel Mod 创建、类型加载和缺失程序集错误均为 0。真实 OWIN 的 API Key、locale、导航和在线玩家 17 个场景在修复内联脚本 CSP、语言菜单关闭、详情内刷新与 alert 语义后均取得通过结果。Discord 与 GeoIP readiness API 可访问但当前未启用，因此未发送外部消息；未执行恢复、undo 或其他危险世界副作用。
 
 2026-07-28 私人家体验对齐完成后，Debug 后端产品编译和 Admin typecheck 通过；`EconomyCommunityMigrationTests` 为 `3/3`，Community 命令聚焦测试为 `13/13`，OpenAPI snapshot 为 `1/1` 并完成客户端再生成。额外执行的聊天桥接组合过滤共 `15` 项，其中 `13` 项通过，另 `2` 项分别因测试进程未加载 `ModEvents+SChatMessageData` 和 Daily handler 集合断言为空而失败；未将其计为本次功能通过证据，也未扩大到全量测试或真实 7DTD。
 

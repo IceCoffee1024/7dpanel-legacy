@@ -30,7 +30,7 @@ const stubs = {
   UInput: { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' },
   UInputNumber: true,
   UModal: { template: '<section><slot name="body"/><slot name="footer"/></section>' },
-  USelect: true,
+  USelect: { props: ['modelValue', 'items'], emits: ['update:modelValue'], template: '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="item in items" :key="typeof item === \'string\' ? item : item.value" :value="typeof item === \'string\' ? item : item.value">{{ typeof item === \'string\' ? item : item.label }}</option></select>' },
   UTable: { template: '<table><slot name="empty"/></table>' },
 }
 
@@ -102,6 +102,90 @@ describe('worldOperationPanel', () => {
 
     expect(wrapper.text()).toContain('Owner')
     expect(wrapper.find('[data-testid="world-operation-form"]').exists()).toBe(false)
+  })
+
+  it('requires a matching server preflight and never exposes editable change-set or hash fields', async () => {
+    const wrapper = mount(WorldOperationPanel, {
+      props: {
+        summary,
+        canMutate: true,
+        submitting: false,
+        undoPreflightPhase: 'idle',
+        undoPreflight: null,
+      },
+      global: { stubs: nuxtUiStubs },
+    })
+    await wrapper.find('select').setValue('undoChangeSet')
+    const inputs = wrapper.findAll('input')
+    expect(inputs).toHaveLength(1)
+    await inputs[0]!.setValue('operation-source')
+    const checkButton = wrapper.find('[data-testid="check-undo-preflight"]')
+    const reviewButton = wrapper.find('[data-testid="review-world-operation"]')
+    expect(reviewButton.attributes('disabled')).toBeDefined()
+    await checkButton.trigger('click')
+    expect(wrapper.emitted('requestUndoPreflight')?.[0]).toEqual(['operation-source'])
+
+    await wrapper.setProps({
+      undoPreflightPhase: 'ready',
+      undoPreflight: {
+        sourceOperationId: 'operation-source',
+        changeSetId: 'changeset-from-server',
+        worldId: 'world-1',
+        worldVersion: 'world-v7',
+        afterHash: 'sha256:after',
+        currentRegionHash: 'sha256:current-from-server',
+        currentHashMatches: true,
+        status: 'ready',
+      },
+    })
+    expect(wrapper.find('[data-testid="undo-preflight-ready"]').text()).toContain('changeset-from-server')
+    expect(wrapper.findAll('input')).toHaveLength(1)
+    expect(reviewButton.attributes('disabled')).toBeUndefined()
+    await wrapper.find('form').trigger('submit')
+    const review = wrapper.emitted('review')?.[0]?.[0] as ReturnType<typeof createWorldOperationReview>
+    expect(review.submission).toEqual({
+      type: 'undoChangeSet',
+      request: {
+        worldId: 'world-1',
+        worldVersion: 'world-v7',
+        mapResourceVersion: 'map-v3',
+        confirmed: true,
+        strongConfirmed: true,
+        sourceOperationId: 'operation-source',
+        changeSetId: 'changeset-from-server',
+        currentRegionHash: 'sha256:current-from-server',
+      },
+    })
+  })
+
+  it('clears prior preflight when the source operation changes and blocks mismatches', async () => {
+    const wrapper = mount(WorldOperationPanel, {
+      props: {
+        summary,
+        canMutate: true,
+        submitting: false,
+        undoPreflightPhase: 'ready',
+        undoPreflight: {
+          sourceOperationId: 'operation-source',
+          changeSetId: 'changeset-1',
+          worldId: 'world-1',
+          worldVersion: 'world-v7',
+          afterHash: 'sha256:after',
+          currentRegionHash: 'sha256:different',
+          currentHashMatches: false,
+          status: 'undo_current_region_changed',
+        },
+      },
+      global: { stubs: nuxtUiStubs },
+    })
+    await wrapper.find('select').setValue('undoChangeSet')
+    const input = wrapper.find('input')
+    await input.setValue('operation-source')
+    expect(wrapper.text()).toContain('目标区域在源操作完成后已发生变化')
+    const reviewButton = wrapper.find('[data-testid="review-world-operation"]')
+    expect(reviewButton.attributes('disabled')).toBeDefined()
+    await input.setValue('operation-other')
+    expect(wrapper.emitted('clearUndoPreflight')!.length).toBeGreaterThan(0)
   })
 })
 

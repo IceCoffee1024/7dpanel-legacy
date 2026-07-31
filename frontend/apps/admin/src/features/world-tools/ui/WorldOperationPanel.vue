@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { WorldCatalog, WorldSummary } from '../api/worldTools'
+import type { UndoWorldChangeSetPreflight, WorldCatalog, WorldSummary } from '../api/worldTools'
 import type { WorldOperationReview } from '../model/worldOperationForm'
+import type { UndoPreflightErrorCode, UndoPreflightPhase } from '../model/useUndoPreflight'
 
-import { computed, reactive, shallowRef } from 'vue'
+import { computed, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   createInitialWorldOperationForm,
@@ -14,6 +15,9 @@ const props = withDefaults(defineProps<{
   summary: WorldSummary | null
   canMutate: boolean
   submitting: boolean
+  undoPreflightPhase?: UndoPreflightPhase
+  undoPreflight?: UndoWorldChangeSetPreflight | null
+  undoPreflightErrorCode?: UndoPreflightErrorCode | null
   blockCatalog?: WorldCatalog | null
   prefabCatalog?: WorldCatalog | null
   entityTypeCatalog?: WorldCatalog | null
@@ -21,8 +25,15 @@ const props = withDefaults(defineProps<{
   blockCatalog: null,
   prefabCatalog: null,
   entityTypeCatalog: null,
+  undoPreflightPhase: 'idle',
+  undoPreflight: null,
+  undoPreflightErrorCode: null,
 })
-const emit = defineEmits<{ review: [review: WorldOperationReview] }>()
+const emit = defineEmits<{
+  review: [review: WorldOperationReview]
+  requestUndoPreflight: [sourceOperationId: string]
+  clearUndoPreflight: []
+}>()
 const { t } = useI18n()
 const form = reactive(createInitialWorldOperationForm())
 const feedback = shallowRef<string | null>(null)
@@ -77,12 +88,67 @@ const snapshotReady = computed(() => props.summary !== null
   && (props.summary.sourceState === 'Success' || props.summary.sourceState === 'Partial')
   && props.summary.worldId !== null
   && props.summary.worldVersion !== null)
+const undoPreflightReady = computed(() => form.type !== 'undoChangeSet' || (
+  props.undoPreflightPhase === 'ready'
+  && props.undoPreflight?.status === 'ready'
+  && props.undoPreflight.currentHashMatches === true
+  && props.undoPreflight.currentRegionHash !== null
+  && props.undoPreflight.sourceOperationId === form.sourceOperationId.trim()
+  && props.undoPreflight.worldId === props.summary?.worldId
+  && props.undoPreflight.worldVersion === props.summary?.worldVersion
+))
+const undoPreflightDescription = computed(() => {
+  if (props.undoPreflightPhase === 'failed')
+    return t(`worldTools.operations.undoPreflight.errors.${props.undoPreflightErrorCode ?? 'unavailable'}`)
+  if (props.undoPreflightPhase !== 'ready' || props.undoPreflight === null)
+    return null
+  if (props.undoPreflight.worldId !== props.summary?.worldId || props.undoPreflight.worldVersion !== props.summary?.worldVersion)
+    return t('worldTools.operations.undoPreflight.worldChanged')
+  if (props.undoPreflight.currentHashMatches === false)
+    return t('worldTools.operations.undoPreflight.hashMismatch')
+  if (props.undoPreflight.currentHashMatches === null || props.undoPreflight.currentRegionHash === null)
+    return t('worldTools.operations.undoPreflight.runtimeUnavailable')
+  if (props.undoPreflight.status !== 'ready')
+    return t('worldTools.operations.undoPreflight.notReady', { status: props.undoPreflight.status })
+  return null
+})
+
+watch(() => form.sourceOperationId, () => {
+  form.changeSetId = ''
+  form.currentRegionHash = ''
+  feedback.value = null
+  emit('clearUndoPreflight')
+})
+
+watch(() => form.type, (type, previousType) => {
+  feedback.value = null
+  if (type === 'undoChangeSet' || previousType === 'undoChangeSet')
+    emit('clearUndoPreflight')
+})
+
+function requestUndoPreflight() {
+  feedback.value = null
+  const sourceOperationId = form.sourceOperationId.trim()
+  if (sourceOperationId === '') {
+    feedback.value = t('worldTools.operations.feedback.sourceOperationRequired')
+    return
+  }
+  emit('requestUndoPreflight', sourceOperationId)
+}
 
 function prepareReview() {
   feedback.value = null
   if (props.summary === null) {
     feedback.value = t('worldTools.operations.feedback.snapshotRequired')
     return
+  }
+  if (form.type === 'undoChangeSet') {
+    if (!undoPreflightReady.value || props.undoPreflight === null || props.undoPreflight.currentRegionHash === null) {
+      feedback.value = t('worldTools.operations.feedback.undoPreflightRequired')
+      return
+    }
+    form.changeSetId = props.undoPreflight.changeSetId
+    form.currentRegionHash = props.undoPreflight.currentRegionHash
   }
   if (needsCatalog.value) {
     if (activeCatalog.value?.catalogVersion === null || activeCatalog.value?.catalogVersion === undefined) {
@@ -278,12 +344,36 @@ function prepareReview() {
         <UFormField :label="t('worldTools.operations.fields.sourceOperationId')" required>
           <UInput v-model="form.sourceOperationId" class="w-full" />
         </UFormField>
-        <UFormField :label="t('worldTools.operations.fields.changeSetId')" required>
-          <UInput v-model="form.changeSetId" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('worldTools.operations.fields.currentRegionHash')" required>
-          <UInput v-model="form.currentRegionHash" class="w-full" />
-        </UFormField>
+        <div>
+          <UButton
+            data-testid="check-undo-preflight"
+            type="button"
+            color="neutral"
+            icon="i-lucide-shield-check"
+            :label="t('worldTools.operations.undoPreflight.check')"
+            :disabled="form.sourceOperationId.trim() === '' || props.undoPreflightPhase === 'loading'"
+            :loading="props.undoPreflightPhase === 'loading'"
+            variant="outline"
+            @click="requestUndoPreflight"
+          />
+        </div>
+        <UAlert
+          v-if="undoPreflightDescription"
+          color="warning"
+          icon="i-lucide-triangle-alert"
+          :title="t('worldTools.operations.undoPreflight.blocked')"
+          :description="undoPreflightDescription"
+          variant="subtle"
+        />
+        <div
+          v-else-if="undoPreflightReady && props.undoPreflight"
+          data-testid="undo-preflight-ready"
+          class="grid gap-2 rounded-lg border border-success/30 bg-success/5 p-3 text-sm sm:grid-cols-3"
+        >
+          <div><span class="text-muted">{{ t('worldTools.operations.fields.changeSetId') }}</span><br>{{ props.undoPreflight.changeSetId }}</div>
+          <div><span class="text-muted">{{ t('worldTools.operations.undoPreflight.world') }}</span><br>{{ props.undoPreflight.worldId }} / {{ props.undoPreflight.worldVersion }}</div>
+          <div><span class="text-muted">{{ t('worldTools.operations.undoPreflight.hashStatus') }}</span><br>{{ t('worldTools.operations.undoPreflight.matched') }}</div>
+        </div>
       </div>
 
       <fieldset v-if="needsMapBounds" class="space-y-3">
@@ -316,11 +406,12 @@ function prepareReview() {
       />
       <div class="flex justify-end">
         <UButton
+          data-testid="review-world-operation"
           type="submit"
           color="warning"
           icon="i-lucide-shield-alert"
           :label="t('worldTools.operations.review')"
-          :disabled="!snapshotReady || props.submitting"
+          :disabled="!snapshotReady || props.submitting || !undoPreflightReady"
           :loading="props.submitting"
         />
       </div>

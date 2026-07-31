@@ -245,6 +245,17 @@ export interface UndoWorldChangeSetRequest extends StrongConfirmedWorldRequest {
   currentRegionHash: string
 }
 
+export interface UndoWorldChangeSetPreflight {
+  sourceOperationId: string
+  changeSetId: string
+  worldId: string
+  worldVersion: string
+  afterHash: string
+  currentRegionHash: string | null
+  currentHashMatches: boolean | null
+  status: string
+}
+
 export interface RefreshMapResourcesRequest extends ConfirmedWorldRequest { bounds: WorldMapBoundsRequest | null }
 export interface RenderExploredMapRequest extends ConfirmedWorldRequest { bounds: WorldMapBoundsRequest | null }
 export interface RenderFullMapRequest extends StrongConfirmedWorldRequest { bounds: WorldMapBoundsRequest | null }
@@ -583,6 +594,20 @@ export function parseWorldOperation(value: unknown): WorldOperationRecord {
   })
 }
 
+export function parseUndoWorldChangeSetPreflight(value: unknown): UndoWorldChangeSetPreflight {
+  const source = record(value, 'Invalid undo preflight response')
+  return Object.freeze({
+    sourceOperationId: text(source.sourceOperationId, 'Invalid undo preflight response'),
+    changeSetId: text(source.changeSetId, 'Invalid undo preflight response'),
+    worldId: text(source.worldId, 'Invalid undo preflight response'),
+    worldVersion: text(source.worldVersion, 'Invalid undo preflight response'),
+    afterHash: text(source.afterHash, 'Invalid undo preflight response'),
+    currentRegionHash: nullableText(source.currentRegionHash),
+    currentHashMatches: nullableBoolean(source.currentHashMatches),
+    status: text(source.status, 'Invalid undo preflight response'),
+  })
+}
+
 function get<T>(path: string, authorizationHeader: string, parser: (value: unknown) => T, signal?: AbortSignal): Promise<T> {
   return requestJson<unknown>(path, { headers: { Authorization: authorizationHeader }, signal }).then(parser)
 }
@@ -610,6 +635,19 @@ export function fetchWorldPrefabCatalog(authorizationHeader: string, signal?: Ab
 }
 export function fetchWorldEntityTypeCatalog(authorizationHeader: string, signal?: AbortSignal) {
   return get('/api/v1/world/catalogs/entity-types', authorizationHeader, parseCatalog, signal)
+}
+
+export function fetchUndoWorldChangeSetPreflight(
+  authorizationHeader: string,
+  operationId: string,
+  signal?: AbortSignal,
+) {
+  return get(
+    `/api/v1/world-operations/${encodeURIComponent(operationId)}/undo-preflight`,
+    authorizationHeader,
+    parseUndoWorldChangeSetPreflight,
+    signal,
+  )
 }
 
 export const worldResourcesTransport: WorldResourcesTransport = Object.freeze({

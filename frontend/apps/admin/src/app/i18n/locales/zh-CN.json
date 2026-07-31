@@ -2045,7 +2045,28 @@
       "feedback": {
         "snapshotRequired": "需要当前世界快照。",
         "catalogUnavailable": "所需的已批准资源目录不可用。",
-        "invalidForm": "操作表单无效。"
+        "invalidForm": "操作表单无效。",
+        "sourceOperationRequired": "请输入源操作 ID。",
+        "undoPreflightRequired": "必须先完成撤销条件检查，并确认当前区域未发生变化。"
+      },
+      "undoPreflight": {
+        "check": "检查撤销条件",
+        "blocked": "当前不能撤销",
+        "world": "世界 / 版本",
+        "hashStatus": "区域状态",
+        "matched": "与变更后状态一致",
+        "worldChanged": "预检对应的世界或版本与当前快照不一致，请刷新后重新检查。",
+        "hashMismatch": "目标区域在源操作完成后已发生变化，不能安全撤销。",
+        "runtimeUnavailable": "游戏运行时当前无法读取目标区域哈希，不能安全撤销。",
+        "notReady": "服务端未允许撤销（{status}）。",
+        "errors": {
+          "session-expired": "会话已过期，请重新登录。",
+          "forbidden": "当前账号无权检查撤销条件。",
+          "not-found": "未找到源操作。",
+          "conflict": "源操作当前不满足撤销条件，可能已撤销、过期或记录不完整。",
+          "invalid-response": "服务端返回的撤销预检数据无效。",
+          "unavailable": "撤销预检服务暂时不可用。"
+        }
       },
       "types": {
         "deleteLandClaim": "删除领地石",

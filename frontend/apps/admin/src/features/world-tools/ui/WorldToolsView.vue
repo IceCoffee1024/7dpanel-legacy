@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '../../auth'
+import { useUndoPreflight } from '../model/useUndoPreflight'
 import { useWorldOperations } from '../model/useWorldOperations'
 import { useWorldResources } from '../model/useWorldResources'
 import WorldOperationConfirmDialog from './WorldOperationConfirmDialog.vue'
@@ -47,6 +48,7 @@ const operations = useWorldOperations({
   onSessionExpired: handleSessionExpired,
   replaceOperationId,
 })
+const undoPreflight = useUndoPreflight({ onSessionExpired: handleSessionExpired })
 
 function operationIdFromQuery(value: unknown): string | null {
   if (typeof value === 'string' && value.trim() !== '')
@@ -155,10 +157,15 @@ onMounted(() => {
                 :summary="resources.summary.value.data"
                 :can-mutate="operations.canMutate.value"
                 :submitting="operations.state.value === 'submitting'"
+                :undo-preflight-phase="undoPreflight.phase.value"
+                :undo-preflight="undoPreflight.data.value"
+                :undo-preflight-error-code="undoPreflight.errorCode.value"
                 :block-catalog="resources.blockCatalog.value.data"
                 :prefab-catalog="resources.prefabCatalog.value.data"
                 :entity-type-catalog="resources.entityTypeCatalog.value.data"
                 @review="reviewOperation"
+                @request-undo-preflight="undoPreflight.load"
+                @clear-undo-preflight="undoPreflight.clear"
               />
               <WorldOperationHistory
                 :operation="operations.operation.value"

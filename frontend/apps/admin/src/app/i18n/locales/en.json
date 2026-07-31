@@ -2045,7 +2045,28 @@
       "feedback": {
         "snapshotRequired": "A current world snapshot is required.",
         "catalogUnavailable": "The required approved resource catalog is unavailable.",
-        "invalidForm": "The operation form is invalid."
+        "invalidForm": "The operation form is invalid.",
+        "sourceOperationRequired": "Enter the source operation ID.",
+        "undoPreflightRequired": "Check undo conditions first and verify that the current region has not changed."
+      },
+      "undoPreflight": {
+        "check": "Check undo conditions",
+        "blocked": "Undo is currently blocked",
+        "world": "World / version",
+        "hashStatus": "Region status",
+        "matched": "Matches the post-change state",
+        "worldChanged": "The preflight world or version differs from the current snapshot. Refresh and check again.",
+        "hashMismatch": "The target region changed after the source operation and cannot be safely undone.",
+        "runtimeUnavailable": "The game runtime cannot currently read the target region hash, so undo is blocked.",
+        "notReady": "The server did not allow undo ({status}).",
+        "errors": {
+          "session-expired": "The session expired. Sign in again.",
+          "forbidden": "This account cannot check undo conditions.",
+          "not-found": "The source operation was not found.",
+          "conflict": "The source operation cannot be undone. It may already be undone, expired, or incomplete.",
+          "invalid-response": "The server returned invalid undo preflight data.",
+          "unavailable": "The undo preflight service is temporarily unavailable."
+        }
       },
       "types": {
         "deleteLandClaim": "Delete land claim",

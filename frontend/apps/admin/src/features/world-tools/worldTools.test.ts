@@ -1,4 +1,5 @@
 import type {
+  UndoWorldChangeSetPreflight,
   WorldOperationRecord,
   WorldOperationSubmission,
   WorldResourcesTransport,
@@ -9,10 +10,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, isReadonly } from 'vue'
 
 import {
+  fetchUndoWorldChangeSetPreflight,
+  parseUndoWorldChangeSetPreflight,
   parseWorldOperation,
   parseWorldSummary,
   submitWorldOperation,
 } from './api/worldTools'
+import { HttpError } from '../../shared/api/http'
+import { useUndoPreflight } from './model/useUndoPreflight'
 import { useWorldOperations } from './model/useWorldOperations'
 import { useWorldResources } from './model/useWorldResources'
 import {
@@ -116,6 +121,29 @@ function mountOperations(options: Parameters<typeof useWorldOperations>[0]) {
   return { controller: () => controller, wrapper }
 }
 
+function mountUndoPreflight(options: Parameters<typeof useUndoPreflight>[0]) {
+  let controller!: ReturnType<typeof useUndoPreflight>
+  const Host = defineComponent({
+    setup() {
+      controller = useUndoPreflight(options)
+      return () => null
+    },
+  })
+  const wrapper = mount(Host)
+  return { controller: () => controller, wrapper }
+}
+
+const readyPreflight: UndoWorldChangeSetPreflight = {
+  sourceOperationId: 'operation-source',
+  changeSetId: 'changeset-1',
+  worldId: 'world-1',
+  worldVersion: 'world-v7',
+  afterHash: 'sha256:after',
+  currentRegionHash: 'sha256:current',
+  currentHashMatches: true,
+  status: 'ready',
+}
+
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
@@ -171,6 +199,31 @@ describe('world-tools transport', () => {
     'parses the %s operation state without collapsing it',
     status => expect(parseWorldOperation(operation(status))).toMatchObject({ status }),
   )
+
+  it('strictly parses undo preflight and keeps current hash distinct from the recorded after hash', () => {
+    expect(parseUndoWorldChangeSetPreflight(readyPreflight)).toEqual(readyPreflight)
+    expect(parseUndoWorldChangeSetPreflight(readyPreflight).currentRegionHash).not.toBe(readyPreflight.afterHash)
+    expect(() => parseUndoWorldChangeSetPreflight({ ...readyPreflight, currentHashMatches: 'true' })).toThrow()
+    expect(() => parseUndoWorldChangeSetPreflight({ ...readyPreflight, status: '' })).toThrow()
+    expect(() => parseUndoWorldChangeSetPreflight({ ...readyPreflight, changeSetId: null })).toThrow()
+  })
+
+  it('requests encoded undo preflight with authorization and caller cancellation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(readyPreflight), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+
+    await fetchUndoWorldChangeSetPreflight(authorization, 'source/1', controller.signal)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(path).toBe('/api/v1/world-operations/source%2F1/undo-preflight')
+    expect(init.headers).toEqual({ Authorization: authorization })
+    expect(init.signal).toBeInstanceOf(AbortSignal)
+  })
 })
 
 describe('world operation form mapping', () => {
@@ -315,6 +368,54 @@ describe('useWorldOperations', () => {
     expect(fetchOperation).toHaveBeenCalledWith(authorization, 'operation-restored', expect.any(AbortSignal))
     mounted.wrapper.unmount()
     expect(requestSignal?.aborted).toBe(true)
+  })
+})
+
+describe('useUndoPreflight', () => {
+  it('publishes only the latest successful preflight and aborts the replaced request', async () => {
+    let firstSignal: AbortSignal | undefined
+    let resolveFirst!: (value: UndoWorldChangeSetPreflight) => void
+    const fetchPreflight = vi.fn()
+      .mockImplementationOnce((_header: string, _id: string, signal?: AbortSignal) => {
+        firstSignal = signal
+        return new Promise<UndoWorldChangeSetPreflight>((resolve) => { resolveFirst = resolve })
+      })
+      .mockResolvedValueOnce({ ...readyPreflight, sourceOperationId: 'operation-new' })
+    const mounted = mountUndoPreflight({
+      auth: { authorizationHeader: authorization, expireSession: vi.fn() },
+      fetchPreflight,
+    })
+
+    void mounted.controller().load('operation-old')
+    await mounted.controller().load('operation-new')
+    resolveFirst({ ...readyPreflight, sourceOperationId: 'operation-old' })
+    await flushPromises()
+
+    expect(firstSignal?.aborted).toBe(true)
+    expect(mounted.controller().data.value?.sourceOperationId).toBe('operation-new')
+    expect(mounted.controller().phase.value).toBe('ready')
+    mounted.wrapper.unmount()
+  })
+
+  it('classifies conflicts and expires a 401 session', async () => {
+    const expireSession = vi.fn()
+    const onSessionExpired = vi.fn()
+    const fetchPreflight = vi.fn()
+      .mockRejectedValueOnce(new HttpError('http', 'conflict', { status: 409 }))
+      .mockRejectedValueOnce(new HttpError('http', 'expired', { status: 401 }))
+    const mounted = mountUndoPreflight({
+      auth: { authorizationHeader: authorization, expireSession },
+      fetchPreflight,
+      onSessionExpired,
+    })
+
+    await mounted.controller().load('operation-conflict')
+    expect(mounted.controller().errorCode.value).toBe('conflict')
+    await mounted.controller().load('operation-expired')
+    expect(mounted.controller().errorCode.value).toBe('session-expired')
+    expect(expireSession).toHaveBeenCalledTimes(1)
+    expect(onSessionExpired).toHaveBeenCalledTimes(1)
+    mounted.wrapper.unmount()
   })
 })
 
