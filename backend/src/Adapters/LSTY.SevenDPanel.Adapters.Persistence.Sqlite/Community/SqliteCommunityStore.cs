@@ -289,10 +289,11 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             return ToSettings(stored);
         }
 
-        public PlayerHome SaveHome(PlayerHome home, int maxHomes)
+        public PlayerHome SaveHome(PlayerHome home, int maxHomes, long? expectedRowVersion)
         {
             if (home == null) throw new ArgumentNullException(nameof(home));
             if (maxHomes < 0) throw new ArgumentOutOfRangeException(nameof(maxHomes));
+            if (expectedRowVersion < 0) throw new ArgumentOutOfRangeException(nameof(expectedRowVersion));
             using var connection = connectionFactory.Open();
             using var transaction = connection.BeginTransaction(deferred: false);
             var existingById = connection.QuerySingleOrDefault<HomeRow>(
@@ -304,6 +305,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             {
                 throw new CommunityConflictException();
             }
+            if ((existingById == null) != (expectedRowVersion == null))
+                throw new CommunityConflictException();
             var nameOwner = connection.QuerySingleOrDefault<HomeRow>(
                 HomeSelect + " WHERE crossplatform_id = @CrossplatformId AND name = @Name;",
                 new { home.CrossplatformId, home.Name },
@@ -316,7 +319,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 transaction);
             if (count >= maxHomes) throw new CommunityLimitExceededException();
 
-            if (existingById == null)
+            if (expectedRowVersion == null)
             {
                 connection.Execute(
                     @"INSERT INTO player_homes (
@@ -334,8 +337,19 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                       SET name = @Name, world_id = @WorldId, x = @X, y = @Y, z = @Z,
                           yaw = @Yaw, updated_at_utc = @UpdatedAtUtc,
                           row_version = row_version + 1
-                      WHERE home_id = @HomeId AND row_version = @RowVersion;",
-                    HomeParameters(home),
+                      WHERE home_id = @HomeId AND row_version = @ExpectedRowVersion;",
+                    new
+                    {
+                        home.HomeId,
+                        home.Name,
+                        WorldId = home.Position.WorldId,
+                        home.Position.X,
+                        home.Position.Y,
+                        home.Position.Z,
+                        home.Position.Yaw,
+                        UpdatedAtUtc = home.UpdatedAtUtc.ToUnixTimeMilliseconds(),
+                        ExpectedRowVersion = expectedRowVersion.Value
+                    },
                     transaction);
                 if (changed != 1) throw new CommunityConflictException();
             }

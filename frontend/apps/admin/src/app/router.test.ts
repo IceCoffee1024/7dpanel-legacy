@@ -13,8 +13,8 @@ vi.mock('vue-router/auto-routes', () => ({
     { path: '/players', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/game-resources', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/players/map', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true } },
+    { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
+    { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
     { path: '/players/profile/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
     { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
     { path: '/console-logs', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner', 'Admin'] } },
@@ -224,12 +224,21 @@ describe('createAdminRouter', () => {
       .toBe('/login?redirect=/players/history/EOS_0002d12af0fe4add9c7de0fbc238d431')
   })
 
-  it('allows authenticated navigation to the history list', async () => {
+  it('allows Owner navigation to the history list', async () => {
     const { pinia, router } = createTestRouter()
-    authenticate(pinia)
+    authenticateAs(pinia, 'Owner')
     await router.push('/players/history')
 
     expect(router.currentRoute.value.fullPath).toBe('/players/history')
+  })
+
+  it.each(['Admin', 'Viewer'] as const)('sends %s history deep links to Forbidden', async (role) => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, role)
+
+    await router.push('/players/history/EOS_ada')
+
+    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/players/history/EOS_ada')
   })
 
   it('allows Owner to open a player profile deep link', async () => {

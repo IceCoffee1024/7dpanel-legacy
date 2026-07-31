@@ -40,14 +40,15 @@ namespace LSTY.SevenDPanel.Application.Community
             var existing = store.FindHome(player.CrossplatformId, name);
             return store.SaveHome(
                 new PlayerHome(
-                    homeId,
+                    existing?.HomeId ?? homeId,
                     player.CrossplatformId,
                     name,
                     player.Position,
                     existing?.CreatedAtUtc ?? now,
                     now,
                     existing?.RowVersion ?? 0),
-                settings.MaxHomes ?? int.MaxValue);
+                settings.MaxHomes ?? int.MaxValue,
+                existing?.RowVersion);
         }
 
         public IReadOnlyList<PlayerHome> List(string crossplatformId) =>

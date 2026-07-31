@@ -123,7 +123,7 @@ const navigation = computed<NavigationMenuItem[]>(() => [
     defaultOpen: isNavigationGroupActive(playerAndWorldNavigation.value),
   },
   {
-    label: 'API Keys',
+    label: t('apiKeys.title'),
     icon: 'i-lucide-key-round',
     to: '/api-keys',
     onSelect: () => {
@@ -229,7 +229,7 @@ const searchGroups = computed(() => [{
     }),
     ...playerAndWorldNavigation.value.map(createSearchItem),
     createSearchItem({
-      label: 'API Keys',
+      label: t('apiKeys.title'),
       icon: 'i-lucide-key-round',
       to: '/api-keys',
     }),

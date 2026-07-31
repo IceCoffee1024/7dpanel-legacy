@@ -16,7 +16,7 @@ namespace LSTY.SevenDPanel.Application.Community
         TeleportSettings GetTeleportSettings(TeleportKind kind);
         TeleportSettings SaveTeleportSettings(TeleportSettings settings);
 
-        PlayerHome SaveHome(PlayerHome home, int maxHomes);
+        PlayerHome SaveHome(PlayerHome home, int maxHomes, long? expectedRowVersion);
         IReadOnlyList<PlayerHome> ListHomes(string crossplatformId);
         PlayerHome? FindHome(string crossplatformId, string name);
         bool DeleteHome(string crossplatformId, string name);

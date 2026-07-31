@@ -43,10 +43,7 @@ const selectedBrowser = {
   baseURL,
   channel: selectedBrowserChannel,
 }
-const mockBrowser = {
-  ...selectedBrowser,
-  baseURL: localAdminUrl,
-}
+const ownerWaveMatrixTest = '**/admin-owner-waves.spec.ts'
 
 export default defineConfig({
   outputDir: './node_modules/.cache/playwright/test-results',
@@ -62,19 +59,41 @@ export default defineConfig({
       use: selectedBrowser,
     },
     {
-      name: `${browserChannels[selectedBrowserChannel]} - mock desktop`,
+      name: 'Chromium - mock desktop',
       testDir: './e2e',
       use: {
-        ...mockBrowser,
+        ...devices['Desktop Chrome'],
+        baseURL: localAdminUrl,
         viewport: { width: 1280, height: 900 },
       },
     },
     {
-      name: `${browserChannels[selectedBrowserChannel]} - mock 390x844`,
+      name: 'Firefox - mock desktop',
+      testDir: './e2e',
+      testMatch: ownerWaveMatrixTest,
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: localAdminUrl,
+        viewport: { width: 1280, height: 900 },
+      },
+    },
+    {
+      name: 'WebKit - mock desktop',
+      testDir: './e2e',
+      testMatch: ownerWaveMatrixTest,
+      use: {
+        ...devices['Desktop Safari'],
+        baseURL: localAdminUrl,
+        viewport: { width: 1280, height: 900 },
+      },
+    },
+    {
+      name: 'Chromium - mock 390x844',
       testDir: './e2e',
       testIgnore: '**/admin-auth.spec.ts',
       use: {
-        ...mockBrowser,
+        ...devices['Desktop Chrome'],
+        baseURL: localAdminUrl,
         viewport: { width: 390, height: 844 },
       },
     },

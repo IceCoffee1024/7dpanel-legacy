@@ -1,5 +1,5 @@
 <route lang="json">
-{ "meta": { "requiresAuth": true } }
+{ "meta": { "requiresAuth": true, "roles": ["Owner"] } }
 </route>
 
 <script setup lang="ts">

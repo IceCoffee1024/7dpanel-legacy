@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -357,7 +356,7 @@ namespace LSTY.SevenDPanel.Application.Community
                 {
                     var operationId = Id("home-save");
                     var home = homes.SaveFromPlayerCommand(
-                        StableHomeId(context.CrossplatformId, homeName),
+                        operationId + ":home",
                         homeName,
                         player.Player,
                         operationId);
@@ -564,17 +563,6 @@ namespace LSTY.SevenDPanel.Application.Community
                 if (string.IsNullOrWhiteSpace(value))
                     throw new InvalidOperationException("community_game_command_id_unavailable");
                 return "community-" + kind + "-" + value.Trim();
-            }
-
-            private static string StableHomeId(string crossplatformId, string homeName)
-            {
-                using var sha256 = SHA256.Create();
-                var digest = sha256.ComputeHash(Encoding.UTF8.GetBytes(
-                    crossplatformId + "\n" + homeName));
-                var builder = new StringBuilder("home-");
-                for (var index = 0; index < 16; index++)
-                    builder.Append(digest[index].ToString("x2", CultureInfo.InvariantCulture));
-                return builder.ToString();
             }
 
             private static string SnakeCase<T>(T value) where T : struct, Enum

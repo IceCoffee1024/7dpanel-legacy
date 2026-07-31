@@ -83,15 +83,18 @@ namespace LSTY.SevenDPanel.Tests
             store.SaveTeleportSettings(Settings(TeleportKind.Home, maxHomes: 1));
             var first = store.SaveHome(
                 new PlayerHome("home-1", "EOS-A", "Base", Position(10, 70, 20), Now, Now, 0),
-                1);
+                1,
+                null);
 
             Assert.Equal("Base", first.Name);
             Assert.Throws<CommunityLimitExceededException>(() => store.SaveHome(
                 new PlayerHome("home-2", "EOS-A", "Mine", Position(20, 70, 20), Now, Now, 0),
-                1));
+                1,
+                null));
             Assert.Throws<CommunityConflictException>(() => store.SaveHome(
                 new PlayerHome("home-3", "EOS-A", "base", Position(30, 70, 20), Now, Now, 0),
-                2));
+                2,
+                null));
 
             store.SaveCity(new City(
                 "city-1", "Trader", "Public trader", false, Position(40, 70, 20), 0, Now, Now, 0));
@@ -134,7 +137,8 @@ namespace LSTY.SevenDPanel.Tests
             var store = new SqliteCommunityStore(database.Factory);
             var created = store.SaveHome(
                 new PlayerHome("home-1", "EOS-A", "Base", Position(10, 70, 20), Now, Now, 0),
-                2);
+                2,
+                null);
             var firstWriter = new PlayerHome(
                 created.HomeId, created.CrossplatformId, created.Name, Position(30, 70, 40),
                 created.CreatedAtUtc, Now.AddSeconds(1), created.RowVersion);
@@ -142,8 +146,9 @@ namespace LSTY.SevenDPanel.Tests
                 created.HomeId, created.CrossplatformId, created.Name, Position(50, 70, 60),
                 created.CreatedAtUtc, Now.AddSeconds(2), created.RowVersion);
 
-            var updated = store.SaveHome(firstWriter, 2);
-            var conflict = Assert.Throws<CommunityConflictException>(() => store.SaveHome(staleWriter, 2));
+            var updated = store.SaveHome(firstWriter, 2, created.RowVersion);
+            var conflict = Assert.Throws<CommunityConflictException>(() =>
+                store.SaveHome(staleWriter, 2, created.RowVersion));
 
             Assert.Equal("community_conflict", conflict.Code);
             Assert.Equal(1, updated.RowVersion);
@@ -151,6 +156,64 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(updated.RowVersion, persisted.RowVersion);
             Assert.Equal(30, persisted.Position.X);
             Assert.Equal(40, persisted.Position.Z);
+        }
+
+        [Fact]
+        public void Home_delete_allows_a_new_incarnation_but_rejects_a_stale_writer()
+        {
+            using var database = new TemporaryDatabase();
+            var store = new SqliteCommunityStore(database.Factory);
+            var created = store.SaveHome(
+                new PlayerHome("home-1", "EOS-A", "Base", Position(10, 70, 20), Now, Now, 0),
+                2,
+                null);
+            var staleWriter = new PlayerHome(
+                created.HomeId, created.CrossplatformId, created.Name, Position(30, 70, 40),
+                created.CreatedAtUtc, Now.AddSeconds(2), created.RowVersion);
+
+            Assert.True(store.DeleteHome("EOS-A", "Base"));
+            var recreated = store.SaveHome(
+                new PlayerHome(
+                    "home-2",
+                    created.CrossplatformId,
+                    created.Name,
+                    Position(50, 70, 60),
+                    Now.AddSeconds(1),
+                    Now.AddSeconds(1),
+                    0),
+                2,
+                null);
+            var conflict = Assert.Throws<CommunityConflictException>(() =>
+                store.SaveHome(staleWriter, 2, created.RowVersion));
+
+            Assert.Equal("community_conflict", conflict.Code);
+            Assert.Equal(0, recreated.RowVersion);
+            Assert.NotEqual(created.HomeId, recreated.HomeId);
+            Assert.Equal(Now.AddSeconds(1), recreated.CreatedAtUtc);
+            var persisted = Assert.IsType<PlayerHome>(store.FindHome("EOS-A", "Base"));
+            Assert.Equal(50, persisted.Position.X);
+            Assert.Equal(60, persisted.Position.Z);
+        }
+
+        [Fact]
+        public void Home_delete_rejects_a_stale_writer_instead_of_resurrecting_it()
+        {
+            using var database = new TemporaryDatabase();
+            var store = new SqliteCommunityStore(database.Factory);
+            var created = store.SaveHome(
+                new PlayerHome("home-1", "EOS-A", "Base", Position(10, 70, 20), Now, Now, 0),
+                2,
+                null);
+            var staleWriter = new PlayerHome(
+                created.HomeId, created.CrossplatformId, created.Name, Position(30, 70, 40),
+                created.CreatedAtUtc, Now.AddSeconds(1), created.RowVersion);
+
+            Assert.True(store.DeleteHome("EOS-A", "Base"));
+            var conflict = Assert.Throws<CommunityConflictException>(() =>
+                store.SaveHome(staleWriter, 2, created.RowVersion));
+
+            Assert.Equal("community_conflict", conflict.Code);
+            Assert.Null(store.FindHome("EOS-A", "Base"));
         }
 
         [Fact]
@@ -195,7 +258,8 @@ namespace LSTY.SevenDPanel.Tests
                 globalCooldown: TimeSpan.FromMinutes(1)));
             community.SaveHome(
                 new PlayerHome("home-1", "EOS-A", "Base", Position(100, 70, 200), Now, Now, 0),
-                3);
+                3,
+                null);
             var gateway = new RecordingGateway(TeleportActionResult.Succeeded(Position(1, 65, 2)));
             var useCases = new TeleportUseCases(
                 community,

@@ -522,7 +522,7 @@ namespace LSTY.SevenDPanel.Tests
                 return saved;
             }
 
-            public PlayerHome SaveHome(PlayerHome home, int maxHomes)
+            public PlayerHome SaveHome(PlayerHome home, int maxHomes, long? expectedRowVersion)
             {
                 homes.RemoveAll(value => string.Equals(value.HomeId, home.HomeId, StringComparison.Ordinal));
                 homes.Add(home);

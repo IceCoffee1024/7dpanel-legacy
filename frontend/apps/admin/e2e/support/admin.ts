@@ -2,6 +2,11 @@ import type { ConsoleMessage, Page } from '@playwright/test'
 
 export type AdminRole = 'Owner' | 'Admin' | 'Viewer'
 
+export interface OwnerWave {
+  readonly wave: 1 | 2 | 3 | 4 | 5 | 6
+  readonly routes: readonly string[]
+}
+
 const authSessionStorageKey = '7dpanel.auth.session.v1'
 
 export const ownerNavigationRoutes = [
@@ -48,8 +53,47 @@ export const majorAdminRoutes = [
   '/players/profile/EOS_browser_smoke',
 ] as const
 
+export const ownerWaves: readonly OwnerWave[] = [
+  {
+    wave: 1,
+    routes: [
+      '/audit',
+      '/game-chat/live',
+      '/game-chat/history',
+      '/game-chat/mutes',
+      '/game-chat/settings',
+      '/game-chat/colored',
+    ],
+  },
+  { wave: 2, routes: ['/backups', '/schedules'] },
+  { wave: 3, routes: ['/players/profile/EOS_browser_smoke'] },
+  {
+    wave: 4,
+    routes: [
+      '/economy/accounts',
+      '/economy/transactions',
+      '/economy/reward-packages',
+      '/economy/daily-reward',
+      '/economy/reward-operations',
+      '/economy/shop',
+      '/economy/redeem-codes',
+      '/economy/achievement-online-rewards',
+      '/community/teleport',
+      '/community/cities',
+      '/community/votes',
+    ],
+  },
+  {
+    wave: 5,
+    routes: ['/automation', '/integrations/discord', '/integrations/geoip'],
+  },
+  { wave: 6, routes: ['/world-tools', '/modules'] },
+] as const
+
 export const ownerOnlyRoutes = [
   '/players/map',
+  '/players/history',
+  '/players/history/EOS_browser_smoke',
   '/players/profile/EOS_browser_smoke',
   '/game-chat/live',
   '/game-chat/history',
@@ -82,8 +126,6 @@ export const ownerOnlyRoutes = [
 export const sharedAuthenticatedRoutes = [
   '/',
   '/players',
-  '/players/history',
-  '/players/history/EOS_browser_smoke',
   '/game-resources',
   '/api-keys',
   '/access-lists',
