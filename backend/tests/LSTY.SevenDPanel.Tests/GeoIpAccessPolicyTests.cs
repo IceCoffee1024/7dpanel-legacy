@@ -399,6 +399,91 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task MaxMind_timeout_is_failure_cached_and_drives_fail_open_or_fail_closed_without_requery()
+        {
+            var store = new MemoryGeoIpStore
+            {
+                Settings = Settings(
+                    GeoIpFailureMode.FailOpen,
+                    provider: GeoIpProviderNames.MaxMindWebService)
+            };
+            SetMaxMindCredentials(store);
+            var transportCalls = 0;
+            using var cachePersisted = new ManualResetEventSlim(false);
+            store.CacheEntryCountChanged = _ => cachePersisted.Set();
+            using var provider = new MaxMindWebServiceGeoIpProvider(
+                store,
+                () => new DelegateHttpMessageHandler((_, _) =>
+                {
+                    Interlocked.Increment(ref transportCalls);
+                    return Task.FromException<HttpResponseMessage>(
+                        new TaskCanceledException("transport-timeout-secret"));
+                }));
+            using var worker = new GeoIpRefreshWorker(
+                store,
+                new[] { provider },
+                failureTtl: TimeSpan.FromMinutes(2),
+                drainTimeout: TimeSpan.FromSeconds(2),
+                utcClock: () => Now);
+            worker.Start();
+
+            Assert.True(worker.TryWrite(Request("203.0.113.50")));
+            Assert.True(cachePersisted.Wait(
+                TimeSpan.FromSeconds(2),
+                TestContext.Current.CancellationToken));
+            worker.Stop();
+
+            var cached = Assert.Single(store.CacheEntries);
+            Assert.Equal(GeoIpLookupStatus.Unavailable.ToString(), cached.LookupStatus);
+            Assert.Equal(Now.AddMinutes(2), cached.ExpiresAtUtc);
+            var refreshQueue = new RecordingRefreshQueue();
+            var useCase = new EvaluateGeoIpJoinUseCase(
+                store,
+                new GeoIpPolicyEvaluator(),
+                refreshQueue,
+                () => Now);
+
+            var failOpen = useCase.Execute(
+                new GeoIpJoinAttempt("203.0.113.50", null, false));
+            store.Settings = store.Settings! with { FailureMode = GeoIpFailureMode.FailClosed };
+            var failClosed = useCase.Execute(
+                new GeoIpJoinAttempt("203.0.113.50", null, false));
+
+            Assert.True(failOpen.IsAllowed);
+            Assert.False(failClosed.IsAllowed);
+            Assert.True(failOpen.WasCacheHit);
+            Assert.True(failClosed.WasCacheHit);
+            Assert.Empty(refreshQueue.Requests);
+            Assert.Equal(1, Volatile.Read(ref transportCalls));
+            Assert.DoesNotContain("transport-timeout-secret", cached.ToString(), StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task MaxMind_http_rejection_is_typed_as_transport_unavailable()
+        {
+            var store = new MemoryGeoIpStore();
+            SetMaxMindCredentials(store);
+            using var provider = new MaxMindWebServiceGeoIpProvider(
+                store,
+                () => new DelegateHttpMessageHandler((_, _) => Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                    {
+                        Content = new StringContent(
+                            "{\"code\":\"SERVER_ERROR\",\"error\":\"response-secret\"}",
+                            Encoding.UTF8,
+                            "application/json")
+                    })));
+
+            var result = await provider.LookupAsync(
+                "203.0.113.51",
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(GeoIpLookupStatus.Unavailable, result.Status);
+            Assert.Equal(GeoIpLookupFailure.Http, result.Failure);
+            Assert.DoesNotContain("response-secret", result.ToString(), StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void SevenDays_join_callback_returns_and_rejects_before_external_lookup_completes()
         {
             var store = new MemoryGeoIpStore
@@ -493,6 +578,16 @@ namespace LSTY.SevenDPanel.Tests
                 ip,
                 7,
                 Now);
+
+        private static void SetMaxMindCredentials(MemoryGeoIpStore store)
+        {
+            var credentials = new UpdateGeoIpCredentialsUseCase(store, () => Now);
+            credentials.Execute(
+                new GeoIpCredentialsActor("owner-subject", isOwner: true),
+                new GeoIpCredentialsUpdate(
+                    GeoIpSecretUpdate.Replace("12345"),
+                    GeoIpSecretUpdate.Replace("license-value")));
+        }
 
         private sealed class RecordingRefreshQueue : IGeoIpRefreshQueue
         {
@@ -745,6 +840,20 @@ namespace LSTY.SevenDPanel.Tests
                     });
                 }
             }
+        }
+
+        private sealed class DelegateHttpMessageHandler : HttpMessageHandler
+        {
+            private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send;
+
+            public DelegateHttpMessageHandler(
+                Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) =>
+                this.send = send;
+
+            protected override Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request,
+                CancellationToken cancellationToken) =>
+                send(request, cancellationToken);
         }
     }
 }

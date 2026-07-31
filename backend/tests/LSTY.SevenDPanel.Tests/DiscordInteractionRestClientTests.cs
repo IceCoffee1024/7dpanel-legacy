@@ -54,6 +54,51 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Follow_up_maps_rate_limit_delay_and_timeout_without_exposing_or_replaying_the_token()
+        {
+            var calls = 0;
+            using var rateLimitedHandler = new RecordingHandler((_, _) =>
+            {
+                calls++;
+                var response = new HttpResponseMessage((HttpStatusCode)429)
+                {
+                    Content = new StringContent("{\"retry_after\":99,\"message\":\"body-secret\"}")
+                };
+                response.Headers.TryAddWithoutValidation("Retry-After", "1.75");
+                return Task.FromResult(response);
+            });
+            using var rateLimitedClient = new DiscordInteractionFollowupClient(rateLimitedHandler);
+
+            var rateLimited = await rateLimitedClient.SendEphemeralAsync(
+                FollowupRequest(),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(DiscordInteractionFollowupDisposition.Retryable, rateLimited.Disposition);
+            Assert.Equal("discord_interaction_followup_rate_limited", rateLimited.ErrorCode);
+            Assert.Equal(TimeSpan.FromSeconds(1.75), rateLimited.RetryAfter);
+            Assert.Equal(1, calls);
+            Assert.DoesNotContain("body-secret", rateLimited.ToString(), StringComparison.Ordinal);
+            Assert.DoesNotContain(InteractionToken, rateLimited.ToString(), StringComparison.Ordinal);
+
+            using var timeoutHandler = new RecordingHandler((_, _) =>
+            {
+                calls++;
+                return Task.FromException<HttpResponseMessage>(
+                    new TaskCanceledException("timeout " + InteractionToken));
+            });
+            using var timeoutClient = new DiscordInteractionFollowupClient(timeoutHandler);
+
+            var unknown = await timeoutClient.SendEphemeralAsync(
+                FollowupRequest(),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(DiscordInteractionFollowupDisposition.ResultUnknown, unknown.Disposition);
+            Assert.Equal("discord_interaction_followup_result_unknown", unknown.ErrorCode);
+            Assert.Equal(2, calls);
+            Assert.DoesNotContain(InteractionToken, unknown.ToString(), StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task Follow_up_rejects_non_snowflake_application_ids_without_contacting_a_custom_url()
         {
             var calls = 0;
@@ -186,6 +231,13 @@ namespace LSTY.SevenDPanel.Tests
 
         private static DiscordGuildCommandSynchronizationRequest Request() =>
             new DiscordGuildCommandSynchronizationRequest(ApplicationId, GuildId, BotToken, null);
+
+        private static DiscordInteractionFollowupRequest FollowupRequest() =>
+            new DiscordInteractionFollowupRequest(
+                ApplicationId,
+                InteractionToken,
+                "The server is ready.",
+                null);
 
         private static JObject DeserializeObject(string json) => JObject.Parse(json);
 

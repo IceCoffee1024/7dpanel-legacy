@@ -234,7 +234,7 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
                 }
 
                 var createdAtUtc = utcNow();
-                descriptor = changeSets.Create(new WorldChangeSetDraft(
+                var draft = new WorldChangeSetDraft(
                     execution.OperationId,
                     intent.WorldId,
                     intent.WorldVersion,
@@ -243,7 +243,37 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World
                     beforeHash,
                     storageResourceId,
                     createdAtUtc,
-                    createdAtUtc.Add(ChangeSetRetention)));
+                    createdAtUtc.Add(ChangeSetRetention));
+                descriptor = changeSets.Create(draft);
+                if (descriptor == null ||
+                    string.IsNullOrWhiteSpace(descriptor.ChangeSetId) ||
+                    !string.Equals(
+                        descriptor.SourceOperationId,
+                        draft.SourceOperationId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(descriptor.WorldId, draft.WorldId, StringComparison.Ordinal) ||
+                    !string.Equals(
+                        descriptor.WorldVersion,
+                        draft.WorldVersion,
+                        StringComparison.Ordinal) ||
+                    !SameRegion(descriptor.Region, draft.Region) ||
+                    !string.Equals(
+                        descriptor.BeforeHash,
+                        draft.BeforeHash,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        descriptor.AfterHash,
+                        draft.AfterHash,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        descriptor.StorageResourceId,
+                        draft.StorageResourceId,
+                        StringComparison.Ordinal) ||
+                    descriptor.CreatedAtUtc != draft.CreatedAtUtc ||
+                    descriptor.ExpiresAtUtc != draft.ExpiresAtUtc)
+                {
+                    throw new InvalidOperationException();
+                }
                 changeSetId = descriptor.ChangeSetId;
             }
             catch

@@ -71,17 +71,31 @@ namespace LSTY.SevenDPanel.Tests.Local
             using var directories = new TestDirectories();
             var worldFile = Path.Combine(directories.World, "main.ttw");
             File.WriteAllText(worldFile, "live-world");
+            var catalogRead = false;
             var fixture = CreateFixture(
                 directories,
                 BackupKind.World,
-                new[] { new ArchiveFile("main.ttw", "archived-world") });
+                new[] { new ArchiveFile("main.ttw", "archived-world") },
+                onCatalogGet: () => catalogRead = true);
 
             var result = fixture.Applier.ApplyPending();
 
             Assert.Equal(RestoreExecutionStage.RolledBack, result!.Stage);
             Assert.Equal(WorldRestoreTimingGate.UnverifiedError, result.ErrorCode);
+            Assert.False(catalogRead);
             Assert.Equal("live-world", File.ReadAllText(worldFile));
             Assert.Equal(RestoreExecutionStage.RolledBack, fixture.Store.ReadReceipt()!.Stage);
+        }
+
+        [Theory]
+        [InlineData("v3.0.1-b4")]
+        [InlineData("v3.0.1-b5")]
+        public void World_restore_timing_gate_never_infers_approval_from_a_version_string(
+            string gameVersion)
+        {
+            var gate = new WorldRestoreTimingGate();
+
+            Assert.False(gate.IsApproved(gameVersion));
         }
 
         [Theory]
@@ -132,6 +146,34 @@ namespace LSTY.SevenDPanel.Tests.Local
             Assert.Equal(RestoreExecutionStage.RolledBack, result!.Stage);
             Assert.Equal(PendingRestoreApplier.ArchiveSizeMismatchError, result.ErrorCode);
             Assert.Equal("old-panel", File.ReadAllText(target));
+        }
+
+        [Fact]
+        public void Occupied_archive_fails_closed_before_prepared_receipt_or_target_mutation()
+        {
+            using var directories = new TestDirectories();
+            var target = Path.Combine(directories.Panel, "7dpanel.sqlite");
+            File.WriteAllText(target, "old-panel");
+            var fixture = CreateFixture(
+                directories,
+                BackupKind.PanelDatabase,
+                new[] { new ArchiveFile("panel-database.sqlite", "new-panel") });
+            using var archiveLock = File.Open(
+                fixture.ArchivePath,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.None);
+
+            var result = fixture.Applier.ApplyPending();
+
+            Assert.Equal(RestoreExecutionStage.RolledBack, result!.Stage);
+            Assert.Equal(PendingRestoreApplier.ArchiveChecksumMismatchError, result.ErrorCode);
+            Assert.Equal("old-panel", File.ReadAllText(target));
+            Assert.Null(fixture.Store.ReadMarker());
+            Assert.Equal(RestoreExecutionStage.RolledBack, fixture.Store.ReadReceipt()!.Stage);
+            Assert.DoesNotContain(
+                Directory.EnumerateFiles(directories.Panel, "*", SearchOption.AllDirectories),
+                path => Path.GetFileName(path).StartsWith(".restore-", StringComparison.Ordinal));
         }
 
         [Fact]
@@ -351,6 +393,95 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
 
         [Fact]
+        public void Prepared_restart_rolls_back_only_files_replaced_before_the_interruption()
+        {
+            using var directories = new TestDirectories();
+            var first = Path.Combine(directories.Configuration, "first.xml");
+            var second = Path.Combine(directories.Configuration, "second.xml");
+            File.WriteAllText(first, "new-first");
+            File.WriteAllText(second, "old-second");
+            var fixture = CreateFixture(
+                directories,
+                BackupKind.ServerConfiguration,
+                new[]
+                {
+                    new ArchiveFile("first.xml", "new-first"),
+                    new ArchiveFile("second.xml", "new-second")
+                });
+            fixture.Store.WriteReceipt(RestoreResultReceipt.FromMarker(
+                fixture.Marker,
+                RestoreExecutionStage.Prepared));
+            var operationId = fixture.Marker.JobSnapshot.JobId.ToString("N");
+            var stagingRoot = Path.Combine(
+                directories.Configuration,
+                $".restore-{operationId}.staging");
+            Directory.CreateDirectory(stagingRoot);
+            File.WriteAllText(Path.Combine(stagingRoot, "second.xml"), "new-second");
+            File.WriteAllText(
+                Path.Combine(directories.Configuration, $".restore-{operationId}-first.xml.safety"),
+                "old-first");
+            File.WriteAllText(
+                Path.Combine(directories.Configuration, $".restore-{operationId}-second.xml.safety"),
+                "old-second");
+
+            var result = fixture.Applier.ApplyPending();
+
+            Assert.Equal(RestoreExecutionStage.RolledBack, result!.Stage);
+            Assert.Equal(PendingRestoreApplier.ReplaceFailedError, result.ErrorCode);
+            Assert.Equal("old-first", File.ReadAllText(first));
+            Assert.Equal("old-second", File.ReadAllText(second));
+            Assert.Null(fixture.Store.ReadMarker());
+            Assert.Equal(RestoreExecutionStage.RolledBack, fixture.Store.ReadReceipt()!.Stage);
+            Assert.DoesNotContain(
+                Directory.EnumerateFiles(directories.Configuration, "*", SearchOption.AllDirectories),
+                path => Path.GetFileName(path).StartsWith(".restore-", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void Occupied_archive_during_prepared_recovery_preserves_retry_state_until_next_startup()
+        {
+            using var directories = new TestDirectories();
+            var target = Path.Combine(directories.Panel, "7dpanel.sqlite");
+            File.WriteAllText(target, "new-panel");
+            var fixture = CreateFixture(
+                directories,
+                BackupKind.PanelDatabase,
+                new[] { new ArchiveFile("panel-database.sqlite", "new-panel") });
+            fixture.Store.WriteReceipt(RestoreResultReceipt.FromMarker(
+                fixture.Marker,
+                RestoreExecutionStage.Prepared));
+            var operationId = fixture.Marker.JobSnapshot.JobId.ToString("N");
+            var safety = Path.Combine(
+                directories.Panel,
+                $".restore-{operationId}-7dpanel.sqlite.safety");
+            File.WriteAllText(safety, "old-panel");
+
+            using (File.Open(
+                fixture.ArchivePath,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.None))
+            {
+                var error = Assert.Throws<RestoreStateException>(() => fixture.Applier.ApplyPending());
+
+                Assert.Equal(PendingRestoreApplier.RollbackFailedError, error.ErrorCode);
+                Assert.Equal("new-panel", File.ReadAllText(target));
+                Assert.NotNull(fixture.Store.ReadMarker());
+                Assert.Equal(RestoreExecutionStage.Prepared, fixture.Store.ReadReceipt()!.Stage);
+                Assert.Equal("old-panel", File.ReadAllText(safety));
+            }
+
+            var result = fixture.Applier.ApplyPending();
+
+            Assert.Equal(RestoreExecutionStage.RolledBack, result!.Stage);
+            Assert.Equal(PendingRestoreApplier.ReplaceFailedError, result.ErrorCode);
+            Assert.Equal("old-panel", File.ReadAllText(target));
+            Assert.Null(fixture.Store.ReadMarker());
+            Assert.Equal(RestoreExecutionStage.RolledBack, fixture.Store.ReadReceipt()!.Stage);
+            Assert.False(File.Exists(safety));
+        }
+
+        [Fact]
         public void Damaged_receipt_stably_blocks_restore_before_any_overwrite()
         {
             using var directories = new TestDirectories();
@@ -378,7 +509,8 @@ namespace LSTY.SevenDPanel.Tests.Local
             IReadOnlyList<ArchiveFile> files,
             Func<BackupArtifact, BackupArtifact>? mutateCatalog = null,
             string? manifestKind = null,
-            RestoreArchiveLimits? limits = null)
+            RestoreArchiveLimits? limits = null,
+            Action? onCatalogGet = null)
         {
             var roots = directories.CreateRoots();
             var store = new JsonPendingRestoreStore(roots);
@@ -438,7 +570,9 @@ namespace LSTY.SevenDPanel.Tests.Local
                 snapshot,
                 RestoreExecutionStage.Prepared);
             store.CreateMarker(marker);
-            var catalog = new SingleArtifactCatalog(mutateCatalog == null ? artifact : mutateCatalog(artifact));
+            var catalog = new SingleArtifactCatalog(
+                mutateCatalog == null ? artifact : mutateCatalog(artifact),
+                onCatalogGet);
             var applier = new PendingRestoreApplier(
                 roots,
                 catalog,
@@ -481,13 +615,19 @@ namespace LSTY.SevenDPanel.Tests.Local
         private sealed class SingleArtifactCatalog : IBackupCatalog
         {
             private readonly BackupArtifact artifact;
+            private readonly Action? onGet;
 
-            public SingleArtifactCatalog(BackupArtifact artifact) => this.artifact = artifact;
+            public SingleArtifactCatalog(BackupArtifact artifact, Action? onGet = null)
+            {
+                this.artifact = artifact;
+                this.onGet = onGet;
+            }
 
             public BackupArtifact Add(CompletedBackup backup) => throw new NotSupportedException();
 
             public BackupArtifact Get(Guid backupId)
             {
+                onGet?.Invoke();
                 if (backupId != artifact.Id) throw new KeyNotFoundException();
                 return artifact;
             }

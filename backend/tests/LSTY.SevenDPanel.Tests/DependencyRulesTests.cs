@@ -503,6 +503,11 @@ namespace LSTY.SevenDPanel.Tests
                 "backend",
                 "scripts",
                 "Publish-Mod.ps1"));
+            var cleanupScript = File.ReadAllText(Path.Combine(
+                RepositoryRoot,
+                "backend",
+                "scripts",
+                "Remove-ForbiddenReleaseArtifactContent.ps1"));
             var manifestPath = Path.Combine(
                 RepositoryRoot,
                 "backend",
@@ -541,7 +546,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal("wwwroot/assets", (string)manifest["admin"]!["assetsDirectory"]!);
             Assert.Contains("release-manifest.json", publishScript);
             Assert.Contains("Test-ReleaseArtifact.ps1", publishScript);
-            Assert.Contains("Remove-Item -LiteralPath $path -Force", publishScript);
+            Assert.Contains("Remove-ForbiddenReleaseArtifactContent.ps1", publishScript);
+            Assert.Contains("Remove-Item -LiteralPath $file.FullName -Force", cleanupScript);
+            Assert.Contains("Remove-Item -LiteralPath $path -Force", cleanupScript);
         }
 
         [Fact]

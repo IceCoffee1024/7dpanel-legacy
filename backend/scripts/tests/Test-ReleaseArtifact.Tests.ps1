@@ -3,6 +3,7 @@ Set-StrictMode -Version 2.0
 
 $scriptRoot = Split-Path $PSScriptRoot -Parent
 $validatorPath = Join-Path $scriptRoot 'Test-ReleaseArtifact.ps1'
+$cleanupPath = Join-Path $scriptRoot 'Remove-ForbiddenReleaseArtifactContent.ps1'
 $manifestPath = Join-Path $scriptRoot 'release-manifest.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('7dpanel-release-validation-' + [Guid]::NewGuid().ToString('N'))
@@ -134,6 +135,29 @@ try {
     $unsafePathManifestPath = Join-Path $temporaryRoot 'unsafe-path-release-manifest.json'
     $unsafePathManifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $unsafePathManifestPath -Encoding UTF8
     Assert-ValidationFails $validArtifact 'unsafe relative path' $unsafePathManifestPath
+
+    $cleanupArtifact = Join-Path $temporaryRoot 'cleanup'
+    New-ValidArtifact $cleanupArtifact
+    New-FixtureFile $cleanupArtifact 'nested/Newtonsoft.Json.dll'
+    New-FixtureFile $cleanupArtifact 'e_sqlite3.dll'
+    New-FixtureFile $cleanupArtifact 'runtimes/win-arm/native/e_sqlite3.dll'
+    New-FixtureFile $cleanupArtifact 'runtimes/win-x86/native/e_sqlite3.dll'
+
+    & $cleanupPath -ArtifactPath $cleanupArtifact -ManifestPath $manifestPath | Out-Null
+
+    foreach ($removedPath in @(
+        'nested/Newtonsoft.Json.dll',
+        'e_sqlite3.dll',
+        'runtimes/win-arm/native/e_sqlite3.dll',
+        'runtimes/win-x86/native/e_sqlite3.dll'
+    )) {
+        if (Test-Path -LiteralPath (Join-Path $cleanupArtifact $removedPath.Replace(
+            '/',
+            [System.IO.Path]::DirectorySeparatorChar))) {
+            throw "Release cleanup did not remove: $removedPath"
+        }
+    }
+    & $validatorPath -ArtifactPath $cleanupArtifact -ManifestPath $manifestPath | Out-Null
 
     Assert-ValidationFails ([System.IO.Path]::GetPathRoot($validArtifact)) 'must not be a filesystem root'
 

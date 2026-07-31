@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using LSTY.SevenDPanel.Adapters.Local.MapTiles;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.World;
 using LSTY.SevenDPanel.Application.WorldOperations;
 using Xunit;
@@ -95,6 +97,89 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(0, expired.ApplyCalls + corrupt.ApplyCalls + duplicate.ApplyCalls);
         }
 
+        [Theory]
+        [InlineData("resource-id")]
+        [InlineData("content-hash")]
+        public async Task Handler_rejects_forged_blob_identity_before_evidence_or_apply(string forged)
+        {
+            var fixture = new HandlerFixture(2);
+            if (forged == "resource-id")
+                fixture.Blobs.ReadStorageResourceId = "wcs-99999999999999999999999999999999";
+            else
+                fixture.Blobs.ReadContentHash = new string('f', 64);
+
+            var result = await fixture.Handler.HandleAsync(
+                fixture.Execution(),
+                CancellationToken.None);
+
+            Assert.Equal(SevenDaysUndoOperationOutcome.Rejected, result.Outcome);
+            Assert.Equal(SevenDaysUndoOperationResult.ChangeSetCorrupt, result.ErrorCode);
+            Assert.Equal(0, fixture.Blobs.WriteCalls);
+            Assert.Equal(0, fixture.ApplyCalls);
+        }
+
+        [Fact]
+        public async Task Successful_undo_replay_is_rejected_without_new_evidence_or_apply()
+        {
+            var fixture = new HandlerFixture(2);
+            var first = await fixture.Handler.HandleAsync(
+                fixture.Execution(),
+                CancellationToken.None);
+            var writesAfterFirst = fixture.Blobs.WriteCalls;
+            var appliesAfterFirst = fixture.ApplyCalls;
+
+            var replay = await fixture.Handler.HandleAsync(
+                fixture.Execution(),
+                CancellationToken.None);
+
+            Assert.Equal(SevenDaysUndoOperationOutcome.Succeeded, first.Outcome);
+            Assert.Equal(SevenDaysUndoOperationOutcome.Rejected, replay.Outcome);
+            Assert.Equal(SevenDaysUndoOperationResult.AlreadyUndone, replay.ErrorCode);
+            Assert.Equal(writesAfterFirst, fixture.Blobs.WriteCalls);
+            Assert.Equal(appliesAfterFirst, fixture.ApplyCalls);
+        }
+
+        [Fact]
+        public async Task Source_change_set_competition_after_capture_is_rejected_before_evidence_or_apply()
+        {
+            var fixture = new HandlerFixture(2);
+            fixture.Metadata.BeforeRead = count =>
+            {
+                if (count == 2)
+                    fixture.Metadata.SetSource(
+                        fixture.Source with { AfterHash = new string('d', 64) });
+            };
+
+            var result = await fixture.Handler.HandleAsync(
+                fixture.Execution(),
+                CancellationToken.None);
+
+            Assert.Equal(SevenDaysUndoOperationOutcome.Rejected, result.Outcome);
+            Assert.Equal(SevenDaysUndoOperationResult.ChangeSetInvalid, result.ErrorCode);
+            Assert.Equal(0, fixture.Blobs.WriteCalls);
+            Assert.Equal(0, fixture.ApplyCalls);
+        }
+
+        [Fact]
+        public async Task Cancellation_at_a_safe_boundary_rolls_back_and_is_interrupted()
+        {
+            using var cancellation = new CancellationTokenSource();
+            var fixture = new HandlerFixture(257);
+            fixture.AfterDispatch = () =>
+            {
+                if (fixture.AppliedBefore == 256) cancellation.Cancel();
+            };
+
+            var result = await fixture.Handler.HandleAsync(
+                fixture.Execution(),
+                cancellation.Token);
+
+            Assert.Equal(SevenDaysUndoOperationOutcome.Interrupted, result.Outcome);
+            Assert.Equal("undo-change-set", result.ChangeSetId);
+            Assert.Equal(256, result.Progress.Current);
+            Assert.All(fixture.Current, block => Assert.Equal(2u, block.RawData));
+        }
+
         [Fact]
         public async Task Cancellation_at_a_safe_boundary_with_failed_rollback_is_rollback_failed()
         {
@@ -112,6 +197,52 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(SevenDaysUndoOperationOutcome.RollbackFailed, result.Outcome);
             Assert.Equal(SevenDaysUndoOperationResult.RollbackFailed, result.ErrorCode);
             Assert.DoesNotContain("exception", result.ErrorCode!, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task Job_handler_persists_rollback_failure_before_returning_completion()
+        {
+            using var cancellation = new CancellationTokenSource();
+            var fixture = new HandlerFixture(257, failRollback: true);
+            fixture.AfterDispatch = () =>
+            {
+                if (fixture.AppliedBefore == 256) cancellation.Cancel();
+            };
+            var execution = fixture.Execution();
+            var executions = new RecordingExecutionStore(execution);
+            var root = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-undo-job-handler-" + Guid.NewGuid().ToString("N"));
+            var staging = Path.Combine(root, "staging");
+            var published = Path.Combine(root, "published");
+            Directory.CreateDirectory(staging);
+            Directory.CreateDirectory(published);
+            try
+            {
+                var handler = new WorldOperationJobHandler(
+                    executions,
+                    new SevenDaysMapWorldOperationHandler(staging),
+                    new LocalMapResourcePublisher(staging, published),
+                    new SevenDaysRegionOperationHandler(fixture.Metadata, fixture.Blobs),
+                    new SevenDaysBlockPrefabOperationHandler(fixture.Metadata, fixture.Blobs),
+                    new SevenDaysEntityMaintenanceHandler(),
+                    new SevenDaysRuntimeMaintenanceHandler(),
+                    fixture.Handler,
+                    Utc);
+
+                var result = await handler.ExecuteAsync(execution.JobId, cancellation.Token);
+
+                Assert.Equal(WorldOperationStatus.RollbackFailed, result.Status);
+                Assert.Equal(SevenDaysUndoOperationResult.RollbackFailed, result.ErrorCode);
+                Assert.Equal(1, executions.RollbackFailureCalls);
+                Assert.Equal(execution.JobId, executions.RollbackFailureJobId);
+                Assert.Equal(SevenDaysUndoOperationResult.RollbackFailed, executions.RollbackFailureCode);
+                Assert.Equal(Utc(), executions.RollbackFailedAtUtc);
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
         }
 
         private static DateTimeOffset Utc() =>
@@ -369,11 +500,13 @@ namespace LSTY.SevenDPanel.Tests
         {
             private WorldChangeSetDescriptor source;
             private WorldChangeSetDescriptor? undo;
+            private int readCalls;
 
             internal HandlerMetadataStore(WorldChangeSetDescriptor source) => this.source = source;
 
             internal List<(string ChangeSetId, string AfterHash)> Marked { get; } =
                 new List<(string ChangeSetId, string AfterHash)>();
+            internal Action<int>? BeforeRead { get; set; }
 
             internal void SetSource(WorldChangeSetDescriptor descriptor) => source = descriptor;
 
@@ -393,10 +526,13 @@ namespace LSTY.SevenDPanel.Tests
                 return undo;
             }
 
-            public WorldChangeSetDescriptor Read(string changeSetId) =>
-                changeSetId == source.ChangeSetId
+            public WorldChangeSetDescriptor Read(string changeSetId)
+            {
+                BeforeRead?.Invoke(++readCalls);
+                return changeSetId == source.ChangeSetId
                     ? source
                     : undo ?? throw new KeyNotFoundException();
+            }
 
             public void MarkApplied(string changeSetId, string afterHash)
             {
@@ -418,6 +554,8 @@ namespace LSTY.SevenDPanel.Tests
             }
 
             internal bool CorruptRead { get; set; }
+            internal string? ReadStorageResourceId { get; set; }
+            internal string? ReadContentHash { get; set; }
             internal int WriteCalls { get; private set; }
             internal WorldChangeSetBlobDraft? LastDraft { get; private set; }
 
@@ -435,9 +573,39 @@ namespace LSTY.SevenDPanel.Tests
 
             public WorldChangeSetBlobReadResult Read(string storageResourceId, string expectedHash) =>
                 new WorldChangeSetBlobReadResult(
-                    source.StorageResourceId,
-                    source.BeforeHash,
+                    ReadStorageResourceId ?? source.StorageResourceId,
+                    ReadContentHash ?? source.BeforeHash,
                     CorruptRead ? new byte[] { 9 } : before);
+        }
+
+        private sealed class RecordingExecutionStore : IWorldOperationExecutionStore
+        {
+            private readonly WorldOperationExecutionRecord execution;
+
+            internal RecordingExecutionStore(WorldOperationExecutionRecord execution) =>
+                this.execution = execution;
+
+            internal int RollbackFailureCalls { get; private set; }
+            internal Guid RollbackFailureJobId { get; private set; }
+            internal string? RollbackFailureCode { get; private set; }
+            internal DateTimeOffset RollbackFailedAtUtc { get; private set; }
+
+            public WorldOperationExecutionRecord ReadForExecution(Guid jobId)
+            {
+                Assert.Equal(execution.JobId, jobId);
+                return execution;
+            }
+
+            public void MarkRollbackFailed(
+                Guid jobId,
+                string errorCode,
+                DateTimeOffset failedAtUtc)
+            {
+                RollbackFailureCalls++;
+                RollbackFailureJobId = jobId;
+                RollbackFailureCode = errorCode;
+                RollbackFailedAtUtc = failedAtUtc;
+            }
         }
 
         private static byte[] Snapshot(WorldRegion region, uint rawData)

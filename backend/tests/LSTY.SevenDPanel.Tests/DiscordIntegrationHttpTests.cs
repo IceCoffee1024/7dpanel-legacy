@@ -445,6 +445,66 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Anonymous_interaction_rejects_ambiguous_signature_headers_and_oversized_raw_bodies()
+        {
+            var store = ConfiguredStore();
+            using var host = CreateHost(
+                null,
+                store,
+                InteractionVerifier());
+            const string ping = "{\"type\":1}";
+            var signature = Sign(InteractionTimestamp, Encoding.UTF8.GetBytes(ping));
+            using var duplicateHeaderRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/v1/integrations/discord/interactions")
+            {
+                Content = Json(ping)
+            };
+            duplicateHeaderRequest.Headers.TryAddWithoutValidation(
+                "X-Signature-Ed25519",
+                new[] { signature, signature });
+            duplicateHeaderRequest.Headers.TryAddWithoutValidation(
+                "X-Signature-Timestamp",
+                InteractionTimestamp);
+
+            using var duplicateHeaderResponse = await host.Client.SendAsync(
+                duplicateHeaderRequest,
+                TestContext.Current.CancellationToken);
+            var duplicateHeaderProblem = JObject.Parse(
+                await duplicateHeaderResponse.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.Unauthorized, duplicateHeaderResponse.StatusCode);
+            Assert.Equal(
+                "discord_interaction_signature_invalid",
+                (string?)duplicateHeaderProblem["code"]);
+
+            var oversizedBody = new string('x', 64 * 1024 + 1);
+            using var oversizedRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/v1/integrations/discord/interactions")
+            {
+                Content = Json(oversizedBody)
+            };
+            oversizedRequest.Headers.TryAddWithoutValidation(
+                "X-Signature-Ed25519",
+                Sign(InteractionTimestamp, Encoding.UTF8.GetBytes(oversizedBody)));
+            oversizedRequest.Headers.TryAddWithoutValidation(
+                "X-Signature-Timestamp",
+                InteractionTimestamp);
+
+            using var oversizedResponse = await host.Client.SendAsync(
+                oversizedRequest,
+                TestContext.Current.CancellationToken);
+            var oversizedJson = await oversizedResponse.Content.ReadAsStringAsync();
+            var oversizedProblem = JObject.Parse(oversizedJson);
+
+            Assert.Equal(HttpStatusCode.BadRequest, oversizedResponse.StatusCode);
+            Assert.Equal("discord_interaction_body_invalid", (string?)oversizedProblem["code"]);
+            Assert.DoesNotContain(oversizedBody, oversizedJson, StringComparison.Ordinal);
+            Assert.Equal(0, store.RegisterInteractionCallCount);
+        }
+
+        [Fact]
         public async Task Signed_application_command_is_accepted_and_persisted_for_deferred_processing()
         {
             var store = ConfiguredInboundStore();

@@ -260,6 +260,57 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Cancellation_loses_to_a_running_claim_without_overwriting_job_state()
+        {
+            using var database = new TemporaryDatabase();
+            var receipt = database.Bridge.Enqueue(Intent(
+                WorldOperationKind.CollectGarbage,
+                "cancel-running",
+                new WorldMaintenanceOperationTarget(null)));
+            using (var connection = database.ConnectionFactory.Open())
+            {
+                Assert.Equal(1, connection.Execute(
+                    @"UPDATE jobs
+                      SET status = 'Running', started_at_utc = @StartedAtUtc,
+                          worker_id = 'worker-1', row_version = row_version + 1
+                      WHERE id = @JobId AND status = 'Queued';",
+                    new
+                    {
+                        JobId = receipt.JobId.ToString("D"),
+                        StartedAtUtc = Utc(1).ToUnixTimeMilliseconds()
+                    }));
+            }
+
+            Assert.False(database.Bridge.RequestCancellation(receipt.OperationId, "owner"));
+            var record = database.Bridge.Get(receipt.OperationId);
+            Assert.Equal(WorldOperationStatus.Running, record.Status);
+            Assert.Equal(Utc(1), record.StartedAtUtc);
+            Assert.Null(record.CompletedAtUtc);
+        }
+
+        [Fact]
+        public void Rollback_failure_is_persisted_once_and_competing_rewrite_is_rejected()
+        {
+            using var database = new TemporaryDatabase();
+            var receipt = database.Bridge.Enqueue(Intent(
+                WorldOperationKind.UndoChangeSet,
+                "rollback-persist",
+                new WorldRegionOperationTarget(
+                    1, 2, 3, 4, 5, 6, "change-set-source", null)));
+            var store = new SqliteWorldOperationStore(database.ConnectionFactory);
+
+            store.MarkRollbackFailed(receipt.JobId, "rollback-first", Utc(2));
+            var conflict = Assert.Throws<InvalidOperationException>(() =>
+                store.MarkRollbackFailed(receipt.JobId, "rollback-second", Utc(3)));
+
+            Assert.Equal("world_operation_rollback_failure_conflict", conflict.Message);
+            var record = database.Bridge.Get(receipt.OperationId);
+            Assert.Equal(WorldOperationStatus.RollbackFailed, record.Status);
+            Assert.Equal("rollback-first", record.ErrorCode);
+            Assert.Equal(Utc(2), record.CompletedAtUtc);
+        }
+
+        [Fact]
         public void Failed_target_insert_rolls_back_the_job_and_operation_and_never_stores_unsafe_summary()
         {
             using var database = new TemporaryDatabase();

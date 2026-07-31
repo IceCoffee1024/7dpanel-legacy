@@ -73,6 +73,12 @@ overwrite the server-owned `config.json` or `data/`. It replaces only the
 published `wwwroot/` directory with `frontend/apps/admin/dist/`, producing this
 runtime layout:
 
+Before replacing `wwwroot/`, `Publish-Mod.ps1` invokes
+`Remove-ForbiddenReleaseArtifactContent.ps1`. The cleanup is constrained to a
+resolved, non-root artifact directory without reparse points. It removes
+manifest-forbidden managed files and non-target native RID copies emitted by
+`dotnet publish`; it never scans or deletes outside that artifact root.
+
 ```text
 <ModDirectory>/
   LSTY.SevenDPanel.dll
@@ -141,6 +147,10 @@ The fixture suite uses temporary synthetic files only. It covers the valid
 layout plus missing product DLLs/native assets, forbidden files and paths,
 Admin output, JSON config examples, malformed release manifests, and private
 reference-content exclusion.
+
+`Remove-ForbiddenReleaseArtifactContent.ps1` is the publish cleanup boundary;
+`Test-ReleaseArtifact.ps1` is the independent fail-closed validation boundary.
+Publishing must run cleanup first and validation last.
 
 The script keeps the Windows and Linux native assets under their RID
 directories and removes any root `e_sqlite3.dll` because the 7DTD Mod loader

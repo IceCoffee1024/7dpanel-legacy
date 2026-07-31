@@ -89,9 +89,13 @@ namespace LSTY.SevenDPanel.Adapters.Local.GeoIp
             {
                 return Unavailable(GeoIpLookupFailure.Http);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
+            }
+            catch (OperationCanceledException)
+            {
+                return Unavailable(GeoIpLookupFailure.Http);
             }
             catch
             {

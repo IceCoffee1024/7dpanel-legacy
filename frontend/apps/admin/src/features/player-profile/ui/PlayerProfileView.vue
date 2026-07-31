@@ -30,10 +30,10 @@ const profileController = usePlayerProfile(crossplatformId, { onSessionExpired }
 const evidenceController = usePlayerEvidence(crossplatformId, { onSessionExpired })
 const onlineController = useOnlinePlayers({ onSessionExpired })
 const profile = computed(() => profileController.profile.value)
-const currentWorldId = computed(() => profile.value?.inventory.value?.worldId
-  ?? profile.value?.skills.value?.worldId
-  ?? profile.value?.sessions.value?.find(session => session.endedAtUtc === null)?.worldId
-  ?? profile.value?.activity.value?.[0]?.worldId
+const currentWorldId = computed(() => profile.value?.inventory?.value?.worldId
+  ?? profile.value?.skills?.value?.worldId
+  ?? profile.value?.sessions?.value?.find(session => session.endedAtUtc === null)?.worldId
+  ?? profile.value?.activity?.value?.[0]?.worldId
   ?? null)
 const freshTarget = computed<PlayerActionTarget | null>(() => {
   if (onlineController.state.value !== 'fresh' || currentWorldId.value === null)
@@ -55,7 +55,7 @@ const actions = usePlayerActions({ freshTarget, onSessionExpired })
 
 type DialogName = 'grant' | 'remove' | 'reset-skills' | 'reset-partial' | 'reset-full'
 const activeDialog = shallowRef<DialogName | null>(null)
-const catalogVersion = computed(() => profile.value?.inventory.value?.catalogVersion ?? null)
+const catalogVersion = computed(() => profile.value?.inventory?.value?.catalogVersion ?? null)
 const canOpenActions = computed(() => auth.role === 'Owner' && freshTarget.value !== null)
 
 function openDialog(name: DialogName) {
@@ -92,7 +92,7 @@ onUnmounted(() => {
       <div class="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
         <div>
           <h1 class="text-lg font-semibold text-highlighted">
-            {{ profile?.summary.value?.latestName ?? t('players.profile.title') }}
+            {{ profile?.summary?.value?.latestName ?? t('players.profile.title') }}
           </h1>
           <p class="break-all text-xs text-muted">
             {{ crossplatformId }}

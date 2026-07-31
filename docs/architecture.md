@@ -91,15 +91,15 @@ last_updated: "2026-07-31"
 ### 六波次功能对齐当前代码状态
 
 - SQLite migration `008_EvidenceFoundation.sql` 至 `015_DiscordInteractionPersistence.sql` 按波次保存专用权威记录，并逐步扩展只读 `unified_audit_projection`；初期开发阶段由建表 migration 直接写入固定默认配置，不维护尚未发布数据库的向前兼容补丁。投影只保存稳定摘要，不复制正文、Secret、路径或大字段，`gap` 始终独立于业务事件和管理员动作。
-- 第二波以持久作业、Cron、公告、备份目录和跨重启恢复意图为中心，Local Adapter 只访问批准根；作业、备份、恢复和调度状态由 SQLite 拥有，HTTP 202 与 Admin 页面不会把排队或 stage 表述为最终成功。恢复替换后的 `.safety` 副本会保留到终态收据持久化成功；回滚只消费独立 `.rollback` 临时副本，瞬时 I/O 失败保留 `Prepared` 收据、marker 和安全副本供下次启动继续回滚，不会重新应用归档。
+- 第二波以持久作业、Cron、公告、备份目录和跨重启恢复意图为中心，Local Adapter 只访问批准根；作业、备份、恢复和调度状态由 SQLite 拥有，HTTP 202 与 Admin 页面不会把排队或 stage 表述为最终成功。恢复替换后的 `.safety` 副本会保留到终态收据持久化成功；回滚只消费独立 `.rollback` 临时副本，瞬时 I/O 或访问拒绝会保留 `Prepared` 收据、marker 和安全副本供下次启动继续回滚，不会重新应用归档。启动步骤按 `ApplyingPendingRestore`、`MigratingDatabase`、`ReconcilingRestoreResult` 顺序执行并记录精确失败阶段。
 - 第三波保存玩家 Profile、会话、背包/技能观察、物品证据及 grant/remove/reset 操作状态；SevenDays Adapter 在游戏线程重验稳定身份，`PendingReconciliation`/`ResultUnknown` 不自动重放副作用。背包标量采集按“功能 Mod 在前、外观 Mod 在后”合并 `ItemValue.Modifications` 与 `ItemValue.CosmeticMods`，过滤空值并按 ordinal 去重，因此仅外观 Mod 变化也会进入既有指纹与 diff。
 - 第四波使用平衡的经济账本、奖励发放状态机、商品/兑换/成就/在线奖励及 Community Store。奖励失败补偿的账本 transaction ID 绑定原 grant operation，而不是请求键；并发补偿同一 grant 时只有一个请求可以冲正余额，账本幂等冲突映射为奖励并发冲突。登记式游戏命令通过现有唯一 `SevenDaysChatRuntime` 私发结果；`bal/pay/moneytop/daily/shop/buy/redeem`、家/城市/返回点、`tpa/tpaccept/tpreject` 和投票连接真实用例。私人家设置在 `teleport_settings` 中持久化设置费用、四个启动期命令名称和私发提示；省略名称时使用 `home`，列表返回世界与坐标，设置费用使用经济预留后捕获。`daily` 以稳定规则标识定位 `014_DailyRewardPolicies.sql` 中 Owner 配置的奖励包绑定，资格键为 `ruleId + crossplatformId + UTC yyyyMMdd`；缺失或禁用规则不创建 grant，同日重试复用既有奖励包快照。TPA 请求在 SQLite 中持久保存固定双方实体/世界快照与终态，接受通过条件更新竞争；生产组合根使用旧版默认的 30 秒有效期。Community Store 提供稳定排序的全量城市、好友记录、传送操作和投票轮次查询；`011_EconomyCommunity.sql` 在建表时直接初始化 Home、City、Friend、Return、Admin 五类传送设置及默认禁用的 Kick、Restart 投票配置，传送设置与投票配置更新把 `expectedRowVersion` 下沉到 SQLite 条件更新。
 - 第五波的 Automation 只接受固定 trigger、条件字段和类型化 action，保存 trigger snapshot、条件证据和逐动作结果；Discord 出站由专用 delivery worker 处理，Gateway runtime 负责连接、心跳、重连和停止。心跳 ACK 失效时 runtime 先释放当前 socket 再等待 receive loop，避免 transport 忽略 cancellation 时永久阻塞重连；interaction HTTP transport 校验 Ed25519 签名并把持久 Slash 结果通过原 interaction token 私密 follow-up。`012_AutomationIntegrations.sql` 在建表时直接初始化启用的 `bind`/`status` 与禁用的 `players` Slash 命令设置；GeoIP 在加入边界执行固定策略。`RewardEvidenceRuntime` 订阅已持久化的玩家历史与证据写入完成入口，驱动成就与在线奖励评估；它不新增静态事件总线或逐事件 `Task.Run`。这些 Discord 链路尚未取得 sandbox 或真实环境往返证据。
-- 第六波把世界只读摘要、领地/车辆/无人机/容器、地图作业、类型化世界操作、change set/undo 与 17 个固定功能模块接入生产对象图。模块状态从 `IFeatureModuleStateStore` 读取并约束 Automation 与 Community 游戏命令；危险世界操作仍要求真实测试实例、备份与回滚目标后才能执行 smoke。
+- 第六波把世界只读摘要、领地/车辆/无人机/容器、地图作业、类型化世界操作、change set/undo 与 17 个固定功能模块接入生产对象图。block/prefab handler 会逐项核对 change-set Store 返回的来源操作、世界、区域、前后 hash、storage ID 和时间，拒绝伪造或串线 descriptor；模块状态从 `IFeatureModuleStateStore` 读取并约束 Automation 与 Community 游戏命令。危险世界操作仍要求真实测试实例、备份与回滚目标后才能执行 smoke。
 - 阻塞型单消费者后台边界不占用共享线程池等待队列：控制台审计、游戏事件、玩家证据、游戏资源目录、近期活动、GeoIP 等 worker 通过 `TaskCreationOptions.LongRunning` 启动专用消费者，并使用启动就绪信号、完成事件和有界排空期限协调 `Start`、`Stop` 与 `Dispose`。SSE heartbeat、Discord 排空和地图元数据等待同样以事件或完成信号驱动，避免轮询和线程池饥饿改变生命周期时序。
 - Web Adapter 暴露固定 `/api/v1` Controller 和独立 DTO，OpenAPI snapshot 已刷新，Admin SDK 已由 `pnpm api:gen` 重新生成。Admin Feature 使用严格 parser、readonly composable、无乐观成功和 Owner-only route meta；页面入口由 `AppShell` 分组到服务器运维、经济与奖励、传送与投票、集成与访问策略。
 
-本节只提升当前代码结构和本轮可复查命令支持的事实。合成发布目录已经通过 manifest 驱动的布局校验，但真实备份恢复、真实玩家和世界副作用、Discord/MaxMind sandbox、Playwright、实际 publish 与 Windows/Linux 候选发布门禁仍未完成。
+本节只提升当前代码结构和本轮可复查命令支持的事实。当前八项目已完成一次临时目录 `dotnet publish`、Admin 产物组装和 manifest 布局校验；本地 Playwright mock 已覆盖桌面与 `390x844` 路由、权限和 Chat Mutes 关键交互。真实备份恢复、真实玩家和世界副作用、Discord/MaxMind sandbox、受控真实 OWIN Playwright、向 `Mods/7DPanel` 发布以及 Windows/Linux 候选发布门禁仍未完成。
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据来自根目录只读私有子模块 `7dtd-reference/`；该子模块不是产品源码或发布内容。
 
@@ -354,7 +354,7 @@ GET /
 
 ## 部署与运维
 
-- 最近一次真实验证的仍是六项目发布物；它不证明当前八项目解决方案已完成 publish。当前仓库新增 `release-manifest.json` 和独立 `Test-ReleaseArtifact.ps1`，合成夹具已验证八个产品 DLL、托管依赖、配置示例、Admin `wwwroot`、Windows/Linux x64 SQLite RID native、禁止程序集/路径和 `7dtd-reference/` 排除规则；validator 还在枚举前拒绝文件系统根目录与 reparse point，但这仍只属于发布布局自动化和代码复核证据。Mod 根目录不得包含 native `e_sqlite3.dll`、`0Harmony.dll`、System.Data.SQLite/SQLite.Interop、`7dtd-reference/`、游戏提供的 JSON/Unity/LogLibrary 程序集、服主 `config.json` 或运行数据；运行环境使用单独的游戏 `0_TFP_Harmony` Mod。
+- 最近一次真实游戏进程验证的仍是六项目发布物；它不证明当前八项目发布物能被 Unity Mono 加载。当前八项目已在临时目录完成 `dotnet publish`，原始输出中的 `Newtonsoft.Json.dll` 与非目标 win-arm/win-x86 `e_sqlite3.dll` 会由 `Remove-ForbiddenReleaseArtifactContent.ps1` 清理；组装实际 Admin `wwwroot` 后，同一 `release-manifest.json` validator 通过。合成夹具继续覆盖八个产品 DLL、托管依赖、配置示例、Windows/Linux x64 SQLite RID native、禁止程序集/路径、文件系统根目录、reparse point 和 `7dtd-reference/` 排除规则。Mod 根目录不得包含 native `e_sqlite3.dll`、`0Harmony.dll`、System.Data.SQLite/SQLite.Interop、`7dtd-reference/`、游戏提供的 JSON/Unity/LogLibrary 程序集、服主 `config.json` 或运行数据；运行环境使用单独的游戏 `0_TFP_Harmony` Mod。
 - `Publish-Mod.ps1` 要求 Admin `dist/index.html` 和资产存在，执行 `dotnet publish` 后按同一 manifest 移除禁止的根目录资产、只替换目标中的 `wwwroot/`，最后复用独立 validator 校验精确八个产品程序集、完整托管依赖、配置、Admin 资产和双平台 SQLite Native 布局。`NJsonSchema.Annotations.dll` 是该运行时闭包的一部分，不代表项目安装了 `NSwag.Annotations`。
 - 发布脚本是增量的，不清空整个 Mod 目录；已有 `config.json` 和 `data/` 保持不变。
 - 2026-07-24 的 `online-player-details` 工作树发布使用主仓库只读 `7dtd-reference` 作为显式 `SevenDaysReferenceRoot` 构建输入，因为该工作树的子模块 Gitlink 未初始化。`Publish-Mod.ps1` 成功写入已配置的远程 `Mods/7DPanel`，保留远端 `config.json` 与 `data/`；本地与远端 `wwwroot/index.html`、动态玩家 JavaScript 和 CSS 的 SHA-256 一致，且远端 `LSTY.SevenDPanel.dll` 存在。该发布/文件完整性证据不包含服务器重启或新的 7DTD 进程 smoke。
@@ -377,7 +377,7 @@ GET /
 - 历史玩家自动化覆盖 31 字段快照与 UTC/null/安全整数 parser、Owner-only Web 合同、cursor、Store 事务与降采样、Channel fail-open、页面局部状态的取消/stale/分页去重、历史只读详情与认证路由。当前环境未运行新的 OWIN `HttpListener` 历史路由用例、真实 7DTD 或浏览器 E2E，因此这些边界不能视为真实进程/浏览器证据。
 - `DependencyRulesTests` 用源码规则保护当前项目依赖、Adapter 方向、唯一 `IModApi` 和 Bootstrap candidate 发布顺序。
 - SQLite 集成测试覆盖 migration 幂等、WAL、引导 Owner 同步、PBKDF2-HMAC-SHA256 1000 次迭代、凭据轮换撤销、Access Token 跨 Store/connection factory 重建、到期、严格 128 容量、API Key 一次性完整值、SHA-256 摘要、到期/撤销/容量与明文不落盘，以及命令原文、ordinal 参数、逐行输出和幂等 gap 的事务往返；SSE 可控时钟测试覆盖失效后停止写出。
-- 本地确定性测试覆盖恢复回滚中断续作、Discord cancellation-resistant receive 重连、同一奖励 grant 并发补偿唯一冲正，以及玩家背包功能/外观 Mod 合并；这些测试不替代真实文件占用、Discord sandbox、游戏物品字段或玩家经济副作用。
+- 本地确定性测试覆盖恢复回滚中断续作与启动阶段诊断、Discord 重复签名头/请求体上限/follow-up 429 和不确定结果、MaxMind timeout/503 与失败缓存、世界 descriptor 防伪/取消/undo 竞争/回滚失败持久化、同一奖励 grant 并发补偿唯一冲正，以及玩家背包功能/外观 Mod 合并；这些测试不替代真实文件占用、Discord/MaxMind sandbox、游戏线程和世界 API、游戏物品字段或玩家经济副作用。
 - 健康客户端保留最后成功样本并明确标记 stale/offline，不把失败或过期结果显示为 fresh。
 
 ### 安全性

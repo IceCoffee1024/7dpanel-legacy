@@ -193,6 +193,12 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                         ReplaceFailedError);
                 }
             }
+            catch (Exception exception) when (IsRetryableFileAccess(exception))
+            {
+                // Keep Prepared authoritative when recovery material cannot be inspected
+                // because of transient file access. A later startup can retry safely.
+                throw new RestoreStateException(RollbackFailedError, exception);
+            }
             catch (Exception exception) when (
                 exception is RestoreApplyException || exception is IOException ||
                 exception is UnauthorizedAccessException || exception is InvalidDataException ||
@@ -209,6 +215,16 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                 marker.JobSnapshot.JobId,
                 RestoreExecutionStage.RollbackFailed,
                 RollbackFailedError);
+        }
+
+        private static bool IsRetryableFileAccess(Exception exception)
+        {
+            for (Exception? current = exception; current != null; current = current.InnerException)
+            {
+                if (current is IOException || current is UnauthorizedAccessException)
+                    return true;
+            }
+            return false;
         }
 
         private BackupArtifact ReadAndValidateArtifact(PendingRestoreMarker marker)

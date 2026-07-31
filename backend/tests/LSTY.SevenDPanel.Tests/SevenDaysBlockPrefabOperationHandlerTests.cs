@@ -251,6 +251,82 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Theory]
+        [InlineData("blob-hash")]
+        [InlineData("descriptor-hash")]
+        public async Task Forged_change_set_evidence_is_rejected_before_the_side_effect(string forged)
+        {
+            var trace = new List<string>();
+            var sideEffects = 0;
+            var metadata = new RecordingMetadataStore(
+                trace,
+                draft => Descriptor(
+                    draft,
+                    beforeHash: forged == "descriptor-hash"
+                        ? new string('f', 64)
+                        : draft.BeforeHash));
+            var blobs = new RecordingBlobStore(
+                trace,
+                draft => new WorldChangeSetBlobReceipt(
+                    draft.StorageResourceId,
+                    forged == "blob-hash" ? new string('e', 64) : draft.ExpectedHash,
+                    draft.Content.LongLength));
+
+            var result = await Handler(
+                    BlockContext(apply: () =>
+                    {
+                        sideEffects++;
+                        return true;
+                    }),
+                    metadata,
+                    blobs,
+                    trace)
+                .HandleAsync(
+                    Execution(
+                        WorldOperationKind.SetBlock,
+                        new WorldBlockOperationTarget(1, 2, 3, "steelBlock", 1, "Cube")),
+                    CancellationToken.None);
+
+            Assert.Equal(SevenDaysBlockPrefabOperationOutcome.Failed, result.Outcome);
+            Assert.Equal(SevenDaysBlockPrefabOperationResult.ChangeSetCaptureFailed, result.ErrorCode);
+            Assert.Null(result.ChangeSetId);
+            Assert.Equal(0, sideEffects);
+        }
+
+        [Fact]
+        public async Task Cancellation_after_evidence_but_before_apply_is_failed_without_world_side_effect()
+        {
+            using var cancellation = new CancellationTokenSource();
+            var trace = new List<string>();
+            var sideEffects = 0;
+            var metadata = new RecordingMetadataStore(trace, draft =>
+            {
+                cancellation.Cancel();
+                return Descriptor(draft);
+            });
+
+            var result = await Handler(
+                    BlockContext(apply: () =>
+                    {
+                        sideEffects++;
+                        return true;
+                    }),
+                    metadata,
+                    new RecordingBlobStore(trace),
+                    trace)
+                .HandleAsync(
+                    Execution(
+                        WorldOperationKind.SetBlock,
+                        new WorldBlockOperationTarget(1, 2, 3, "steelBlock", 1, "Cube")),
+                    cancellation.Token);
+
+            Assert.Equal(SevenDaysBlockPrefabOperationOutcome.Failed, result.Outcome);
+            Assert.Equal(SevenDaysBlockPrefabOperationResult.DispatchCancelled, result.ErrorCode);
+            Assert.Equal("change-set-1", result.ChangeSetId);
+            Assert.Equal(0, sideEffects);
+            Assert.Equal(new[] { "dispatch", "context", "blob", "metadata" }, trace);
+        }
+
+        [Theory]
         [InlineData(false)]
         [InlineData(true)]
         public async Task Partial_side_effect_or_post_start_exception_is_result_unknown_and_sanitized(
@@ -455,8 +531,15 @@ namespace LSTY.SevenDPanel.Tests
         private sealed class RecordingMetadataStore : IWorldChangeSetMetadataStore
         {
             private readonly ICollection<string> trace;
+            private readonly Func<WorldChangeSetDraft, WorldChangeSetDescriptor> create;
 
-            public RecordingMetadataStore(ICollection<string> trace) => this.trace = trace;
+            public RecordingMetadataStore(
+                ICollection<string> trace,
+                Func<WorldChangeSetDraft, WorldChangeSetDescriptor>? create = null)
+            {
+                this.trace = trace;
+                this.create = create ?? (draft => Descriptor(draft));
+            }
 
             public WorldChangeSetDraft? CreatedDraft { get; private set; }
             public string? MarkedChangeSetId { get; private set; }
@@ -466,17 +549,7 @@ namespace LSTY.SevenDPanel.Tests
             {
                 trace.Add("metadata");
                 CreatedDraft = draft;
-                return new WorldChangeSetDescriptor(
-                    "change-set-1",
-                    draft.SourceOperationId,
-                    draft.WorldId,
-                    draft.WorldVersion,
-                    draft.Region,
-                    draft.BeforeHash,
-                    draft.AfterHash,
-                    draft.StorageResourceId,
-                    draft.CreatedAtUtc,
-                    draft.ExpiresAtUtc);
+                return create(draft);
             }
 
             public WorldChangeSetDescriptor Read(string changeSetId) =>
@@ -493,20 +566,42 @@ namespace LSTY.SevenDPanel.Tests
         private sealed class RecordingBlobStore : IWorldChangeSetBlobStore
         {
             private readonly ICollection<string> trace;
+            private readonly Func<WorldChangeSetBlobDraft, WorldChangeSetBlobReceipt> write;
 
-            public RecordingBlobStore(ICollection<string> trace) => this.trace = trace;
+            public RecordingBlobStore(
+                ICollection<string> trace,
+                Func<WorldChangeSetBlobDraft, WorldChangeSetBlobReceipt>? write = null)
+            {
+                this.trace = trace;
+                this.write = write ?? (draft => new WorldChangeSetBlobReceipt(
+                    draft.StorageResourceId,
+                    draft.ExpectedHash,
+                    draft.Content.LongLength));
+            }
 
             public WorldChangeSetBlobReceipt Write(WorldChangeSetBlobDraft draft)
             {
                 trace.Add("blob");
-                return new WorldChangeSetBlobReceipt(
-                    draft.StorageResourceId,
-                    draft.ExpectedHash,
-                    draft.Content.LongLength);
+                return write(draft);
             }
 
             public WorldChangeSetBlobReadResult Read(string storageResourceId, string expectedHash) =>
                 throw new NotSupportedException();
         }
+
+        private static WorldChangeSetDescriptor Descriptor(
+            WorldChangeSetDraft draft,
+            string? beforeHash = null) =>
+            new WorldChangeSetDescriptor(
+                "change-set-1",
+                draft.SourceOperationId,
+                draft.WorldId,
+                draft.WorldVersion,
+                draft.Region,
+                beforeHash ?? draft.BeforeHash,
+                draft.AfterHash,
+                draft.StorageResourceId,
+                draft.CreatedAtUtc,
+                draft.ExpiresAtUtc);
     }
 }

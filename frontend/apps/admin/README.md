@@ -79,6 +79,12 @@ Run it only against that controlled environment:
 pnpm test:e2e
 ```
 
+The same command also runs repository-owned mock projects against a local Vite
+server: Microsoft Edge desktop and `390x844`. They cover route reachability,
+role guards, horizontal overflow, and selected interaction closures without
+claiming real OWIN or game-side effects. The mobile mock project omits the
+duplicated role matrix because role behavior is viewport-independent.
+
 When any required variable is absent, the suite reports its real-environment
 tests as skipped. A skipped suite is not evidence that the browser smoke passed.
 An unsupported browser value fails during Playwright configuration instead of

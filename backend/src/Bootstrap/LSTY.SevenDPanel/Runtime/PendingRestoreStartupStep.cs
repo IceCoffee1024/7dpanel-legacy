@@ -4,6 +4,16 @@ using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 
 namespace LSTY.SevenDPanel.DependencyInjection
 {
+    internal enum PendingRestoreStartupStage
+    {
+        NotStarted,
+        ApplyingPendingRestore,
+        MigratingDatabase,
+        ReconcilingRestoreResult,
+        Completed,
+        Failed
+    }
+
     internal sealed class PendingRestoreStartupStep
     {
         private readonly Action applyPendingRestore;
@@ -34,11 +44,39 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 throw new ArgumentNullException(nameof(reconcileRestoreResult));
         }
 
+        public PendingRestoreStartupStage CurrentStage { get; private set; } =
+            PendingRestoreStartupStage.NotStarted;
+
+        public PendingRestoreStartupStage? FailedStage { get; private set; }
+
         public void Execute()
         {
-            applyPendingRestore();
-            migrateDatabase();
-            reconcileRestoreResult();
+            FailedStage = null;
+            ExecuteStage(
+                PendingRestoreStartupStage.ApplyingPendingRestore,
+                applyPendingRestore);
+            ExecuteStage(
+                PendingRestoreStartupStage.MigratingDatabase,
+                migrateDatabase);
+            ExecuteStage(
+                PendingRestoreStartupStage.ReconcilingRestoreResult,
+                reconcileRestoreResult);
+            CurrentStage = PendingRestoreStartupStage.Completed;
+        }
+
+        private void ExecuteStage(PendingRestoreStartupStage stage, Action action)
+        {
+            CurrentStage = stage;
+            try
+            {
+                action();
+            }
+            catch
+            {
+                FailedStage = stage;
+                CurrentStage = PendingRestoreStartupStage.Failed;
+                throw;
+            }
         }
     }
 }

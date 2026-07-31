@@ -49,47 +49,10 @@ if ($LASTEXITCODE -ne 0) {
 $publishPath = [System.IO.Path]::GetFullPath($publishPath).TrimEnd(
     [System.IO.Path]::DirectorySeparatorChar,
     [System.IO.Path]::AltDirectorySeparatorChar)
-$publishPrefix = $publishPath + [System.IO.Path]::DirectorySeparatorChar
 $releaseManifestPath = Join-Path $PSScriptRoot 'release-manifest.json'
-$releaseManifest = Get-Content -LiteralPath $releaseManifestPath -Raw | ConvertFrom-Json
-$forbiddenNames = @($releaseManifest.forbiddenFileNames)
-$forbiddenFiles = Get-ChildItem -LiteralPath $publishPath -Recurse -File | Where-Object {
-    $_.Name -in $forbiddenNames
-}
-if ($forbiddenFiles) {
-    Write-Host "Removing forbidden assemblies from publish output: $($forbiddenFiles.Name -join ', ')"
-    $forbiddenFiles | Remove-Item -Force
-}
-
-$forbidden = Get-ChildItem -LiteralPath $publishPath -Recurse -File | Where-Object {
-    $_.Name -in $forbiddenNames
-}
-if ($forbidden) {
-    throw "The publish directory contains forbidden assemblies: $($forbidden.Name -join ', ')"
-}
-
-foreach ($relativePath in @($releaseManifest.forbiddenRelativePaths)) {
-    $normalizedRelativePath = ([string]$relativePath).Replace('\', '/')
-    $segments = @($normalizedRelativePath.Split('/') | Where-Object { $_.Length -gt 0 })
-    if ([System.IO.Path]::IsPathRooted($relativePath) -or
-        $segments.Count -eq 0 -or
-        @($segments | Where-Object { $_ -eq '.' -or $_ -eq '..' }).Count -gt 0) {
-        throw "The release manifest contains an unsafe forbidden path: $relativePath"
-    }
-    $path = [System.IO.Path]::GetFullPath((Join-Path $publishPath $normalizedRelativePath.Replace(
-        '/',
-        [System.IO.Path]::DirectorySeparatorChar)))
-    if (-not $path.StartsWith($publishPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "The release manifest forbidden path escapes publish output: $relativePath"
-    }
-    if (Test-Path -LiteralPath $path -PathType Leaf) {
-        Write-Host "Removing forbidden asset from publish output: $relativePath"
-        Remove-Item -LiteralPath $path -Force
-    }
-    if (Test-Path -LiteralPath $path) {
-        throw "A forbidden asset must not remain in publish output: $path"
-    }
-}
+& (Join-Path $PSScriptRoot 'Remove-ForbiddenReleaseArtifactContent.ps1') `
+    -ArtifactPath $publishPath `
+    -ManifestPath $releaseManifestPath
 
 $wwwrootPath = [System.IO.Path]::GetFullPath((Join-Path $publishPath 'wwwroot'))
 if ((Split-Path $wwwrootPath -Parent) -ne $publishPath) {
