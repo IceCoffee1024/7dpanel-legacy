@@ -118,6 +118,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             ChannelIds = normalizedChannels;
             GatewayUri = AddGatewayQuery(endpoint);
             ReconnectDelay = retry;
+            BotTokenFingerprint = DiscordSecretFingerprint.Compute(Token);
         }
 
         internal string Token { get; }
@@ -125,6 +126,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         public string GuildId { get; }
         public Uri GatewayUri { get; }
         public TimeSpan ReconnectDelay { get; }
+        internal string BotTokenFingerprint { get; }
 
         internal static Uri AddGatewayQuery(Uri endpoint)
         {
@@ -613,6 +615,8 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             {
                 ThrowIfDisposed();
                 if (runCancellation != null && !runTask.IsCompleted) return false;
+                healthSink?.ObserveLoadedGatewayBotTokenFingerprint(
+                    options.BotTokenFingerprint);
                 runCancellation?.Dispose();
                 runCancellation = new CancellationTokenSource();
                 runTask = RunAsync(runCancellation.Token);

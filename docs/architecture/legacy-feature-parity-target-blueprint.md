@@ -159,7 +159,7 @@ last_updated: "2026-07-26"
 
 六波次的 migration、主要 Domain/Application/Adapter/Web/DI 和 Admin 页面已经在当前工作树形成代码切片，已采用结构不再由本 Target 文档重复定义。以下条目仍保留为目标或验收缺口：
 
-- `daily/claim`、`shop`、`tpa/tpaccept/tpreject` 的专用持久合同、Community 全量查询、传送设置/投票配置 `expectedRowVersion` 和私人家覆盖 CAS 已提升为 Current；其他可变 Community 记录仍需在存在丢失更新风险时逐项补明确版本语义，不能用通用仓储抽象代替；
+- `daily/claim`、`shop`、`tpa/tpaccept/tpreject` 的专用持久合同、Community 全量查询、传送设置/投票配置 `expectedRowVersion` 及私人家/城市覆盖 CAS 已提升为 Current；其他可变 Community 记录仍需在存在丢失更新风险且合同明确时逐项补版本语义，不能用通用仓储抽象代替；
 - Discord Gateway 网络连接和 interaction Ed25519 transport 已提升为 Current；仍缺真实 sandbox 往返，以及 GeoIP/MaxMind 真实加入决策；
 - 奖励、成就和在线奖励 evidence runtime 已接入生产持久观察完成入口；真实奖励发放与补偿恢复仍需环境证据；
 - 真实备份恢复、玩家动作、经济/传送/投票、世界 change set/undo 和危险世界工具必须在受控 `v3.0.1-b4` 实例取得证据；危险操作前必须确认备份与回滚目标；

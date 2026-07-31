@@ -28,6 +28,7 @@ last_updated: "2026-07-31"
 | Admin 浏览器门禁 | 本地 mock 首轮桌面与 `390x844` 共 `154/160`，修复后定向 `4/4`；2026-07-31 当前认证真实 OWIN 的 API Key、locale、导航和在线玩家共 17 个场景均取得通过结果 | 登录/会话/登出、API Key 生命周期、语言协商与切换、主要导航、在线玩家详情刷新、不可用锁存、320/390/桌面溢出和 CSP 无违规 | 未覆盖全部六波次页面、Discord/GeoIP 外部服务或危险世界操作 |
 | 实际八项目发布目录 | Admin build、`net48` `dotnet publish`、UNC 清理、真实 `Mods/7DPanel` 组装和 validator 通过；新编排完成关服、发布、启服与健康 200 | 精确八项目、托管闭包、游戏 JSON 排除、目标双 RID native、Admin 产物和当前 Windows Unity Mono 启动 | Linux Unity Mono、Discord/MaxMind sandbox、恢复与危险世界副作用 |
 | 发布证据、聊天审计与 Home CAS 收口 | 脚本合成门禁通过；后端聚焦及扩大 Chat/Community 组合 `76/76` | smoke 脱敏步骤归档、命令审计意图失败不执行、完成失败不重放、SQLite `pending` 恢复及私人家覆盖版本冲突 | 真实 smoke 证据包、真实命令回调、玩家传送与经济副作用 |
+| City CAS、Discord 轮换与跨平台证据收口 | 后端 Community/Discord 组合 `69/69`；Windows PowerShell 5.1 与 PowerShell 7 的 smoke/artifact 合成门禁通过 | 城市陈旧 writer 冲突、Bot Token 轮换重启诊断、Secret/指纹不回显、原生退出码 fail-fast 与无 BOM UTF-8 摘要 | 真实 Discord/MaxMind sandbox、Windows 候选证据包、Linux artifact 与 Unity Mono smoke |
 | 发布物独立布局门禁 | PowerShell 合成夹具通过 | 八个产品 DLL、依赖/配置/Admin/双 RID native 的必需项，以及禁止程序集、路径和私有参考内容拒绝；根目录与 reparse point 拒绝另有代码复核 | 实际 `dotnet publish` 输出、Unity Mono 加载和 Windows/Linux 真实进程 |
 | Admin Chat Mutes 收口 | `5` 个文件、`49/49`；typecheck 通过 | 中英 locale、桌面表格/移动列表、loading 语义、目标化可访问名称、解除确认与提交锁定 | 真实浏览器视觉、OWIN 和真实禁言副作用 |
 | Admin Automation/Discord/GeoIP parser | `3/3` | 严格响应解析与敏感字段拒绝 | 最终整站 typecheck、浏览器交互和外部服务 |
@@ -48,6 +49,8 @@ last_updated: "2026-07-31"
 2026-07-31 当前工作树进一步完成世界恢复强确认、真实 timing evidence gate、undo preflight、Admin 的“撤销预检 → 强确认”闭环、Discord secret HTTP 和 GeoIP MMDB 路径传递；后端受影响组合 `158/158`、OpenAPI snapshot `1/1`、Admin World Tools 定向单元 `62/62`、typecheck 和生产构建通过。Admin 撤销界面不再接受手填 `changeSetId` 或 `currentRegionHash`，并覆盖来源变化清理、并发取消、哈希不匹配和运行时不可用阻断。真实 Windows 编排多次完成优雅关服、UNC 发布物清理/校验、启服和健康 200；最新日志中 7DPanel Mod 创建、类型加载和缺失程序集错误均为 0。真实 OWIN 的 API Key、locale、导航和在线玩家 17 个场景在修复内联脚本 CSP、语言菜单关闭、详情内刷新与 alert 语义后均取得通过结果。Discord 与 GeoIP readiness API 可访问但当前未启用，因此未发送外部消息；未执行恢复、undo 或其他危险世界副作用。
 
 2026-07-31 并行可靠性切片新增发布 smoke 的显式 `-EvidenceDirectory`，合成测试确认成功、失败、fail-fast、步骤摘要和凭据脱敏；后端扩大 Chat/Community 组合 `76/76` 覆盖聊天命令 `Begin(pending) → Execute once → Complete(terminal)`、真实 SQLite 写锁恢复和私人家覆盖保存 CAS。当前没有用新归档能力执行真实 Windows/Linux smoke，也没有执行真实聊天命令、玩家、经济或传送副作用。
+
+2026-07-31 下一批可靠性切片以 `69/69` 后端组合覆盖城市覆盖保存 CAS、Discord Bot Token 轮换后的 `discord_gateway_restart_required` 诊断及首次未加载不误报；Windows PowerShell 5.1 与 PowerShell 7 的合成脚本门禁覆盖无 BOM UTF-8 摘要、原生退出码保留和有/无归档模式 fail-fast。真实外部服务、Windows 候选发布和 Linux Unity Mono 仍未执行。
 
 2026-07-28 私人家体验对齐完成后，Debug 后端产品编译和 Admin typecheck 通过；`EconomyCommunityMigrationTests` 为 `3/3`，Community 命令聚焦测试为 `13/13`，OpenAPI snapshot 为 `1/1` 并完成客户端再生成。额外执行的聊天桥接组合过滤共 `15` 项，其中 `13` 项通过，另 `2` 项分别因测试进程未加载 `ModEvents+SChatMessageData` 和 Daily handler 集合断言为空而失败；未将其计为本次功能通过证据，也未扩大到全量测试或真实 7DTD。
 

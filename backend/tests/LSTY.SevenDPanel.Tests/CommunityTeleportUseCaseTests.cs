@@ -154,6 +154,34 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void City_upsert_rejects_a_stale_version_without_losing_the_first_update()
+        {
+            using var database = new TemporaryDatabase();
+            var store = new SqliteCommunityStore(database.Factory);
+            var created = store.SaveCity(new City(
+                "city-1", "Trader", "Initial", true, Position(10, 70, 20), 0, Now, Now, 0));
+            var firstWriter = new City(
+                created.CityId, created.Name, "First writer", created.Enabled,
+                Position(30, 70, 40), created.SortOrder, created.CreatedAtUtc,
+                Now.AddSeconds(1), created.RowVersion);
+            var staleWriter = new City(
+                created.CityId, created.Name, "Stale writer", created.Enabled,
+                Position(50, 70, 60), created.SortOrder, created.CreatedAtUtc,
+                Now.AddSeconds(2), created.RowVersion);
+
+            var updated = store.SaveCity(firstWriter);
+            var conflict = Assert.Throws<CommunityConflictException>(() => store.SaveCity(staleWriter));
+
+            Assert.Equal("community_conflict", conflict.Code);
+            Assert.Equal(1, updated.RowVersion);
+            var persisted = store.ListCities().Single(city => city.CityId == created.CityId);
+            Assert.Equal(updated.RowVersion, persisted.RowVersion);
+            Assert.Equal("First writer", persisted.Description);
+            Assert.Equal(30, persisted.Position.X);
+            Assert.Equal(40, persisted.Position.Z);
+        }
+
+        [Fact]
         public async Task Confirmed_teleport_captures_fee_and_atomically_updates_cooldowns_and_return_point()
         {
             using var database = new TemporaryDatabase();

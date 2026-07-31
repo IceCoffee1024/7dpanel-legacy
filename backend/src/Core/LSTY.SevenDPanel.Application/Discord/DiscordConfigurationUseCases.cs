@@ -227,13 +227,17 @@ namespace LSTY.SevenDPanel.Application.Discord
             var now = utcNow();
             if (now.Offset != TimeSpan.Zero)
                 throw new InvalidOperationException("discord_clock_not_utc");
-            var fingerprint = Fingerprint(secretValue!);
+            var fingerprint = DiscordSecretFingerprint.Compute(secretValue!);
             store.SetSecret(new DiscordSecretValue(key, secretValue!, fingerprint, now));
             return new DiscordSecretSummary(key, true, fingerprint, now);
         }
+    }
 
-        private static string Fingerprint(string value)
+    public static class DiscordSecretFingerprint
+    {
+        public static string Compute(string value)
         {
+            if (value == null) throw new ArgumentNullException(nameof(value));
             using var sha256 = SHA256.Create();
             var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(value));
             return string.Concat(hash.Take(6).Select(part => part.ToString("x2")));

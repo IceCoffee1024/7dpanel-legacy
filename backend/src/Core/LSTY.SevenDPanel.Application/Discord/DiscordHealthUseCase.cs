@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace LSTY.SevenDPanel.Application.Discord
 {
@@ -19,7 +20,29 @@ namespace LSTY.SevenDPanel.Application.Discord
 
     public sealed record DiscordHealthSnapshot(
         DiscordHealthSection Gateway,
-        DiscordHealthSection Inbound);
+        DiscordHealthSection Inbound)
+    {
+        private readonly string? loadedGatewayBotTokenFingerprint;
+
+        public DiscordHealthSnapshot(
+            DiscordHealthSection gateway,
+            DiscordHealthSection inbound,
+            string? loadedGatewayBotTokenFingerprint)
+            : this(gateway, inbound) =>
+            this.loadedGatewayBotTokenFingerprint = loadedGatewayBotTokenFingerprint;
+
+        public bool HasLoadedGatewayBotToken =>
+            loadedGatewayBotTokenFingerprint != null;
+
+        public bool IsGatewayBotTokenLoaded(string fingerprint) =>
+            string.Equals(
+                fingerprint,
+                loadedGatewayBotTokenFingerprint,
+                StringComparison.Ordinal);
+
+        public override string ToString() =>
+            $"DiscordHealthSnapshot {{ Gateway = {Gateway}, Inbound = {Inbound} }}";
+    }
 
     public interface IDiscordIntegrationHealthSource
     {
@@ -28,6 +51,8 @@ namespace LSTY.SevenDPanel.Application.Discord
 
     public interface IDiscordGatewayHealthSink
     {
+        void ObserveLoadedGatewayBotTokenFingerprint(string? fingerprint);
+
         void ObserveGatewayHealth(
             DiscordHealthState state,
             string? errorCode,
@@ -67,15 +92,24 @@ namespace LSTY.SevenDPanel.Application.Discord
                     DiscordHealthState.Disabled,
                     null,
                     settings.UpdatedAtUtc)
-                : GatewayHealth(settings, health.Gateway);
+                : GatewayHealth(
+                    settings,
+                    health.Gateway,
+                    health);
             return new DiscordHealthSnapshot(gateway, health.Inbound);
         }
 
         private DiscordHealthSection GatewayHealth(
             DiscordIntegrationSettings settings,
-            DiscordHealthSection runtimeHealth)
+            DiscordHealthSection runtimeHealth,
+            DiscordHealthSnapshot runtimeHealthSnapshot)
         {
-            if (store.GetSecret(DiscordSecretKeys.BotToken) == null ||
+            var botToken = store.ListSecretMetadata().FirstOrDefault(secret =>
+                string.Equals(
+                    secret.SecretKey,
+                    DiscordSecretKeys.BotToken,
+                    StringComparison.Ordinal));
+            if (botToken == null ||
                 string.IsNullOrWhiteSpace(settings.GuildId) ||
                 string.IsNullOrWhiteSpace(settings.PublicChannelId))
             {
@@ -83,6 +117,15 @@ namespace LSTY.SevenDPanel.Application.Discord
                     DiscordHealthState.Unavailable,
                     "discord_gateway_configuration_incomplete",
                     settings.UpdatedAtUtc);
+            }
+
+            if (runtimeHealthSnapshot.HasLoadedGatewayBotToken &&
+                !runtimeHealthSnapshot.IsGatewayBotTokenLoaded(botToken.Fingerprint))
+            {
+                return new DiscordHealthSection(
+                    DiscordHealthState.Degraded,
+                    "discord_gateway_restart_required",
+                    botToken.UpdatedAtUtc);
             }
 
             return runtimeHealth;

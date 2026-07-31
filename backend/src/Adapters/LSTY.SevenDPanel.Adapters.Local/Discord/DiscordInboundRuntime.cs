@@ -33,6 +33,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             DiscordHealthState.Unavailable,
             "discord_inbound_runtime_not_running",
             null);
+        private string? loadedGatewayBotTokenFingerprint;
 
         public DiscordInboundRuntime(
             BridgeDiscordMessageToGameUseCase discordToGame,
@@ -213,7 +214,22 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
 
         public DiscordHealthSnapshot GetHealth()
         {
-            lock (sync) return new DiscordHealthSnapshot(gatewayHealth, inboundHealth);
+            lock (sync)
+            {
+                return new DiscordHealthSnapshot(
+                    gatewayHealth,
+                    inboundHealth,
+                    loadedGatewayBotTokenFingerprint);
+            }
+        }
+
+        public void ObserveLoadedGatewayBotTokenFingerprint(string? fingerprint)
+        {
+            lock (sync)
+            {
+                if (disposed) return;
+                loadedGatewayBotTokenFingerprint = fingerprint;
+            }
         }
 
         public void ObserveGatewayHealth(

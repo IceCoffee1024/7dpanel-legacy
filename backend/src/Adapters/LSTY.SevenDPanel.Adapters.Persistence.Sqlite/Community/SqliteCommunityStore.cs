@@ -391,7 +391,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 transaction);
             if (nameOwner != null && !string.Equals(nameOwner.CityId, city.CityId, StringComparison.Ordinal))
                 throw new CommunityConflictException();
-            connection.Execute(
+            var changed = connection.Execute(
                 @"INSERT INTO cities (
                       city_id, name, description, enabled, world_id, x, y, z, yaw,
                       sort_order, created_at_utc, updated_at_utc, row_version)
@@ -402,7 +402,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                       enabled = excluded.enabled, world_id = excluded.world_id,
                       x = excluded.x, y = excluded.y, z = excluded.z, yaw = excluded.yaw,
                       sort_order = excluded.sort_order, updated_at_utc = excluded.updated_at_utc,
-                      row_version = cities.row_version + 1;",
+                      row_version = cities.row_version + 1
+                  WHERE cities.row_version = @ExpectedRowVersion;",
                 new
                 {
                     city.CityId,
@@ -416,9 +417,11 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                     city.Position.Yaw,
                     city.SortOrder,
                     CreatedAtUtc = city.CreatedAtUtc.ToUnixTimeMilliseconds(),
-                    UpdatedAtUtc = city.UpdatedAtUtc.ToUnixTimeMilliseconds()
+                    UpdatedAtUtc = city.UpdatedAtUtc.ToUnixTimeMilliseconds(),
+                    ExpectedRowVersion = city.RowVersion
                 },
                 transaction);
+            if (changed != 1) throw new CommunityConflictException();
             var stored = connection.QuerySingle<CityRow>(
                 CitySelect + " WHERE city_id = @CityId;",
                 new { city.CityId },

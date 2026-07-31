@@ -214,6 +214,9 @@ namespace LSTY.SevenDPanel.Tests
                 new ControlledGatewayDelay());
 
             Assert.True(client.Start());
+            Assert.Equal(
+                DiscordSecretFingerprint.Compute("gateway-token"),
+                sink.LoadedGatewayBotTokenFingerprint);
             Assert.Contains(sink.Health, item => item.State == DiscordHealthState.Connecting);
             socket.Push("{\"op\":10,\"d\":{\"heartbeat_interval\":60000}}");
             await EventuallyAsync(() => socket.SentPayloads.Any(payload => Opcode(payload) == 2));
@@ -452,6 +455,10 @@ namespace LSTY.SevenDPanel.Tests
                 new List<DiscordInteractionEnvelope>();
             public ConcurrentQueue<DiscordHealthSection> Health { get; } =
                 new ConcurrentQueue<DiscordHealthSection>();
+            public string? LoadedGatewayBotTokenFingerprint { get; private set; }
+
+            public void ObserveLoadedGatewayBotTokenFingerprint(string? fingerprint) =>
+                LoadedGatewayBotTokenFingerprint = fingerprint;
 
             public void ObserveGatewayHealth(
                 DiscordHealthState state,

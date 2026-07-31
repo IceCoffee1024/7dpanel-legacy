@@ -313,6 +313,9 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(
                 DiscordHealthState.Unavailable,
                 runtime.GetHealth().Inbound.State);
+            runtime.ObserveLoadedGatewayBotTokenFingerprint("loaded-fingerprint");
+            Assert.True(runtime.GetHealth().IsGatewayBotTokenLoaded("loaded-fingerprint"));
+            Assert.DoesNotContain("loaded-fingerprint", runtime.GetHealth().ToString());
             Assert.True(runtime.Start());
             Assert.False(runtime.Start());
             Assert.Equal(DiscordHealthState.Healthy, runtime.GetHealth().Inbound.State);

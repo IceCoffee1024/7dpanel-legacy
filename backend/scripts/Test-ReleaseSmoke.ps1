@@ -63,7 +63,38 @@ function Write-SmokeEvidenceSummary {
         [Parameter(Mandatory = $true)] [string] $Path
     )
 
-    $Summary | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Path -Encoding UTF8
+    $json = $Summary | ConvertTo-Json -Depth 6
+    $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $json, $utf8WithoutBom)
+}
+
+function Invoke-SmokeChildScript {
+    param(
+        [Parameter(Mandatory = $true)] [string] $Name,
+        [Parameter(Mandatory = $true)] [string] $ScriptPath,
+        [Parameter(Mandatory = $true)] [hashtable] $Parameters
+    )
+
+    $global:LASTEXITCODE = 0
+    $records = @(& $ScriptPath @Parameters *>&1)
+    $nativeExitCode = $LASTEXITCODE
+    if ($nativeExitCode -ne 0) {
+        $exception = New-Object System.InvalidOperationException(
+            "Smoke step '$Name' failed with native exit code $nativeExitCode.")
+        $exception.Data['ExitCode'] = $nativeExitCode
+        throw $exception
+    }
+    return $records
+}
+
+function Get-SmokeFailureExitCode {
+    param([Parameter(Mandatory = $true)] [System.Management.Automation.ErrorRecord] $Failure)
+
+    $recordedExitCode = $Failure.Exception.Data['ExitCode']
+    if ($recordedExitCode -is [int] -and $recordedExitCode -ne 0) {
+        return $recordedExitCode
+    }
+    return 1
 }
 
 function Invoke-SmokeEvidenceStep {
@@ -82,7 +113,7 @@ function Invoke-SmokeEvidenceStep {
     $failure = $null
 
     try {
-        $records = @(& $ScriptPath @Parameters *>&1)
+        $records = @(Invoke-SmokeChildScript -Name $Name -ScriptPath $ScriptPath -Parameters $Parameters)
         $status = 'Passed'
         $exitCode = 0
     }
@@ -90,7 +121,7 @@ function Invoke-SmokeEvidenceStep {
         $failure = $_
         $records += $_
         $status = 'Failed'
-        $exitCode = 1
+        $exitCode = Get-SmokeFailureExitCode -Failure $_
     }
 
     $endedAt = [DateTimeOffset]::UtcNow
@@ -109,7 +140,7 @@ function Invoke-SmokeEvidenceStep {
     $Summary.endedAtUtc = $endedAt.ToString('o')
     $Summary.durationMilliseconds = [long]($endedAt - [DateTimeOffset]::Parse($Summary.startedAtUtc)).TotalMilliseconds
     $Summary.status = if ($failure) { 'Failed' } else { 'Running' }
-    $Summary.exitCode = if ($failure) { 1 } else { $null }
+    $Summary.exitCode = if ($failure) { $exitCode } else { $null }
     Write-SmokeEvidenceSummary -Summary $Summary -Path $SummaryPath
 
     foreach ($record in $records) {
@@ -215,7 +246,9 @@ if ($evidenceEnabled) {
         -SecretValues $secretValues
 }
 else {
-    & (Join-Path $PSScriptRoot 'Stop-Server.ps1') @stopParameters
+    Invoke-SmokeChildScript -Name 'Stop-Server' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Stop-Server.ps1') `
+        -Parameters $stopParameters
 }
 
 Write-Host 'Publishing the 7DPanel Mod...'
@@ -236,7 +269,9 @@ if ($evidenceEnabled) {
         -SecretValues $secretValues
 }
 else {
-    & (Join-Path $PSScriptRoot 'Publish-Mod.ps1') @publishParameters
+    Invoke-SmokeChildScript -Name 'Publish-Mod' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Publish-Mod.ps1') `
+        -Parameters $publishParameters
 }
 
 Write-Host 'Starting 7DTD...'
@@ -250,7 +285,9 @@ if ($evidenceEnabled) {
         -SecretValues $secretValues
 }
 else {
-    & (Join-Path $PSScriptRoot 'Start-Server.ps1') @startParameters
+    Invoke-SmokeChildScript -Name 'Start-Server' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Start-Server.ps1') `
+        -Parameters $startParameters
 }
 
 $healthParameters = @{ TimeoutSeconds = $HealthTimeoutSeconds }
@@ -278,5 +315,7 @@ if ($evidenceEnabled) {
     Write-SmokeEvidenceSummary -Summary $evidenceSummary -Path $evidenceSummaryPath
 }
 else {
-    & (Join-Path $PSScriptRoot 'Test-HealthEndpoint.ps1') @healthParameters
+    Invoke-SmokeChildScript -Name 'Test-HealthEndpoint' `
+        -ScriptPath (Join-Path $PSScriptRoot 'Test-HealthEndpoint.ps1') `
+        -Parameters $healthParameters
 }

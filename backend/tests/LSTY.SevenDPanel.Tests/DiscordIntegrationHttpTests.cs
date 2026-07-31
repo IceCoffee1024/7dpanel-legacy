@@ -129,7 +129,8 @@ namespace LSTY.SevenDPanel.Tests
                 new DiscordHealthSection(
                     DiscordHealthState.Healthy,
                     null,
-                    FixedNow));
+                    FixedNow),
+                "bot-fingerprint");
             using var host = CreateHost("Owner", store);
 
             using var response = await host.Client.GetAsync(
@@ -144,6 +145,82 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(
                 FixedNow.AddSeconds(1),
                 (DateTimeOffset?)payload["gateway"]!["observedAtUtc"]);
+            Assert.Null(payload["loadedGatewayBotTokenFingerprint"]);
+        }
+
+        [Fact]
+        public async Task Bot_token_rotation_reports_that_the_gateway_requires_restart_without_echoing_secrets()
+        {
+            var store = ConfiguredStore();
+            store.Settings = store.Settings! with
+            {
+                Mode = DiscordIntegrationMode.Bot,
+                BridgeDiscordToGame = true
+            };
+            store.SetSecret(new DiscordSecretValue(
+                DiscordSecretKeys.BotToken,
+                "old-bot-token",
+                "old-fingerprint",
+                FixedNow));
+            store.Health = new DiscordHealthSnapshot(
+                new DiscordHealthSection(DiscordHealthState.Healthy, null, FixedNow),
+                new DiscordHealthSection(DiscordHealthState.Healthy, null, FixedNow),
+                "old-fingerprint");
+            using var host = CreateHost("Owner", store);
+
+            using var rotateResponse = await host.Client.PutAsync(
+                "api/v1/integrations/discord/secrets/botToken",
+                Json("{\"value\":\"rotated-bot-token\"}"),
+                TestContext.Current.CancellationToken);
+            using var healthResponse = await host.Client.GetAsync(
+                "api/v1/integrations/discord/health",
+                TestContext.Current.CancellationToken);
+            var json = await healthResponse.Content.ReadAsStringAsync();
+            var payload = JObject.Parse(json);
+
+            Assert.Equal(HttpStatusCode.NoContent, rotateResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
+            Assert.Equal("Degraded", (string?)payload["gateway"]!["state"]);
+            Assert.Equal(
+                "discord_gateway_restart_required",
+                (string?)payload["gateway"]!["errorCode"]);
+            Assert.DoesNotContain("old-bot-token", json, StringComparison.Ordinal);
+            Assert.DoesNotContain("rotated-bot-token", json, StringComparison.Ordinal);
+            Assert.DoesNotContain("fingerprint", json, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task Configured_bot_without_a_loaded_runtime_token_preserves_runtime_health()
+        {
+            var store = ConfiguredStore();
+            store.Settings = store.Settings! with
+            {
+                Mode = DiscordIntegrationMode.Bot,
+                BridgeDiscordToGame = true
+            };
+            store.SetSecret(new DiscordSecretValue(
+                DiscordSecretKeys.BotToken,
+                "bot-token",
+                "bot-fingerprint",
+                FixedNow));
+            store.Health = new DiscordHealthSnapshot(
+                new DiscordHealthSection(
+                    DiscordHealthState.Unavailable,
+                    "discord_gateway_not_running",
+                    FixedNow),
+                new DiscordHealthSection(DiscordHealthState.Healthy, null, FixedNow));
+            using var host = CreateHost("Owner", store);
+
+            using var response = await host.Client.GetAsync(
+                "api/v1/integrations/discord/health",
+                TestContext.Current.CancellationToken);
+            var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("Unavailable", (string?)payload["gateway"]!["state"]);
+            Assert.Equal(
+                "discord_gateway_not_running",
+                (string?)payload["gateway"]!["errorCode"]);
         }
 
         [Fact]

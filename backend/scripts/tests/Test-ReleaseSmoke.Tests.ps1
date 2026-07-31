@@ -8,6 +8,7 @@ $evidenceRoot = Join-Path $temporaryRoot 'evidence'
 $tracePath = Join-Path $temporaryRoot 'trace.txt'
 $env:SEVENDPANEL_SMOKE_TEST_TRACE = $tracePath
 $env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP = ''
+$env:SEVENDPANEL_SMOKE_TEST_NATIVE_EXIT_STEP = ''
 
 function Assert-True {
     param(
@@ -59,6 +60,10 @@ param([string] $EnvironmentFile, [string] $PublishDirectory)
 Add-Content -LiteralPath $env:SEVENDPANEL_SMOKE_TEST_TRACE -Value 'Publish-Mod'
 Write-Host 'X-API-Key: full-api-key-value'
 if ($env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP -eq 'Publish-Mod') { throw 'Secret: full-failure-secret' }
+if ($env:SEVENDPANEL_SMOKE_TEST_NATIVE_EXIT_STEP -eq 'Publish-Mod') {
+    $hostExecutable = (Get-Process -Id $PID).Path
+    & $hostExecutable -NoProfile -Command 'exit 23'
+}
 'Published'
 '@
         'Start-Server.ps1' = @'
@@ -92,6 +97,12 @@ if ($env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP -eq 'Test-HealthEndpoint') { throw 'Se
     & $smokePath -EvidenceDirectory $evidenceRoot -Credential $credential | Out-Null
     $runDirectory = Get-OnlyRunDirectory $evidenceRoot
     $summaryPath = Join-Path $runDirectory 'summary.json'
+    $summaryBytes = [System.IO.File]::ReadAllBytes($summaryPath)
+    $hasUtf8Bom = $summaryBytes.Length -ge 3 -and
+        $summaryBytes[0] -eq 0xEF -and
+        $summaryBytes[1] -eq 0xBB -and
+        $summaryBytes[2] -eq 0xBF
+    Assert-True (-not $hasUtf8Bom) 'Smoke summary must use portable UTF-8 without a BOM.'
     $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
     Assert-Equal 'Passed' $summary.status 'Successful smoke summary status is incorrect.'
     Assert-Equal 0 $summary.exitCode 'Successful smoke summary exit code is incorrect.'
@@ -133,11 +144,42 @@ if ($env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP -eq 'Test-HealthEndpoint') { throw 'Se
     Assert-True (-not $failedLog.Contains('full-failure-secret')) 'Failed step log retained a secret.'
     Assert-True ($failedLog.Contains('Secret: <redacted>')) 'Failed step log omitted its redacted diagnostic.'
 
+    $env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP = ''
+    $env:SEVENDPANEL_SMOKE_TEST_NATIVE_EXIT_STEP = 'Publish-Mod'
+    $nativeExitFailed = $false
+    Remove-Item -LiteralPath $tracePath
+    try {
+        & $smokePath | Out-Null
+    }
+    catch {
+        $nativeExitFailed = $true
+    }
+    Assert-True $nativeExitFailed 'A non-zero child native exit code must fail without evidence enabled.'
+    Assert-Equal 'Stop-Server,Publish-Mod' ((Get-Content -LiteralPath $tracePath) -join ',') 'Smoke continued after a native command failure.'
+
+    $nativeExitEvidenceRoot = Join-Path $temporaryRoot 'native-exit-evidence'
+    $nativeExitFailed = $false
+    try {
+        & $smokePath -EvidenceDirectory $nativeExitEvidenceRoot | Out-Null
+    }
+    catch {
+        $nativeExitFailed = $true
+    }
+    Assert-True $nativeExitFailed 'A non-zero child native exit code must fail the orchestrator.'
+    $nativeExitRunDirectory = Get-OnlyRunDirectory $nativeExitEvidenceRoot
+    $nativeExitSummary = Get-Content -LiteralPath (Join-Path $nativeExitRunDirectory 'summary.json') -Raw | ConvertFrom-Json
+    Assert-Equal 'Failed' $nativeExitSummary.status 'Native-exit smoke summary status is incorrect.'
+    Assert-Equal 23 $nativeExitSummary.exitCode 'Native-exit smoke summary did not preserve the exit code.'
+    Assert-Equal 2 @($nativeExitSummary.steps).Count 'Smoke must stop after a native command failure.'
+    Assert-Equal 'Failed' $nativeExitSummary.steps[1].status 'Native-exit step status is incorrect.'
+    Assert-Equal 23 $nativeExitSummary.steps[1].exitCode 'Native-exit step did not preserve the exit code.'
+
     Write-Host 'Release smoke evidence tests passed.'
 }
 finally {
     Remove-Item Env:\SEVENDPANEL_SMOKE_TEST_TRACE -ErrorAction SilentlyContinue
     Remove-Item Env:\SEVENDPANEL_SMOKE_TEST_FAIL_STEP -ErrorAction SilentlyContinue
+    Remove-Item Env:\SEVENDPANEL_SMOKE_TEST_NATIVE_EXIT_STEP -ErrorAction SilentlyContinue
     if (Test-Path -LiteralPath $temporaryRoot) {
         Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
     }

@@ -318,6 +318,10 @@ Each run contains `summary.json` plus one log for every attempted step. The
 summary records UTC start/end times, duration, status, and exit code for the
 overall run and each step. It is rewritten after every completed step, so a
 failed step remains reviewable and later steps are not reported as attempted.
+The summary uses UTF-8 without a byte-order mark, and its log references are
+run-directory-relative file names so the evidence directory can move between
+Windows and Linux. A non-zero native command exit from a child script fails the
+sequence and is preserved in both the failed step and overall summary.
 Logs retain child-script diagnostics while redacting credential values and
 common Authorization, API key, password, secret, and token representations,
 including headers, JSON properties, query parameters, and command arguments.
