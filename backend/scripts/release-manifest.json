@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "productAssemblies": [
+    "LSTY.SevenDPanel.dll",
+    "LSTY.SevenDPanel.Application.dll",
+    "LSTY.SevenDPanel.Domain.dll",
+    "LSTY.SevenDPanel.Hosting.dll",
+    "LSTY.SevenDPanel.Adapters.Local.dll",
+    "LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll",
+    "LSTY.SevenDPanel.Adapters.SevenDays.dll",
+    "LSTY.SevenDPanel.Adapters.Web.dll"
+  ],
+  "requiredManagedAssemblies": [
+    "Dapper.dll",
+    "dbup-core.dll",
+    "dbup-sqlite.dll",
+    "Microsoft.Bcl.AsyncInterfaces.dll",
+    "Microsoft.CSharp.dll",
+    "Microsoft.Data.Sqlite.dll",
+    "Microsoft.Extensions.DependencyInjection.dll",
+    "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+    "Microsoft.Extensions.Logging.Abstractions.dll",
+    "Microsoft.Owin.Security.OAuth.dll",
+    "Namotion.Reflection.dll",
+    "NJsonSchema.Annotations.dll",
+    "NJsonSchema.dll",
+    "NJsonSchema.NewtonsoftJson.dll",
+    "NSwag.AspNet.Owin.dll",
+    "NSwag.Core.dll",
+    "NSwag.Generation.dll",
+    "NSwag.Generation.WebApi.dll",
+    "SQLitePCLRaw.batteries_v2.dll",
+    "SQLitePCLRaw.core.dll",
+    "SQLitePCLRaw.provider.dynamic_cdecl.dll",
+    "System.Buffers.dll",
+    "System.ComponentModel.DataAnnotations.dll",
+    "System.Dynamic.dll",
+    "System.IO.Pipelines.dll",
+    "System.Memory.dll",
+    "System.Numerics.Vectors.dll",
+    "System.Reflection.Emit.dll",
+    "System.Runtime.CompilerServices.Unsafe.dll",
+    "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "System.Text.Encodings.Web.dll",
+    "System.Text.Json.dll",
+    "System.Threading.Channels.dll",
+    "System.Threading.Tasks.Extensions.dll"
+  ],
+  "requiredFiles": [
+    "ModInfo.xml",
+    "config.example.json",
+    "SQLitePCLRaw.batteries_v2.dll.config"
+  ],
+  "requiredNativeAssets": [
+    "runtimes/win-x64/native/e_sqlite3.dll",
+    "runtimes/linux-x64/native/libe_sqlite3.so"
+  ],
+  "forbiddenFileNames": [
+    "0Harmony.dll",
+    "Assembly-CSharp.dll",
+    "LogLibrary.dll",
+    "Newtonsoft.Json.dll",
+    "UnityEngine.CoreModule.dll",
+    "System.Data.SQLite.dll",
+    "SQLite.Interop.dll"
+  ],
+  "forbiddenRelativePaths": [
+    "e_sqlite3.dll",
+    "System.Resources.ResourceManager.dll",
+    "runtimes/win-x64/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll"
+  ],
+  "forbiddenPathSegments": [
+    "7dtd-reference"
+  ],
+  "admin": {
+    "root": "wwwroot",
+    "index": "wwwroot/index.html",
+    "assetsDirectory": "wwwroot/assets"
+  },
+  "configExamples": [
+    "config.example.json"
+  ]
+}

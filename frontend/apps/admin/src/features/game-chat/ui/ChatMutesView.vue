@@ -4,19 +4,21 @@ import type { TableColumn } from '@nuxt/ui'
 import type { ChatMuteRecord, ChatMuteWriteInput, CreateChatMuteInput } from '../api/chatMutes'
 import type { ChatMutesController } from '../model/useChatMutes'
 import { computed, reactive, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   controller: ChatMutesController
 }>()
 
-const columns: TableColumn<ChatMuteRecord>[] = [
-  { accessorKey: 'crossplatformId', header: '跨平台身份' },
-  { accessorKey: 'displayName', header: '显示名' },
-  { accessorKey: 'reason', header: '原因' },
-  { accessorKey: 'mutedUntilUtc', header: '期限' },
-  { accessorKey: 'updatedAtUtc', header: '更新时间（UTC）' },
-  { id: 'actions', header: '操作' },
-]
+const { t } = useI18n()
+const columns = computed<TableColumn<ChatMuteRecord>[]>(() => [
+  { accessorKey: 'crossplatformId', header: t('gameChat.mutes.table.crossplatformId') },
+  { accessorKey: 'displayName', header: t('gameChat.mutes.table.displayName') },
+  { accessorKey: 'reason', header: t('gameChat.mutes.table.reason') },
+  { accessorKey: 'mutedUntilUtc', header: t('gameChat.mutes.table.expires') },
+  { accessorKey: 'updatedAtUtc', header: t('gameChat.mutes.table.updatedAtUtc') },
+  { id: 'actions', header: t('gameChat.mutes.table.actions') },
+])
 const mode = shallowRef<'create' | 'edit' | null>(null)
 const editingId = shallowRef<string | null>(null)
 const permanent = shallowRef(true)
@@ -102,11 +104,11 @@ async function submitForm() {
   const reason = form.reason.trim()
   const mutedUntilUtc = permanent.value ? null : form.mutedUntilUtc.trim()
   if (crossplatformId === '' || reason === '') {
-    formError.value = '跨平台身份和原因不能为空'
+    formError.value = t('gameChat.mutes.validation.required')
     return
   }
   if (mutedUntilUtc !== null && !isUtcTimestamp(mutedUntilUtc)) {
-    formError.value = '期限必须是 UTC 时间，例如 2026-07-26T08:00:00Z'
+    formError.value = t('gameChat.mutes.validation.utcTimestamp')
     return
   }
   formError.value = null
@@ -136,7 +138,7 @@ async function confirmRelease() {
 <template>
   <UDashboardPanel id="chat-mutes">
     <template #header>
-      <UDashboardNavbar title="禁言管理">
+      <UDashboardNavbar :title="t('gameChat.mutes.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -145,7 +147,7 @@ async function confirmRelease() {
             data-testid="create-mute-button"
             :disabled="controller.isMutating.value"
             icon="i-lucide-volume-x"
-            label="新增禁言"
+            :label="t('gameChat.mutes.create')"
             @click="openCreate"
           />
         </template>
@@ -158,42 +160,51 @@ async function confirmRelease() {
           v-if="controller.state.value === 'stale'"
           color="warning"
           icon="i-lucide-triangle-alert"
-          title="刷新失败，当前显示上一次成功结果"
+          :title="t('gameChat.mutes.state.stale')"
         />
         <UAlert
           v-else-if="controller.state.value === 'forbidden'"
           color="warning"
           icon="i-lucide-shield-alert"
-          title="当前账号无权管理禁言"
+          :title="t('gameChat.mutes.state.forbidden')"
         />
         <UAlert
           v-else-if="controller.state.value === 'failed'"
           color="error"
           icon="i-lucide-circle-x"
-          title="禁言列表加载失败"
+          :title="t('gameChat.mutes.state.failed')"
         >
           <template #actions>
             <UButton
               color="neutral"
-              label="重试"
+              :label="t('gameChat.common.retry')"
               variant="outline"
               @click="controller.retry"
             />
           </template>
         </UAlert>
 
-        <div v-if="controller.state.value === 'loading'" class="space-y-2" aria-label="正在加载禁言列表">
+        <div
+          v-if="controller.state.value === 'loading'"
+          class="space-y-2"
+          role="status"
+          :aria-label="t('gameChat.mutes.state.loading')"
+        >
           <USkeleton v-for="row in 5" :key="row" class="h-10 w-full" />
         </div>
 
         <UAlert
           v-if="controller.state.value === 'ready' && controller.mutes.value.length === 0"
           color="neutral"
-          title="当前没有生效中的禁言"
+          :title="t('gameChat.mutes.state.empty')"
         />
 
-        <div v-if="controller.mutes.value.length > 0" class="hidden overflow-x-auto rounded-lg border border-default md:block">
-          <UTable :columns="columns" :data="tableData">
+        <div
+          v-if="controller.mutes.value.length > 0"
+          data-testid="mute-desktop-table"
+          class="hidden overflow-x-auto rounded-lg border border-default md:block"
+        >
+          <UTable :aria-label="t('gameChat.mutes.table.aria')" :columns="columns" :data="tableData">
             <template #crossplatformId-cell="{ row }">
               <code>{{ row.original.crossplatformId }}</code>
             </template>
@@ -204,7 +215,7 @@ async function confirmRelease() {
               <UBadge
                 v-if="row.original.mutedUntilUtc === null"
                 color="error"
-                label="永久"
+                :label="t('gameChat.mutes.permanent')"
                 variant="subtle"
               />
               <time v-else class="whitespace-nowrap">{{ row.original.mutedUntilUtc }}</time>
@@ -215,18 +226,20 @@ async function confirmRelease() {
             <template #actions-cell="{ row }">
               <div class="flex gap-2">
                 <UButton
-                  :data-testid="`edit-mute-${row.original.crossplatformId}`"
+                  :aria-label="t('gameChat.mutes.actions.editAria', { id: row.original.crossplatformId })"
+                  :data-testid="`edit-mute-desktop-${row.original.crossplatformId}`"
                   :disabled="controller.isMutating.value"
-                  label="编辑"
+                  :label="t('gameChat.common.edit')"
                   size="xs"
                   variant="outline"
                   @click="openEdit(row.original)"
                 />
                 <UButton
-                  :data-testid="`release-mute-${row.original.crossplatformId}`"
+                  :aria-label="t('gameChat.mutes.actions.releaseAria', { id: row.original.crossplatformId })"
+                  :data-testid="`release-mute-desktop-${row.original.crossplatformId}`"
                   :disabled="controller.isMutating.value"
                   color="error"
-                  label="解除"
+                  :label="t('gameChat.mutes.actions.release')"
                   size="xs"
                   variant="soft"
                   @click="releaseTarget = row.original"
@@ -236,15 +249,20 @@ async function confirmRelease() {
           </UTable>
         </div>
 
-        <div class="grid gap-3 md:hidden">
-          <article
+        <ul
+          v-if="controller.mutes.value.length > 0"
+          data-testid="mute-mobile-list"
+          class="grid gap-3 md:hidden"
+          :aria-label="t('gameChat.mutes.cards.aria')"
+        >
+          <li
             v-for="record in controller.mutes.value"
             :key="record.crossplatformId"
             class="space-y-3 rounded-lg border border-default p-4"
           >
             <div>
               <p class="font-medium">
-                {{ record.displayName ?? '未提供显示名' }}
+                {{ record.displayName ?? t('gameChat.mutes.cards.missingDisplayName') }}
               </p>
               <code class="break-all text-xs text-muted">{{ record.crossplatformId }}</code>
             </div>
@@ -252,29 +270,31 @@ async function confirmRelease() {
               {{ record.reason }}
             </p>
             <p class="text-sm text-muted">
-              {{ record.mutedUntilUtc === null ? '永久' : record.mutedUntilUtc }}
+              {{ record.mutedUntilUtc === null ? t('gameChat.mutes.permanent') : record.mutedUntilUtc }}
             </p>
             <div class="flex gap-2">
               <UButton
-                :data-testid="`edit-mute-${record.crossplatformId}`"
+                :aria-label="t('gameChat.mutes.actions.editAria', { id: record.crossplatformId })"
+                :data-testid="`edit-mute-mobile-${record.crossplatformId}`"
                 :disabled="controller.isMutating.value"
-                label="编辑"
+                :label="t('gameChat.common.edit')"
                 size="sm"
                 variant="outline"
                 @click="openEdit(record)"
               />
               <UButton
-                :data-testid="`release-mute-${record.crossplatformId}`"
+                :aria-label="t('gameChat.mutes.actions.releaseAria', { id: record.crossplatformId })"
+                :data-testid="`release-mute-mobile-${record.crossplatformId}`"
                 :disabled="controller.isMutating.value"
                 color="error"
-                label="解除"
+                :label="t('gameChat.mutes.actions.release')"
                 size="sm"
                 variant="soft"
                 @click="releaseTarget = record"
               />
             </div>
-          </article>
-        </div>
+          </li>
+        </ul>
 
         <div v-if="controller.mutes.value.length > 0" class="flex justify-end">
           <UPagination
@@ -290,8 +310,8 @@ async function confirmRelease() {
 
   <UModal
     v-model:open="formOpen"
-    :description="mode === 'create' ? '创建永久或有明确 UTC 截止时间的禁言。' : '更新当前禁言并立即应用。'"
-    :title="mode === 'create' ? '新增禁言' : '编辑禁言'"
+    :description="mode === 'create' ? t('gameChat.mutes.form.createDescription') : t('gameChat.mutes.form.editDescription')"
+    :title="mode === 'create' ? t('gameChat.mutes.form.createTitle') : t('gameChat.mutes.form.editTitle')"
     :ui="{ footer: 'justify-end' }"
   >
     <template #body>
@@ -301,30 +321,36 @@ async function confirmRelease() {
         class="space-y-4"
         @submit="submitForm"
       >
-        <UFormField label="跨平台身份" name="crossplatformId" required>
-          <UInput v-model="form.crossplatformId" class="w-full" :disabled="mode === 'edit'" />
+        <UFormField :label="t('gameChat.mutes.form.crossplatformId')" name="crossplatformId" required>
+          <UInput
+            v-model="form.crossplatformId"
+            data-testid="mute-crossplatform-id"
+            class="w-full"
+            :disabled="mode === 'edit'"
+          />
         </UFormField>
-        <UFormField label="显示名" name="displayName">
+        <UFormField :label="t('gameChat.mutes.form.displayName')" name="displayName">
           <UInput v-model="form.displayName" class="w-full" />
         </UFormField>
-        <UFormField label="原因" name="reason" required>
+        <UFormField :label="t('gameChat.mutes.form.reason')" name="reason" required>
           <UTextarea
             v-model="form.reason"
+            data-testid="mute-reason"
             autoresize
             class="w-full"
             :maxrows="6"
           />
         </UFormField>
-        <UCheckbox v-model="permanent" label="永久禁言" />
+        <UCheckbox v-model="permanent" :label="t('gameChat.mutes.form.permanent')" />
         <UFormField
           v-if="!permanent"
-          label="截止时间（UTC）"
+          :label="t('gameChat.mutes.form.expiresAtUtc')"
           name="mutedUntilUtc"
           required
         >
           <UInput v-model="form.mutedUntilUtc" class="w-full" placeholder="2026-07-26T08:00:00Z" />
         </UFormField>
-        <UFormField label="关联 ID" name="correlationId" hint="可选">
+        <UFormField :label="t('gameChat.mutes.form.correlationId')" name="correlationId" :hint="t('gameChat.common.optional')">
           <UInput v-model="form.correlationId" class="w-full" />
         </UFormField>
         <p v-if="formError" role="alert" class="text-sm text-error">
@@ -336,14 +362,15 @@ async function confirmRelease() {
       <UButton
         :disabled="controller.isMutating.value"
         color="neutral"
-        label="取消"
+        :label="t('gameChat.common.cancel')"
         variant="outline"
         @click="closeForm"
       />
       <UButton
         form="chat-mute-form"
         :disabled="controller.isMutating.value"
-        :label="mode === 'create' ? '创建' : '保存'"
+        data-testid="submit-mute-button"
+        :label="mode === 'create' ? t('gameChat.mutes.form.create') : t('gameChat.mutes.form.save')"
         :loading="controller.isMutating.value"
         type="submit"
       />
@@ -352,25 +379,29 @@ async function confirmRelease() {
 
   <UModal
     v-model:open="releaseOpen"
-    description="解除后该玩家可立即恢复发送聊天消息。"
-    title="解除禁言"
+    :description="t('gameChat.mutes.release.description')"
+    :title="t('gameChat.mutes.release.title')"
     :ui="{ footer: 'justify-end' }"
   >
     <template #body>
-      <p>确认解除 <code>{{ releaseTarget?.crossplatformId }}</code> 的禁言？</p>
+      <p id="chat-mute-release-confirmation">
+        {{ t('gameChat.mutes.release.confirmation', { id: releaseTarget?.crossplatformId }) }}
+      </p>
     </template>
     <template #footer>
       <UButton
         :disabled="controller.isMutating.value"
         color="neutral"
-        label="取消"
+        :label="t('gameChat.common.cancel')"
         variant="outline"
         @click="releaseTarget = null"
       />
       <UButton
         :disabled="controller.isMutating.value"
         color="error"
-        label="确认解除"
+        :aria-label="t('gameChat.mutes.release.confirmAria', { id: releaseTarget?.crossplatformId })"
+        data-testid="confirm-release-mute"
+        :label="t('gameChat.mutes.release.confirm')"
         :loading="controller.isMutating.value"
         @click="confirmRelease"
       />

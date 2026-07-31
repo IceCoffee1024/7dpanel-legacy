@@ -777,6 +777,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
             }
 
             var heartbeatResult = await heartbeat.ConfigureAwait(false);
+            DisposeSocket(socket);
             await ObserveConnectionEndAsync(receive).ConfigureAwait(false);
             return new DiscordGatewayConnectionResult(heartbeatResult, false);
         }
@@ -889,6 +890,11 @@ namespace LSTY.SevenDPanel.Adapters.Local.Discord
         {
             IDiscordGatewaySocket? socket;
             lock (sync) socket = currentSocket;
+            DisposeSocket(socket);
+        }
+
+        private static void DisposeSocket(IDiscordGatewaySocket? socket)
+        {
             try
             {
                 socket?.Dispose();

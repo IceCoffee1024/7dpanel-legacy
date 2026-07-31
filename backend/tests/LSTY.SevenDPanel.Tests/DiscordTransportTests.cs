@@ -176,6 +176,33 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Gateway_client_disposes_an_unresponsive_socket_before_heartbeat_reconnect()
+        {
+            var first = new CancellationIgnoringGatewaySocket(
+                "{\"op\":10,\"d\":{\"heartbeat_interval\":1000}}");
+            var second = new ScriptedGatewaySocket();
+            var sockets = new QueueGatewaySocketFactory(first, second);
+            var delay = new ControlledGatewayDelay();
+            using var client = new DiscordGatewayClient(
+                Options(TimeSpan.Zero),
+                new RecordingInboundSink(),
+                sockets,
+                delay);
+
+            Assert.True(client.Start());
+            await EventuallyAsync(() => first.SentPayloads.Any(payload => Opcode(payload) == 2));
+            await delay.ReleaseAsync(TimeSpan.FromSeconds(1));
+            await EventuallyAsync(() => first.SentPayloads.Any(payload => Opcode(payload) == 1));
+
+            await delay.ReleaseAsync(TimeSpan.FromSeconds(1));
+            await EventuallyAsync(() => first.IsDisposed && sockets.CreatedCount == 2);
+
+            second.Push("{\"op\":10,\"d\":{\"heartbeat_interval\":60000}}");
+            await EventuallyAsync(() => second.SentPayloads.Any(payload => Opcode(payload) == 2));
+            Assert.True(await client.StopAsync(TimeSpan.FromSeconds(1), CancellationToken.None));
+        }
+
+        [Fact]
         public async Task Gateway_client_reports_connecting_connected_and_stopped_health()
         {
             var socket = new ScriptedGatewaySocket();
@@ -545,6 +572,50 @@ namespace LSTY.SevenDPanel.Tests
 
             public void Dispose()
             {
+            }
+        }
+
+        private sealed class CancellationIgnoringGatewaySocket : IDiscordGatewaySocket
+        {
+            private readonly string helloPayload;
+            private readonly TaskCompletionSource<string?> receiveReleased =
+                new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            private readonly object sentSync = new object();
+            private readonly List<string> sent = new List<string>();
+            private int receiveCount;
+            private int disposed;
+
+            public CancellationIgnoringGatewaySocket(string helloPayload) =>
+                this.helloPayload = helloPayload;
+
+            public bool IsDisposed => Volatile.Read(ref disposed) != 0;
+
+            public IReadOnlyList<string> SentPayloads
+            {
+                get
+                {
+                    lock (sentSync) return sent.ToArray();
+                }
+            }
+
+            public Task ConnectAsync(Uri endpoint, CancellationToken cancellationToken) =>
+                Task.CompletedTask;
+
+            public Task<string?> ReceiveTextAsync(CancellationToken cancellationToken) =>
+                Interlocked.Increment(ref receiveCount) == 1
+                    ? Task.FromResult<string?>(helloPayload)
+                    : receiveReleased.Task;
+
+            public Task SendTextAsync(string payload, CancellationToken cancellationToken)
+            {
+                lock (sentSync) sent.Add(payload);
+                return Task.CompletedTask;
+            }
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+                receiveReleased.TrySetResult(null);
             }
         }
 

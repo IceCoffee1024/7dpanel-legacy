@@ -296,6 +296,61 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
 
         [Fact]
+        public void Interrupted_prepared_rollback_keeps_safety_copies_and_retries_without_reapplying()
+        {
+            using var directories = new TestDirectories();
+            var first = Path.Combine(directories.Configuration, "first.xml");
+            var second = Path.Combine(directories.Configuration, "second.xml");
+            File.WriteAllText(first, "new-first");
+            File.WriteAllText(second, "new-second");
+            var fixture = CreateFixture(
+                directories,
+                BackupKind.ServerConfiguration,
+                new[]
+                {
+                    new ArchiveFile("first.xml", "must-not-reapply-first"),
+                    new ArchiveFile("second.xml", "must-not-reapply-second")
+                });
+            fixture.Store.WriteReceipt(RestoreResultReceipt.FromMarker(
+                fixture.Marker,
+                RestoreExecutionStage.Prepared));
+            var operationId = fixture.Marker.JobSnapshot.JobId.ToString("N");
+            var firstSafety = Path.Combine(
+                directories.Configuration,
+                $".restore-{operationId}-first.xml.safety");
+            var secondSafety = Path.Combine(
+                directories.Configuration,
+                $".restore-{operationId}-second.xml.safety");
+            File.WriteAllText(firstSafety, "old-first");
+            File.WriteAllText(secondSafety, "old-second");
+
+            using (var lockSecond = File.Open(second, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var error = Assert.Throws<RestoreStateException>(() => fixture.Applier.ApplyPending());
+
+                Assert.Equal(PendingRestoreApplier.RollbackFailedError, error.ErrorCode);
+                Assert.Equal("old-first", File.ReadAllText(first));
+                Assert.Equal("new-second", ReadAllText(lockSecond));
+                Assert.Equal("old-first", File.ReadAllText(firstSafety));
+                Assert.Equal("old-second", File.ReadAllText(secondSafety));
+                Assert.NotNull(fixture.Store.ReadMarker());
+                Assert.Equal(RestoreExecutionStage.Prepared, fixture.Store.ReadReceipt()!.Stage);
+            }
+
+            var result = fixture.Applier.ApplyPending();
+
+            Assert.Equal(RestoreExecutionStage.RolledBack, result!.Stage);
+            Assert.Equal(PendingRestoreApplier.ReplaceFailedError, result.ErrorCode);
+            Assert.Equal("old-first", File.ReadAllText(first));
+            Assert.Equal("old-second", File.ReadAllText(second));
+            Assert.Null(fixture.Store.ReadMarker());
+            Assert.Equal(RestoreExecutionStage.RolledBack, fixture.Store.ReadReceipt()!.Stage);
+            Assert.DoesNotContain(
+                Directory.EnumerateFiles(directories.Configuration, "*", SearchOption.AllDirectories),
+                path => Path.GetFileName(path).StartsWith(".restore-", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void Damaged_receipt_stably_blocks_restore_before_any_overwrite()
         {
             using var directories = new TestDirectories();
@@ -406,6 +461,13 @@ namespace LSTY.SevenDPanel.Tests.Local
             {
                 File.Delete(path);
             }
+        }
+
+        private static string ReadAllText(FileStream stream)
+        {
+            stream.Position = 0;
+            using var reader = new StreamReader(stream, Encoding.UTF8, true, 1024, leaveOpen: true);
+            return reader.ReadToEnd();
         }
 
         private sealed record ArchiveFile(string Path, string Content);

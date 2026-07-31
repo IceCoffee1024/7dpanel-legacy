@@ -139,6 +139,69 @@ namespace LSTY.SevenDPanel.Tests
                 rewardStore.GetGrant(compensationSource.Operation.OperationId).State);
         }
 
+        [Fact]
+        public async Task Concurrent_refunds_with_different_request_keys_reverse_currency_once()
+        {
+            using var database = new RewardTestDatabase();
+            var rewardStore = new SqliteRewardStore(database.ConnectionFactory);
+            var economy = new SqliteEconomyLedgerStore(database.ConnectionFactory);
+            var catalog = RewardTestCatalog.Available();
+            new SaveRewardPackageUseCase(rewardStore, catalog).Execute(Package());
+            var delivery = new RecordingRewardDeliveryPort(command =>
+                RewardDeliveryResult.Succeeded(command.Entries
+                    .Where(entry => entry.Kind != RewardEntryKind.Currency)
+                    .Select(entry => RewardDeliveryEntryResult.Succeeded(
+                        entry.OperationEntryId,
+                        "action-" + entry.OperationEntryId))));
+            var grant = new GrantRewardUseCase(rewardStore, delivery, economy, catalog);
+            var source = await grant.ExecuteAsync(
+                Command("concurrent-refund-source", "concurrent-refund-source"),
+                CancellationToken.None);
+            using var concurrentEconomy = new ConcurrentRefundLedgerStore(economy);
+            var refund = new RefundRewardGrantUseCase(rewardStore, concurrentEconomy);
+            var occurredAtUtc = DateTimeOffset.UtcNow;
+
+            var attempts = new[]
+            {
+                Task.Run(() => refund.Execute(new RefundRewardGrantCommand(
+                    source.Operation.OperationId,
+                    "refund-key-1",
+                    "Owner",
+                    "owner-1",
+                    "refund-correlation-1",
+                    occurredAtUtc))),
+                Task.Run(() => refund.Execute(new RefundRewardGrantCommand(
+                    source.Operation.OperationId,
+                    "refund-key-2",
+                    "Owner",
+                    "owner-2",
+                    "refund-correlation-2",
+                    occurredAtUtc)))
+            };
+
+            try
+            {
+                await Task.WhenAll(attempts);
+            }
+            catch (RewardConcurrencyException)
+            {
+            }
+
+            Assert.Equal(1, attempts.Count(attempt => attempt.Status == TaskStatus.RanToCompletion));
+            var failed = Assert.Single(attempts, attempt => attempt.IsFaulted);
+            Assert.IsType<RewardConcurrencyException>(failed.Exception!.InnerException);
+            Assert.Equal(
+                GrantOperationState.Refunded,
+                rewardStore.GetGrant(source.Operation.OperationId).State);
+            Assert.Equal(
+                0,
+                economy.QueryAccounts(new AccountKeysetQuery(
+                    20, false, "EOS-player", null, null, null)).Accounts.Single().PostedBalance);
+            Assert.Single(economy.QueryTransactions(new TransactionKeysetQuery(
+                    50, "EOS-player", null, "RewardRefund", null, null))
+                .Transactions);
+        }
+
         private static RewardPackageDraft Package() => new RewardPackageDraft(
             "starter-package",
             "Starter Package",
@@ -192,6 +255,60 @@ namespace LSTY.SevenDPanel.Tests
                 Calls++;
                 return Task.FromResult(deliver(command));
             }
+        }
+
+        private sealed class ConcurrentRefundLedgerStore : IEconomyLedgerStore, IDisposable
+        {
+            private readonly IEconomyLedgerStore inner;
+            private readonly Barrier refundBarrier = new Barrier(2);
+
+            public ConcurrentRefundLedgerStore(IEconomyLedgerStore inner) =>
+                this.inner = inner;
+
+            public AccountSnapshot GetOrCreatePlayerAccount(
+                string crossplatformId,
+                string idempotencyKey,
+                long openingAmount,
+                DateTimeOffset occurredAtUtc) => inner.GetOrCreatePlayerAccount(
+                    crossplatformId,
+                    idempotencyKey,
+                    openingAmount,
+                    occurredAtUtc);
+
+            public LedgerWriteResult Commit(LedgerTransactionDraft transaction)
+            {
+                if (string.Equals(transaction.Type, "RewardRefund", StringComparison.Ordinal) &&
+                    !refundBarrier.SignalAndWait(TimeSpan.FromSeconds(5)))
+                {
+                    throw new TimeoutException("Concurrent refund test did not reach the commit barrier.");
+                }
+
+                return inner.Commit(transaction);
+            }
+
+            public FundsReservationResult TryReserve(FundsReservationDraft reservation) =>
+                inner.TryReserve(reservation);
+
+            public LedgerWriteResult Capture(
+                string reservationId,
+                string transactionId,
+                string idempotencyKey,
+                DateTimeOffset occurredAtUtc) => inner.Capture(
+                    reservationId,
+                    transactionId,
+                    idempotencyKey,
+                    occurredAtUtc);
+
+            public bool Release(string reservationId, DateTimeOffset occurredAtUtc) =>
+                inner.Release(reservationId, occurredAtUtc);
+
+            public AccountPage QueryAccounts(AccountKeysetQuery query) =>
+                inner.QueryAccounts(query);
+
+            public TransactionPage QueryTransactions(TransactionKeysetQuery query) =>
+                inner.QueryTransactions(query);
+
+            public void Dispose() => refundBarrier.Dispose();
         }
     }
 }

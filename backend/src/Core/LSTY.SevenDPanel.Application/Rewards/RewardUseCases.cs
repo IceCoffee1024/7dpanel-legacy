@@ -388,24 +388,32 @@ namespace LSTY.SevenDPanel.Application.Rewards
                 "reward-account:" + operation.CrossplatformId,
                 0,
                 command.OccurredAtUtc);
-            var transactionId = "reward-refund:" + operation.OperationId + ":" + command.IdempotencyKey;
-            var write = ledger.Commit(new LedgerTransactionDraft(
-                transactionId,
-                "RewardRefund",
-                transactionId,
-                command.OccurredAtUtc,
-                command.ActorKind,
-                command.ActorId,
-                operation.CrossplatformId,
-                "GrantRefund",
-                operation.OperationId,
-                command.CorrelationId,
-                null,
-                new[]
-                {
-                    new LedgerEntryDraft(account.AccountId, LedgerSide.Debit, amount),
-                    new LedgerEntryDraft(SystemAccountIds.Rewards, LedgerSide.Credit, amount)
-                }));
+            var transactionId = "reward-refund:" + operation.OperationId;
+            LedgerWriteResult write;
+            try
+            {
+                write = ledger.Commit(new LedgerTransactionDraft(
+                    transactionId,
+                    "RewardRefund",
+                    transactionId,
+                    command.OccurredAtUtc,
+                    command.ActorKind,
+                    command.ActorId,
+                    operation.CrossplatformId,
+                    "GrantRefund",
+                    operation.OperationId,
+                    command.CorrelationId,
+                    null,
+                    new[]
+                    {
+                        new LedgerEntryDraft(account.AccountId, LedgerSide.Debit, amount),
+                        new LedgerEntryDraft(SystemAccountIds.Rewards, LedgerSide.Credit, amount)
+                    }));
+            }
+            catch (EconomyIdempotencyConflictException)
+            {
+                throw new RewardConcurrencyException();
+            }
             if (!store.TryMarkRefunded(
                     operation.OperationId,
                     operation.RowVersion,

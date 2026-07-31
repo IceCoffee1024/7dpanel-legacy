@@ -281,14 +281,9 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
             {
                 useAmount = (decimal)itemValue.UseTimes;
             }
-            var mods = (itemValue.Modifications ?? Array.Empty<global::ItemValue>())
-                .Where(value => value != null && !value.IsEmpty() &&
-                                value.ItemClass is global::ItemClassModifier)
-                .Select(value => Normalize(value.ItemClass?.GetItemName()))
-                .Where(value => value != null)
-                .Cast<string>()
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
+            var mods = CopyModInternalNames(
+                ReadModInternalNames(itemValue.Modifications),
+                ReadModInternalNames(itemValue.CosmeticMods));
             return new InventoryItemScalar(
                 container,
                 slot,
@@ -298,6 +293,24 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Outbound.Players
                 useAmount,
                 mods);
         }
+
+        internal static IReadOnlyList<string> CopyModInternalNames(
+            IEnumerable<string?>? modifications,
+            IEnumerable<string?>? cosmeticMods) =>
+            (modifications ?? Array.Empty<string?>())
+                .Concat(cosmeticMods ?? Array.Empty<string?>())
+                .Select(Normalize)
+                .Where(value => value != null)
+                .Cast<string>()
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+        private static IEnumerable<string?> ReadModInternalNames(
+            IEnumerable<global::ItemValue>? values) =>
+            (values ?? Array.Empty<global::ItemValue>())
+                .Where(value => value != null && !value.IsEmpty() &&
+                                value.ItemClass is global::ItemClassModifier)
+                .Select(value => value.ItemClass?.GetItemName());
 
         private static PlayerEvidenceProgressionDraft UnavailableProgression(
             IEnumerable<PlayerEvidenceProgressionDefinition> definitions,

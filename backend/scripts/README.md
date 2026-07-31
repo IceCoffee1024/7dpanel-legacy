@@ -19,6 +19,10 @@ backend\scripts\Test-HealthEndpoint.cmd
 The matching `.ps1` files expose PowerShell parameters for automation. Explicit
 parameters take precedence over values loaded from the environment file.
 
+`Test-ReleaseArtifact.ps1` is the publish-independent release layout gate. It
+validates an existing artifact directory against `release-manifest.json` and
+does not build, publish, start, or modify a 7DTD server.
+
 ## Local Configuration
 
 Copy `backend/.env.example` to the ignored `backend/.env.local` file and set
@@ -76,7 +80,9 @@ runtime layout:
   dbup-core.dll
   dbup-sqlite.dll
   LSTY.SevenDPanel.Application.dll
+  LSTY.SevenDPanel.Domain.dll
   LSTY.SevenDPanel.Hosting.dll
+  LSTY.SevenDPanel.Adapters.Local.dll
   LSTY.SevenDPanel.Adapters.Web.dll
   LSTY.SevenDPanel.Adapters.SevenDays.dll
   LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll
@@ -103,6 +109,38 @@ runtime layout:
     index.html
     assets/
 ```
+
+After assembling `wwwroot/`, publish runs the same manifest-driven validator
+available to CI. The manifest owns the exact eight product DLLs, required managed
+dependencies and config examples, forbidden game/legacy assemblies and assets,
+Windows/Linux x64 SQLite native RID paths, Admin asset minimums, and the
+`7dtd-reference` exclusion.
+
+## Release Artifact Validation
+
+Validate an already assembled Mod directory on Windows without invoking
+publish:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/Test-ReleaseArtifact.ps1 -ArtifactPath <ModDirectory>
+```
+
+Use PowerShell 7 for the same deterministic gate on Linux:
+
+```bash
+pwsh -NoProfile -File backend/scripts/Test-ReleaseArtifact.ps1 -ArtifactPath <ModDirectory>
+```
+
+Run the self-contained validator fixture suite from the repository root:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Test-ReleaseArtifact.Tests.ps1
+```
+
+The fixture suite uses temporary synthetic files only. It covers the valid
+layout plus missing product DLLs/native assets, forbidden files and paths,
+Admin output, JSON config examples, malformed release manifests, and private
+reference-content exclusion.
 
 The script keeps the Windows and Linux native assets under their RID
 directories and removes any root `e_sqlite3.dll` because the 7DTD Mod loader

@@ -1054,7 +1054,62 @@
         "staleDescription": "The latest refresh failed; these filtered results may be stale."
       }
     },
-    "settings": {
+  "mutes": {
+    "title": "Chat mutes",
+    "create": "Add mute",
+    "permanent": "Permanent",
+    "state": {
+      "loading": "Loading chat mutes",
+      "empty": "No active chat mutes",
+      "failed": "Chat mutes are unavailable",
+      "forbidden": "You cannot manage chat mutes",
+      "stale": "Refresh failed; showing the last successful result"
+    },
+    "table": {
+      "aria": "Active chat mutes",
+      "crossplatformId": "Cross-platform ID",
+      "displayName": "Display name",
+      "reason": "Reason",
+      "expires": "Expires",
+      "updatedAtUtc": "Updated (UTC)",
+      "actions": "Actions"
+    },
+    "cards": {
+      "aria": "Active chat mutes on small screens",
+      "missingDisplayName": "Display name not provided"
+    },
+    "actions": {
+      "release": "Release",
+      "editAria": "Edit mute for {id}",
+      "releaseAria": "Release mute for {id}"
+    },
+    "form": {
+      "createTitle": "Add chat mute",
+      "editTitle": "Edit chat mute",
+      "createDescription": "Create a permanent mute or one with an explicit UTC expiration.",
+      "editDescription": "Update this mute and apply it immediately.",
+      "crossplatformId": "Cross-platform ID",
+      "displayName": "Display name",
+      "reason": "Reason",
+      "permanent": "Permanent mute",
+      "expiresAtUtc": "Expiration (UTC)",
+      "correlationId": "Correlation ID",
+      "create": "Create",
+      "save": "Save"
+    },
+    "validation": {
+      "required": "Cross-platform ID and reason are required",
+      "utcTimestamp": "Expiration must be a UTC timestamp, for example 2026-07-26T08:00:00Z"
+    },
+    "release": {
+      "title": "Release chat mute",
+      "description": "The player can send chat messages immediately after release.",
+      "confirmation": "Release the chat mute for {id}?",
+      "confirm": "Confirm release",
+      "confirmAria": "Confirm releasing the chat mute for {id}"
+    }
+  },
+  "settings": {
       "title": "Chat settings",
       "loading": "Loading chat settings",
       "forbidden": "You cannot manage chat settings",

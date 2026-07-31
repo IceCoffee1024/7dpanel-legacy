@@ -128,7 +128,10 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                 catch (Exception exception) when (
                     exception is IOException || exception is UnauthorizedAccessException)
                 {
-                    var rolledBack = TryRollback(plan);
+                    var rollback = TryRollback(plan);
+                    if (rollback == RollbackOutcome.RetryableFailure)
+                        throw new RestoreStateException(RollbackFailedError, exception);
+                    var rolledBack = rollback == RollbackOutcome.Succeeded;
                     var stage = rolledBack
                         ? RestoreExecutionStage.RolledBack
                         : RestoreExecutionStage.RollbackFailed;
@@ -174,7 +177,10 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                 var archivePath = ResolveAndValidateArchive(marker, artifact);
                 var validated = ValidateArchive(archivePath, artifact, marker);
                 var plan = BuildPlan(marker, validated);
-                if (TryRollback(plan))
+                var rollback = TryRollback(plan);
+                if (rollback == RollbackOutcome.RetryableFailure)
+                    throw new RestoreStateException(RollbackFailedError);
+                if (rollback == RollbackOutcome.Succeeded)
                 {
                     store.WriteReceipt(RestoreResultReceipt.FromMarker(
                         marker,
@@ -427,12 +433,17 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                     targetDirectory,
                     ".restore-" + operationId + "-" + Path.GetFileName(targetPath) + ".safety");
                 ValidateTargetPath(marker.BackupKind, safetyPath, allowPanelState: true);
+                var rollbackPath = Path.Combine(
+                    targetDirectory,
+                    ".restore-" + operationId + "-" + Path.GetFileName(targetPath) + ".rollback");
+                ValidateTargetPath(marker.BackupKind, rollbackPath, allowPanelState: true);
                 files.Add(new RestoreFilePlan(
                     file.RelativePath,
                     file.Sha256,
                     targetPath,
                     stagingPath,
-                    safetyPath));
+                    safetyPath,
+                    rollbackPath));
             }
             return new RestorePlan(stagingRoot, files);
         }
@@ -444,7 +455,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
             {
                 if (!File.Exists(file.TargetPath))
                     throw new RestoreApplyException(TargetMissingError);
-                if (File.Exists(file.SafetyPath))
+                if (File.Exists(file.SafetyPath) || File.Exists(file.RollbackPath))
                     throw new RestoreApplyException(ApplyFailedError);
             }
             Directory.CreateDirectory(plan.StagingRoot);
@@ -492,7 +503,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
             }
         }
 
-        private bool TryRollback(RestorePlan plan)
+        private RollbackOutcome TryRollback(RestorePlan plan)
         {
             try
             {
@@ -500,26 +511,30 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                 {
                     var safetyExists = File.Exists(file.SafetyPath);
                     var stagingExists = File.Exists(file.StagingPath);
-                    if (!safetyExists) return false;
+                    if (!safetyExists) return RollbackOutcome.RecoveryMaterialMissing;
                     if (stagingExists)
                     {
-                        File.Delete(file.SafetyPath);
+                        continue;
                     }
-                    else if (File.Exists(file.TargetPath))
+
+                    // Keep the authoritative safety copy until the terminal receipt is durable.
+                    // A process interruption can then repeat this replacement safely.
+                    File.Copy(file.SafetyPath, file.RollbackPath, overwrite: true);
+                    if (File.Exists(file.TargetPath))
                     {
-                        File.Replace(file.SafetyPath, file.TargetPath, null);
+                        File.Replace(file.RollbackPath, file.TargetPath, null);
                     }
                     else
                     {
-                        File.Move(file.SafetyPath, file.TargetPath);
+                        File.Move(file.RollbackPath, file.TargetPath);
                     }
                 }
-                return true;
+                return RollbackOutcome.Succeeded;
             }
             catch (Exception exception) when (
                 exception is IOException || exception is UnauthorizedAccessException)
             {
-                return false;
+                return RollbackOutcome.RetryableFailure;
             }
         }
 
@@ -686,6 +701,7 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
                 try
                 {
                     if (File.Exists(file.SafetyPath)) File.Delete(file.SafetyPath);
+                    if (File.Exists(file.RollbackPath)) File.Delete(file.RollbackPath);
                 }
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
@@ -706,7 +722,16 @@ namespace LSTY.SevenDPanel.Adapters.Local.Restore
             string Sha256,
             string TargetPath,
             string StagingPath,
-            string SafetyPath);
+            string SafetyPath,
+            string RollbackPath);
+
+        private enum RollbackOutcome
+        {
+            Succeeded,
+            RetryableFailure,
+            RecoveryMaterialMissing
+        }
+
         private sealed record ParsedManifest(
             int Version,
             string Kind,

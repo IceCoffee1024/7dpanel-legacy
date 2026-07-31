@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
@@ -502,82 +503,45 @@ namespace LSTY.SevenDPanel.Tests
                 "backend",
                 "scripts",
                 "Publish-Mod.ps1"));
-            var forbiddenNamesStart = publishScript.IndexOf(
-                "$forbiddenNames = @(",
-                StringComparison.Ordinal);
-            var forbiddenNamesEnd = publishScript.IndexOf(
-                "$forbiddenFiles =",
-                forbiddenNamesStart,
-                StringComparison.Ordinal);
-            var requiredNamesStart = publishScript.IndexOf(
-                "$requiredNames = @(",
-                StringComparison.Ordinal);
-            var requiredNamesEnd = publishScript.IndexOf(
-                "$missingRequired =",
-                requiredNamesStart,
-                StringComparison.Ordinal);
-            Assert.True(forbiddenNamesStart >= 0 && forbiddenNamesEnd > forbiddenNamesStart);
-            Assert.True(requiredNamesStart >= 0 && requiredNamesEnd > requiredNamesStart);
-            var forbiddenNames = publishScript.Substring(
-                forbiddenNamesStart,
-                forbiddenNamesEnd - forbiddenNamesStart);
-            var requiredNames = publishScript.Substring(
-                requiredNamesStart,
-                requiredNamesEnd - requiredNamesStart);
+            var manifestPath = Path.Combine(
+                RepositoryRoot,
+                "backend",
+                "scripts",
+                "release-manifest.json");
+            var manifest = JObject.Parse(File.ReadAllText(manifestPath));
+            var productAssemblies = manifest["productAssemblies"]!.Values<string>().ToArray();
+            var requiredManagedAssemblies = manifest["requiredManagedAssemblies"]!.Values<string>().ToArray();
+            var forbiddenNames = manifest["forbiddenFileNames"]!.Values<string>().ToArray();
+            var requiredNativeAssets = manifest["requiredNativeAssets"]!.Values<string>().ToArray();
 
-            Assert.Contains("'UnityEngine.CoreModule.dll'", publishScript);
-            Assert.Contains("'0Harmony.dll'", forbiddenNames);
-            Assert.DoesNotContain("'0Harmony.dll'", requiredNames);
-            Assert.Contains("$requiredNames", publishScript);
-            Assert.Contains("'LSTY.SevenDPanel.dll'", requiredNames);
-            Assert.Contains("'LSTY.SevenDPanel.Application.dll'", requiredNames);
-            Assert.Contains("'LSTY.SevenDPanel.Hosting.dll'", requiredNames);
-            Assert.Contains("'LSTY.SevenDPanel.Adapters.Web.dll'", requiredNames);
-            Assert.Contains("'LSTY.SevenDPanel.Adapters.SevenDays.dll'", requiredNames);
-            Assert.Contains("'LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll'", requiredNames);
-            Assert.Contains("'System.Threading.Channels.dll'", publishScript);
-            Assert.Contains("'System.Threading.Tasks.Extensions.dll'", publishScript);
-            Assert.Contains("'Microsoft.Extensions.DependencyInjection.dll'", publishScript);
-            Assert.Contains("'Microsoft.Extensions.DependencyInjection.Abstractions.dll'", publishScript);
-            Assert.Contains("'Microsoft.Bcl.AsyncInterfaces.dll'", publishScript);
-            Assert.Contains("'Microsoft.CSharp.dll'", publishScript);
-            Assert.Contains("'System.Runtime.CompilerServices.Unsafe.dll'", publishScript);
-            Assert.Contains("'System.Runtime.InteropServices.RuntimeInformation.dll'", publishScript);
-            Assert.Contains("'System.Reflection.Emit.dll'", publishScript);
-            Assert.Contains("'System.Dynamic.dll'", publishScript);
-            Assert.Contains("'System.ComponentModel.DataAnnotations.dll'", publishScript);
-            Assert.Contains("'Dapper.dll'", publishScript);
-            Assert.Contains("'dbup-core.dll'", publishScript);
-            Assert.Contains("'dbup-sqlite.dll'", publishScript);
-            Assert.Contains("'Microsoft.Data.Sqlite.dll'", publishScript);
-            Assert.Contains("'Namotion.Reflection.dll'", requiredNames);
-            Assert.Contains("'NJsonSchema.Annotations.dll'", requiredNames);
-            Assert.Contains("'NJsonSchema.dll'", requiredNames);
-            Assert.Contains("'NJsonSchema.NewtonsoftJson.dll'", requiredNames);
-            Assert.Contains("'NSwag.AspNet.Owin.dll'", requiredNames);
-            Assert.Contains("'NSwag.Core.dll'", requiredNames);
-            Assert.Contains("'NSwag.Generation.dll'", requiredNames);
-            Assert.Contains("'NSwag.Generation.WebApi.dll'", requiredNames);
-            Assert.Contains("'System.IO.Pipelines.dll'", requiredNames);
-            Assert.Contains("'System.Text.Encodings.Web.dll'", requiredNames);
-            Assert.Contains("'System.Text.Json.dll'", requiredNames);
-            Assert.Contains("'Newtonsoft.Json.dll'", forbiddenNames);
-            Assert.DoesNotContain("'Newtonsoft.Json.dll'", requiredNames);
-            Assert.DoesNotContain("'SQLitePCLRaw.batteries_v2.dll'", forbiddenNames);
-            Assert.Contains("'SQLitePCLRaw.batteries_v2.dll'", requiredNames);
-            Assert.Contains("'SQLitePCLRaw.batteries_v2.dll.config'", requiredNames);
-            Assert.Contains("'SQLitePCLRaw.core.dll'", publishScript);
-            Assert.Contains("'SQLitePCLRaw.provider.dynamic_cdecl.dll'", publishScript);
-            Assert.Contains("'e_sqlite3.dll'", publishScript);
-            Assert.Contains("'runtimes\\win-x64\\native\\e_sqlite3.dll'", publishScript);
-            Assert.Contains("'runtimes\\linux-x64\\native\\libe_sqlite3.so'", publishScript);
-            Assert.Contains("$forbiddenRootRuntimeNames", publishScript);
+            Assert.Equal(1, (int)manifest["schemaVersion"]!);
+            Assert.Equal(8, productAssemblies.Length);
+            Assert.Contains("LSTY.SevenDPanel.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Application.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Domain.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Hosting.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Adapters.Local.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Adapters.Web.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Adapters.SevenDays.dll", productAssemblies);
+            Assert.Contains("LSTY.SevenDPanel.Adapters.Persistence.Sqlite.dll", productAssemblies);
+            Assert.Contains("0Harmony.dll", forbiddenNames);
+            Assert.Contains("Assembly-CSharp.dll", forbiddenNames);
+            Assert.Contains("Newtonsoft.Json.dll", forbiddenNames);
+            Assert.Contains("LogLibrary.dll", forbiddenNames);
+            Assert.Contains("UnityEngine.CoreModule.dll", forbiddenNames);
+            Assert.Contains("System.Data.SQLite.dll", forbiddenNames);
+            Assert.Contains("SQLite.Interop.dll", forbiddenNames);
+            Assert.DoesNotContain("SQLitePCLRaw.batteries_v2.dll", forbiddenNames);
+            Assert.Contains("SQLitePCLRaw.batteries_v2.dll", requiredManagedAssemblies);
+            Assert.Contains("runtimes/win-x64/native/e_sqlite3.dll", requiredNativeAssets);
+            Assert.Contains("runtimes/linux-x64/native/libe_sqlite3.so", requiredNativeAssets);
+            Assert.Contains("7dtd-reference", manifest["forbiddenPathSegments"]!.Values<string>());
+            Assert.Contains("config.example.json", manifest["configExamples"]!.Values<string>());
+            Assert.Equal("wwwroot/index.html", (string)manifest["admin"]!["index"]!);
+            Assert.Equal("wwwroot/assets", (string)manifest["admin"]!["assetsDirectory"]!);
+            Assert.Contains("release-manifest.json", publishScript);
+            Assert.Contains("Test-ReleaseArtifact.ps1", publishScript);
             Assert.Contains("Remove-Item -LiteralPath $path -Force", publishScript);
-            Assert.DoesNotContain("Copy-Item -LiteralPath $requiredNativePath", publishScript);
-            Assert.Contains("$requiredRuntimeAssetPaths", publishScript);
-            Assert.Contains("'System.Data.SQLite.dll'", publishScript);
-            Assert.Contains("'SQLite.Interop.dll'", publishScript);
-            Assert.Contains("Missing required managed dependencies", publishScript);
         }
 
         [Fact]
