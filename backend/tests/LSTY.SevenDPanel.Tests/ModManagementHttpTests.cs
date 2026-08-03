@@ -18,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Web")]
     public sealed class ModManagementHttpTests
     {
         [Theory]
@@ -87,6 +89,10 @@ namespace LSTY.SevenDPanel.Tests
             return new Host(provider, configuration);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class Catalog : IModCatalog
         {
             private readonly ModStateChangeResult result;
@@ -98,12 +104,20 @@ namespace LSTY.SevenDPanel.Tests
             public ModStateChangeResult SetEnabled(string directoryId, bool enabled) => result;
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class LoadedQuery : ILoadedModQuery
         {
             private readonly LoadedModSnapshot snapshot;
             public LoadedQuery(LoadedModSnapshot snapshot) { this.snapshot = snapshot; }
             public LoadedModSnapshot GetLoadedNames() => snapshot;
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -126,6 +140,10 @@ namespace LSTY.SevenDPanel.Tests
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class Host : IDisposable
         {

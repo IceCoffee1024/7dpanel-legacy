@@ -5,6 +5,8 @@ import type { AutomationController } from '../model/useAutomation'
 import { computed, reactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { operationStatus } from '../../../shared/model/operationStatus'
+
 const props = defineProps<{ controller: AutomationController }>()
 const { t } = useI18n()
 const deleteConfirmationOpen = shallowRef(false)
@@ -270,6 +272,22 @@ function removeSelected() {
                 :title="t(controller.validation.value.isValid ? 'automation.validation.valid' : 'automation.validation.invalid')"
                 :description="controller.validation.value.issues.map(issue => `${issue.path}: ${issue.code}`).join('\n') || t('automation.validation.noIssues')"
               />
+            </UCard>
+            <UCard v-if="controller.executionState.value === 'available'">
+              <template #header>
+                <h2 class="font-semibold">
+                  {{ t('automation.execution.title') }}
+                </h2>
+              </template>
+              <div v-if="controller.executions.value.length" class="space-y-2">
+                <div v-for="execution in controller.executions.value" :key="execution.executionId" class="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>{{ execution.ruleId }}</span>
+                  <UBadge :color="operationStatus(execution.status).tone" :label="t(operationStatus(execution.status).i18nKey)" variant="subtle" />
+                </div>
+              </div>
+              <p v-else class="text-sm text-muted">
+                {{ t('automation.execution.empty') }}
+              </p>
             </UCard>
             <UCard>
               <template #header>

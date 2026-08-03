@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysGameLifecycleAdapterTests
     {
         [Fact]
@@ -138,6 +140,10 @@ namespace LSTY.SevenDPanel.Tests
             };
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingRuntime : IModRuntime
         {
             private readonly IList<string>? trace;
@@ -173,6 +179,10 @@ namespace LSTY.SevenDPanel.Tests
                 if (StopException != null) throw StopException;
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class FakeLifecycleEvents : ISevenDaysLifecycleEvents
         {
@@ -227,6 +237,10 @@ namespace LSTY.SevenDPanel.Tests
                 }
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class FakeSubscription : IDisposable
         {

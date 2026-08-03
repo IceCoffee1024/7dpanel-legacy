@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysPlayerAccessControlTests
     {
         [Fact]
@@ -74,6 +76,10 @@ namespace LSTY.SevenDPanel.Tests
 
             Assert.Same(expected, result);
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class DelegateNativeAccessLists : INativePlayerAccessLists
         {

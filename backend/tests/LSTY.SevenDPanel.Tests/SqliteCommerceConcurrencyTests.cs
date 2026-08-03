@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteCommerceConcurrencyTests
     {
         [Fact]

@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerEvidenceUseCaseTests
     {
         [Fact]
@@ -497,6 +499,10 @@ namespace LSTY.SevenDPanel.Tests
 
         private const string PlayerId = "EOS_1";
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class TestHistoryStore : IPlayerHistoryStore
         {
             public HistoricalPlayerDetails? Player { get; set; }
@@ -519,6 +525,10 @@ namespace LSTY.SevenDPanel.Tests
                 HistoricalPlayerLastLocationsStoreQuery query) => throw new NotSupportedException();
             public int Compact(DateTimeOffset utcNow, int maximumDeletes) => throw new NotSupportedException();
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TestEvidenceStore : IPlayerEvidenceStore
         {
@@ -649,6 +659,10 @@ namespace LSTY.SevenDPanel.Tests
             public void Compact(PlayerEvidenceCompactionRequest request) => throw new NotSupportedException();
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class PageResult<T>
         {
             public PageResult(IReadOnlyList<T> items, PlayerEvidenceCursor? nextCursor)
@@ -660,6 +674,10 @@ namespace LSTY.SevenDPanel.Tests
             public IReadOnlyList<T> Items { get; }
             public PlayerEvidenceCursor? NextCursor { get; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TestOperationQuery : IPlayerActionOperationQuery
         {

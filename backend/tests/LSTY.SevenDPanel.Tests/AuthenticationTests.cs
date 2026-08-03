@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class AuthenticationTests
     {
         [Fact]
@@ -225,6 +227,10 @@ namespace LSTY.SevenDPanel.Tests
                 });
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class TestCredentialStore : IPanelCredentialStore
         {
             private readonly string password;
@@ -268,6 +274,10 @@ namespace LSTY.SevenDPanel.Tests
                 return true;
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TestAccessTokenStore : IPanelAccessTokenStore
         {
@@ -314,6 +324,10 @@ namespace LSTY.SevenDPanel.Tests
                 return true;
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TestApiKeyStore : IPanelApiKeyStore
         {

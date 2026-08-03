@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Automation")]
+    [Trait("Boundary", "Application")]
     public sealed class AutomationExecutionTests
     {
         [Fact]
@@ -420,11 +422,19 @@ namespace LSTY.SevenDPanel.Tests
             return string.Concat(bytes.Select(item => item.ToString("x2")));
         }
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ReadyDependencies : IAutomationDependencyCatalog
         {
             public AutomationDependencyState Resolve(AutomationAction action) =>
                 AutomationDependencyState.Ready;
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ResolvedTargets : IAutomationTargetResolver
         {
@@ -436,6 +446,10 @@ namespace LSTY.SevenDPanel.Tests
                         ? "global"
                         : action.ReferenceId ?? snapshot.ActorCrossplatformId ?? "missing");
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingDispatcher : IAutomationActionDispatcher
         {
@@ -459,6 +473,10 @@ namespace LSTY.SevenDPanel.Tests
                     : AutomationDispatchResult.Succeeded(IsConsumerIdempotent(action));
             }
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingStore : IAutomationStore
         {
@@ -504,6 +522,10 @@ namespace LSTY.SevenDPanel.Tests
                     .OrderBy(result => result.Ordinal)
                     .ToArray();
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

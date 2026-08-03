@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Persistence")]
     public sealed class EconomyCommunityMigrationTests
     {
         private static readonly string[] ExpectedTables =
@@ -444,6 +446,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(result.Successful, result.Error?.ToString());
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class TemporaryDatabase : IDisposable
         {
             private readonly string directory = Path.Combine(
@@ -464,10 +470,18 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ForeignKeyViolation
         {
             public string table { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class ForeignKeyRow
         {
@@ -476,11 +490,19 @@ namespace LSTY.SevenDPanel.Tests
             public string on_delete { get; set; } = string.Empty;
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class TableColumn
         {
             public string name { get; set; } = string.Empty;
             public string type { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class AuditProjectionRow
         {

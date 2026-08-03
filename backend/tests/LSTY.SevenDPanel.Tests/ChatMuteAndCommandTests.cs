@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class ChatMuteAndCommandTests
     {
         [Fact]
@@ -138,6 +140,10 @@ namespace LSTY.SevenDPanel.Tests
         private static IGameChatCommandHandler Handler(string name, params string[] aliases) =>
             new StubCommandHandler(name, aliases);
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubCommandHandler : IGameChatCommandHandler
         {
             public StubCommandHandler(string name, IReadOnlyList<string> aliases)
@@ -150,6 +156,10 @@ namespace LSTY.SevenDPanel.Tests
             public GameChatCommandResult Handle(GameChatCommandContext context) =>
                 GameChatCommandResult.HelpSucceeded(new[] { Descriptor.Name });
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class CountingCommandHandler : IGameChatCommandHandler
         {
@@ -171,6 +181,10 @@ namespace LSTY.SevenDPanel.Tests
                 return GameChatCommandResult.HelpSucceeded(new[] { "claimed" });
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingCommandAudit : IGameChatCommandAuditTrail
         {

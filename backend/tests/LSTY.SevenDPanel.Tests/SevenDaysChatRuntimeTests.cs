@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysChatRuntimeTests
     {
         [Fact]
@@ -66,6 +68,10 @@ namespace LSTY.SevenDPanel.Tests
             Message = "hello"
         };
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class SettingsStore : IChatSettingsStore
         {
             private readonly List<string> calls;
@@ -74,6 +80,10 @@ namespace LSTY.SevenDPanel.Tests
             public ChatSettings Save(ChatSettings settings) => settings;
             public ChatSettings Reset() => Get();
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class ColoredStore : IColoredChatStore
         {
@@ -89,6 +99,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool TryDeleteProfile(string crossplatformId) => false;
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class MuteStore : IChatMuteStore
         {
             private readonly ChatMuteRecord mute;
@@ -100,6 +114,10 @@ namespace LSTY.SevenDPanel.Tests
             public IReadOnlyList<ChatMuteRecord> Release(string crossplatformId, ChatMuteOperation operation) => Array.Empty<ChatMuteRecord>();
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private class HistoryStore : IChatHistoryStore
         {
             public virtual void Append(ChatMessage message) { }
@@ -108,12 +126,20 @@ namespace LSTY.SevenDPanel.Tests
             public int DeleteBefore(DateTimeOffset cutoffUtc, int maximumDeletes) => 0;
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class BlockingHistoryStore : HistoryStore
         {
             private readonly ManualResetEventSlim gate;
             public BlockingHistoryStore(ManualResetEventSlim gate) => this.gate = gate;
             public override void Append(ChatMessage message) => gate.Wait();
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingRuntime : IModRuntime
         {
@@ -123,6 +149,10 @@ namespace LSTY.SevenDPanel.Tests
             public void MarkGameReady() { }
             public void Stop() => calls.Add("inner-stop");
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class CallbackDisposable : IDisposable
         {

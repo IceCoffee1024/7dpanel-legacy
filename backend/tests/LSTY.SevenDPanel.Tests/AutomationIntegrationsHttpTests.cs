@@ -21,6 +21,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Automation")]
+    [Trait("Boundary", "Web")]
     public sealed class AutomationIntegrationsHttpTests
     {
         private static readonly DateTimeOffset Now =
@@ -391,6 +393,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration, store);
         }
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -420,6 +426,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -452,11 +462,19 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class ReadyDependencyCatalog : IAutomationDependencyCatalog
         {
             public AutomationDependencyState Resolve(AutomationAction action) =>
                 AutomationDependencyState.Ready;
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class SafeTargetResolver : IAutomationTargetResolver
         {
@@ -476,6 +494,10 @@ namespace LSTY.SevenDPanel.Tests
                 return AutomationTargetResolution.Unresolved("automation_target_not_found");
             }
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Web")]
 
         public sealed class RecordingAutomationStore : IAutomationStore
         {

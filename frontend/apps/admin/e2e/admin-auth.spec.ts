@@ -75,3 +75,37 @@ test('an authenticated login redirect accepts safe internal targets and rejects 
   await gotoAdmin(page, '/login?redirect=%2F%2Fevil.example')
   await expect(page).toHaveURL(url => url.pathname === '/players')
 })
+
+test('an expired stored token is rejected before an Owner-only deep link is rendered', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('7dpanel.auth.session.v1', JSON.stringify({
+      version: 1,
+      token: '7dp_t_expired.secret',
+      expiresAt: Date.now() - 1,
+      username: 'expired-owner',
+      role: 'Owner',
+    }))
+  })
+  await mockAdminApi(page)
+
+  await gotoAdmin(page, '/operations/configuration?source=expired-token')
+
+  await expect(page).toHaveURL(url => (
+    url.pathname === '/login'
+    && url.searchParams.get('redirect') === '/operations/configuration?source=expired-token'
+  ))
+})
+
+test('legacy and current capability deep links resolve to the same Owner destinations', async ({ page }) => {
+  await useStoredSession(page, 'Owner')
+  await mockAdminApi(page)
+
+  for (const [legacy, current] of [
+    ['/server-configuration?source=legacy#field', '/operations/configuration?source=legacy#field'],
+    ['/mods?source=legacy', '/operations/extensions/mods?source=legacy'],
+    ['/game-chat/history?source=legacy', '/community/chat/history?source=legacy'],
+  ] as const) {
+    await gotoAdmin(page, legacy)
+    await expect(page, legacy).toHaveURL(url => `${url.pathname}${url.search}${url.hash}` === current)
+  }
+})

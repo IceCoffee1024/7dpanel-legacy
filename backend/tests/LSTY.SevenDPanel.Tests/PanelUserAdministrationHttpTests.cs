@@ -19,6 +19,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Web")]
     public sealed class PanelUserAdministrationHttpTests
     {
         [Fact]
@@ -86,6 +88,10 @@ namespace LSTY.SevenDPanel.Tests
             return new Host(provider, configuration);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubStore : IPanelUserAdministrationStore
         {
             public PanelUserMutationResult UpdateResult { get; set; } =
@@ -114,6 +120,10 @@ namespace LSTY.SevenDPanel.Tests
                 PanelUserMutationResult.With(PanelUserMutationStatus.Deleted);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class PrincipalHandler : DelegatingHandler
         {
             private readonly string? role;
@@ -138,6 +148,10 @@ namespace LSTY.SevenDPanel.Tests
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class Host : IDisposable
         {

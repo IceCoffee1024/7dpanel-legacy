@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Automation")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteAutomationIntegrationsTests
     {
         private static readonly DateTimeOffset Now =
@@ -556,6 +558,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(result.Successful, result.Error?.ToString());
         }
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class TemporaryDatabase : IDisposable
         {
             private readonly string directory = Path.Combine(
@@ -581,10 +587,18 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class TableColumn
         {
             public string name { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class ForeignKeyRow
         {
@@ -592,10 +606,18 @@ namespace LSTY.SevenDPanel.Tests
             public string from { get; set; } = string.Empty;
         }
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ForeignKeyViolation
         {
             public string table { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class RuleTombstoneRow
         {
@@ -604,6 +626,10 @@ namespace LSTY.SevenDPanel.Tests
             public long deleted { get; set; }
             public long updated_utc { get; set; }
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class AuditProjectionRow
         {

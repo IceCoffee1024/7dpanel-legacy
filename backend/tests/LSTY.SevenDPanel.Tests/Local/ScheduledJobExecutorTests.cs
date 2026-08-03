@@ -16,6 +16,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class ScheduledJobExecutorTests
     {
         [Fact]
@@ -365,6 +367,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class ScheduledFixture
         {
             private ScheduledFixture(params JobRecord[] claims)
@@ -410,6 +416,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         private sealed record RecordedDelay(
             TimeSpan Duration,
             CancellationToken CancellationToken);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class RecordingScheduledJobStore : IJobStore
         {
@@ -458,6 +468,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             JobStatus Next,
             JobCompletion Completion);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class RecordingScheduledPayloadReader : IJobPayloadReader
         {
             public Dictionary<Guid, ScheduledConsoleCommandPayload> Commands { get; } =
@@ -499,6 +513,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class RecordingConsoleCommandGateway : IConsoleCommandGateway
         {
             private readonly List<string> events;
@@ -527,6 +545,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class RecordingRestartScriptLauncher : IRestartScriptLauncher
         {
             private readonly List<string> events;
@@ -547,6 +569,10 @@ namespace LSTY.SevenDPanel.Tests.Local
                 return Utc(2);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class RecordingAnnouncementGateway : IAnnouncementGateway
         {

@@ -5,6 +5,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ConsoleCommandCatalogTests
     {
         [Fact]

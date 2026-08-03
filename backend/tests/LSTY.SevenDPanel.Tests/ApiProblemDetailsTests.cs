@@ -14,6 +14,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Application")]
     public sealed class ApiProblemDetailsTests
     {
         [Fact]
@@ -230,6 +232,10 @@ namespace LSTY.SevenDPanel.Tests
             return await reader.ReadToEndAsync();
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class DelegateMiddleware : OwinMiddleware
         {
             private readonly Func<IOwinContext, Task> invoke;
@@ -242,6 +248,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public override Task Invoke(IOwinContext context) => invoke(context);
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class StaticResponseHandler : HttpMessageHandler
         {

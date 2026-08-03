@@ -4,6 +4,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Domain.Jobs
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Domain")]
     public sealed class JobStateMachineTests
     {
         [Theory]

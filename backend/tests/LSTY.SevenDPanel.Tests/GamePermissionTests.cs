@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class GamePermissionTests
     {
         [Theory]
@@ -67,6 +69,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(0, nativeCalls);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingControl : IGamePermissionControl
         {
             public int MutationCalls { get; private set; }
@@ -77,6 +83,10 @@ namespace LSTY.SevenDPanel.Tests
             public Task<GamePermissionMutationResult> UpsertCommandAsync(string command, int level, CancellationToken cancellationToken) { MutationCalls++; return Task.FromResult(GamePermissionMutationResult.Succeeded()); }
             public Task<GamePermissionMutationResult> RemoveCommandAsync(string command, CancellationToken cancellationToken) { MutationCalls++; return Task.FromResult(GamePermissionMutationResult.Succeeded()); }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class DelegateNativeControl : INativeGamePermissionControl
         {
@@ -96,6 +106,10 @@ namespace LSTY.SevenDPanel.Tests
             public GamePermissionMutationResult UpsertCommand(string command, int level) => upsertCommand(command, level);
             public GamePermissionMutationResult RemoveCommand(string command) => GamePermissionMutationResult.Succeeded();
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class NoOpActivityWriter : IRecentActivityWriter
         {

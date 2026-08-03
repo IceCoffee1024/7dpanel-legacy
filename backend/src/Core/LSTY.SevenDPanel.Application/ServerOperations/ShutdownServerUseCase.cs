@@ -11,6 +11,9 @@ namespace LSTY.SevenDPanel.Application
         private readonly IRecentActivityWriter recentActivity;
         private readonly Func<string> operationIdFactory;
         private readonly Func<DateTimeOffset> utcClock;
+        private readonly IServerOperationStore operationStore;
+        private readonly ServerOperationProcessInstance processInstance;
+        private readonly TimeSpan completionWindow;
         private int inFlight;
 
         public ShutdownServerUseCase(
@@ -22,7 +25,8 @@ namespace LSTY.SevenDPanel.Application
                 auditTrail,
                 recentActivity,
                 () => Guid.NewGuid().ToString("N"),
-                () => DateTimeOffset.UtcNow)
+                () => DateTimeOffset.UtcNow,
+                new InMemoryServerOperationStore(), new ServerOperationProcessInstance(), TimeSpan.FromMinutes(5))
         {
         }
 
@@ -32,12 +36,41 @@ namespace LSTY.SevenDPanel.Application
             IRecentActivityWriter recentActivity,
             Func<string> operationIdFactory,
             Func<DateTimeOffset> utcClock)
+            : this(gateway, auditTrail, recentActivity, operationIdFactory, utcClock,
+                new InMemoryServerOperationStore(), new ServerOperationProcessInstance(), TimeSpan.FromMinutes(5))
+        {
+        }
+
+        public ShutdownServerUseCase(
+            IShutdownServerGateway gateway,
+            IServerOperationAuditTrail auditTrail,
+            IRecentActivityWriter recentActivity,
+            IServerOperationStore operationStore,
+            ServerOperationProcessInstance processInstance)
+            : this(gateway, auditTrail, recentActivity, () => Guid.NewGuid().ToString("N"),
+                () => DateTimeOffset.UtcNow, operationStore, processInstance, TimeSpan.FromMinutes(5))
+        {
+        }
+
+        internal ShutdownServerUseCase(
+            IShutdownServerGateway gateway,
+            IServerOperationAuditTrail auditTrail,
+            IRecentActivityWriter recentActivity,
+            Func<string> operationIdFactory,
+            Func<DateTimeOffset> utcClock,
+            IServerOperationStore operationStore,
+            ServerOperationProcessInstance processInstance,
+            TimeSpan completionWindow)
         {
             this.gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
             this.auditTrail = auditTrail ?? throw new ArgumentNullException(nameof(auditTrail));
             this.recentActivity = recentActivity ?? throw new ArgumentNullException(nameof(recentActivity));
             this.operationIdFactory = operationIdFactory ?? throw new ArgumentNullException(nameof(operationIdFactory));
             this.utcClock = utcClock ?? throw new ArgumentNullException(nameof(utcClock));
+            this.operationStore = operationStore ?? throw new ArgumentNullException(nameof(operationStore));
+            this.processInstance = processInstance ?? throw new ArgumentNullException(nameof(processInstance));
+            if (completionWindow <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(completionWindow));
+            this.completionWindow = completionWindow;
         }
 
         public async Task<ServerOperationResult> ExecuteAsync(
@@ -56,7 +89,13 @@ namespace LSTY.SevenDPanel.Application
             {
                 var operationId = operationIdFactory();
                 var requestedAtUtc = utcClock();
+                CreateQueued(operationId, actorSubject, requestedAtUtc);
                 CreatePending(operationId, actorSubject, requestedAtUtc);
+                if (!operationStore.TryTransition(operationId, ServerOperationLifecycleStatus.Queued,
+                        ServerOperationLifecycleStatus.Running, requestedAtUtc, null))
+                {
+                    throw new InvalidOperationException("server_operation_transition_failed");
+                }
 
                 try
                 {
@@ -65,20 +104,20 @@ namespace LSTY.SevenDPanel.Application
                 }
                 catch (OperationCanceledException)
                 {
-                    throw Fail(operationId, actorSubject, ServerOperationCodeContract.ShutdownCancelled);
+                    throw Fail(operationId, actorSubject, ServerOperationCodeContract.ShutdownCancelled, ServerOperationLifecycleStatus.Cancelled);
                 }
                 catch (TimeoutException)
                 {
-                    throw Fail(operationId, actorSubject, ServerOperationCodeContract.ShutdownTimeout);
+                    throw Fail(operationId, actorSubject, ServerOperationCodeContract.ShutdownTimeout, ServerOperationLifecycleStatus.Failed);
                 }
                 catch (ServerOperationFailedException exception)
                 {
-                    RecordFailure(operationId, actorSubject, exception.FailureCode);
+                    RecordFailure(operationId, actorSubject, exception.FailureCode, ServerOperationLifecycleStatus.Failed);
                     throw;
                 }
                 catch
                 {
-                    throw Fail(operationId, actorSubject, ServerOperationCodeContract.ShutdownFailed);
+                    throw Fail(operationId, actorSubject, ServerOperationCodeContract.ShutdownFailed, ServerOperationLifecycleStatus.Failed);
                 }
 
                 var acceptedAtUtc = utcClock();
@@ -126,18 +165,21 @@ namespace LSTY.SevenDPanel.Application
         private ServerOperationFailedException Fail(
             string operationId,
             string actorSubject,
-            string failureCode)
+            string failureCode,
+            ServerOperationLifecycleStatus status)
         {
-            RecordFailure(operationId, actorSubject, failureCode);
+            RecordFailure(operationId, actorSubject, failureCode, status);
             return new ServerOperationFailedException(failureCode);
         }
 
         private void RecordFailure(
             string operationId,
             string actorSubject,
-            string failureCode)
+            string failureCode,
+            ServerOperationLifecycleStatus status)
         {
             var failedAtUtc = utcClock();
+            operationStore.TryTransition(operationId, ServerOperationLifecycleStatus.Running, status, failedAtUtc, failureCode);
             try
             {
                 auditTrail.TryMarkFailed(new ServerOperationAuditFailure(
@@ -157,15 +199,38 @@ namespace LSTY.SevenDPanel.Application
                 CancellationToken.None));
         }
 
+        private void CreateQueued(string operationId, string actorSubject, DateTimeOffset requestedAtUtc)
+        {
+            operationStore.CreateQueued(new ServerOperationSnapshot(
+                operationId, ServerOperationCodeContract.Shutdown, ServerOperationLifecycleStatus.Queued,
+                actorSubject, processInstance.Value, requestedAtUtc, null, null,
+                requestedAtUtc.Add(completionWindow), null, "recorded"));
+        }
+
         private bool TryMarkStarted(string operationId, DateTimeOffset acceptedAtUtc)
         {
             try
             {
-                return auditTrail.TryMarkStarted(operationId, acceptedAtUtc);
+                var recorded = auditTrail.TryMarkStarted(operationId, acceptedAtUtc);
+                if (!recorded)
+                    TryMarkAuditDegraded(operationId);
+                return recorded;
             }
             catch
             {
+                TryMarkAuditDegraded(operationId);
                 return false;
+            }
+        }
+
+        private void TryMarkAuditDegraded(string operationId)
+        {
+            try
+            {
+                operationStore.TrySetAuditStatus(operationId, ServerOperationLifecycleStatus.Running, "audit_degraded");
+            }
+            catch
+            {
             }
         }
 

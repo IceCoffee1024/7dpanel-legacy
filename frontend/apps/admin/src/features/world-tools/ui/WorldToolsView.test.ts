@@ -191,15 +191,15 @@ describe('worldOperationPanel', () => {
 
 describe('worldOperationHistory', () => {
   it.each([
-    ['ResultUnknown'],
-    ['RollbackFailed'],
-  ] as const)('renders a persistent high-severity alert for %s', (status) => {
+    ['ResultUnknown', '结果未知'],
+    ['RollbackFailed', '回滚失败'],
+  ] as const)('renders a persistent high-severity alert for %s', (status, label) => {
     const wrapper = mount(WorldOperationHistory, {
       props: { operation: worldOperation(status), receipt: null, state: 'terminal', errorCode: null },
       global: { stubs: nuxtUiStubs },
     })
 
-    expect(wrapper.text()).toContain(status)
+    expect(wrapper.text()).toContain(label)
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
   })
 })

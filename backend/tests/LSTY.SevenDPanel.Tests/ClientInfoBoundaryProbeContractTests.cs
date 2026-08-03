@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class ClientInfoBoundaryProbeContractTests
     {
         [Fact]
@@ -137,6 +139,10 @@ namespace LSTY.SevenDPanel.Tests
                 ClientInfoBoundaryProbeStatus.Failed,
                 (await failing.ProbePrivateReplyAsync("probe", TestContext.Current.CancellationToken)).Status);
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class Candidate
         {

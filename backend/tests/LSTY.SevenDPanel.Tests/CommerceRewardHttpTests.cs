@@ -25,6 +25,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Web")]
     public sealed class CommerceRewardHttpTests
     {
         private const string HttpNamespace =
@@ -415,6 +417,10 @@ namespace LSTY.SevenDPanel.Tests
             CommerceIdempotency
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubBackend :
             IEconomyLedgerStore,
             IEconomyAccountAdministrationStore,
@@ -680,6 +686,10 @@ namespace LSTY.SevenDPanel.Tests
                     Utc(), Utc(), 0);
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubCatalog : IGameResourceCatalog
         {
             public GameResourceCatalogReadResult Read() => GameResourceCatalogReadResult.Unavailable();
@@ -688,6 +698,10 @@ namespace LSTY.SevenDPanel.Tests
                 string resourceId,
                 CancellationToken cancellationToken) => throw new NotSupportedException();
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class DailyPolicyStore : IDailyRewardPolicyStore
         {
@@ -708,6 +722,10 @@ namespace LSTY.SevenDPanel.Tests
                     : throw new DailyRewardPolicyUnavailableException();
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubRewardDelivery : IRewardDeliveryPort
         {
             public Task<RewardDeliveryResult> DeliverAsync(
@@ -716,12 +734,20 @@ namespace LSTY.SevenDPanel.Tests
                     RewardDeliveryResult.Succeeded(Array.Empty<RewardDeliveryEntryResult>()));
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubRuntimeStatus : IPanelRuntimeStatus
         {
             public StubRuntimeStatus(GameReadinessState readiness) => GameReadiness = readiness;
             public ModHostState State => default;
             public GameReadinessState GameReadiness { get; }
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HttpTestHost : IDisposable
         {
@@ -747,6 +773,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {

@@ -6,7 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
-namespace LSTY.SevenDPanel.Hosting.Platform
+namespace LSTY.SevenDPanel.Adapters.Local.Platform
 {
     public sealed class WindowsHostPlatformAdapter : IHostPlatformAdapter
     {

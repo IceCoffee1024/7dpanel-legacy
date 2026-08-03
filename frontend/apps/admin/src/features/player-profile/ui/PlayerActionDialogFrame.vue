@@ -4,6 +4,8 @@ import type { PlayerActionFeedback, PlayerActionTarget } from './playerProfileUi
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { operationStatus } from '../../../shared/model/operationStatus'
+
 const props = defineProps<{
   open: boolean
   title: string
@@ -17,9 +19,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: [], confirm: [] }>()
 const { t } = useI18n()
-const statusColor = computed(() => props.feedback?.status === 'Succeeded'
-  ? 'success'
-  : props.feedback?.status === 'ResultUnknown' ? 'warning' : 'error')
+const status = computed(() => props.feedback === null ? null : operationStatus(props.feedback.status))
 
 function updateOpen(open: boolean) {
   if (!open && !props.pending)
@@ -70,9 +70,9 @@ function updateOpen(open: boolean) {
         <slot />
         <UAlert
           v-if="feedback"
-          :color="statusColor"
-          :title="t(`players.profile.actions.status.${feedback.status.charAt(0).toLowerCase()}${feedback.status.slice(1)}`)"
-          :description="feedback.status === 'ResultUnknown' ? t('players.profile.actions.resultUnknownDescription', { operationId: feedback.operationId ?? '—' }) : (feedback.failureCode ?? undefined)"
+          :color="status?.tone ?? 'error'"
+          :title="t(status?.i18nKey ?? 'operationStatus.unknown')"
+          :description="status?.semantic === 'result-unknown' ? t('players.profile.actions.resultUnknownDescription', { operationId: feedback.operationId ?? '—' }) : (feedback.failureCode ?? undefined)"
         />
       </div>
     </template>

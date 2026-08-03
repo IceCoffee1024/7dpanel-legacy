@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerPartialResetUseCaseTests
     {
         [Fact]
@@ -237,6 +239,10 @@ namespace LSTY.SevenDPanel.Tests
                 "correlation-clear",
                 dangerConfirmed);
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ResetFixture
         {
             public ResetFixture()
@@ -257,6 +263,10 @@ namespace LSTY.SevenDPanel.Tests
             public ResetSkillsUseCase UseCase { get; }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ClearFixture
         {
             public ClearFixture()
@@ -276,6 +286,10 @@ namespace LSTY.SevenDPanel.Tests
             public RecordingClearInventoryGateway Gateway { get; }
             public ClearInventoryUseCase UseCase { get; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingResetSkillsStore : IResetSkillsOperationStore
         {
@@ -349,6 +363,10 @@ namespace LSTY.SevenDPanel.Tests
                     value.CorrelationId);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingClearInventoryStore : IClearInventoryOperationStore
         {
             private readonly List<string> order;
@@ -421,6 +439,10 @@ namespace LSTY.SevenDPanel.Tests
                     value.CorrelationId);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingResetSkillsGateway : IResetSkillsGateway
         {
             private readonly List<string> order;
@@ -452,6 +474,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(ExecuteResult);
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingClearInventoryGateway : IClearInventoryGateway
         {

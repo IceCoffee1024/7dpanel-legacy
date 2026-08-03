@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysGameEventRuntimeTests
     {
         private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(3);
@@ -267,6 +269,10 @@ namespace LSTY.SevenDPanel.Tests
             bool isPlayer) =>
             new GameEventEntitySnapshot(subject, isPlayer);
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class FailingStore : IGameEventStore
         {
             private readonly object gate = new object();
@@ -303,6 +309,10 @@ namespace LSTY.SevenDPanel.Tests
             public GameEventPage Query(GameEventQuery query) => throw new NotSupportedException();
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class BlockingEventStore : IGameEventStore, IDisposable
         {
             private readonly object gate = new object();
@@ -321,6 +331,10 @@ namespace LSTY.SevenDPanel.Tests
             public GameEventPage Query(GameEventQuery query) => throw new NotSupportedException();
             public void Dispose() { ReleaseAppend.Set(); AppendEntered.Dispose(); ReleaseAppend.Dispose(); }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class BlockingGapStore : IGameEventStore, IDisposable
         {
@@ -382,6 +396,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class FakeGameEventSources : ISevenDaysGameEventSources
         {
             private Action<GameEventSubject?>? joined;
@@ -416,6 +434,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingRuntime : IModRuntime
         {
             private readonly ICollection<string> trace;
@@ -424,6 +446,10 @@ namespace LSTY.SevenDPanel.Tests
             public void MarkGameReady() { }
             public void Stop() => trace.Add("inner-stop");
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class CallbackDisposable : IDisposable
         {

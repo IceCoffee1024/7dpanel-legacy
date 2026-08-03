@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.SevenDays
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysAnnouncementGatewayTests
     {
         [Fact]
@@ -72,6 +74,10 @@ namespace LSTY.SevenDPanel.Tests.SevenDays
             Assert.DoesNotContain('\r', command);
             Assert.DoesNotContain('\n', command);
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingAnnouncementGateway : IAnnouncementGateway
         {

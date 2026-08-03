@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteGameEventStoreTests
     {
         [Fact]
@@ -58,6 +60,10 @@ namespace LSTY.SevenDPanel.Tests
         private static GameEventRecord Record(string id, GameEventType type, DateTimeOffset at, string crossplatformId) =>
             new GameEventRecord(id, type, at, at, new GameEventSubject(crossplatformId, null, 1, "player"), null, null);
         private static DateTimeOffset Utc(int minute) => new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

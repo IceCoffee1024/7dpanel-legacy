@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysBlockPrefabOperationHandlerTests
     {
         private static readonly DateTimeOffset CreatedAtUtc =
@@ -528,6 +530,10 @@ namespace LSTY.SevenDPanel.Tests
                     target,
                     CreatedAtUtc));
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingMetadataStore : IWorldChangeSetMetadataStore
         {
             private readonly ICollection<string> trace;
@@ -562,6 +568,10 @@ namespace LSTY.SevenDPanel.Tests
                 MarkedAfterHash = afterHash;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingBlobStore : IWorldChangeSetBlobStore
         {

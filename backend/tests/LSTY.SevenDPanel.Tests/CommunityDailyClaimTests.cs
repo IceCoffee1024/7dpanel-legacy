@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class CommunityDailyClaimTests
     {
         private static readonly DateTimeOffset Now =
@@ -139,6 +141,10 @@ namespace LSTY.SevenDPanel.Tests
             true,
             0,
             new[] { RewardPackageEntryDraft.Currency("daily-currency", 5) });
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingDelivery : IRewardDeliveryPort
         {

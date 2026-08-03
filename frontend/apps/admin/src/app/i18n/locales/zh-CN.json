@@ -10,6 +10,18 @@
     "confirm": "确认",
     "unknown": "未知"
   },
+  "operationStatus": {
+    "queued": "已排队",
+    "running": "运行中",
+    "succeeded": "已成功",
+    "failed": "已失败",
+    "cancelled": "已取消",
+    "interrupted": "已中断",
+    "result-unknown": "结果未知",
+    "rollback-failed": "回滚失败",
+    "unavailable": "不可用",
+    "unknown": "未知操作状态"
+  },
   "locale": {
     "label": "语言",
     "current": "语言：{language}",
@@ -1444,6 +1456,8 @@
       "operationIncomplete": "操作未完成"
     },
     "execution": {
+      "title": "执行记录",
+      "empty": "暂无执行记录",
       "unavailableTitle": "执行证据查询暂不可用",
       "unavailableDescription": "后端当前没有 execution 查询合同；规则编辑、验证和 dry-run 仍可使用。",
       "actionResults": "动作结果"

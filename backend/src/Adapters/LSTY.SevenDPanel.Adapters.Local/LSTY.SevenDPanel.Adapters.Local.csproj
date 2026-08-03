@@ -16,5 +16,6 @@
     </Reference>
     <ProjectReference Include="..\..\Core\LSTY.SevenDPanel.Application\LSTY.SevenDPanel.Application.csproj" />
     <ProjectReference Include="..\..\Core\LSTY.SevenDPanel.Domain\LSTY.SevenDPanel.Domain.csproj" />
+    <ProjectReference Include="..\..\Runtime\LSTY.SevenDPanel.Hosting\LSTY.SevenDPanel.Hosting.csproj" />
   </ItemGroup>
 </Project>

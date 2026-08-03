@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerActionRecoveryTests
     {
         private static readonly DateTimeOffset Now =
@@ -200,6 +202,10 @@ namespace LSTY.SevenDPanel.Tests
                 null,
                 "correlation");
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRecoveryStore : IPlayerActionRecoveryStore
         {
             private readonly List<string>? order;
@@ -230,6 +236,10 @@ namespace LSTY.SevenDPanel.Tests
                 return CompleteResult;
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

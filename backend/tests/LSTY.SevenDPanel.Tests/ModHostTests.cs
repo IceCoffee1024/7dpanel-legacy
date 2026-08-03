@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class ModHostTests
     {
         [Fact]
@@ -189,6 +191,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(1, webHost.StartCount);
             Assert.Equal(1, webHost.DisposeCount);
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class FakeWebHost : IPanelWebHost
         {

@@ -24,6 +24,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Web
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Web")]
     public sealed class JobsBackupsSchedulesAuthorizationTests
     {
         [Fact]
@@ -150,6 +152,10 @@ namespace LSTY.SevenDPanel.Tests.Web
             return new Host(provider, configuration, store);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class Host : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -177,6 +183,10 @@ namespace LSTY.SevenDPanel.Tests.Web
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class PrincipalHandler : DelegatingHandler
         {
             private readonly string? role;
@@ -201,6 +211,10 @@ namespace LSTY.SevenDPanel.Tests.Web
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         public sealed class BackupStore : IJobStore, IJobSubmissionStore, IJobPayloadReader,
             IBackupCatalog, IBackupArchiveStorage, IPendingRestoreMarkerStore,

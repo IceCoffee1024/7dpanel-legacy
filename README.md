@@ -84,6 +84,12 @@ production build. Run the exact commands from the
 See the [test strategy](docs/test.md) for the required verification levels and
 release gates. On Windows, use the `.cmd` wrappers as the default entry points:
 
+Repository governance checks can be run without a game server:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/complexity/Test-ComplexityBudget.ps1
+```
+
 ```bat
 backend\scripts\Publish-Mod.cmd
 backend\scripts\Start-Server.cmd

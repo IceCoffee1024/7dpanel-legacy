@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Application
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ScheduleServiceTests
     {
         [Fact]
@@ -216,6 +218,10 @@ namespace LSTY.SevenDPanel.Tests.Application
                 null,
                 null,
                 rowVersion);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingScheduleStore : IScheduleStore
         {

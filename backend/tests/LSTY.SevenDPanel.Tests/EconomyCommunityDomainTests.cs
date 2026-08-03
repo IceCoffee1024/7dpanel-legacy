@@ -5,6 +5,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Domain")]
     public sealed class EconomyCommunityDomainTests
     {
         [Fact]

@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerEvidenceWriteServiceTests
     {
         [Fact]
@@ -199,6 +201,10 @@ namespace LSTY.SevenDPanel.Tests
         private static void WaitFor(ManualResetEventSlim signal) =>
             signal.Wait(TestContext.Current.CancellationToken);
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private class RecordingStore : IPlayerEvidenceStore
         {
             private readonly object sync = new object();
@@ -278,6 +284,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class BlockingStore : RecordingStore
         {
             private int blocked;
@@ -325,6 +335,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FailFirstSnapshotStore : RecordingStore
         {
             private int inventoryFailures;
@@ -344,6 +358,10 @@ namespace LSTY.SevenDPanel.Tests
                 base.AppendSkillSnapshot(snapshot);
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class BlockingFailFirstSessionStore : RecordingStore
         {

@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class GameResourceCatalogRuntimeTests
     {
         [Fact]
@@ -114,6 +116,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains(exception.InnerExceptions, failure => failure is TimeoutException);
             Assert.Equal("inner:stop", trace.Last());
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

@@ -42,7 +42,8 @@ using LSTY.SevenDPanel.Application.WorldOperations;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
-using LSTY.SevenDPanel.Hosting.Platform;
+using LSTY.SevenDPanel.Adapters.Local.Platform;
+using LSTY.SevenDPanel.Adapters.Local.ServerOperations;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
@@ -50,6 +51,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class DependencyInjectionTests
     {
         [Fact]
@@ -833,6 +836,10 @@ namespace LSTY.SevenDPanel.Tests
             return (T?)field.GetValue(instance);
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         public sealed class ScopedProbeController : ApiController
         {
             public ScopedProbeController(ScopedProbe probe)
@@ -842,6 +849,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public ScopedProbe Probe { get; }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         public sealed class ScopedProbe : IDisposable
         {
@@ -859,6 +870,10 @@ namespace LSTY.SevenDPanel.Tests
             public void Dispose() => onDispose?.Invoke();
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class InvalidSingleton
         {
             public InvalidSingleton(ScopedProbe probe)
@@ -868,6 +883,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public ScopedProbe Probe { get; }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class RecordingRuntime : IModRuntime
         {
@@ -897,6 +916,10 @@ namespace LSTY.SevenDPanel.Tests
                 if (failOnStop) throw new InvalidOperationException("runtime failure");
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class BlockingStartRuntime : IModRuntime
         {
@@ -929,6 +952,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class TimeoutOnceRuntime : IModRuntime
         {
             private readonly IList<string> order;
@@ -959,6 +986,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class RecordingDisposable : IDisposable
         {
             private readonly IList<string> order;
@@ -977,6 +1008,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class CallbackDisposable : IDisposable
         {
             private Action? callback;
@@ -992,6 +1027,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class NullRecentActivityWriter : IRecentActivityWriter
         {
             public Task RecordPanelLoginSucceededAsync(string actorSubject, string actorDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -1001,6 +1040,10 @@ namespace LSTY.SevenDPanel.Tests
             public Task RecordShutdownRequestedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
             public Task RecordServerOperationFailedAsync(string actorSubject, string operationCode, string failureCode, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class DisposalAwareRecentActivityWriter : IRecentActivityWriter, IDisposable
         {
@@ -1030,6 +1073,10 @@ namespace LSTY.SevenDPanel.Tests
                 Disposed.Set();
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class ScopeCaptureHandler : HttpMessageHandler
         {

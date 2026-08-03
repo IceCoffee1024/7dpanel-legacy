@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysRegionOperationHandlerTests
     {
         private static readonly DateTimeOffset Now =
@@ -469,6 +471,10 @@ namespace LSTY.SevenDPanel.Tests
             return true;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingMetadataStore : IWorldChangeSetMetadataStore
         {
             private readonly ICollection<string>? trace;
@@ -511,6 +517,10 @@ namespace LSTY.SevenDPanel.Tests
                 MarkedAfterHash = afterHash;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingBlobStore : IWorldChangeSetBlobStore
         {

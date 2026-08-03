@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class PendingRestoreApplierTests
     {
         [Fact]
@@ -616,6 +618,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             return new RestoreFixture(applier, store, marker, archivePath);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class RuntimeEvidenceSource : IWorldRestoreRuntimeEvidenceSource
         {
             private readonly WorldRestoreRuntimeEvidence evidence;
@@ -654,6 +660,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             JsonPendingRestoreStore Store,
             PendingRestoreMarker Marker,
             string ArchivePath);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class SingleArtifactCatalog : IBackupCatalog
         {

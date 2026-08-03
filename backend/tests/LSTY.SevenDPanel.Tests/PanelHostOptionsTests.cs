@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class PanelHostOptionsTests
     {
         [Fact]

@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteConsoleCommandAuditStoreTests
     {
         [Fact]
@@ -223,6 +225,10 @@ namespace LSTY.SevenDPanel.Tests
                 null);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class AuditRow
         {
             public string raw_command { get; set; } = string.Empty;
@@ -234,6 +240,10 @@ namespace LSTY.SevenDPanel.Tests
             public string completion_kind { get; set; } = string.Empty;
             public string? exception_type { get; set; }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryCommandAuditDatabase : IDisposable
         {

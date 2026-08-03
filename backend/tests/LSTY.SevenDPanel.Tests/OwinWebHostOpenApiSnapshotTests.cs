@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Web")]
     public sealed partial class OwinWebHostTests
     {
         private const string UpdateAdminOpenApiSnapshotVariable =
@@ -543,6 +545,10 @@ namespace LSTY.SevenDPanel.Tests
 
             throw new InvalidOperationException("Could not locate the repository root.");
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class ChatOpenApiExpectation
         {

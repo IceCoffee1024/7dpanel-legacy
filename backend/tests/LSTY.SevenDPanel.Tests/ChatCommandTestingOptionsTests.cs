@@ -4,6 +4,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class ChatCommandTestingOptionsTests
     {
         [Fact]

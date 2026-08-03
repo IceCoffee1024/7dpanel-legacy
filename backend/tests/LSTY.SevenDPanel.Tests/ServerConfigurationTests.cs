@@ -19,6 +19,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ServerConfigurationTests
     {
         [Fact]
@@ -177,6 +179,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpFixture(provider, configuration);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubStore : IServerConfigurationStore
         {
             private readonly string version;
@@ -196,6 +202,10 @@ namespace LSTY.SevenDPanel.Tests
                     : new ServerConfigurationUpdateResult(ServerConfigurationUpdateStatus.Conflict, version, null, false);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ConfigurationFixture : IDisposable
         {
@@ -221,6 +231,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class HttpFixture : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -241,6 +255,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {

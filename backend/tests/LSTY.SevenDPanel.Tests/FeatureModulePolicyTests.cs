@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class FeatureModulePolicyTests
     {
         private static readonly DateTimeOffset Now =
@@ -182,6 +184,10 @@ namespace LSTY.SevenDPanel.Tests
             path.Remove(module);
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class MemoryStore : IFeatureModuleStateStore
         {
             private readonly Dictionary<FeatureModuleId, FeatureModuleState> states = new();
@@ -215,12 +221,20 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class ActivityQuery : IFeatureModuleActivityQuery
         {
             public ISet<FeatureModuleId> Active { get; } = new HashSet<FeatureModuleId>();
 
             public bool HasActiveWork(FeatureModuleId moduleId) => Active.Contains(moduleId);
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class RecordingWorldOperationBridge : IWorldOperationJobBridge
         {
@@ -261,6 +275,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public bool RequestCancellation(string operationId, string actorSubject) => false;
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

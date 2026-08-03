@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class ChatCommandMixedTestRuntimeTests
     {
         [Fact]
@@ -74,6 +76,10 @@ namespace LSTY.SevenDPanel.Tests
             return new GameChatCommandCatalog(handlers);
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class StubHandler : IGameChatCommandHandler
         {
             public StubHandler(GameChatCommandDescriptor descriptor) => Descriptor = descriptor;
@@ -81,6 +87,10 @@ namespace LSTY.SevenDPanel.Tests
             public GameChatCommandResult Handle(GameChatCommandContext context) =>
                 GameChatCommandResult.HelpSucceeded(Array.Empty<string>());
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

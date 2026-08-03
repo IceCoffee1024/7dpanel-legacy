@@ -19,6 +19,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Web")]
     public sealed class GeoIpHttpTests
     {
         private static readonly DateTimeOffset Now =
@@ -408,6 +410,10 @@ namespace LSTY.SevenDPanel.Tests
             return new Host(provider, configuration);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class Host : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -432,6 +438,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -461,6 +471,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class RecordingRefreshQueue : IGeoIpRefreshQueue
         {
             private readonly bool accepts;
@@ -477,6 +491,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StaticDiagnostics : IGeoIpRefreshDiagnostics
         {
             private readonly GeoIpRefreshDiagnostics diagnostics;
@@ -486,6 +504,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public GeoIpRefreshDiagnostics GetDiagnostics() => diagnostics;
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class MemoryGeoIpStore : IGeoIpAccessPolicyStore
         {

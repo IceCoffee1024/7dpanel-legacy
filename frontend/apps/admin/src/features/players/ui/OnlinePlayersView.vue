@@ -72,7 +72,9 @@ const kickDialogOpen = computed({
   },
 })
 const authorizedToKick = computed(() =>
-  !sessionExpired.value && kickFeedback.value?.code !== 'forbidden')
+  auth.role === 'Owner'
+  && !sessionExpired.value
+  && kickFeedback.value?.code !== 'forbidden')
 const detailsCanKick = computed(() =>
   authorizedToKick.value
   && state.value === 'fresh'

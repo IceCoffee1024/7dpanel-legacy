@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class OverviewUseCaseTests
     {
         [Fact]
@@ -282,6 +284,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(sampledAtUtc, snapshot.SampledAtUtc);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class OverviewFixture
         {
             public OverviewFixture(AvailabilityState availability = AvailabilityState.Available)
@@ -391,6 +397,10 @@ namespace LSTY.SevenDPanel.Tests
                 new ObservedMetric<int?>(6, "World.Entities", "count", observedAtUtc, null),
                 new ObservedMetric<long?>(123456L, "GC.GetTotalMemory(false)", "bytes", observedAtUtc, null));
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingGameQuery : IGameOverviewQuery
         {
             public RecordingGameQuery(GameOverviewSnapshot result)
@@ -410,6 +420,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingHostQuery : IHostOverviewQuery
         {
             public RecordingHostQuery(HostOverviewSnapshot result)
@@ -424,6 +438,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(Result);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingRestartPolicyQuery : IRestartPolicyQuery
         {
@@ -442,6 +460,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Result;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingRecentActivityQuery : IRecentActivityQuery
         {

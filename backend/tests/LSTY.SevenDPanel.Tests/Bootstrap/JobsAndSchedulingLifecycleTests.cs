@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Bootstrap
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class JobsAndSchedulingLifecycleTests
     {
         [Fact]
@@ -247,6 +249,10 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
             {
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

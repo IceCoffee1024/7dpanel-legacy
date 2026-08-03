@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysPlayerResetGatewayTests
     {
         [Fact]
@@ -245,6 +247,10 @@ namespace LSTY.SevenDPanel.Tests
                     {
                         new InventoryItemScalar("bag", 0, "resourceRockSmall", count, null, null, Array.Empty<string>())
                     });
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingEvidenceStore : IPlayerEvidenceStore
         {

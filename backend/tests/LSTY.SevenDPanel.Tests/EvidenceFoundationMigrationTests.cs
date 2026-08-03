@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Persistence")]
     public sealed class EvidenceFoundationMigrationTests
     {
         [Fact]
@@ -231,10 +233,18 @@ namespace LSTY.SevenDPanel.Tests
                 connection.ExecuteScalar<string>(
                     "SELECT actor_subject || '|' || operation || '|' || business_key || '|' || changed_fields FROM chat_operation_audit WHERE id = 1;")!);
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class SchemaColumn
         {
             public string name { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class LegacyAuditSnapshot : IEquatable<LegacyAuditSnapshot>
         {
@@ -250,6 +260,10 @@ namespace LSTY.SevenDPanel.Tests
             public override int GetHashCode() => Values.Aggregate(17, (hash, value) => hash * 31 + value.GetHashCode());
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ProjectionRow
         {
             public string source_kind { get; set; } = string.Empty;
@@ -262,6 +276,10 @@ namespace LSTY.SevenDPanel.Tests
             public string? correlation_id { get; set; }
             public int has_details { get; set; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

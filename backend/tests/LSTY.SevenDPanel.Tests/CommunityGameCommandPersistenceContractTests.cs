@@ -14,6 +14,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class CommunityGameCommandPersistenceContractTests
     {
         private static readonly string[] ExpectedTables =
@@ -184,6 +186,10 @@ namespace LSTY.SevenDPanel.Tests
                 .PerformUpgrade();
             Assert.True(result.Successful, result.Error?.ToString());
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

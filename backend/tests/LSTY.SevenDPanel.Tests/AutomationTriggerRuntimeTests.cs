@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Automation")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class AutomationTriggerRuntimeTests
     {
         [Fact]

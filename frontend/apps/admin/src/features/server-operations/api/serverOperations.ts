@@ -1,6 +1,20 @@
 import { requestJson } from '../../../shared/api/http'
 
 export type ServerOperationAuditStatus = 'recorded' | 'audit_degraded'
+export type ServerOperationKind = 'restart_script' | 'shutdown'
+export type ServerOperationStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'result-unknown'
+
+export interface ServerOperationStatusRecord {
+  operationId: string
+  kind: ServerOperationKind
+  status: ServerOperationStatus
+  requestedAtUtc: string
+  startedAtUtc: string | null
+  completedAtUtc: string | null
+  completionDeadlineUtc: string
+  failureCode: string | null
+  auditStatus: ServerOperationAuditStatus
+}
 
 export interface RestartServerAccepted {
   operationId: string
@@ -77,6 +91,42 @@ function auditStatus(value: unknown): ServerOperationAuditStatus {
   return invalid()
 }
 
+function optionalUtcTimestamp(value: unknown): string | null {
+  if (value === null)
+    return null
+  return utcTimestamp(value)
+}
+
+function optionalString(value: unknown): string | null {
+  if (value === null)
+    return null
+  return requiredString(value)
+}
+
+export function parseServerOperationStatus(value: unknown): ServerOperationStatusRecord {
+  const source = record(value, [
+    'operationId', 'kind', 'status', 'requestedAtUtc', 'startedAtUtc', 'completedAtUtc',
+    'completionDeadlineUtc', 'failureCode', 'auditStatus',
+  ])
+  if (source.kind !== 'restart_script' && source.kind !== 'shutdown')
+    return invalid()
+  if (source.status !== 'queued' && source.status !== 'running' && source.status !== 'succeeded'
+    && source.status !== 'failed' && source.status !== 'cancelled' && source.status !== 'result-unknown') {
+    return invalid()
+  }
+  return Object.freeze({
+    operationId: requiredString(source.operationId),
+    kind: source.kind,
+    status: source.status,
+    requestedAtUtc: utcTimestamp(source.requestedAtUtc),
+    startedAtUtc: optionalUtcTimestamp(source.startedAtUtc),
+    completedAtUtc: optionalUtcTimestamp(source.completedAtUtc),
+    completionDeadlineUtc: utcTimestamp(source.completionDeadlineUtc),
+    failureCode: optionalString(source.failureCode),
+    auditStatus: auditStatus(source.auditStatus),
+  })
+}
+
 export function parseRestartAccepted(value: unknown): RestartServerAccepted {
   const source = record(value, ['operationId', 'code', 'requestedAtUtc', 'scriptStartedAtUtc', 'auditStatus'])
   if (source.code !== 'restart_script_started')
@@ -138,4 +188,21 @@ export async function shutdownServer(
     requestOptions(authorizationHeader, signal),
   )
   return parseShutdownAccepted(response)
+}
+
+export async function getServerOperation(
+  authorizationHeader: string,
+  operationId: string,
+  signal?: AbortSignal,
+): Promise<ServerOperationStatusRecord> {
+  const response = await requestJson<unknown>(
+    `/api/v1/server-operations/${encodeURIComponent(operationId)}`,
+    {
+      expectedStatus: 200,
+      headers: { 'Authorization': authorizationHeader },
+      method: 'GET',
+      signal,
+    },
+  )
+  return parseServerOperationStatus(response)
 }

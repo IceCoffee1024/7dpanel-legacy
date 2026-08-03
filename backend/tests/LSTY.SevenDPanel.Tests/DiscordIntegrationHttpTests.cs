@@ -23,6 +23,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Web")]
     public sealed class DiscordIntegrationHttpTests
     {
         [Fact]
@@ -865,6 +867,10 @@ namespace LSTY.SevenDPanel.Tests
         private const string InteractionPublicKeyHex =
             "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a";
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -889,6 +895,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -917,6 +927,10 @@ namespace LSTY.SevenDPanel.Tests
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class MemoryDiscordStore :
             IDiscordIntegrationStore,

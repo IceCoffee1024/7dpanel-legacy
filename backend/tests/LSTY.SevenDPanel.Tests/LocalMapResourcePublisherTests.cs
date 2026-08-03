@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class LocalMapResourcePublisherTests
     {
         private static readonly byte[] OnePixelPng = Convert.FromBase64String(
@@ -85,6 +87,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.True(Directory.Exists(previous.RootPath));
             Assert.True(Directory.Exists(invalidStage));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class PublisherFixture : IDisposable
         {

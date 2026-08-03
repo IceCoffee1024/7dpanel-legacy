@@ -1,6 +1,6 @@
 using System;
 
-namespace LSTY.SevenDPanel.Hosting.Platform
+namespace LSTY.SevenDPanel.Adapters.Local.Platform
 {
     public sealed class HostCpuSampler
     {

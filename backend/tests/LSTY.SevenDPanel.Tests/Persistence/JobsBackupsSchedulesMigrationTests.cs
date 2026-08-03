@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Persistence
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class JobsBackupsSchedulesMigrationTests
     {
         private static readonly string[] ExpectedTables =
@@ -309,12 +311,20 @@ namespace LSTY.SevenDPanel.Tests.Persistence
             Assert.True(result.Successful, result.Error?.ToString());
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ForeignKeyRow
         {
             public string table { get; set; } = string.Empty;
             public string from { get; set; } = string.Empty;
             public string on_delete { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class AuditProjectionRow
         {
@@ -324,6 +334,10 @@ namespace LSTY.SevenDPanel.Tests.Persistence
             public string? target_ref { get; set; }
             public string status { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

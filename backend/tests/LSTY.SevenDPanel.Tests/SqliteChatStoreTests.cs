@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteChatStoreTests
     {
         [Fact]
@@ -207,6 +209,10 @@ namespace LSTY.SevenDPanel.Tests
 
         private static DateTimeOffset Utc(int day) =>
             new DateTimeOffset(2026, 7, 1 + day, 0, 0, 0, TimeSpan.Zero);
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryChatDatabase : IDisposable
         {

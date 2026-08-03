@@ -4,6 +4,8 @@ import type { JobRecord } from '../model/useBackups'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { operationStatus } from '../../../shared/model/operationStatus'
+
 const props = defineProps<{ job: JobRecord }>()
 const { d, t } = useI18n()
 
@@ -15,9 +17,7 @@ const progress = computed(() => {
   return Math.min(100, Math.max(0, Math.round(current / total * 100)))
 })
 
-const color = computed(() => props.job.status === 'Succeeded'
-  ? 'success'
-  : ['Failed', 'Cancelled', 'Interrupted', 'ResultUnknown'].includes(props.job.status) ? 'error' : 'primary')
+const status = computed(() => operationStatus(props.job.status))
 </script>
 
 <template>
@@ -32,7 +32,7 @@ const color = computed(() => props.job.status === 'Succeeded'
             {{ job.kind }} · {{ job.id }}
           </p>
         </div>
-        <UBadge :color="color" :label="t(`backups.job.status.${job.status}`)" variant="subtle" />
+        <UBadge :color="status.tone" :label="t(status.i18nKey)" variant="subtle" />
       </div>
       <UProgress v-if="progress !== null" :model-value="progress" />
       <p class="text-xs text-muted">

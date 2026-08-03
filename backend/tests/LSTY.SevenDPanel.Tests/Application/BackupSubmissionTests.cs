@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Application
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class BackupSubmissionTests
     {
         [Fact]
@@ -45,6 +47,10 @@ namespace LSTY.SevenDPanel.Tests.Application
         private static CreateBackupRequest Request(string key) => new CreateBackupRequest(
             "owner", key, "corr-" + key,
             new DateTimeOffset(2026, 7, 26, 12, 0, 0, TimeSpan.Zero));
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingSubmissionStore : IJobSubmissionStore
         {

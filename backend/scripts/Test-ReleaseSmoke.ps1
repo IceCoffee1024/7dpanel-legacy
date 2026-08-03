@@ -68,6 +68,24 @@ function Write-SmokeEvidenceSummary {
     [System.IO.File]::WriteAllText($Path, $json, $utf8WithoutBom)
 }
 
+function Write-SmokeEvidenceManifest {
+    param(
+        [Parameter(Mandatory = $true)] [System.Collections.IDictionary] $Summary,
+        [Parameter(Mandatory = $true)] [string] $RunDirectory
+    )
+
+    $subEvidence = @('summary.json') + @($Summary.steps | ForEach-Object { $_.logFile })
+    $parameters = @{
+        EvidenceDirectory = $RunDirectory
+        EvidenceKind = 'release-smoke'
+        ExecutionScope = 'development-smoke'
+        Status = $Summary.status
+        SubEvidencePaths = $subEvidence
+    }
+    if ($null -ne $evidenceArtifactIdentity) { $parameters.ArtifactIdentity = $evidenceArtifactIdentity }
+    & (Join-Path $PSScriptRoot 'New-EvidenceManifest.ps1') @parameters | Out-Null
+}
+
 function Invoke-SmokeChildScript {
     param(
         [Parameter(Mandatory = $true)] [string] $Name,
@@ -142,6 +160,7 @@ function Invoke-SmokeEvidenceStep {
     $Summary.status = if ($failure) { 'Failed' } else { 'Running' }
     $Summary.exitCode = if ($failure) { $exitCode } else { $null }
     Write-SmokeEvidenceSummary -Summary $Summary -Path $SummaryPath
+    Write-SmokeEvidenceManifest -Summary $Summary -RunDirectory $evidenceRunDirectory
 
     foreach ($record in $records) {
         Write-Output $record
@@ -202,6 +221,7 @@ $evidenceEnabled = $PSBoundParameters.ContainsKey('EvidenceDirectory')
 $evidenceSummary = $null
 $evidenceSummaryPath = $null
 $evidenceRunDirectory = $null
+$evidenceArtifactIdentity = $null
 $secretValues = @()
 if ($evidenceEnabled) {
     if ([string]::IsNullOrWhiteSpace($EvidenceDirectory)) {
@@ -232,6 +252,7 @@ if ($evidenceEnabled) {
         $secretValues += $Credential.GetNetworkCredential().Password
     }
     Write-SmokeEvidenceSummary -Summary $evidenceSummary -Path $evidenceSummaryPath
+    Write-SmokeEvidenceManifest -Summary $evidenceSummary -RunDirectory $evidenceRunDirectory
     Write-Host "Smoke evidence directory: $evidenceRunDirectory"
 }
 
@@ -244,6 +265,13 @@ if ($evidenceEnabled) {
         -Summary $evidenceSummary `
         -SummaryPath $evidenceSummaryPath `
         -SecretValues $secretValues
+
+    if ($PSBoundParameters.ContainsKey('PublishDirectory') -and
+        (Test-Path -LiteralPath $PublishDirectory -PathType Container)) {
+        $evidenceArtifactIdentity = & (Join-Path $PSScriptRoot 'Get-ReleaseArtifactIdentity.ps1') `
+            -ArtifactPath $PublishDirectory
+        Write-SmokeEvidenceManifest -Summary $evidenceSummary -RunDirectory $evidenceRunDirectory
+    }
 }
 else {
     Invoke-SmokeChildScript -Name 'Stop-Server' `
@@ -313,6 +341,7 @@ if ($evidenceEnabled) {
     $evidenceSummary.endedAtUtc = $endedAt.ToString('o')
     $evidenceSummary.durationMilliseconds = [long]($endedAt - [DateTimeOffset]::Parse($evidenceSummary.startedAtUtc)).TotalMilliseconds
     Write-SmokeEvidenceSummary -Summary $evidenceSummary -Path $evidenceSummaryPath
+    Write-SmokeEvidenceManifest -Summary $evidenceSummary -RunDirectory $evidenceRunDirectory
 }
 else {
     Invoke-SmokeChildScript -Name 'Test-HealthEndpoint' `

@@ -18,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Web")]
     public sealed class PlayerMapWebContractTests
     {
         private const string PlayerId = "EOS_0002d12af0fe4add9c7de0fbc238d431";
@@ -350,6 +352,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class MetadataQuery : IMapMetadataQuery
         {
             private readonly MapMetadataProjectionSnapshot snapshot;
@@ -357,12 +363,20 @@ namespace LSTY.SevenDPanel.Tests
             public MapMetadataProjectionSnapshot Query() => snapshot;
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class GameTimeQuery : IMapGameTimeQuery
         {
             private readonly MapGameTimeProjectionSnapshot snapshot;
             public GameTimeQuery(MapGameTimeProjectionSnapshot snapshot) { this.snapshot = snapshot; }
             public MapGameTimeProjectionSnapshot Query() => snapshot;
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class StubMapLayerProjection : IMapLayerProjection
         {
@@ -374,11 +388,19 @@ namespace LSTY.SevenDPanel.Tests
             public MapLayerProjectionSnapshot Query(MapLayerQuery value) => query(value);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class EmptyOnlinePlayerQuery : IOnlinePlayerQuery
         {
             public Task<OnlinePlayersSnapshot> GetOnlineAsync(CancellationToken cancellationToken) =>
                 Task.FromResult(new OnlinePlayersSnapshot(Array.Empty<PlayerSnapshot>()));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class TrackStore : IPlayerHistoryStore, IPlayerMapSpatialQueryStore
         {
@@ -412,6 +434,10 @@ namespace LSTY.SevenDPanel.Tests
                 PlayerAreaCandidateQuery query) => AreaCandidates;
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -436,6 +462,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {

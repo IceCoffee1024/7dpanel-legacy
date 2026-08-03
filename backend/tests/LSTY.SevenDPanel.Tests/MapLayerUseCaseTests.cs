@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class MapLayerUseCaseTests
     {
         [Fact]
@@ -161,6 +163,10 @@ namespace LSTY.SevenDPanel.Tests
                 0,
                 Utc(0));
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingMapLayerProjection : IMapLayerProjection
         {
             public MapLayerQuery? QueryValue { get; private set; }
@@ -172,6 +178,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubOnlinePlayerQuery : IOnlinePlayerQuery
         {
             private readonly OnlinePlayersSnapshot snapshot;
@@ -182,11 +192,19 @@ namespace LSTY.SevenDPanel.Tests
                 Task.FromResult(snapshot);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ThrowingOnlinePlayerQuery : IOnlinePlayerQuery
         {
             public Task<OnlinePlayersSnapshot> GetOnlineAsync(CancellationToken cancellationToken) =>
                 Task.FromException<OnlinePlayersSnapshot>(new InvalidOperationException("unavailable"));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingHistoryStore : IPlayerHistoryStore
         {

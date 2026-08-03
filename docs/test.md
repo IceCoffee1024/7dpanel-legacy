@@ -7,7 +7,55 @@ last_updated: "2026-08-03"
 
 ## 范围与可追踪性
 
-本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-08-03 当前工作树的 Admin 全量 Vitest 为 `137` 个文件、`937/937` 项通过；typecheck、`api:check` 和 Vite 生产构建通过。此次重构触及文件的 ESLint 显式范围通过，但全量 ESLint 仍有 6 个既有格式错误（`e2e/admin-routes.spec.ts` 与 `features/world-tools`），因此不能宣称全局 lint 门禁通过。Playwright 已尝试运行，但本机缺少 `chrome-headless-shell`，没有取得有效 mock 或真实 OWIN 浏览器证据；真实 7DTD、Discord/GeoIP sandbox、备份恢复演练、危险世界副作用和 Linux 候选发布 smoke 仍未执行，不能由本地静态检查替代。
+## 能力成熟度唯一台账
+
+下面的机读表是当前成熟度、证据范围和发布阻塞的唯一事实来源。`Implemented` 只表示代码与局部自动化存在；`Verified` 还需要适用的真实边界证据；`Release-ready` 只能由冻结候选 artifact、适用环境和回滚证据共同支持。`Planned`、`Implemented`、`Verified`、`Release-ready` 是唯一允许的成熟度；`Open`、`Blocked`、`Passed` 是唯一允许的门禁状态。历史 smoke、目标蓝图、设计规格、实施计划和不同 artifact 的证据不会提升当前行的状态。
+
+<!-- CAPABILITY_MATURITY_START -->
+| ID | Owner | Contract | Current implementation anchor | Required boundaries | Evidence | Maturity | Gate | Blockers/expiry |
+|---|---|---|---|---|---|---|---|---|
+| CAP-01 | Operations | 服务器概览与运行状态 | `docs/design.md#admin-综合概览第一阶段` | Application/Web/Admin/Windows/Linux/7DTD/Chromium | `docs/test.md#六波次功能对齐当前工作树证据` | Implemented | Open | 缺冻结候选的双平台进程与浏览器证据 |
+| CAP-02 | Players | 玩家发现、历史、地图与安全动作 | `frontend/apps/admin/src/features/players` | Players/Application/SevenDays/Web/Admin/真实玩家/Chromium | `docs/test.md#产品需求追踪` | Implemented | Open | 缺受控真实玩家、踢出审计和 Linux 证据 |
+| CAP-03 | Operations | 备份、恢复与可恢复任务 | `backend/src` 备份与恢复用例 | Domain/Application/Persistence/Local/Windows/Linux/文件故障 | `docs/test.md#已知缺口` | Implemented | Blocked | 缺当前候选跨平台恢复演练和回滚证据 |
+| CAP-04 | Community | 公告与调度触发 | `backend/src` Automation/Announcements | Application/SQLite/SevenDays/真实触发/重启恢复 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺真实游戏公告、重复触发与重启证据 |
+| CAP-05 | Administration | 认证、用户、权限与审计 | `backend/src` Identity/Audit | Web/SQLite/Bootstrap/安全/Owner-Admin-Viewer/真实进程 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺候选 artifact 的跨平台安全和失效证据 |
+| CAP-06 | Operations | 配置与 Mod 生命周期 | `backend/src` ServerConfiguration/Mods | Local/SevenDays/Web/原子文件/重启/Windows/Linux | `docs/test.md#产品需求追踪` | Implemented | Open | 缺真实重启生效、路径和双平台证据 |
+| CAP-07 | Community | 聊天、命令与聊天审计 | `backend/src` Chat/ConsoleCommands | SevenDays/Application/SQLite/Web/Admin/真实玩家/安全 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺真实聊天、私发和命令副作用证据 |
+| CAP-08 | Players | 玩家档案、资源与物品 | `frontend/apps/admin/src/features/player-profile` | Players/Application/SevenDays/Web/字段兼容/按需真实进程 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺当前游戏版本的真实字段与补偿证据 |
+| CAP-09 | Economy | 账本、商店与奖励 | `backend/src` Economy/Rewards | Domain/Application/SQLite/并发/SevenDays/幂等发放 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺真实发放、补偿和候选性能证据 |
+| CAP-10 | Community | 传送、城市、好友与投票 | `backend/src` Community | Domain/Application/SQLite/SevenDays/规则副作用/审计 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺真实传送、投票和危险动作证据 |
+| CAP-11 | Administration | Discord 与 GeoIP 集成 | `backend/src` Discord/GeoIp | Web/Local/外部服务/Secret/故障模式/双平台 | `docs/test.md#产品需求追踪` | Implemented | Open | 缺 Discord/GeoIP sandbox 或真实服务证据 |
+| CAP-12 | Operations | 地图、世界工具与功能模块 | `backend/src` WorldOperations/Modules | Application/SevenDays/文件/长作业/备份/回滚 | `docs/test.md#产品需求追踪` | Implemented | Blocked | 缺真实世界副作用、备份和回滚前置条件 |
+| J1 | Operations | 服务器日常运维与可恢复重启 | `docs/design.md#admin-综合概览第一阶段` | Candidate/Windows/Linux/7DTD/Chromium/审计/回滚 | `docs/test.md#已知缺口` | Implemented | Blocked | 未完成冻结候选、双平台和回滚闭环 |
+| J2 | Players | 玩家发现、处置与审计 | `frontend/apps/admin/src/features/players` | Candidate/真实玩家/Windows/Linux/Chromium/审计 | `docs/test.md#产品需求追踪` | Implemented | Blocked | 未执行受控玩家和跨平台浏览器旅程 |
+| J3 | Operations | 备份、恢复、重启与核对 | `backend/src` 备份与恢复用例 | Candidate/Windows/Linux/文件故障/恢复/回滚 | `docs/test.md#已知缺口` | Implemented | Blocked | 没有可用双平台恢复实例和回滚目标 |
+<!-- CAPABILITY_MATURITY_END -->
+
+检查器 `tests/docs/Test-CapabilityMaturity.ps1` 只解析上述标记区间；它拒绝缺失或重复 ID、未知所有者/成熟度/门禁、断链、无 evidence 的 `Verified`、带 blocker 的 `Release-ready`、缺 artifact SHA-256，以及把 Target/spec/plan 当作 implementation evidence。`skipped` 和失败步骤永远不能计为通过。
+
+## 复杂性预算与趋势
+
+`tests/complexity/Measure-Complexity.ps1` 是只读测量器，排除 `bin/`、`obj/`、`node_modules/`、`.pnpm-store/` 和 `7dtd-reference/`，输出包含时间戳之外可比较的生产 C# 文件数、产品项目数、后端测试项目/文件数、Admin Feature 数、一级任务域数、Bootstrap 注册文件行数、组合根数、Hosting 对 Application 的项目引用、未知 Capability 和新增公共接口数。文件数和 Feature 数只作趋势指标；项目数、测试项目数、组合根、一级任务域、未声明项目引用、未知 Capability、新增未说明接口和存量跨层例外增加时，`Test-ComplexityBudget.ps1` 失败。
+
+当前基线为 8 个产品项目、1 个后端测试项目、1 个 Bootstrap 根 Provider、6 个一级任务域；Hosting 对 Application 的项目引用已清零，平台实现归入 Local Adapter。预算门禁不要求为了降低数字而合并 Domain/Application/Adapter，也不把单纯文件增长当作失败。
+
+## 候选 artifact 与证据 manifest
+
+`backend/scripts/Get-ReleaseArtifactIdentity.ps1` 为候选发布物提供唯一确定性 SHA-256；`backend/scripts/New-EvidenceManifest.ps1` 将证据绑定到 clean commit、artifact hash、版本字段、环境摘要和相对子证据。`summary.json` 记录步骤级退出码与状态，`manifest.json` 记录证据合同；开发 smoke 可以留存 `Skipped`，但不能提升成熟度。候选 artifact 必须由同一 identity 经过 validator，代码变更后旧 manifest 失效。
+
+## J2/J3 旅程安全编排
+
+`tests/journeys/Test-PlayerJourney.ps1` 只接受显式稳定 `ExpectedCrossplatformId`、`EnvironmentId` 和 `EvidenceDirectory`；`-ConfirmKickTestPlayer` 不会绕过精确身份匹配。没有受控访问 Token、玩家不在线或身份不唯一时只写脱敏 `Skipped/Blocked` 证据，不执行踢出。`tests/journeys/Test-RestoreDrill.ps1` 要求隔离 `ServerRoot`/`EvidenceDirectory`、`IsolationRoot`、预期世界名、`BackupId` 或 `CreateBackup` 和 `-ConfirmDestructiveRestoreDrill`，拒绝盘符根、系统/用户根、仓库路径和 reparse point。当前脚本只完成安全预检；没有冻结候选、空间、备份、回滚目标和真实双平台进程时，J2/J3 不得提升成熟度。
+
+## 2026-08-03 收口波证据
+
+本波实际执行的治理与局部自动化命令均在当前工作树通过：成熟度台账 `15` 行、复杂性预算 `577` 个生产 C# 文件/`8` 个产品项目/`197` 个后端测试源/`27` 个 Admin Feature、测试分类 `197` 个源文件、artifact identity/manifest/release smoke 三组 PowerShell 合成测试、J2/J3 旅程安全测试。J2 玩家相关 Admin Vitest 为 `264/264`，CAP-04 至 CAP-07 聚焦 Admin Vitest 为 `147/147`，Admin `pnpm typecheck` 通过；Admin operation status 聚焦 Vitest 为 `18` 个文件/`122` 项通过。两个后端 Capability 过滤命令已写入脚本和 README，但当前工作树缺少只读 `7dtd-reference` 中的 Harmony/Newtonsoft 运行时程序集，因此无法完成测试发现；这保持为环境阻塞，不计为通过。
+
+`summary.json` 记录发布 smoke 的每个步骤、退出码和脱敏日志；同一证据目录中的 `manifest.json` 记录 schema、evidence kind、UTC、Git commit/dirty、候选 artifact SHA-256、产品/游戏/OS/浏览器版本、环境摘要、执行范围、状态和相对子证据。`Get-ReleaseArtifactIdentity.ps1` 是唯一 artifact hash 算法；脚本和 validator 都消费同一 identity。环境 ID 只保存 SHA-256 摘要，凭据、Token、密码和绝对机器路径禁止进入 manifest 或日志。
+
+开发 smoke 可以是 `Passed`、`Failed` 或 `Skipped`，但其 maturity 固定为 `Development`。`candidate-release` 必须绑定 clean commit、完整版本字段、artifact hash、`Passed` 状态和可审计的相对子证据；dirty、missing、failed、skipped、版本不符、敏感信息、无退出码或断链都不能提升成熟度。代码修复会使旧 artifact 与 manifest 失效，必须重新生成候选并只在新候选上重跑受影响边界。
+
+本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-08-03 当前工作树的 Admin 全量 Vitest 为 `138` 个文件、`956/956` 项通过；typecheck、全量 lint、`api:check` 和 Vite 生产构建通过。Playwright 已尝试运行，但本机缺少 `chrome-headless-shell`，没有取得有效 mock 或真实 OWIN 浏览器证据；真实 7DTD、Discord/GeoIP sandbox、备份恢复演练、危险世界副作用和 Linux 候选发布 smoke 仍未执行，不能由本地静态检查替代。
 
 2026-07-26 游戏资源目录第一切片完成后，后端 `GameResource` 聚焦过滤 `55/55`、组合根 `12/12`、OpenAPI 快照语义与刷新后复验 `1/1` 通过；Admin 游戏资源、导航、路由和 i18n 共 `12` 个文件、`99/99` 项断言通过，修正请求生命周期后又以 `2` 个文件、`8/8` 项完成干净定向复验。Admin typecheck、聚焦 ESLint、Vite 生产构建和 Hey API 客户端生成通过。没有重复后端全量、Admin 全量、Playwright、publish、真实 7DTD 或跨平台 smoke。
 
@@ -168,7 +216,7 @@ last_updated: "2026-08-03"
 | 规划场景 | 覆盖重点 | 主要测试层级 | 需求映射 | 必须保留的证据 |
 |---|---|---|---|---|
 | Overview 权限矩阵与字段裁剪 | 未认证为 401；`Owner`、`Admin`、`Viewer` 的读取权限；仅 `Owner` 获得设备、系统用户、公网地址、卷根路径和同类敏感主机字段；部分分区无权时保持结构化状态 | Application 单元、Katana/OWIN 集成、安全 | `CAP-01`、`CAP-05`、`NFR-02` | 各角色 API 响应字段断言、401/403 Problem Details 与裁剪报告 |
-| Windows/Linux 主机平台采样 | OS family、运行时、进程、物理内存、Windows 虚拟地址空间与 Linux Swap 的不同语义、固定卷/主数据卷及单卷失败 | Hosting 单元、平台集成、Windows/Linux 真实进程 | `CAP-01`、`NFR-02` | 受控平台夹具、分区可用状态、真实进程采样记录 |
+| Windows/Linux 主机平台采样 | OS family、运行时、进程、物理内存、Windows 虚拟地址空间与 Linux Swap 的不同语义、固定卷/主数据卷及单卷失败 | Local Adapter 单元、平台集成、Windows/Linux 真实进程 | `CAP-01`、`NFR-02` | 受控平台夹具、分区可用状态、真实进程采样记录 |
 | 游戏主线程快照复制 | 游戏字段只在主线程读取后复制为不可变快照；游戏未就绪、缓存、超时和单一游戏分区失败不得伪造主机或综合成功 | Application/SevenDays 单元、Katana/OWIN 集成、真实 7DTD 进程 | `CAP-01`、`NFR-02` | Dispatcher 断言、不可变快照断言、API 分区状态与服务端日志 |
 | 近期活动与服务器操作审计 | 固定用途活动保留、敏感值不落库、重启脚本与固定关服分别写入可追溯操作状态 | SQLite 集成、Application 单元 | `CAP-01`、`CAP-05`、`NFR-02` | migration/Store 结果、保留策略断言、敏感值扫描和审计状态 |
 | 可替身的脚本启动与固定关服 | Windows/Linux 使用无副作用替身脚本写临时标记，证明 API 创建脚本进程；仅 `Owner` 可提交精确确认；拒绝命令、路径、参数和环境输入；固定关服走独立确认与结果路径 | Application 单元、Katana/OWIN 集成、Windows/Linux 平台集成 | `CAP-05`、`NFR-02` | 临时标记、权限/请求体断言、`202` 或失败结果、独立审计与关服结果记录 |

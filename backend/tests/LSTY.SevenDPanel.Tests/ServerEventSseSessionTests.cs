@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ServerEventSseSessionTests
     {
         [Fact]
@@ -509,6 +511,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains(": keep-alive\n\n", text);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ObservingMemoryStream : MemoryStream
         {
             private readonly string expectedText;
@@ -612,11 +618,19 @@ namespace LSTY.SevenDPanel.Tests
                 "Player",
                 message);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FakeRuntimeStatus : IPanelRuntimeStatus
         {
             public ModHostState State => ModHostState.Running;
             public GameReadinessState GameReadiness => GameReadinessState.Ready;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FakeServerEventStream : IServerEventStream
         {
@@ -657,6 +671,10 @@ namespace LSTY.SevenDPanel.Tests
                 return true;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FakeSubscription : IServerEventSubscription
         {
@@ -703,6 +721,10 @@ namespace LSTY.SevenDPanel.Tests
             {
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FakeAuthenticationStore :
             IPanelCredentialStore,

@@ -5,6 +5,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerHistoryUseCaseTests
     {
         [Fact]
@@ -95,6 +97,10 @@ namespace LSTY.SevenDPanel.Tests
 
         private static DateTimeOffset Utc(int hour) =>
             new DateTimeOffset(2026, 7, 25, hour, 0, 0, TimeSpan.Zero);
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingPlayerHistoryStore : IPlayerHistoryStore
         {

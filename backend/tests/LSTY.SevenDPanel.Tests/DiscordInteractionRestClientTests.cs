@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class DiscordInteractionRestClientTests
     {
         private const string ApplicationId = "123456789012345678";
@@ -241,6 +243,10 @@ namespace LSTY.SevenDPanel.Tests
 
         private static JObject DeserializeObject(string json) => JObject.Parse(json);
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingHandler : HttpMessageHandler
         {
             private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send;
@@ -253,6 +259,10 @@ namespace LSTY.SevenDPanel.Tests
                 HttpRequestMessage request,
                 CancellationToken cancellationToken) => send(request, cancellationToken);
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class CapturedRequest
         {

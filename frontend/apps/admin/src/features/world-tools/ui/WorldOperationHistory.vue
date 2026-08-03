@@ -6,6 +6,8 @@ import type { WorldOperationsErrorCode, WorldOperationsState } from '../model/us
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { operationStatus } from '../../../shared/model/operationStatus'
+
 const props = defineProps<{
   operation: WorldOperationRecord | null
   receipt: WorldOperationReceipt | null
@@ -26,18 +28,6 @@ const columns = computed<TableColumn<WorldOperationRecord>[]>(() => [
 ])
 const rows = computed(() => props.operation === null ? [] : [props.operation])
 const trackedOperationId = computed(() => props.operation?.operationId ?? props.receipt?.operationId ?? null)
-
-function statusColor(status: WorldOperationRecord['status']): 'neutral' | 'info' | 'success' | 'warning' | 'error' {
-  if (status === 'Succeeded')
-    return 'success'
-  if (status === 'Queued' || status === 'Running')
-    return 'info'
-  if (status === 'Interrupted' || status === 'ResultUnknown')
-    return 'warning'
-  if (status === 'Failed' || status === 'RollbackFailed')
-    return 'error'
-  return 'neutral'
-}
 
 function progressLabel(operation: WorldOperationRecord): string {
   if (operation.progress === null)
@@ -111,8 +101,8 @@ function progressLabel(operation: WorldOperationRecord): string {
     <div class="hidden md:block">
       <UTable :columns="columns" :data="rows">
         <template #status-cell="{ row }">
-          <UBadge :color="statusColor(row.original.status)" variant="subtle">
-            {{ row.original.status }}
+          <UBadge :color="operationStatus(row.original.status).tone" variant="subtle">
+            {{ t(operationStatus(row.original.status).i18nKey) }}
           </UBadge>
         </template>
         <template #createdAtUtc-cell="{ row }">
@@ -129,8 +119,8 @@ function progressLabel(operation: WorldOperationRecord): string {
     <article v-if="props.operation" class="space-y-3 rounded-lg border border-default p-4 md:hidden">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <strong class="text-highlighted">{{ props.operation.kind }}</strong>
-        <UBadge :color="statusColor(props.operation.status)" variant="subtle">
-          {{ props.operation.status }}
+        <UBadge :color="operationStatus(props.operation.status).tone" variant="subtle">
+          {{ t(operationStatus(props.operation.status).i18nKey) }}
         </UBadge>
       </div>
       <dl class="grid gap-2 text-sm">

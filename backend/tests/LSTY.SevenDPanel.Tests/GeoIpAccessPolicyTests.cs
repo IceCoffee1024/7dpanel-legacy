@@ -16,6 +16,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class GeoIpAccessPolicyTests
     {
         private static readonly DateTimeOffset Now =
@@ -589,6 +591,10 @@ namespace LSTY.SevenDPanel.Tests
                     GeoIpSecretUpdate.Replace("license-value")));
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRefreshQueue : IGeoIpRefreshQueue
         {
             public List<GeoIpRefreshRequest> Requests { get; } = new List<GeoIpRefreshRequest>();
@@ -600,6 +606,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StaticRefreshDiagnostics : IGeoIpRefreshDiagnostics
         {
             private readonly GeoIpRefreshDiagnostics diagnostics;
@@ -609,6 +619,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public GeoIpRefreshDiagnostics GetDiagnostics() => diagnostics;
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class DelegateGeoIpProvider : IGeoIpProvider
         {
@@ -634,6 +648,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class CallbackDisposable : IDisposable
         {
             private Action? callback;
@@ -642,6 +660,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public void Dispose() => Interlocked.Exchange(ref callback, null)?.Invoke();
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class MemoryGeoIpStore : IGeoIpAccessPolicyStore
         {
@@ -753,6 +775,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class MaxMindAuthenticationProbe
         {
             private string expectedAccountId;
@@ -808,6 +834,10 @@ namespace LSTY.SevenDPanel.Tests
                 return true;
             }
 
+            [Trait("Capability", "Administration")]
+
+            [Trait("Boundary", "Application")]
+
             private sealed class MaxMindAuthenticationHandler : HttpMessageHandler
             {
                 private readonly MaxMindAuthenticationProbe owner;
@@ -841,6 +871,10 @@ namespace LSTY.SevenDPanel.Tests
                 }
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class DelegateHttpMessageHandler : HttpMessageHandler
         {

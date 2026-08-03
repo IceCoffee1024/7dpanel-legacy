@@ -44,6 +44,9 @@ function Get-OnlyRunDirectory {
 try {
     New-Item -ItemType Directory -Path $scriptRoot -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $sourceRoot 'Test-ReleaseSmoke.ps1') -Destination $scriptRoot
+    Copy-Item -LiteralPath (Join-Path $sourceRoot 'New-EvidenceManifest.ps1') -Destination $scriptRoot
+    Copy-Item -LiteralPath (Join-Path $sourceRoot 'Get-ReleaseArtifactIdentity.ps1') -Destination $scriptRoot
+    Copy-Item -LiteralPath (Join-Path $sourceRoot 'release-manifest.json') -Destination $scriptRoot
 
     $stubs = @{
         'Stop-Server.ps1' = @'
@@ -97,6 +100,7 @@ if ($env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP -eq 'Test-HealthEndpoint') { throw 'Se
     & $smokePath -EvidenceDirectory $evidenceRoot -Credential $credential | Out-Null
     $runDirectory = Get-OnlyRunDirectory $evidenceRoot
     $summaryPath = Join-Path $runDirectory 'summary.json'
+    $manifestPath = Join-Path $runDirectory 'manifest.json'
     $summaryBytes = [System.IO.File]::ReadAllBytes($summaryPath)
     $hasUtf8Bom = $summaryBytes.Length -ge 3 -and
         $summaryBytes[0] -eq 0xEF -and
@@ -104,6 +108,13 @@ if ($env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP -eq 'Test-HealthEndpoint') { throw 'Se
         $summaryBytes[2] -eq 0xBF
     Assert-True (-not $hasUtf8Bom) 'Smoke summary must use portable UTF-8 without a BOM.'
     $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
+    Assert-True (Test-Path -LiteralPath $manifestPath) 'Evidence-enabled smoke must create a manifest.'
+    $evidenceManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    Assert-Equal 'release-smoke' $evidenceManifest.evidenceKind 'Smoke manifest evidence kind is incorrect.'
+    Assert-Equal 'Passed' $evidenceManifest.status 'Successful smoke manifest status is incorrect.'
+    Assert-Equal 'Development' $evidenceManifest.maturity 'Smoke manifest must not promote maturity.'
+    Assert-True ($evidenceManifest.environmentId -match '^[A-F0-9]{64}$') 'Smoke manifest must store a non-sensitive environment digest.'
+    Assert-Equal 'summary.json,01-stop-server.log,02-publish-mod.log,03-start-server.log,04-health-endpoint.log' (@($evidenceManifest.subEvidence) -join ',') 'Smoke manifest sub-evidence is incorrect.'
     Assert-Equal 'Passed' $summary.status 'Successful smoke summary status is incorrect.'
     Assert-Equal 0 $summary.exitCode 'Successful smoke summary exit code is incorrect.'
     Assert-True ($summary.durationMilliseconds -ge 0) 'Successful smoke summary duration is missing.'
@@ -134,6 +145,9 @@ if ($env:SEVENDPANEL_SMOKE_TEST_FAIL_STEP -eq 'Test-HealthEndpoint') { throw 'Se
     Assert-True $failed 'A failed smoke step must fail the orchestrator.'
     $failedRunDirectory = Get-OnlyRunDirectory $failedEvidenceRoot
     $failedSummary = Get-Content -LiteralPath (Join-Path $failedRunDirectory 'summary.json') -Raw | ConvertFrom-Json
+    $failedManifest = Get-Content -LiteralPath (Join-Path $failedRunDirectory 'manifest.json') -Raw | ConvertFrom-Json
+    Assert-Equal 'Failed' $failedManifest.status 'Failed smoke manifest status is incorrect.'
+    Assert-Equal 'summary.json,01-stop-server.log,02-publish-mod.log,03-start-server.log' (@($failedManifest.subEvidence) -join ',') 'Failed smoke manifest must retain only attempted-step evidence.'
     Assert-Equal 'Failed' $failedSummary.status 'Failed smoke summary status is incorrect.'
     Assert-Equal 1 $failedSummary.exitCode 'Failed smoke summary exit code is incorrect.'
     Assert-True ($failedSummary.durationMilliseconds -ge 0) 'Failed smoke summary duration is missing.'

@@ -17,6 +17,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Web")]
     public sealed class AccessListHttpTests
     {
         [Theory]
@@ -114,6 +116,10 @@ namespace LSTY.SevenDPanel.Tests
         private static Task<HttpResponseMessage> PutJsonAsync(HttpClient client, string path, string json) =>
             client.PutAsync(path, new StringContent(json, Encoding.UTF8, "application/json"));
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -127,6 +133,10 @@ namespace LSTY.SevenDPanel.Tests
             public HttpClient Client { get; }
             public void Dispose() { Client.Dispose(); configuration.Dispose(); provider.Dispose(); }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -150,6 +160,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class RecordingAccessControl : IPlayerAccessControl
         {
             private readonly AccessListMutationResult result;
@@ -162,6 +176,10 @@ namespace LSTY.SevenDPanel.Tests
             public Task<AccessListMutationResult> UpsertWhitelistAsync(WhitelistRequest request, CancellationToken cancellationToken) { WhitelistRequests.Add(request); return Task.FromResult(result); }
             public Task<AccessListMutationResult> RemoveWhitelistAsync(string playerId, CancellationToken cancellationToken) => Task.FromResult(result);
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class NoOpActivityWriter : IRecentActivityWriter, IServerGovernanceActivityWriter
         {

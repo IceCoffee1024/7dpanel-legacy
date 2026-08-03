@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class BackupPolicySchedulerTests
     {
         [Fact]
@@ -101,6 +103,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class Fixture : IDisposable
         {
             private readonly string root = Path.Combine(
@@ -143,6 +149,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class TemporaryDatabase : IDisposable
         {
             public TemporaryDatabase(string path)
@@ -159,6 +169,10 @@ namespace LSTY.SevenDPanel.Tests.Local
                 SqliteConnection.ClearAllPools();
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class EmptyScheduleStore : IScheduleStore
         {

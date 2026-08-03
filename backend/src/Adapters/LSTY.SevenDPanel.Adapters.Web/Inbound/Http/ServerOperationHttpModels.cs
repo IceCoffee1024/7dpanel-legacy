@@ -77,4 +77,30 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
         public DateTimeOffset AcceptedAtUtc { get; }
         public string AuditStatus { get; }
     }
+
+    public sealed class ServerOperationStatusHttpResponse
+    {
+        internal ServerOperationStatusHttpResponse(ServerOperationSnapshot operation)
+        {
+            OperationId = operation.OperationId;
+            Kind = operation.OperationKind;
+            Status = ServerOperationSnapshot.ToWireStatus(operation.Status);
+            RequestedAtUtc = operation.RequestedAtUtc;
+            StartedAtUtc = operation.StartedAtUtc;
+            CompletedAtUtc = operation.CompletedAtUtc;
+            CompletionDeadlineUtc = operation.CompletionDeadlineUtc;
+            FailureCode = operation.FailureCode;
+            AuditStatus = operation.AuditStatus;
+        }
+
+        public string OperationId { get; }
+        public string Kind { get; }
+        public string Status { get; }
+        public DateTimeOffset RequestedAtUtc { get; }
+        public DateTimeOffset? StartedAtUtc { get; }
+        public DateTimeOffset? CompletedAtUtc { get; }
+        public DateTimeOffset CompletionDeadlineUtc { get; }
+        public string? FailureCode { get; }
+        public string AuditStatus { get; }
+    }
 }

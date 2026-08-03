@@ -17,6 +17,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Web")]
     public sealed class AuditHttpTests
     {
         [Theory]
@@ -194,6 +196,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubQuery : IUnifiedAuditQuery
         {
             private readonly UnifiedAuditPage page;
@@ -206,10 +212,18 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class ThrowingQuery : IUnifiedAuditQuery
         {
             public UnifiedAuditPage Query(UnifiedAuditFilter filter) => throw new InvalidOperationException("database unavailable");
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HttpTestHost : IDisposable
         {
@@ -224,6 +238,10 @@ namespace LSTY.SevenDPanel.Tests
             public HttpClient Client { get; }
             public void Dispose() { Client.Dispose(); configuration.Dispose(); provider.Dispose(); }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {

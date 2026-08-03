@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ConsoleCommandTests
     {
         [Fact]
@@ -59,6 +61,10 @@ namespace LSTY.SevenDPanel.Tests
 
             Assert.Empty(gateway.Requests);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingConsoleGateway : IConsoleCommandGateway
         {

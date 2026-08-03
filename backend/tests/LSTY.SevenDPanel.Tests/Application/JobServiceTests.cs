@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Application
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class JobServiceTests
     {
         [Theory]
@@ -68,6 +70,10 @@ namespace LSTY.SevenDPanel.Tests.Application
 
         private static DateTimeOffset Utc(int day) =>
             new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.Zero).AddDays(day);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class Store : IJobStore
         {

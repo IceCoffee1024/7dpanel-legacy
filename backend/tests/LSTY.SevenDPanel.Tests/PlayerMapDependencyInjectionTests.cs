@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class PlayerMapDependencyInjectionTests
     {
         [Fact]
@@ -109,6 +111,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
         private sealed class FakeLifecycleEvents : ISevenDaysLifecycleEvents
         {
             private Action? gameStartDone;
@@ -131,6 +137,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public void RaiseGameStartDone() => gameStartDone!();
             public void RaiseWorldShuttingDown() => worldShuttingDown!();
+
+            [Trait("Capability", "Platform")]
+
+            [Trait("Boundary", "Bootstrap")]
 
             private sealed class Subscription : IDisposable
             {

@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class ConsoleCommandExecutionPatchTests
     {
         [Fact]

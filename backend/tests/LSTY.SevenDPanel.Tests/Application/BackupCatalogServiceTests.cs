@@ -17,6 +17,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Application
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class BackupCatalogServiceTests
     {
         [Fact]
@@ -216,6 +218,10 @@ namespace LSTY.SevenDPanel.Tests.Application
         private static DateTimeOffset Utc(int day) =>
             new DateTimeOffset(2026, 7, 26, 12, 0, 0, TimeSpan.Zero).AddDays(day);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class Fixture : IDisposable
         {
             private readonly string directory = Path.Combine(
@@ -328,6 +334,10 @@ namespace LSTY.SevenDPanel.Tests.Application
                 if (Directory.Exists(directory)) Directory.Delete(directory, true);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class DeleteFailingCatalog : IBackupCatalog
         {

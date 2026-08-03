@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqlitePlayerEvidenceStoreTests
     {
         [Fact]
@@ -389,16 +391,28 @@ namespace LSTY.SevenDPanel.Tests
                    && version <= 9;
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class IndexColumnRow
         {
             public int seqno { get; set; }
             public string name { get; set; } = string.Empty;
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ForeignKeyRow
         {
             public int id { get; set; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

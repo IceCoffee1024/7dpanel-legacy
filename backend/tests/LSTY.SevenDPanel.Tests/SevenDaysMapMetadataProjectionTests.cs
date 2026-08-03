@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysMapMetadataProjectionTests
     {
         private static readonly DateTimeOffset ObservedAt =
@@ -277,6 +279,10 @@ namespace LSTY.SevenDPanel.Tests
                 5),
             new SevenDaysMapGameTimeSample(4, 13, 27));
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingRuntime : IModRuntime
         {
             public int StopCount { get; private set; }
@@ -284,6 +290,10 @@ namespace LSTY.SevenDPanel.Tests
             public void MarkGameReady() { }
             public void Stop() { StopCount++; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class CoordinatedRuntime : IModRuntime
         {

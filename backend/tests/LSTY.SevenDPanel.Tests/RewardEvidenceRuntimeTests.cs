@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class RewardEvidenceRuntimeTests
     {
         private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(5);
@@ -145,12 +147,20 @@ namespace LSTY.SevenDPanel.Tests
             5,
             ObservedAtUtc);
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class NoopRuntime : IModRuntime
         {
             public void Start() { }
             public void MarkGameReady() { }
             public void Stop() { }
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingHistoryStore : IPlayerHistoryStore
         {
@@ -169,6 +179,10 @@ namespace LSTY.SevenDPanel.Tests
                 throw new NotSupportedException();
             public int Compact(DateTimeOffset utcNow, int maximumDeletes) => 0;
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingEvidenceStore : IPlayerEvidenceStore
         {

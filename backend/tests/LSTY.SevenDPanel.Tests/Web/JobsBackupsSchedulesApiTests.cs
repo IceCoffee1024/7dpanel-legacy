@@ -24,6 +24,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Web
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Web")]
     public sealed class JobsBackupsSchedulesApiTests
     {
         [Fact]
@@ -178,6 +180,10 @@ namespace LSTY.SevenDPanel.Tests.Web
             return new Host(provider, configuration, store);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class Host : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -205,6 +211,10 @@ namespace LSTY.SevenDPanel.Tests.Web
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class PrincipalHandler : DelegatingHandler
         {
             private readonly string? role;
@@ -229,6 +239,10 @@ namespace LSTY.SevenDPanel.Tests.Web
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         public sealed class Store : IJobStore
         {
@@ -276,12 +290,20 @@ namespace LSTY.SevenDPanel.Tests.Web
                 new PagedResult<JobRecord, JobCursor>(new[] { Current }, null);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class AnnouncementGateway : IAnnouncementGateway
         {
             public Task SendAsync(
                 AnnouncementMessage message,
                 CancellationToken cancellationToken) => Task.CompletedTask;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class ScheduleStore : IScheduleStore
         {
@@ -325,6 +347,10 @@ namespace LSTY.SevenDPanel.Tests.Web
             {
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PolicyStore : IBackupPolicyStore
         {

@@ -2,7 +2,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace LSTY.SevenDPanel.Hosting.Platform
+namespace LSTY.SevenDPanel.Adapters.Local.Platform
 {
     public sealed class DeviceIdentityProvider
     {

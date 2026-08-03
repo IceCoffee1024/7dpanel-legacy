@@ -24,6 +24,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Web")]
     public sealed class CommunityHttpTests
     {
         private const string ControllerName =
@@ -354,6 +356,10 @@ namespace LSTY.SevenDPanel.Tests
         private static readonly DateTimeOffset FixedNow =
             new DateTimeOffset(2026, 7, 27, 0, 0, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -378,6 +384,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -407,12 +417,20 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubRuntimeStatus : IPanelRuntimeStatus
         {
             public StubRuntimeStatus(GameReadinessState readiness) => GameReadiness = readiness;
             public ModHostState State => default;
             public GameReadinessState GameReadiness { get; }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class UnknownTeleportGateway : ICommunityGameGateway
         {
@@ -422,6 +440,10 @@ namespace LSTY.SevenDPanel.Tests
                 Task.FromResult(TeleportActionResult.ResultUnknown());
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class SuccessfulVoteActionPort : ICommunityVoteActionPort
         {
             public Task<VoteActionResult> ExecuteAsync(
@@ -429,6 +451,10 @@ namespace LSTY.SevenDPanel.Tests
                 CancellationToken cancellationToken) =>
                 Task.FromResult(VoteActionResult.Succeeded("operation:vote", null));
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class UnusedLedger : IEconomyLedgerStore
         {
@@ -440,6 +466,10 @@ namespace LSTY.SevenDPanel.Tests
             public AccountPage QueryAccounts(AccountKeysetQuery query) => throw new NotSupportedException();
             public TransactionPage QueryTransactions(TransactionKeysetQuery query) => throw new NotSupportedException();
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class MemoryCommunityStore : ICommunityStore, IVoteStore
         {

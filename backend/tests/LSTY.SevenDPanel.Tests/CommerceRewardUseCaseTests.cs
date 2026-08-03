@@ -18,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Application")]
     public sealed class CommerceRewardUseCaseTests
     {
         [Fact]
@@ -482,6 +484,10 @@ namespace LSTY.SevenDPanel.Tests
         private static DateTimeOffset Utc(int hour, int minute = 0) =>
             new DateTimeOffset(2026, 7, 27, hour, minute, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRewardDeliveryPort : IRewardDeliveryPort
         {
             private readonly Func<RewardDeliveryCommand, RewardDeliveryResult> deliver;
@@ -500,6 +506,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(deliver(command));
             }
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class Fixture
         {
@@ -521,12 +531,20 @@ namespace LSTY.SevenDPanel.Tests
             public RecordingRewardDeliveryPort Delivery { get; }
         }
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingDisposable : IDisposable
         {
             public bool Disposed { get; private set; }
 
             public void Dispose() => Disposed = true;
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingModRuntime : IModRuntime
         {

@@ -8,11 +8,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Hosting;
-using LSTY.SevenDPanel.Hosting.Platform;
+using LSTY.SevenDPanel.Adapters.Local.Platform;
 using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class HostOverviewQueryTests
     {
         [Fact]
@@ -392,6 +394,10 @@ namespace LSTY.SevenDPanel.Tests
             throw new IOException("volume enumeration failed");
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class FakePlatform : IHostPlatformAdapter
         {
             private readonly Queue<HostCpuCounters> cpuCounters;
@@ -437,6 +443,10 @@ namespace LSTY.SevenDPanel.Tests
             public IEnumerable<IHostStorageVolumeSource> ReadStorageVolumes() => Volumes;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class FakeVolume : IHostStorageVolumeSource
         {
             public FakeVolume(string name, string rootPath, bool fixedDrive, bool overlay, long totalBytes, long availableBytes, bool? isPrimaryDataVolume)
@@ -452,6 +462,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool? IsPrimaryDataVolume { get; }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class ThrowingVolume : IHostStorageVolumeSource
         {
             public ThrowingVolume(string name, string rootPath) { Name = name; RootPath = rootPath; }
@@ -463,6 +477,10 @@ namespace LSTY.SevenDPanel.Tests
             public long AvailableBytes => throw new UnauthorizedAccessException();
             public bool? IsPrimaryDataVolume => null;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class StorageOnlyPlatform : IHostPlatformAdapter
         {
@@ -478,6 +496,10 @@ namespace LSTY.SevenDPanel.Tests
             public HostMemorySample ReadMemory() => throw new NotSupportedException();
             public IEnumerable<IHostStorageVolumeSource> ReadStorageVolumes() => volumes;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class ConcurrentReadDetectingPlatform : IHostPlatformAdapter
         {
@@ -516,6 +538,10 @@ namespace LSTY.SevenDPanel.Tests
             public IEnumerable<IHostStorageVolumeSource> ReadStorageVolumes() => Array.Empty<IHostStorageVolumeSource>();
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingHandler : HttpMessageHandler
         {
             private readonly Func<HttpRequestMessage, Task<HttpResponseMessage>> send;
@@ -528,6 +554,10 @@ namespace LSTY.SevenDPanel.Tests
                 return send(request);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class ThrowingContent : HttpContent
         {
@@ -542,6 +572,10 @@ namespace LSTY.SevenDPanel.Tests
                 return false;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class CancellablePendingHandler : HttpMessageHandler
         {
@@ -559,6 +593,10 @@ namespace LSTY.SevenDPanel.Tests
                 return pending.Task;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class DeferredHandler : HttpMessageHandler
         {

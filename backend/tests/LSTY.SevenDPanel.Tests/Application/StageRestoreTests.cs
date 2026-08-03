@@ -11,6 +11,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Application
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class StageRestoreTests
     {
         [Fact]
@@ -147,6 +149,10 @@ namespace LSTY.SevenDPanel.Tests.Application
                 fixture.Artifact,
                 fixture.Job with { Status = JobStatus.PendingRestart }));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class Fixture : IBackupCatalog, IJobStore, IPendingRestoreMarkerStore, IRestartScriptLauncher
         {

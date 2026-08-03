@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class MapTileUseCaseTests
     {
         [Theory]
@@ -115,6 +117,10 @@ namespace LSTY.SevenDPanel.Tests
                     new DateTimeOffset(2026, 7, 26, 9, 0, 0, TimeSpan.Zero))),
                 store);
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class MetadataQuery : IMapMetadataQuery
         {
             private readonly MapMetadataProjectionSnapshot snapshot;
@@ -123,6 +129,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public MapMetadataProjectionSnapshot Query() => snapshot;
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingTileStore : IMapTileStore
         {

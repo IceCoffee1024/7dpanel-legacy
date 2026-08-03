@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { requestJson } from '../../../shared/api/http'
 import {
+  getServerOperation,
+  parseServerOperationStatus,
   restartServer,
   ServerOperationError,
   shutdownServer,
@@ -100,5 +102,39 @@ describe('server operation API', () => {
 
     await expect(restartServer('Bearer expired')).rejects.toBe(problem)
     await expect(shutdownServer('Bearer expired')).rejects.toBe(problem)
+  })
+
+  it('gets a sanitized persisted operation status through its stable ID', async () => {
+    const operation = {
+      operationId: 'restart-1',
+      kind: 'restart_script',
+      status: 'running',
+      requestedAtUtc: '2026-07-25T01:02:03Z',
+      startedAtUtc: '2026-07-25T01:02:04Z',
+      completedAtUtc: null,
+      completionDeadlineUtc: '2026-07-25T01:07:04Z',
+      failureCode: null,
+      auditStatus: 'recorded',
+    }
+    vi.mocked(requestJson).mockResolvedValue(operation)
+    const controller = new AbortController()
+
+    await expect(getServerOperation('Bearer owner', 'restart-1', controller.signal)).resolves.toEqual(operation)
+
+    expect(requestJson).toHaveBeenCalledWith('/api/v1/server-operations/restart-1', {
+      expectedStatus: 200,
+      headers: { 'Authorization': 'Bearer owner' },
+      method: 'GET',
+      signal: controller.signal,
+    })
+  })
+
+  it('rejects sensitive or unsupported fields from operation status responses', () => {
+    expect(() => parseServerOperationStatus({
+      operationId: 'restart-1', kind: 'restart_script', status: 'running',
+      requestedAtUtc: '2026-07-25T01:02:03Z', startedAtUtc: '2026-07-25T01:02:04Z',
+      completedAtUtc: null, completionDeadlineUtc: '2026-07-25T01:07:04Z',
+      failureCode: null, auditStatus: 'recorded', scriptPath: 'C:\\private\\restart.cmd',
+    })).toThrow(ServerOperationError)
   })
 })

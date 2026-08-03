@@ -4,7 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { defineComponent } from 'vue'
+import { defineComponent, reactive } from 'vue'
 
 import { configureGeneratedClient } from '../../../shared/api/generatedClient'
 import { HttpError } from '../../../shared/api/http'
@@ -161,5 +161,86 @@ describe('useRestartServer', () => {
 
     expect(signal.aborted).toBe(true)
     expect(mounted.operation().state.value).not.toBe('failed')
+  })
+
+  it.each(['succeeded', 'failed', 'cancelled', 'result-unknown'] as const)(
+    'retains the accepted ID in controlled query state and restores the %s terminal result',
+    async (status) => {
+      const auth = { authorizationHeader: 'Bearer owner' as string | null, expireSession: vi.fn() }
+      const route = reactive({ query: {} as Record<string, string> })
+      const replace = vi.fn(async (location: { query: Record<string, string> }) => {
+        Object.assign(route.query, location.query)
+      })
+      const getOperation = vi.fn().mockResolvedValue({
+        operationId: accepted.operationId,
+        kind: 'restart_script' as const,
+        status,
+        requestedAtUtc: accepted.requestedAtUtc,
+        startedAtUtc: accepted.scriptStartedAtUtc,
+        completedAtUtc: '2026-07-25T01:02:05Z',
+        completionDeadlineUtc: '2026-07-25T01:07:04Z',
+        failureCode: status === 'succeeded' ? null : 'restart_script_start_failed',
+        auditStatus: 'recorded' as const,
+      })
+      let operation!: ReturnType<typeof useRestartServer>
+      const Host = defineComponent({
+        setup() {
+          operation = useRestartServer({
+            auth,
+            restartServer: vi.fn().mockResolvedValue(accepted),
+            getOperation,
+            route,
+            router: { replace } as never,
+          })
+          return () => null
+        },
+      })
+      const wrapper = mount(Host)
+
+      operation.startConfirmation()
+      await operation.confirm()
+      await flushPromises()
+
+      expect(replace).toHaveBeenCalledWith({
+        query: { operationId: accepted.operationId, operationKind: 'restart_script' },
+      })
+      expect(getOperation).toHaveBeenCalledWith('Bearer owner', accepted.operationId, expect.any(AbortSignal))
+      expect(operation.state.value).toBe(status)
+      wrapper.unmount()
+    },
+  )
+
+  it('keeps polling after a short transient disconnect without cancelling the operation', async () => {
+    vi.useFakeTimers()
+    const auth = { authorizationHeader: 'Bearer owner' as string | null, expireSession: vi.fn() }
+    const route = reactive({ query: { operationId: accepted.operationId, operationKind: 'restart_script' } })
+    const getOperation = vi.fn()
+      .mockRejectedValueOnce(new HttpError('http', 'temporarily disconnected', { status: 503 }))
+      .mockResolvedValueOnce({
+        operationId: accepted.operationId,
+        kind: 'restart_script' as const,
+        status: 'succeeded' as const,
+        requestedAtUtc: accepted.requestedAtUtc,
+        startedAtUtc: accepted.scriptStartedAtUtc,
+        completedAtUtc: '2026-07-25T01:02:05Z',
+        completionDeadlineUtc: '2026-07-25T01:07:04Z',
+        failureCode: null,
+        auditStatus: 'recorded' as const,
+      })
+    let operation!: ReturnType<typeof useRestartServer>
+    const wrapper = mount(defineComponent({
+      setup() {
+        operation = useRestartServer({ auth, getOperation, route })
+        return () => null
+      },
+    }))
+
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(getOperation).toHaveBeenCalledTimes(2)
+    expect(operation.state.value).toBe('succeeded')
+    wrapper.unmount()
+    vi.useRealTimers()
   })
 })

@@ -4,6 +4,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class ModManagementUseCaseTests
     {
         [Fact]
@@ -44,6 +46,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(catalog.ChangedEnabled);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubCatalog : IModCatalog
         {
             private readonly IReadOnlyList<ModDiskEntry> entries;
@@ -66,6 +72,10 @@ namespace LSTY.SevenDPanel.Tests
                 return ChangeResult;
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class StubLoadedQuery : ILoadedModQuery
         {

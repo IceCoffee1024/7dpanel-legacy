@@ -11,6 +11,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqlitePlayerActionStoresTests
     {
         private static readonly string[] OperationTables =
@@ -413,11 +415,19 @@ namespace LSTY.SevenDPanel.Tests
             return database;
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class SchemaColumn
         {
             public int cid { get; set; }
             public string name { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class IndexListRow
         {
@@ -426,11 +436,19 @@ namespace LSTY.SevenDPanel.Tests
             public string origin { get; set; } = string.Empty;
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class IndexColumnRow
         {
             public int seqno { get; set; }
             public string name { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class GrantRow
         {
@@ -442,11 +460,19 @@ namespace LSTY.SevenDPanel.Tests
             public int hidden_item_confirmed { get; set; }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class RemoveRow
         {
             public string removal_scope { get; set; } = string.Empty;
             public string removal_mode { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class ProjectionRow
         {
@@ -460,6 +486,10 @@ namespace LSTY.SevenDPanel.Tests
             public string? correlation_id { get; set; }
             public int has_details { get; set; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

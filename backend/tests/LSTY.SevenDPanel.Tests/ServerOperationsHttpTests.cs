@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Web")]
     public sealed class ServerOperationsHttpTests
     {
         [Theory]
@@ -228,6 +231,50 @@ namespace LSTY.SevenDPanel.Tests
             Assert.DoesNotContain("secret", body, StringComparison.OrdinalIgnoreCase);
         }
 
+        [Fact]
+        public async Task Operation_query_returns_only_stable_lifecycle_fields_after_acceptance()
+        {
+            using var host = CreateHost("Owner");
+            using var accepted = await PostAsync(host.Client, "api/v1/server-operations/restart", "{\"confirmed\":true}");
+            var acceptedPayload = JObject.Parse(await accepted.Content.ReadAsStringAsync());
+
+            using var response = await host.Client.GetAsync(
+                "api/v1/server-operations/" + (string)acceptedPayload["operationId"]!);
+            var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("restart_script", (string?)payload["kind"]);
+            Assert.Equal("running", (string?)payload["status"]);
+            Assert.Equal("recorded", (string?)payload["auditStatus"]);
+            Assert.Null(payload["failureCode"]?.Value<string>());
+            Assert.DoesNotContain("script", string.Join("|", payload.Properties().Select(property => property.Name)), StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData(null, HttpStatusCode.Unauthorized)]
+        [InlineData("Admin", HttpStatusCode.NotFound)]
+        [InlineData("Viewer", HttpStatusCode.NotFound)]
+        public async Task Operation_query_requires_an_authenticated_supported_role(string? role, HttpStatusCode expectedStatus)
+        {
+            using var host = CreateHost(role);
+
+            using var response = await host.Client.GetAsync("api/v1/server-operations/missing");
+
+            Assert.Equal(expectedStatus, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Operation_query_returns_not_found_for_unknown_identifier()
+        {
+            using var host = CreateHost("Owner");
+
+            using var response = await host.Client.GetAsync("api/v1/server-operations/missing");
+            var problem = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal("operation_not_found", (string?)problem["code"]);
+        }
+
         private static Task<HttpResponseMessage> PostAsync(HttpClient client, string path, string json)
         {
             return client.PostAsync(path, new StringContent(json, Encoding.UTF8, "application/json"));
@@ -243,9 +290,12 @@ namespace LSTY.SevenDPanel.Tests
             gateway ??= new RecordingShutdownGateway();
             audit ??= new RecordingAuditTrail();
             var activity = new NullRecentActivityWriter();
+            var operations = new InMemoryServerOperationStore();
+            var processInstance = new ServerOperationProcessInstance("test-process");
             var services = new ServiceCollection();
-            services.AddSingleton(new RestartServerUseCase(launcher, audit, activity));
-            services.AddSingleton(new ShutdownServerUseCase(gateway, audit, activity));
+            services.AddSingleton(new RestartServerUseCase(launcher, audit, activity, operations, processInstance));
+            services.AddSingleton(new ShutdownServerUseCase(gateway, audit, activity, operations, processInstance));
+            services.AddSingleton(new GetServerOperationUseCase(operations));
             var provider = services.BuildServiceProvider(new ServiceProviderOptions
             {
                 ValidateOnBuild = true,
@@ -264,6 +314,10 @@ namespace LSTY.SevenDPanel.Tests
             configuration.EnsureInitialized();
             return new HttpTestHost(provider, configuration);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HttpTestHost : IDisposable
         {
@@ -289,6 +343,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -317,6 +375,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class RecordingLauncher : IRestartScriptLauncher
         {
             public int Calls { get; private set; }
@@ -327,12 +389,20 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class ThrowingLauncher : IRestartScriptLauncher
         {
             private readonly Exception exception;
             public ThrowingLauncher(Exception exception) { this.exception = exception; }
             public DateTimeOffset StartConfiguredScript() => throw exception;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class RecordingShutdownGateway : IShutdownServerGateway
         {
@@ -345,6 +415,10 @@ namespace LSTY.SevenDPanel.Tests
                 return exception == null ? Task.CompletedTask : Task.FromException(exception);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class BlockingShutdownGateway : IShutdownServerGateway
         {
@@ -360,6 +434,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class RecordingAuditTrail : IServerOperationAuditTrail
         {
             public ServerOperationAuditIntent? LastIntent { get; private set; }
@@ -367,6 +445,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool TryMarkStarted(string operationId, DateTimeOffset startedAtUtc) => true;
             public bool TryMarkFailed(ServerOperationAuditFailure failure) => true;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class ThrowingAuditTrail : IServerOperationAuditTrail
         {
@@ -381,6 +463,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool TryMarkStarted(string operationId, DateTimeOffset startedAtUtc) => false;
             public bool TryMarkFailed(ServerOperationAuditFailure failure) => false;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class NullRecentActivityWriter : IRecentActivityWriter
         {

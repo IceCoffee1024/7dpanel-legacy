@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class AccessListUseCaseTests
     {
         [Fact]
@@ -74,6 +76,10 @@ namespace LSTY.SevenDPanel.Tests
         private static readonly DateTimeOffset FixedNow =
             new DateTimeOffset(2026, 7, 26, 8, 0, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubPlayerAccessControl : IPlayerAccessControl
         {
             private readonly AccessListMutationResult result;
@@ -107,6 +113,10 @@ namespace LSTY.SevenDPanel.Tests
             public Task<AccessListMutationResult> RemoveWhitelistAsync(string playerId, CancellationToken cancellationToken) =>
                 Task.FromResult(result);
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingRecentActivityWriter : IRecentActivityWriter, IServerGovernanceActivityWriter
         {

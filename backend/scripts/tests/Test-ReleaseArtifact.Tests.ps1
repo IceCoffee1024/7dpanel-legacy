@@ -3,6 +3,7 @@ Set-StrictMode -Version 2.0
 
 $scriptRoot = Split-Path $PSScriptRoot -Parent
 $validatorPath = Join-Path $scriptRoot 'Test-ReleaseArtifact.ps1'
+$identityPath = Join-Path $scriptRoot 'Get-ReleaseArtifactIdentity.ps1'
 $cleanupPath = Join-Path $scriptRoot 'Remove-ForbiddenReleaseArtifactContent.ps1'
 $manifestPath = Join-Path $scriptRoot 'release-manifest.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
@@ -59,7 +60,15 @@ function Assert-ValidationFails {
 try {
     $validArtifact = Join-Path $temporaryRoot 'valid'
     New-ValidArtifact $validArtifact
-    & $validatorPath -ArtifactPath $validArtifact -ManifestPath $manifestPath | Out-Null
+    $validationOutput = @(& $validatorPath -ArtifactPath $validArtifact -ManifestPath $manifestPath)
+    $identity = @($validationOutput | Where-Object { $null -ne $_.PSObject.Properties['artifactSha256'] }) | Select-Object -Last 1
+    if ($null -eq $identity -or $identity.artifactSha256 -notmatch '^[A-F0-9]{64}$') {
+        throw 'Release validator must return the shared artifact identity.'
+    }
+    $directIdentity = & $identityPath -ArtifactPath $validArtifact -ManifestPath $manifestPath
+    if ($identity.artifactSha256 -ne $directIdentity.artifactSha256) {
+        throw 'Release validator must return the same artifact identity as Get-ReleaseArtifactIdentity.ps1.'
+    }
 
     foreach ($productAssembly in @($manifest.productAssemblies)) {
         $artifact = Join-Path $temporaryRoot ('missing-' + $productAssembly)

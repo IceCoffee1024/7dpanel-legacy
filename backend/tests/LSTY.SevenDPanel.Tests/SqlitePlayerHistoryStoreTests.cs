@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqlitePlayerHistoryStoreTests
     {
         [Fact]
@@ -451,6 +453,10 @@ namespace LSTY.SevenDPanel.Tests
                 0,
                 observedAtUtc ?? new DateTimeOffset(2026, 7, 25, 1, 0, 0, TimeSpan.Zero));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryHistoryDatabase : IDisposable
         {

@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Persistence
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteBackupPolicyStoreTests
     {
         [Fact]
@@ -145,6 +147,10 @@ namespace LSTY.SevenDPanel.Tests.Persistence
                 7,
                 true,
                 rowVersion);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

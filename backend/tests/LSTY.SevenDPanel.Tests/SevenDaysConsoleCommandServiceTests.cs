@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysConsoleCommandServiceTests
     {
         [Fact]
@@ -170,6 +172,10 @@ namespace LSTY.SevenDPanel.Tests
         private static ConsoleCommandRequest Request(string command) =>
             new ConsoleCommandRequest("owner", command);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class ControlledDispatcher
         {
             private readonly object sync = new();
@@ -230,6 +236,10 @@ namespace LSTY.SevenDPanel.Tests
                     await Task.Delay(10, timeout.Token);
                 }
             }
+
+            [Trait("Capability", "Operations")]
+
+            [Trait("Boundary", "SevenDays")]
 
             private sealed class PendingCall
             {

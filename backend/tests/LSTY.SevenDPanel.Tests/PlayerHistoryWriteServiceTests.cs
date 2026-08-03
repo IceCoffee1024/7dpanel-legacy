@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerHistoryWriteServiceTests
     {
         [Fact]
@@ -216,6 +218,10 @@ namespace LSTY.SevenDPanel.Tests
                 0,
                 new DateTimeOffset(2026, 7, 25, 0, 0, 0, TimeSpan.Zero));
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private class RecordingStore : IPlayerHistoryStore
         {
             private readonly object sync = new object();
@@ -269,6 +275,10 @@ namespace LSTY.SevenDPanel.Tests
                 Array.Empty<HistoricalPlayerLastRetainedLocation>();
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class BlockingStore : RecordingStore
         {
             private readonly object sync = new object();
@@ -300,6 +310,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FailFirstAppendStore : RecordingStore
         {
             private int appendCount;
@@ -326,6 +340,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class BlockingFailFirstAppendStore : RecordingStore
         {
             private int appendCount;
@@ -349,6 +367,10 @@ namespace LSTY.SevenDPanel.Tests
                 base.Append(snapshot);
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class StoreFailureThenQueueFullStore : RecordingStore
         {

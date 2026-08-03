@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysChatMessageSenderTests
     {
         [Fact]
@@ -101,6 +103,10 @@ namespace LSTY.SevenDPanel.Tests
                 new PlayerPlatformIdentity(crossplatformId, "EOS"), PlayerDeviceType.Windows,
                 null, 1, null, null, 0, new PlayerPosition(0, 0, 0), false,
                 100, 100, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, DateTimeOffset.UtcNow);
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class OnlineQuery : IOnlinePlayerQuery
         {

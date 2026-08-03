@@ -161,6 +161,35 @@ reference-content exclusion.
 `Test-ReleaseArtifact.ps1` is the independent fail-closed validation boundary.
 Publishing must run cleanup first and validation last.
 
+## Evidence Manifest
+
+`Get-ReleaseArtifactIdentity.ps1` is the single artifact identity calculator.
+It hashes the approved relative files, lengths, and per-file SHA-256 values in
+sorted order and returns one overall `artifactSha256`; it rejects roots,
+reparse points, missing approved files, and unapproved files. It never emits an
+absolute machine path.
+
+`New-EvidenceManifest.ps1` writes a UTF-8-without-BOM `manifest.json` next to
+the existing smoke `summary.json`. The summary records step-by-step status and
+logs; the manifest binds evidence to Git, artifact, versions, environment
+digest, execution scope, and relative sub-evidence. Environment identifiers
+are hashed and credentials are never accepted as manifest fields. Supported
+evidence kinds are `release-smoke`, `candidate-release`, `restore-drill`,
+`browser-journey`, and `operations-lane`. Development smoke remains
+`Development`; candidate evidence additionally requires a clean 40-character
+commit, artifact SHA-256, all version fields, `Passed` status, and no skipped
+step. Failed or skipped development evidence is retained for diagnosis but
+cannot promote a maturity row.
+
+PowerShell 5.1 and PowerShell 7 use the same scripts and canonical hash
+algorithm. Run the synthetic coverage without a server:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Test-EvidenceManifest.Tests.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Test-ReleaseArtifact.Tests.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Test-ReleaseSmoke.Tests.ps1
+```
+
 The script keeps the Windows and Linux native assets under their RID
 directories and removes any root `e_sqlite3.dll` because the 7DTD Mod loader
 scans root `.dll` files as managed assemblies. `Microsoft.Data.Sqlite` uses the

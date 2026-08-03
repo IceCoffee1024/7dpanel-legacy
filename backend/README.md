@@ -120,3 +120,24 @@ $token = (Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:18080/api/v1/aut
 The root `docs/` directory owns the product contract, system architecture, and
 cross-system release gates. Authoritative build and test commands are kept in
 the root `README.md` and `docs/test.md`.
+
+## Focused Backend Test Filters
+
+The backend remains one test project. Every test class with a `[Fact]` or
+`[Theory]` has exactly one class-level `Trait("Capability", "...")` owner and
+at least one `Trait("Boundary", "...")`. The allowed Capability values are
+`Platform`, `Operations`, `Players`, `Community`, `Economy`, `Automation`, and
+`Administration`; the allowed Boundary values are `Domain`, `Application`,
+`Persistence`, `Local`, `SevenDays`, `Web`, `Bootstrap`, and `CrossSystem`.
+
+Use the taxonomy audit before relying on a focused filter:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/complexity/Test-BackendTestTaxonomy.ps1
+dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --no-restore --filter "Capability=Players&Boundary=Application"
+dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj --no-restore --filter "Capability=Operations"
+```
+
+The filter commands must discover and execute a non-zero set of tests; a zero
+test result is not a passing focused gate. `docs/test.md` defines when to run a
+Capability/Boundary slice, the aggregate suite, or a real game boundary.

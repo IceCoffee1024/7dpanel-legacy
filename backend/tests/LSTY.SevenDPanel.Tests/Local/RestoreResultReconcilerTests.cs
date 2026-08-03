@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class RestoreResultReconcilerTests
     {
         [Theory]
@@ -64,6 +66,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             Assert.Null(store.ReadReceipt());
             Assert.Equal(2, mergeStore.Calls);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class RecordingMergeStore : IRestoreResultMergeStore
         {

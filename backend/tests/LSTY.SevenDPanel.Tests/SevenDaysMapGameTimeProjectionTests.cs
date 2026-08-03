@@ -5,6 +5,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysMapGameTimeProjectionTests
     {
         private static readonly DateTimeOffset ObservedAt =

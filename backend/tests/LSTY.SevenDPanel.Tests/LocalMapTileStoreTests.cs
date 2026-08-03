@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Persistence")]
     public sealed class LocalMapTileStoreTests
     {
         [Fact]
@@ -138,6 +140,10 @@ namespace LSTY.SevenDPanel.Tests
                     new MapTileKey("world-guid", 4, 0, 0),
                     cancellation.Token));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TileFixture : IDisposable
         {

@@ -157,7 +157,7 @@ foreach ($segment in $forbiddenPathSegments) {
         throw "Release manifest property 'forbiddenPathSegments' contains a path: $segment"
     }
     $matchingEntries = @($artifactEntries | Where-Object {
-        $_.FullName.Substring($artifactPrefix.Length).Split(@([char]'/', [char]'\')) -contains $segment
+        $_.FullName.Substring($artifactPrefix.Length).Split([char[]]@([char]'/', [char]'\')) -contains $segment
     })
     if ($matchingEntries.Count -gt 0) {
         throw "Release artifact contains forbidden path segment '$segment': $($matchingEntries.FullName -join ', ')"
@@ -234,4 +234,8 @@ foreach ($configExample in $configExamples) {
     }
 }
 
+$identity = & (Join-Path $PSScriptRoot 'Get-ReleaseArtifactIdentity.ps1') `
+    -ArtifactPath $artifactRoot `
+    -ManifestPath $resolvedManifest.ProviderPath
+Write-Output $identity
 Write-Output "Release artifact validation passed: $artifactRoot"

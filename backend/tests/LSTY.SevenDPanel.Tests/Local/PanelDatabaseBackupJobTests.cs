@@ -16,6 +16,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class PanelDatabaseBackupJobTests
     {
         private const string PayloadMissingError = "panel_database_payload_missing";
@@ -371,6 +373,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             RecordingEvents Events,
             JobRecord Running);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class PanelPayloadReader : IJobPayloadReader
         {
             private readonly RecordingEvents events;
@@ -399,6 +405,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             public ScheduledRestartPayload GetScheduledRestart(Guid jobId) => throw new NotSupportedException();
             public ScheduledAnnouncementPayload GetScheduledAnnouncement(Guid jobId) => throw new NotSupportedException();
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class ThrowingBackupCatalog : IBackupCatalog
         {

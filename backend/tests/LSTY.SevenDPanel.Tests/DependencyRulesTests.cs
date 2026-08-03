@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class DependencyRulesTests
     {
         private static readonly string RepositoryRoot = FindRepositoryRoot();
@@ -27,9 +29,7 @@ namespace LSTY.SevenDPanel.Tests
                 {
                     if (IsIn(projectPath, "Runtime", "LSTY.SevenDPanel.Hosting"))
                     {
-                        Assert.All(references, reference =>
-                            Assert.True(IsIn(reference, "Core", "LSTY.SevenDPanel.Application"),
-                                "Hosting may only reference Application: " + reference));
+                        Assert.Empty(references);
                         Assert.All(document.Descendants("Reference"), reference =>
                             Assert.Equal("System.Net.Http", (string?)reference.Attribute("Include")));
                     }
@@ -65,6 +65,22 @@ namespace LSTY.SevenDPanel.Tests
                             IsIn(reference, "Core", "LSTY.SevenDPanel.Domain"),
                             "Adapters may only reference Hosting, Application, or Domain: " + reference));
                 }
+            }
+        }
+
+        [Fact]
+        public void Hosting_contains_only_runtime_contracts_after_platform_adapters_move_to_local()
+        {
+            var hostingRoot = Path.Combine(
+                SourceRoot,
+                "Runtime",
+                "LSTY.SevenDPanel.Hosting");
+
+            foreach (var sourcePath in Directory.GetFiles(hostingRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                var source = File.ReadAllText(sourcePath);
+                Assert.DoesNotContain("LSTY.SevenDPanel.Application", source, StringComparison.Ordinal);
+                Assert.DoesNotContain("LSTY.SevenDPanel.Adapters", source, StringComparison.Ordinal);
             }
         }
 

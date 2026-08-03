@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class BackgroundWorkConsumerTests
     {
         [Fact]
@@ -159,6 +161,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal sealed class RecordingWorldOperationJobHandler : IWorldOperationJobHandler
     {
         private readonly WorldOperationJobCompletion completion;
@@ -177,6 +183,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal sealed class ThrowingWorldOperationJobHandler : IWorldOperationJobHandler
     {
         public Task<WorldOperationJobCompletion> ExecuteAsync(
@@ -185,6 +195,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             Task.FromException<WorldOperationJobCompletion>(
                 new InvalidOperationException("raw world operation failure must not escape"));
     }
+
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
 
     internal sealed class ConsumerFixture
     {
@@ -225,6 +239,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal sealed class TestDirectories : IDisposable
     {
         public TestDirectories()
@@ -261,6 +279,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal static class TestJobs
     {
         public static JobRecord Running(JobKind kind, int seed)
@@ -285,10 +307,18 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal sealed class RecordingEvents
     {
         public List<string> Items { get; } = new List<string>();
     }
+
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
 
     internal sealed class RecordingJobStore : IJobStore
     {
@@ -338,6 +368,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         JobStatus Next,
         JobCompletion Completion);
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal sealed class RecordingSubmissionStore : IJobSubmissionStore
     {
         public RecordingSubmissionStore()
@@ -367,6 +401,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         public JobRecord Enqueue(NewJob job, ScheduledRestartPayload payload) => throw new NotSupportedException();
         public JobRecord Enqueue(NewJob job, ScheduledAnnouncementPayload payload) => throw new NotSupportedException();
     }
+
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
 
     internal sealed class RecordingPayloadReader : IJobPayloadReader
     {
@@ -401,6 +439,10 @@ namespace LSTY.SevenDPanel.Tests.Local
         public ScheduledAnnouncementPayload GetScheduledAnnouncement(Guid jobId) => throw new NotSupportedException();
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal class RecordingWorldSaveGateway : IWorldSaveGateway
     {
         private readonly RecordingEvents events;
@@ -420,11 +462,19 @@ namespace LSTY.SevenDPanel.Tests.Local
         }
     }
 
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
+
     internal sealed class ThrowingWorldSaveGateway : IWorldSaveGateway
     {
         public Task SaveCurrentWorldAsync(CancellationToken cancellationToken) =>
             Task.FromException(new InvalidOperationException("raw save failure must not escape"));
     }
+
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
 
     internal sealed class BlockingFirstWorldSaveGateway : IWorldSaveGateway
     {
@@ -460,6 +510,10 @@ namespace LSTY.SevenDPanel.Tests.Local
 
         public void ReleaseFirst() => releaseFirst.TrySetResult(true);
     }
+
+    [Trait("Capability", "Operations")]
+
+    [Trait("Boundary", "Local")]
 
     internal sealed class RecordingBackupCatalog : IBackupCatalog
     {

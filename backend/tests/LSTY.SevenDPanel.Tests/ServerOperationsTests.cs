@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using LSTY.SevenDPanel.Adapters.Local.ServerOperations;
 using LSTY.SevenDPanel.Adapters.SevenDays.Outbound.ServerOperations;
 using LSTY.SevenDPanel.Application;
 using LSTY.SevenDPanel.Hosting;
@@ -10,6 +11,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ServerOperationsTests
     {
         [Fact]
@@ -226,6 +229,22 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public async Task Restart_persists_queued_then_running_before_reporting_202_acceptance()
+        {
+            var fixture = new RestartFixture();
+
+            var result = await fixture.UseCase.ExecuteAsync("owner", true, CancellationToken.None);
+            var operation = fixture.Operations.Get(result.OperationId)!;
+
+            Assert.Equal(ServerOperationLifecycleStatus.Running, operation.Status);
+            Assert.Equal("owner", operation.ActorSubject);
+            Assert.Equal("test-process", operation.OriginProcessInstanceId);
+            Assert.NotNull(operation.StartedAtUtc);
+            Assert.Null(operation.CompletedAtUtc);
+            Assert.Null(operation.FailureCode);
+        }
+
+        [Fact]
         public async Task Restart_activity_failure_does_not_change_the_accepted_result_or_block_it()
         {
             var fixture = new RestartFixture(recentActivity: new FailingRecentActivityWriter());
@@ -372,6 +391,10 @@ namespace LSTY.SevenDPanel.Tests
                 System.IO.Path.GetTempPath());
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RestartFixture
         {
             public RestartFixture(
@@ -380,18 +403,27 @@ namespace LSTY.SevenDPanel.Tests
             {
                 Launcher = launcher as RecordingLauncher ?? new RecordingLauncher();
                 Audit = new RecordingAuditTrail();
+                Operations = new InMemoryServerOperationStore();
                 UseCase = new RestartServerUseCase(
                     launcher ?? Launcher,
                     Audit,
                     recentActivity ?? new NoopRecentActivityWriter(),
                     () => "restart-1",
-                    () => DateTimeOffset.UtcNow);
+                    () => DateTimeOffset.UtcNow,
+                    Operations,
+                    new ServerOperationProcessInstance("test-process"),
+                    TimeSpan.FromMinutes(5));
             }
 
             public RecordingLauncher Launcher { get; }
             public RecordingAuditTrail Audit { get; }
+            public InMemoryServerOperationStore Operations { get; }
             public RestartServerUseCase UseCase { get; }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private class RecordingLauncher : IRestartScriptLauncher
         {
@@ -403,6 +435,10 @@ namespace LSTY.SevenDPanel.Tests
                 return DateTimeOffset.UtcNow;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class BlockingLauncher : RecordingLauncher
         {
@@ -423,11 +459,19 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ThrowingLauncher : IRestartScriptLauncher
         {
             public DateTimeOffset StartConfiguredScript() =>
                 throw new InvalidOperationException("machine-specific detail");
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FixedFailureLauncher : IRestartScriptLauncher
         {
@@ -444,6 +488,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class TrackingProcessHandle : IDisposable
         {
             public bool IsDisposed { get; private set; }
@@ -453,6 +501,10 @@ namespace LSTY.SevenDPanel.Tests
                 IsDisposed = true;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingShutdownGateway : IShutdownServerGateway
         {
@@ -464,6 +516,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.CompletedTask;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FixedFailureShutdownGateway : IShutdownServerGateway
         {
@@ -484,6 +540,10 @@ namespace LSTY.SevenDPanel.Tests
                     new ServerOperationFailedException(failureCode));
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class BlockingShutdownGateway : IShutdownServerGateway
         {
@@ -506,6 +566,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class CancelOnceShutdownGateway : IShutdownServerGateway
         {
             public int CallCount { get; private set; }
@@ -518,6 +582,10 @@ namespace LSTY.SevenDPanel.Tests
                     : Task.CompletedTask;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingAuditTrail : IServerOperationAuditTrail
         {
@@ -545,6 +613,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private class NoopRecentActivityWriter : IRecentActivityWriter
         {
             public Task RecordPanelLoginSucceededAsync(string actorSubject, string actorDisplayName, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -555,11 +627,19 @@ namespace LSTY.SevenDPanel.Tests
             public virtual Task RecordServerOperationFailedAsync(string actorSubject, string operationCode, string failureCode, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FailingRecentActivityWriter : NoopRecentActivityWriter
         {
             public override Task RecordRestartScriptStartedAsync(string actorSubject, DateTimeOffset occurredAtUtc, CancellationToken cancellationToken) =>
                 Task.FromException(new InvalidOperationException("activity unavailable"));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class SignalingRecentActivityWriter : NoopRecentActivityWriter
         {
@@ -583,6 +663,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.CompletedTask;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FailureActivity
         {

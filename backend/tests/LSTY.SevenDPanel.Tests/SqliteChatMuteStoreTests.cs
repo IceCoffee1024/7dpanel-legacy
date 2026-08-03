@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteChatMuteStoreTests
     {
         [Fact]
@@ -62,6 +64,10 @@ namespace LSTY.SevenDPanel.Tests
             new ChatMuteOperation(Guid.NewGuid().ToString("D"), kind, record.CrossplatformId, actor, at, "Succeeded", null, record.MutedUntilUtc, record.Reason);
 
         private static DateTimeOffset Utc(int hour) => new DateTimeOffset(2026, 7, 26, hour, 0, 0, TimeSpan.Zero);
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

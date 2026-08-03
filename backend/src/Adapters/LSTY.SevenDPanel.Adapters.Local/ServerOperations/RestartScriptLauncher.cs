@@ -2,8 +2,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using LSTY.SevenDPanel.Application;
+using LSTY.SevenDPanel.Hosting;
 
-namespace LSTY.SevenDPanel.Hosting
+namespace LSTY.SevenDPanel.Adapters.Local.ServerOperations
 {
     public enum RestartScriptPlatform
     {

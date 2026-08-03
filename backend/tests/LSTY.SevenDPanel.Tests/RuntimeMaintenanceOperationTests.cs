@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class RuntimeMaintenanceOperationTests
     {
         private static readonly DateTimeOffset RequestedAtUtc =
@@ -201,6 +203,10 @@ namespace LSTY.SevenDPanel.Tests
                 "operator-1", kind, "world-1", "world-v1", "map-v1",
                 "correlation-1", "Approved runtime maintenance", false,
                 new WorldMaintenanceOperationTarget(null), RequestedAtUtc);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingBridge : IWorldOperationJobBridge
         {

@@ -31,6 +31,8 @@ namespace LSTY.SevenDPanel.Tests
 {
     [Trait("Category", "Integration")]
     [Trait("Host", "InProcessKatana")]
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Web")]
     public sealed partial class OwinWebHostTests
     {
         [Fact]
@@ -3727,6 +3729,10 @@ namespace LSTY.SevenDPanel.Tests
             });
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class TestOnlinePlayerQuery : IOnlinePlayerQuery
         {
             private readonly OnlinePlayersSnapshot? snapshot;
@@ -3757,6 +3763,10 @@ namespace LSTY.SevenDPanel.Tests
                     Array.Empty<PlayerSnapshot>()));
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         public sealed class TestPlayerActions : IPlayerActions
         {
@@ -3795,6 +3805,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
+
         public sealed class TestPlayerActionAuditTrail : IPlayerActionAuditTrail
         {
             private readonly Exception? createFailure;
@@ -3823,6 +3837,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public int MarkPendingUnknown(DateTimeOffset completedAtUtc) => 0;
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class TestPlayerHistoryStore : IPlayerHistoryStore
         {
@@ -3918,6 +3936,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class TestConsoleCommandGateway : IConsoleCommandGateway
         {
             private readonly Exception? failure;
@@ -3942,6 +3964,10 @@ namespace LSTY.SevenDPanel.Tests
                     new[] { "command output" }));
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class ConcurrentConsoleCommandGateway : IConsoleCommandGateway
         {
@@ -3982,6 +4008,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class TestPanelRuntimeStatus : IPanelRuntimeStatus
         {
             public TestPanelRuntimeStatus(ModHostState state, GameReadinessState gameReadiness)
@@ -3993,6 +4023,10 @@ namespace LSTY.SevenDPanel.Tests
             public ModHostState State { get; }
             public GameReadinessState GameReadiness { get; }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class TestPanelAuthenticationStore :
             IPanelCredentialStore,
@@ -4208,6 +4242,10 @@ namespace LSTY.SevenDPanel.Tests
                 return count;
             }
 
+            [Trait("Capability", "Platform")]
+
+            [Trait("Boundary", "Web")]
+
             private sealed class TestUser
             {
                 public TestUser(PanelUserIdentity identity, string password)
@@ -4219,6 +4257,10 @@ namespace LSTY.SevenDPanel.Tests
                 public PanelUserIdentity Identity { get; }
                 public string Password { get; }
             }
+
+            [Trait("Capability", "Platform")]
+
+            [Trait("Boundary", "Web")]
 
             private sealed class TestApiKeyRecord
             {
@@ -4259,12 +4301,20 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class ThrowingDataProtectionProvider : IDataProtectionProvider
         {
             public IDataProtector Create(params string[] purposes) =>
                 throw new PlatformNotSupportedException(
                     "The test host does not provide a default data protector.");
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class ThrowingReplayServerEventStream : IServerEventStream
         {
@@ -4292,6 +4342,10 @@ namespace LSTY.SevenDPanel.Tests
                 return true;
             }
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PendingServerEventSubscription : IServerEventSubscription
         {

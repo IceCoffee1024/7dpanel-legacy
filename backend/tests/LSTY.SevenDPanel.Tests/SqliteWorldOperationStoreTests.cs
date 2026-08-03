@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteWorldOperationStoreTests
     {
         private static readonly string[] ExpectedTables =
@@ -406,6 +408,10 @@ namespace LSTY.SevenDPanel.Tests
                 .PerformUpgrade();
             Assert.True(result.Successful, result.Error?.ToString());
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Persistence
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteRestoreResultMergeStoreTests
     {
         [Fact]
@@ -195,6 +197,10 @@ namespace LSTY.SevenDPanel.Tests.Persistence
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 27, 7, minute, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class JobRow
         {
             public string kind { get; set; } = string.Empty;
@@ -208,12 +214,20 @@ namespace LSTY.SevenDPanel.Tests.Persistence
             public long row_version { get; set; }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class RestorePayloadRow
         {
             public string backup_id { get; set; } = string.Empty;
             public string backup_kind { get; set; } = string.Empty;
             public int restart_after_stage { get; set; }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

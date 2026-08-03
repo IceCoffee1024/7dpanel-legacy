@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Automation")]
+    [Trait("Boundary", "Application")]
     public sealed class AutomationRuleUseCaseTests
     {
         private static readonly AuthenticatedActor Owner =
@@ -336,6 +338,10 @@ namespace LSTY.SevenDPanel.Tests
         private static DateTimeOffset Utc(int hour, int minute) =>
             new(2026, 7, 27, hour, minute, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class ReadyDependencyCatalog : IAutomationDependencyCatalog
         {
             public IDictionary<string, AutomationDependencyState> States { get; } =
@@ -346,6 +352,10 @@ namespace LSTY.SevenDPanel.Tests
                     ? state
                     : AutomationDependencyState.Ready;
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingTargetResolver : IAutomationTargetResolver
         {
@@ -372,6 +382,10 @@ namespace LSTY.SevenDPanel.Tests
                 return AutomationTargetResolution.Resolved(action.ReferenceId);
             }
         }
+
+        [Trait("Capability", "Automation")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingAutomationStore : IAutomationStore
         {

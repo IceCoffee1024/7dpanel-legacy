@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class PlayerEvidenceRuntimeTests
     {
         [Fact]
@@ -54,6 +56,10 @@ namespace LSTY.SevenDPanel.Tests
                 new[] { "writer:start", "projection:stop", "writer:stop" },
                 order);
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

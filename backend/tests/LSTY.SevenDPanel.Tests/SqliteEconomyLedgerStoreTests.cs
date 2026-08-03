@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteEconomyLedgerStoreTests
     {
         private static readonly DateTimeOffset Now =
@@ -279,6 +281,10 @@ namespace LSTY.SevenDPanel.Tests
                   WHERE account_kind = 'Player'
                     AND (posted_balance < reserved_debit OR reserved_debit < 0);"));
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

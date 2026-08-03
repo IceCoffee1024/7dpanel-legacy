@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteOverviewActivityTests
     {
         [Fact]
@@ -375,6 +377,10 @@ namespace LSTY.SevenDPanel.Tests
             return value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffff'Z'", System.Globalization.CultureInfo.InvariantCulture);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ActivityStorageRow
         {
             public string event_type { get; set; } = string.Empty;
@@ -385,6 +391,10 @@ namespace LSTY.SevenDPanel.Tests
             public string occurred_utc { get; set; } = string.Empty;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ServerOperationAuditRow
         {
             public string operation_type { get; set; } = string.Empty;
@@ -394,6 +404,10 @@ namespace LSTY.SevenDPanel.Tests
             public string updated_utc { get; set; } = string.Empty;
             public string? failure_code { get; set; }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryOverviewDatabase : IDisposable
         {

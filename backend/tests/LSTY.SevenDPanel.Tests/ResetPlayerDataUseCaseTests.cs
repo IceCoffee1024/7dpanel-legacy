@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class ResetPlayerDataUseCaseTests
     {
         private static readonly DateTimeOffset Now =
@@ -177,6 +179,10 @@ namespace LSTY.SevenDPanel.Tests
         private static PlayerTargetStamp Target() =>
             new PlayerTargetStamp("EOS_123", 7, Now, "Navezgane");
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class Fixture
         {
             public Fixture()
@@ -196,6 +202,10 @@ namespace LSTY.SevenDPanel.Tests
             public RecordingGateway Gateway { get; }
             public ResetPlayerDataUseCase UseCase { get; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingGateway : IResetPlayerDataGateway
         {
@@ -230,6 +240,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(Execution);
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingStore : IResetPlayerDataOperationStore
         {

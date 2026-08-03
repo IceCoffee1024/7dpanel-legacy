@@ -5,6 +5,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class RegionOperationUseCaseTests
     {
         [Fact]
@@ -128,6 +130,10 @@ namespace LSTY.SevenDPanel.Tests
         private static DateTimeOffset Utc() =>
             new DateTimeOffset(2026, 7, 27, 8, 0, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FixedCatalog : IWorldToolCatalog
         {
             public WorldToolCatalogSnapshot Read() =>
@@ -138,6 +144,10 @@ namespace LSTY.SevenDPanel.Tests
                     Array.Empty<string>(),
                     Array.Empty<string>());
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingBridge : IWorldOperationJobBridge
         {
@@ -158,6 +168,10 @@ namespace LSTY.SevenDPanel.Tests
             public WorldOperationPage Query(WorldOperationQuery query) => throw new NotSupportedException();
             public bool RequestCancellation(string operationId, string actorSubject) => false;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingMetadataStore : IWorldChangeSetMetadataStore
         {

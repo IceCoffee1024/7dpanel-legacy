@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class PlayerEvidenceProjectionTests
     {
         [Fact]
@@ -257,6 +259,10 @@ namespace LSTY.SevenDPanel.Tests
             assign(handler);
             return new Subscription(() => assign(null));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class Subscription : IDisposable
         {

@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class EvidenceFoundationApplicationTests
     {
         [Fact]
@@ -446,6 +448,10 @@ namespace LSTY.SevenDPanel.Tests
         private static GameChatCommandContext CommandContext(params string[] arguments) =>
             new GameChatCommandContext("EOS_1", "Alice", arguments);
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingMuteStore : IChatMuteStore
         {
             private readonly List<string>? order;
@@ -498,6 +504,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingMuteRuntime : IChatMuteRuntimeConfiguration
         {
             private readonly List<string>? order;
@@ -537,6 +547,10 @@ namespace LSTY.SevenDPanel.Tests
                 new ReadOnlyDictionary<string, ChatMuteRecord>(
                     records.ToDictionary(record => record.CrossplatformId, StringComparer.Ordinal));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class StubCommandHandler : IGameChatCommandHandler
         {

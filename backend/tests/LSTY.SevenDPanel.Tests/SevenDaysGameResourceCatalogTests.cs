@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysGameResourceCatalogTests
     {
         [Fact]
@@ -228,6 +230,10 @@ namespace LSTY.SevenDPanel.Tests
                 Array.Empty<GameResourceScalarEntry>(),
                 Array.Empty<GameResourceIconRootDescriptor>(),
                 Array.Empty<string>());
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class TestDirectory : IDisposable
         {

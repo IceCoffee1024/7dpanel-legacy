@@ -66,3 +66,49 @@ test('wave 1 mute loading and empty states remain reachable at 390x844', async (
   await expect(loadingState).toHaveCount(0)
   await expect(page.getByText(/No active chat mutes|当前没有生效中的禁言/u)).toBeVisible()
 })
+
+test('configuration masks secrets and configuration/mod changes clearly state next-start semantics', async ({ page }) => {
+  await useStoredSession(page, 'Owner')
+  await mockAdminApi(page)
+
+  await page.route('**/api/v1/server-configuration', async (route) => {
+    expect(route.request().headers().authorization).toBe('Bearer 7dp_t_browser-smoke.secret')
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: 'a'.repeat(64),
+        readAtUtc: '2026-08-03T00:00:00Z',
+        fields: [
+          {
+            key: 'ServerPassword', value: '', group: 'Security', valueType: 'text', editable: true,
+            advanced: false, sensitive: true, isSet: true, restartRequired: true,
+            allowedValues: [], minimum: null, maximum: null,
+          },
+        ],
+      }),
+    })
+  })
+  await page.route('**/api/v1/mods', async (route) => {
+    expect(route.request().headers().authorization).toBe('Bearer 7dp_t_browser-smoke.secret')
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          directoryId: 'ExampleMod', name: 'Example Mod', displayName: 'Example Mod', author: 'Panel', version: '1.0',
+          website: null, description: null, isLoadedNow: true, isEnabledNextStart: false, isProtected: false,
+        },
+      ]),
+    })
+  })
+
+  await gotoAdmin(page, '/operations/configuration')
+  await expect(page.getByTestId('configuration-value-ServerPassword')).toHaveText(/Set|已设置/u)
+  await expect(page.locator('body')).not.toContainText('ServerPasswordValueShouldNeverRender')
+  await expect(page.locator('body')).toContainText(/Restart required|重启后生效/u)
+
+  await gotoAdmin(page, '/operations/extensions/mods')
+  await expect(page.getByText('Example Mod')).toBeVisible()
+  await expect(page.locator('body')).toContainText(/Changes take effect after restart|更改将在重启后生效/u)
+})

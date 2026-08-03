@@ -9,8 +9,10 @@ using LSTY.SevenDPanel.Adapters.Local.Files;
 using LSTY.SevenDPanel.Adapters.Local.GeoIp;
 using LSTY.SevenDPanel.Adapters.Local.Jobs;
 using LSTY.SevenDPanel.Adapters.Local.MapTiles;
+using LSTY.SevenDPanel.Adapters.Local.Platform;
 using LSTY.SevenDPanel.Adapters.Local.Restore;
 using LSTY.SevenDPanel.Adapters.Local.Schedules;
+using LSTY.SevenDPanel.Adapters.Local.ServerOperations;
 using LSTY.SevenDPanel.Adapters.Local.WorldOperations;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Backups;
@@ -74,7 +76,6 @@ using LSTY.SevenDPanel.Application.WorldOperations;
 using LSTY.SevenDPanel.Domain.Jobs;
 using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
-using LSTY.SevenDPanel.Hosting.Platform;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
 using Microsoft.Extensions.DependencyInjection;
 using LSTY.SevenDPanel.Mods;
@@ -486,6 +487,12 @@ namespace LSTY.SevenDPanel.DependencyInjection
                 services.AddSingleton<SqliteServerOperationAuditTrail>();
                 services.AddSingleton<IServerOperationAuditTrail>(serviceProvider =>
                     serviceProvider.GetRequiredService<SqliteServerOperationAuditTrail>());
+                services.AddSingleton<SqliteServerOperationStore>();
+                services.AddSingleton<IServerOperationStore>(serviceProvider =>
+                    serviceProvider.GetRequiredService<SqliteServerOperationStore>());
+                services.AddSingleton<ServerOperationProcessInstance>();
+                services.AddSingleton<GetServerOperationUseCase>();
+                services.AddSingleton<ReconcileServerOperationsUseCase>();
                 services.AddSingleton<RestartScriptLauncher>();
                 services.AddSingleton<IRestartScriptLauncher>(serviceProvider =>
                     serviceProvider.GetRequiredService<RestartScriptLauncher>());
@@ -1048,10 +1055,14 @@ namespace LSTY.SevenDPanel.DependencyInjection
                     serviceProvider.GetRequiredService<GameChatCommandCatalog>(),
                     RunClientInfoBoundaryProbes,
                     serviceProvider.GetRequiredService<WorldOperationRuntime>()));
+                services.AddSingleton(serviceProvider => new ServerOperationRecoveryRuntime(
+                    serviceProvider.GetRequiredService<ReconcileServerOperationsUseCase>(),
+                    serviceProvider.GetRequiredService<ServerOperationProcessInstance>(),
+                    serviceProvider.GetRequiredService<ChatCommandMixedTestRuntime>()));
                 services.AddSingleton<IPanelRuntimeStatus>(serviceProvider =>
                     serviceProvider.GetRequiredService<ModHost>());
                 services.AddSingleton<IModRuntime>(serviceProvider =>
-                    serviceProvider.GetRequiredService<ChatCommandMixedTestRuntime>());
+                    serviceProvider.GetRequiredService<ServerOperationRecoveryRuntime>());
 
                 provider = services.BuildServiceProvider(new ServiceProviderOptions
                 {

@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class BackgroundSchedulerTests
     {
         [Fact]
@@ -143,6 +145,10 @@ namespace LSTY.SevenDPanel.Tests.Local
 
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class RecordingScheduleStore : IScheduleStore
         {

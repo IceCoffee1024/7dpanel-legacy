@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class ConsoleCommandHarmonyRuntimeTests
     {
         [Fact]
@@ -44,6 +46,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(2, exception.InnerExceptions.Count);
             Assert.Equal(new[] { "inner:start", "inner:stop", "harmony:unpatch" }, order);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

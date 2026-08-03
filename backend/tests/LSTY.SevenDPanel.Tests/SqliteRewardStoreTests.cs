@@ -11,6 +11,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteRewardStoreTests
     {
         [Fact]
@@ -179,6 +181,10 @@ namespace LSTY.SevenDPanel.Tests
             new DateTimeOffset(2026, 7, 27, 0, 0, seconds, TimeSpan.Zero);
     }
 
+    [Trait("Capability", "Economy")]
+
+    [Trait("Boundary", "Persistence")]
+
     internal sealed class RewardTestCatalog : IGameResourceCatalog
     {
         private readonly GameResourceCatalogReadResult result;
@@ -215,6 +221,10 @@ namespace LSTY.SevenDPanel.Tests
             System.Threading.CancellationToken cancellationToken) =>
             System.Threading.Tasks.Task.FromResult(GameResourceIconReadResult.Missing());
     }
+
+    [Trait("Capability", "Economy")]
+
+    [Trait("Boundary", "Persistence")]
 
     internal sealed class RewardTestDatabase : IDisposable
     {

@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class WorldOperationRecoveryTests
     {
         private static readonly DateTimeOffset Now =
@@ -130,6 +132,10 @@ namespace LSTY.SevenDPanel.Tests
                 new WorldMaintenanceOperationTarget(null),
                 Now.AddMinutes(-2));
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRecoveryStore : IWorldOperationRecoveryStore
         {
             private readonly List<string> order;
@@ -144,6 +150,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRuntime : IModRuntime
         {
             private readonly List<string> order;
@@ -154,6 +164,10 @@ namespace LSTY.SevenDPanel.Tests
             public void MarkGameReady() => order.Add("inner:ready");
             public void Stop() => order.Add("inner:stop");
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ExecutionStore : IWorldOperationExecutionStore
         {
@@ -176,6 +190,10 @@ namespace LSTY.SevenDPanel.Tests
                 DateTimeOffset failedAtUtc) => RollbackFailureCount++;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class UnusedChangeSetStore : IWorldChangeSetMetadataStore
         {
             public WorldChangeSetDescriptor Create(WorldChangeSetDraft draft) =>
@@ -188,6 +206,10 @@ namespace LSTY.SevenDPanel.Tests
                 throw new InvalidOperationException("unexpected change-set update");
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class UnusedBlobStore : IWorldChangeSetBlobStore
         {
             public WorldChangeSetBlobReceipt Write(WorldChangeSetBlobDraft draft) =>
@@ -198,6 +220,10 @@ namespace LSTY.SevenDPanel.Tests
                 string expectedHash) =>
                 throw new InvalidOperationException("unexpected blob read");
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

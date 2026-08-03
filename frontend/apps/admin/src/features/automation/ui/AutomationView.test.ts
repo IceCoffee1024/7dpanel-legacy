@@ -96,6 +96,8 @@ describe('automationView', () => {
     expect(wrapper.text()).toContain('复合条件树')
     expect(wrapper.text()).toContain('Matched')
     expect(wrapper.text()).toContain('计划动作 1 个')
+    expect(wrapper.text()).toContain('执行记录')
+    expect(wrapper.text()).toContain('已失败')
     expect(value.save).not.toHaveBeenCalled()
   })
 })

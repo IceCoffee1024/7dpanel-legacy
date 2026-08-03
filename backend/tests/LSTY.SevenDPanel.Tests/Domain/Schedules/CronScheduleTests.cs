@@ -3,6 +3,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Domain.Schedules
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Domain")]
     public sealed class CronScheduleTests
     {
         [Fact]

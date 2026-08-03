@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Local
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Local")]
     public sealed class BackupRetentionRuntimeTests
     {
         [Fact]
@@ -52,6 +54,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             Assert.Equal(JobStatus.Succeeded, Assert.Single(fixture.Jobs.Transitions).Next);
             Assert.Contains(completed.Id, fixture.Catalog.Artifacts.Select(artifact => artifact.Id));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class Fixture : IDisposable
         {
@@ -101,6 +107,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             public void Dispose() => directories.Dispose();
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
+
         private sealed class PolicyStore : IBackupPolicyStore
         {
             private readonly BackupPolicyDefinition policy;
@@ -111,6 +121,10 @@ namespace LSTY.SevenDPanel.Tests.Local
             public BackupPolicyDefinition? Get(BackupKind kind) => kind == policy.Kind ? policy : null;
             public BackupPolicyDefinition Upsert(BackupPolicyDefinition definition) => throw new NotSupportedException();
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Local")]
 
         private sealed class InMemoryCatalog : IBackupCatalog
         {

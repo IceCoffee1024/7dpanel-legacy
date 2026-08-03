@@ -23,6 +23,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Web")]
     public sealed class WorldToolsHttpTests
     {
         private static readonly string[] WorldGetRoutes =
@@ -509,6 +511,10 @@ namespace LSTY.SevenDPanel.Tests
                     new[] { container }));
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubProjection : IWorldSnapshotProjection
         {
             private readonly WorldSnapshot? snapshot;
@@ -524,6 +530,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubCatalog : IWorldToolCatalog
         {
             public WorldToolCatalogSnapshot Read() => WorldToolCatalogSnapshot.Available(
@@ -533,6 +543,10 @@ namespace LSTY.SevenDPanel.Tests
                 new[] { "prefab-1" },
                 new[] { "entity-zombie" });
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class RecordingBridge : IWorldOperationJobBridge
         {
@@ -584,6 +598,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool RequestCancellation(string operationId, string actorSubject) => false;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubChangeSetMetadataStore : IWorldChangeSetMetadataStore
         {
             public WorldChangeSetDescriptor Create(WorldChangeSetDraft draft) =>
@@ -594,6 +612,10 @@ namespace LSTY.SevenDPanel.Tests
                 throw new NotSupportedException();
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubChangeSetBlobStore : IWorldChangeSetBlobStore
         {
             public WorldChangeSetBlobReceipt Write(WorldChangeSetBlobDraft draft) =>
@@ -601,6 +623,10 @@ namespace LSTY.SevenDPanel.Tests
             public WorldChangeSetBlobReadResult Read(string storageResourceId, string expectedHash) =>
                 throw new KeyNotFoundException();
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class StubPreflightGateway : IWorldChangeSetPreflightGateway
         {
@@ -610,6 +636,10 @@ namespace LSTY.SevenDPanel.Tests
                 Task.FromResult(WorldChangeSetRuntimeHashResult.Unavailable(
                     "undo_preflight_runtime_unavailable"));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -638,6 +668,10 @@ namespace LSTY.SevenDPanel.Tests
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HttpTestHost : IDisposable
         {

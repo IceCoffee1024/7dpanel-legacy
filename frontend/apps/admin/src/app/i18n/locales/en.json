@@ -10,6 +10,18 @@
     "confirm": "Confirm",
     "unknown": "Unknown"
   },
+  "operationStatus": {
+    "queued": "Queued",
+    "running": "Running",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "interrupted": "Interrupted",
+    "result-unknown": "Result unknown",
+    "rollback-failed": "Rollback failed",
+    "unavailable": "Unavailable",
+    "unknown": "Unknown operation status"
+  },
   "locale": {
     "label": "Language",
     "current": "Language: {language}",
@@ -1444,6 +1456,8 @@
       "operationIncomplete": "Operation incomplete"
     },
     "execution": {
+      "title": "Execution records",
+      "empty": "No execution records",
       "unavailableTitle": "Execution evidence queries are unavailable",
       "unavailableDescription": "The backend does not currently expose an execution query contract. Rule editing, validation, and dry runs remain available.",
       "actionResults": "Action results"

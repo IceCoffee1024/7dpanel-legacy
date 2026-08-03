@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class RemoveItemUseCaseTests
     {
         private static readonly DateTimeOffset OnlineObservedAtUtc =
@@ -316,6 +318,10 @@ namespace LSTY.SevenDPanel.Tests
                 clientRequestKey,
                 "correlation-1");
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class Fixture
         {
             private readonly Queue<string> operationIds =
@@ -385,6 +391,10 @@ namespace LSTY.SevenDPanel.Tests
                     items);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubCatalog : IGameResourceCatalog
         {
             private readonly GameResourceCatalogReadResult read;
@@ -399,6 +409,10 @@ namespace LSTY.SevenDPanel.Tests
                 CancellationToken cancellationToken) =>
                 Task.FromResult(GameResourceIconReadResult.Missing());
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingGateway : IRemoveItemGateway
         {
@@ -420,6 +434,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(Result);
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingStore : IRemoveItemOperationStore
         {
@@ -494,6 +512,10 @@ namespace LSTY.SevenDPanel.Tests
                     null,
                     intent.CorrelationId);
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingEvidenceStore : IPlayerEvidenceStore
         {

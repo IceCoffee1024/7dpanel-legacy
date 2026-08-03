@@ -12,6 +12,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Application")]
     public sealed class RewardGrantUseCaseTests
     {
         [Fact]
@@ -238,6 +240,10 @@ namespace LSTY.SevenDPanel.Tests
                 "reward-tests",
                 idempotencyKey + "-correlation");
 
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRewardDeliveryPort : IRewardDeliveryPort
         {
             private readonly Func<RewardDeliveryCommand, RewardDeliveryResult> deliver;
@@ -256,6 +262,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(deliver(command));
             }
         }
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ConcurrentRefundLedgerStore : IEconomyLedgerStore, IDisposable
         {

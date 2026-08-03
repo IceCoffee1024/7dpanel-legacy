@@ -5,6 +5,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class WorldReadUseCaseTests
     {
         private static readonly DateTimeOffset ObservedAtUtc =
@@ -101,6 +103,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.DoesNotContain("/", Assert.Single(result.PrefabResourceIds));
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubProjection : IWorldSnapshotProjection
         {
             private readonly WorldSnapshot snapshot;
@@ -109,6 +115,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public WorldSnapshot Query() => snapshot;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class StubCatalog : IWorldToolCatalog
         {

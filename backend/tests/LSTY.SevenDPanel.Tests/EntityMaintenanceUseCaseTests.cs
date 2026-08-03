@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class EntityMaintenanceUseCaseTests
     {
         private const string EntityTypeResourceId = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -195,6 +197,10 @@ namespace LSTY.SevenDPanel.Tests
                 "correlation-1", "Approved entity maintenance", false, target,
                 RequestedAtUtc);
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubCatalog : IWorldToolCatalog
         {
             private readonly string entityTypeResourceId;
@@ -214,6 +220,10 @@ namespace LSTY.SevenDPanel.Tests
                 Array.Empty<string>(),
                 new[] { entityTypeResourceId });
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingBridge : IWorldOperationJobBridge
         {

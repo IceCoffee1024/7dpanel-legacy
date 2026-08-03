@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Domain")]
     public sealed class PlayerHistoryCursorCodecTests
     {
         [Fact]

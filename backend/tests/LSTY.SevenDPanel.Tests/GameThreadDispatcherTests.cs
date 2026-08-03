@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class GameThreadDispatcherTests
     {
         [Fact]

@@ -18,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Web")]
     public sealed class OverviewHttpTests
     {
         [Fact]
@@ -259,6 +261,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -283,6 +289,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -315,6 +325,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class GameQuery : IGameOverviewQuery
         {
             private readonly GameOverviewSnapshot snapshot;
@@ -322,6 +336,10 @@ namespace LSTY.SevenDPanel.Tests
             public Task<GameOverviewSnapshot> GetGameOverviewAsync(CancellationToken cancellationToken) =>
                 Task.FromResult(snapshot);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HostQuery : IHostOverviewQuery
         {
@@ -331,12 +349,20 @@ namespace LSTY.SevenDPanel.Tests
                 Task.FromResult(snapshot);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class RestartQuery : IRestartPolicyQuery
         {
             private readonly RestartPolicySummary summary;
             public RestartQuery(RestartPolicySummary summary) { this.summary = summary; }
             public RestartPolicySummary Query() => summary;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class RecentQuery : IRecentActivityQuery
         {

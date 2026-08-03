@@ -24,6 +24,26 @@ document_role: Target
 当目标决策已经实现并验证后，将持久的当前事实提升到 `docs/architecture.md`；不得从本文推断实现证据。
 当本文不再包含超出当前架构的有意义目标设计时，应删除本蓝图。
 
+## Platform 与 Capability 所有权目标
+
+目标所有权按纵向能力组织，保留现有八个产品项目和单一模块化单体运行时：
+
+| 所有权域 | 负责的变化 | 典型能力 |
+|---|---|---|
+| Platform | 技术边界、生命周期、认证、持久化和游戏集成 | Hosting、Authentication、Persistence、Game Integration |
+| Operations | 服务器运行、配置、备份、恢复、Mod、世界工具 | 概览、服务器运维、J1/J3 |
+| Players | 玩家观察、历史、档案、地图和名单 | 在线玩家、历史、档案、地图、名单、J2 |
+| Community | 聊天、传送、投票、城市 | 游戏聊天、社区动作 |
+| Economy | 账户、交易、奖励和商业 | 账本、奖励包、商店 |
+| Automation | 调度、规则、触发与执行记录 | 计划与自动化 |
+| Administration | 用户、权限、API Key、Discord、GeoIP、审计 | 系统管理 |
+
+每项生产能力必须有一个明确的主要所有者。能力内部可以继续按 Domain、Application 和 Adapter 分层，但跨能力只能通过明确的 Application 端口或只读查询合同交互。能力不得直接访问另一能力的数据库表、内部 Store 或 UI 状态；共享类型必须有稳定的跨能力语义和至少两个真实生产消费者。Platform 只拥有技术机制，不吸收业务规则。
+
+特殊归属保持明确：备份/恢复和重启由 Operations 拥有，作业调度由 Automation 拥有但不得直接控制 Hosting 生命周期；认证、面板用户、原生游戏权限、API Key、Discord、GeoIP 和统一审计由 Administration 拥有；玩家相关读取与处置由 Players 拥有；聊天、传送、投票和城市由 Community 拥有。Bootstrap 是唯一依赖注入组合根，Feature 不得构建容器、启动隐藏线程或注册全局服务。
+
+此目标不授权按 Feature 拆项目、微服务、插件总线、通用工作流引擎或第二套状态框架。验证与当前实现事实仍由[系统架构](../architecture.md)和[测试策略](../test.md)拥有；本蓝图保持 Target，不是实现证据。
+
 ### 六波次提升状态
 
 旧版本功能对齐六波次的主要项目边界、migration `008` 至 `015`、生产组合根和 runtime 已形成当前代码，并已提升到[系统架构](../architecture.md#六波次功能对齐当前代码状态)。与这些 Current 事实重复的目录和链路不再具有 Target 权威；下文只在解释未完成目标时保留必要上下文。Community 的传送设置、投票配置、私人家和城市覆盖已经使用原子版本条件，Discord Gateway/interaction transport 与奖励证据生产观察源也已成为 Current；后续目标只保留其他 Community 可变记录的明确版本语义，以及真实恢复、玩家/世界副作用、外部服务和跨平台发布证据。精确缺口由[测试策略](../test.md#已知缺口)拥有。
@@ -455,7 +475,7 @@ Owner-only restart or shutdown request
 
 - Application 聚合面板、游戏、主机、近期活动与注意事项，但不读取游戏活对象、`Process`、文件系统或 SQLite 细节；任一数据源失败保留对应分区状态，不能用其他来源填充成功。
 - SevenDays Adapter 只在受控主线程复制游戏基础快照并把不可变值交给 Application；主线程读取、游戏就绪和缓存失败各自保留真实状态，不让 Web 请求持有 `World`、`Entity` 或其他游戏活对象。
-- Hosting 拥有 Windows/Linux 平台采样，分别表达操作系统、进程、内存和本地固定卷的可用性与平台语义；单卷或单项采样失败不能抹去其他成功分区。
+- Local Adapter 拥有 Windows/Linux 平台采样，分别表达操作系统、进程、内存和本地固定卷的可用性与平台语义；单卷或单项采样失败不能抹去其他成功分区。Hosting 只提供技术中立的生命周期和运行时契约，不引用 Application 或具体平台实现。
 - Persistence 只为固定用途保存近期活动和服务器操作审计；近期活动不保存凭据、脚本路径、命令行、完整控制台参数/输出或玩家 IP，也不成为通用 Event Bus。
 - Web 在服务端执行 `Owner`、`Admin`、`Viewer` 的 Overview 权限与敏感主机字段裁剪；重启脚本和固定关服均限 `Owner`，浏览器请求只能表达独立确认，不能提交命令、路径、参数或环境值。
 - 启动预配置脚本时，`Process.Start` 返回非空进程只表示脚本进程已创建；响应不得推导脚本已经完成、7DTD 已关闭或新服务器已经启动。固定关服不复用该状态或文案，并保持自己的审计与结果语义。

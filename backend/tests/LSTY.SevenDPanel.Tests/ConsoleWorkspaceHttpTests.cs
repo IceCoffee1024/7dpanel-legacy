@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Web")]
     public sealed partial class OwinWebHostTests
     {
         [Fact]
@@ -250,6 +252,10 @@ namespace LSTY.SevenDPanel.Tests
                 "permissionLevel");
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class TestConsoleCommandCatalogQuery : IConsoleCommandCatalogQuery
         {
             private readonly ConsoleCommandCatalog catalog;
@@ -279,11 +285,19 @@ namespace LSTY.SevenDPanel.Tests
                     : Task.FromException<ConsoleCommandCatalog>(failure);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class UnavailableRecentConsoleLogQuery : IRecentConsoleLogQuery
         {
             public System.Collections.Generic.IReadOnlyList<ConsoleLogEventData> ReadRecentConsoleLogs(
                 int limit) => throw new RecentConsoleLogsUnavailableException();
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class NullRecentActivityWriter : IRecentActivityWriter
         {

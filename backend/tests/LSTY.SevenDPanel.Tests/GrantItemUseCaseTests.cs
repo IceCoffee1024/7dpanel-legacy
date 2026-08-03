@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class GrantItemUseCaseTests
     {
         private static readonly DateTimeOffset ObservedAt =
@@ -441,6 +443,10 @@ namespace LSTY.SevenDPanel.Tests
             return new StubCatalog(GameResourceCatalogReadResult.Available(snapshot), events);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class StubCatalog : IGameResourceCatalog
         {
             private readonly GameResourceCatalogReadResult result;
@@ -464,6 +470,10 @@ namespace LSTY.SevenDPanel.Tests
                 CancellationToken cancellationToken) =>
                 Task.FromResult(GameResourceIconReadResult.Missing());
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingStore : IGrantItemOperationStore
         {
@@ -590,6 +600,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingGateway : IGrantItemGateway
         {
             private readonly Queue<GrantItemInventorySnapshot> snapshots;
@@ -657,6 +671,10 @@ namespace LSTY.SevenDPanel.Tests
                             Array.Empty<string>())
                     });
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingEvidenceStore : IPlayerEvidenceStore
         {

@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class ChatApplicationTests
     {
         [Theory]
@@ -229,6 +231,10 @@ namespace LSTY.SevenDPanel.Tests
         private static DateTimeOffset Utc(int hour) =>
             new DateTimeOffset(2026, 7, 26, hour, 0, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingSender : IChatMessageSender
         {
             public string? GlobalMessage { get; private set; }
@@ -251,11 +257,19 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingAuditTrail : IChatOperationAuditTrail
         {
             public List<ChatOperationAuditEntry> Entries { get; } = new List<ChatOperationAuditEntry>();
             public void Record(ChatOperationAuditEntry entry) => Entries.Add(entry);
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingSettingsStore : IChatSettingsStore
         {
@@ -278,6 +292,10 @@ namespace LSTY.SevenDPanel.Tests
             public ChatSettings Reset() => Current;
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingColoredChatStore : IColoredChatStore
         {
             public bool CreateResult { get; set; } = true;
@@ -290,6 +308,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool TryUpdateProfile(ColoredChatProfile profile) => false;
             public bool TryDeleteProfile(string crossplatformId) => false;
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingRuntimeConfiguration : IChatRuntimeConfiguration
         {

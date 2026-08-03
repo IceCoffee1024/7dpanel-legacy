@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class ConsoleLogServiceTests
     {
         [Fact]
@@ -330,6 +332,10 @@ namespace LSTY.SevenDPanel.Tests
                 .Select(entry => Assert.IsType<ConsoleLogEventData>(entry.Data))
                 .ToArray();
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FakeLogSource
         {
             private readonly IList<string>? calls;
@@ -363,6 +369,10 @@ namespace LSTY.SevenDPanel.Tests
             public void Publish(ConsoleLogEntry entry) => handler?.Invoke(entry);
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingRuntime : IModRuntime
         {
             private readonly IList<string> calls;
@@ -376,6 +386,10 @@ namespace LSTY.SevenDPanel.Tests
             public void MarkGameReady() => calls.Add("inner:ready");
             public void Stop() => calls.Add("inner:stop");
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class CallbackDisposable : IDisposable
         {

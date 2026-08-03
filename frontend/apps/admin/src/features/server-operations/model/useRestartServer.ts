@@ -1,8 +1,10 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
-import type { RestartServerAccepted } from '../api/serverOperations'
+import type { RestartServerAccepted, ServerOperationStatusRecord } from '../api/serverOperations'
+import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 
 import { useMutation, useQueryCache } from '@pinia/colada'
-import { onUnmounted, readonly, shallowRef } from 'vue'
+import { onUnmounted, readonly, shallowRef, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   overviewGetQueryKey,
@@ -10,12 +12,13 @@ import {
 } from '../../../shared/api/generated/@pinia/colada.gen'
 import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
-import { parseRestartAccepted } from '../api/serverOperations'
+import { getServerOperation, parseRestartAccepted } from '../api/serverOperations'
+import { useServerOperationPolling } from './useServerOperationPolling'
 
 type GeneratedRestartDefinition = ReturnType<typeof serverOperationsRestartMutation>
 type GeneratedRestartVariables = Parameters<GeneratedRestartDefinition['mutation']>[0]
 
-export type RestartServerState = 'idle' | 'confirming' | 'submitting' | 'accepted' | 'failed'
+export type RestartServerState = 'idle' | 'confirming' | 'submitting' | 'accepted' | 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'result-unknown'
 export type RestartServerErrorCode
   = | 'session_expired'
     | 'forbidden'
@@ -53,6 +56,9 @@ export interface UseRestartServerOptions {
     signal?: AbortSignal,
   ) => Promise<RestartServerAccepted>
   onSessionExpired?: () => void
+  getOperation?: (authorizationHeader: string, operationId: string, signal?: AbortSignal) => Promise<ServerOperationStatusRecord>
+  route?: Pick<RouteLocationNormalizedLoaded, 'query'>
+  router?: Pick<Router, 'replace'>
 }
 
 const restartProblemCodes = new Set<RestartServerErrorCode>([
@@ -107,6 +113,8 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
     })
   })
   const onSessionExpired = options.onSessionExpired ?? (() => {})
+  const route = options.route ?? optionalRoute()
+  const router = options.router ?? optionalRouter()
   const state = shallowRef<RestartServerState>('idle')
   const result = shallowRef<RestartServerAccepted | null>(null)
   const error = shallowRef<RestartServerError | null>(null)
@@ -114,6 +122,26 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
   let controller: AbortController | null = null
   let disposed = false
   let sessionExpiryNotified = false
+  const polling = useServerOperationPolling({
+    kind: 'restart_script',
+    authorizationHeader: () => auth.authorizationHeader,
+    getOperation: options.getOperation ?? getServerOperation,
+    onOperation(operation) {
+      state.value = operation.status
+      error.value = operation.failureCode === null ? null : Object.freeze({ code: errorCodeFromFailure(operation.failureCode) })
+    },
+    onUnauthorized() {
+      expireSession()
+    },
+    onForbidden() {
+      state.value = 'failed'
+      error.value = Object.freeze({ code: 'forbidden' })
+    },
+    onTransientFailure() {
+      if (state.value === 'accepted' || state.value === 'queued')
+        state.value = 'running'
+    },
+  })
 
   function startConfirmation() {
     if (disposed || state.value === 'submitting')
@@ -158,20 +186,14 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
         result.value = accepted
         state.value = 'accepted'
         sessionExpiryNotified = false
+        rememberOperation(accepted.operationId)
         return accepted
       })
       .catch((cause: unknown) => {
         if (disposed || isAbortError(cause))
           return null
         if (cause instanceof HttpError && cause.status === 401) {
-          if (auth.authorizationHeader !== null)
-            auth.expireSession()
-          state.value = 'failed'
-          error.value = Object.freeze({ code: 'session_expired' })
-          if (!sessionExpiryNotified) {
-            sessionExpiryNotified = true
-            onSessionExpired()
-          }
+          expireSession()
           return null
         }
         state.value = 'failed'
@@ -194,7 +216,36 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
     disposed = true
     controller?.abort()
     controller = null
+    polling.dispose()
   }
+
+  function rememberOperation(operationId: string) {
+    if (route === null)
+      return
+    void router?.replace({ query: { ...route.query, operationId, operationKind: 'restart_script' } })
+    polling.resume(operationId)
+  }
+
+  function resumeFromRoute() {
+    const operationId = routeOperationId(route, 'restart_script')
+    polling.resume(operationId)
+    if (operationId !== null && state.value === 'idle')
+      state.value = 'running'
+  }
+
+  function expireSession() {
+    if (auth.authorizationHeader !== null)
+      auth.expireSession()
+    state.value = 'failed'
+    error.value = Object.freeze({ code: 'session_expired' })
+    if (!sessionExpiryNotified) {
+      sessionExpiryNotified = true
+      onSessionExpired()
+    }
+  }
+
+  watch(() => [route?.query.operationId, route?.query.operationKind], resumeFromRoute, { immediate: true })
+  watch(() => auth.authorizationHeader, resumeFromRoute)
 
   onUnmounted(dispose)
 
@@ -207,4 +258,22 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
     confirm,
     dispose,
   }
+}
+
+function errorCodeFromFailure(value: string): RestartServerErrorCode {
+  return restartProblemCodes.has(value as RestartServerErrorCode) ? value as RestartServerErrorCode : 'unknown'
+}
+
+function routeOperationId(route: Pick<RouteLocationNormalizedLoaded, 'query'> | null, kind: string): string | null {
+  if (route?.query.operationKind !== kind || typeof route.query.operationId !== 'string' || route.query.operationId.trim() === '')
+    return null
+  return route.query.operationId
+}
+
+function optionalRoute(): Pick<RouteLocationNormalizedLoaded, 'query'> | null {
+  try { return useRoute() ?? null } catch { return null }
+}
+
+function optionalRouter(): Pick<Router, 'replace'> | null {
+  try { return useRouter() ?? null } catch { return null }
 }

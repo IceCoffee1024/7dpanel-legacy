@@ -3,10 +3,13 @@ import type { RestartServerErrorCode, RestartServerState } from '../model/useRes
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { operationStatus } from '../../../shared/model/operationStatus'
+
 const props = defineProps<{ state: RestartServerState, errorCode: RestartServerErrorCode | null }>()
 const emit = defineEmits<{ cancel: [], confirm: [] }>()
 const { t } = useI18n()
 const open = computed(() => props.state === 'confirming' || props.state === 'submitting')
+const status = computed(() => operationStatus(props.state))
 function updateOpen(value: boolean) {
   if (!value && props.state === 'confirming')
     emit('cancel')
@@ -49,15 +52,23 @@ function updateOpen(value: boolean) {
     </template>
   </UModal>
   <UAlert
-    v-if="state === 'accepted'"
-    color="success"
+    v-if="state === 'accepted' || state === 'queued' || state === 'running'"
+    :color="status.tone"
     variant="subtle"
-    :title="t('overview.restartDialog.accepted')"
+    :title="t(status.i18nKey)"
+    :description="t('overview.restartDialog.accepted')"
   />
   <UAlert
-    v-else-if="state === 'failed'"
-    color="error"
+    v-else-if="state === 'succeeded'"
+    :color="status.tone"
     variant="subtle"
-    :title="t('overview.restartDialog.failed')"
+    :title="t(status.i18nKey)"
+  />
+  <UAlert
+    v-else-if="state === 'failed' || state === 'cancelled' || state === 'result-unknown'"
+    :color="status.tone"
+    variant="subtle"
+    :title="t(status.i18nKey)"
+    :description="t('overview.restartDialog.failed')"
   />
 </template>

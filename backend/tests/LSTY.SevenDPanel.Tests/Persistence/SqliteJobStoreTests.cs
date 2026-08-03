@@ -16,6 +16,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Persistence
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteJobStoreTests
     {
         [Fact]
@@ -182,6 +184,10 @@ namespace LSTY.SevenDPanel.Tests.Persistence
 
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

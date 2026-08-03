@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteGameChatCommandAuditTrailTests
     {
         [Fact]
@@ -91,6 +93,10 @@ namespace LSTY.SevenDPanel.Tests
                     new { AuditId = auditId })
                 ?? throw new InvalidOperationException("The game chat command audit intent was not found.");
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class CommunityGameCommandTests
     {
         [Fact]
@@ -234,6 +236,10 @@ namespace LSTY.SevenDPanel.Tests
                     false,
                     new WorldBounds(-1000, 1000, -1000, 1000)));
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingConsumer : ICommunityGameCommandConsumer
         {
             private readonly CommunityCommandConsumerResult result;
@@ -260,6 +266,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingCommandSource : ICommunityCommandSource
         {
             private Action<CommunityCommandEnvelope>? handler;
@@ -273,6 +283,10 @@ namespace LSTY.SevenDPanel.Tests
             public void Emit(CommunityCommandEnvelope command) => handler?.Invoke(command);
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingPrivateReplies : ICommunityPrivateReplyPort
         {
             public List<Reply> Replies { get; } = new List<Reply>();
@@ -285,6 +299,10 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         private sealed record Reply(string CrossplatformId, string Code);
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class CallbackDisposable : IDisposable
         {

@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class LocalModCatalogTests
     {
         [Theory]
@@ -82,6 +84,10 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(ModStateChangeStatus.Conflict,
                 fixture.Catalog.SetEnabled("Conflict", false).Status);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class Fixture : IDisposable
         {

@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class SevenDaysGameOverviewQueryTests
     {
         private static readonly DateTimeOffset SampledAt =

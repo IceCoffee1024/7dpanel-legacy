@@ -69,3 +69,24 @@ feat(api)!: replace the player action response
   when the corresponding project or command does not exist.
 - Keep changes scoped to one concern where practical. Separate unrelated
   documentation, repository maintenance, and implementation changes.
+
+## Complexity Review Fields
+
+For a non-trivial change, the review description must state:
+
+- `primary capability`: the single Operations, Players, Community, Economy,
+  Automation, Administration, or Platform owner;
+- `production reason for new interface`: the external boundary, second
+  production consumer, stable duplication, or dependency direction it protects;
+- `background lifecycle`: start, stop, drain, failure, and recovery semantics
+  for every new background task;
+- `migration/recovery`: schema migration, idempotency, rollback, and restore
+  behavior for new persisted state;
+- `navigation task`: the user task and existing secondary/context location for
+  any new page or route;
+- `real-boundary evidence`: the concrete game, browser, external-service, or
+  release artifact evidence required before claiming verification;
+- `rollback`: the recoverable operator action and failure handling.
+
+Changes that cannot answer these fields remain `Implemented` or `Blocked` in
+the maturity ledger until the missing boundary is resolved.

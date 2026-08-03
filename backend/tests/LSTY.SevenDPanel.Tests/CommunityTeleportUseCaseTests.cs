@@ -14,6 +14,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class CommunityTeleportUseCaseTests
     {
         private static readonly DateTimeOffset Now =
@@ -635,6 +637,10 @@ namespace LSTY.SevenDPanel.Tests
             return Convert.ToInt64(command.ExecuteScalar());
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingGateway : ICommunityGameGateway
         {
             private readonly TeleportActionResult result;
@@ -651,6 +657,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(result);
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class CountingGateway : ICommunityGameGateway
         {
@@ -672,6 +682,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FixedPlayerSnapshots : ICommunityPlayerCommandSnapshotProvider
         {
             private readonly IReadOnlyList<CommunityPlayerCommandSnapshot> players;
@@ -692,6 +706,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public IReadOnlyList<CommunityPlayerCommandSnapshot> CaptureOnline() => players;
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

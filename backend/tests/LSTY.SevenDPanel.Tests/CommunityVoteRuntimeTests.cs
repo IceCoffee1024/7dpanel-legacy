@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class CommunityVoteRuntimeTests
     {
         private static readonly DateTimeOffset Now =
@@ -91,6 +93,10 @@ namespace LSTY.SevenDPanel.Tests
                 () => now,
                 TimeSpan.FromHours(1));
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
+
         private sealed class RecordingVoteActionPort : ICommunityVoteActionPort
         {
             public int CallCount { get; private set; }
@@ -103,6 +109,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(VoteActionResult.Succeeded("operation-" + CallCount, null));
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

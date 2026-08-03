@@ -18,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Web")]
     public sealed class GameEventsHttpTests
     {
         [Fact]
@@ -161,6 +163,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration);
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubStore : IGameEventStore
         {
             private readonly GameEventPage page;
@@ -175,12 +181,20 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class ThrowingStore : IGameEventStore
         {
             public void Append(GameEventRecord record) => throw new NotSupportedException();
             public void AppendGap(GameEventGap gap) => throw new NotSupportedException();
             public GameEventPage Query(GameEventQuery query) => throw new InvalidOperationException("unavailable");
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HttpTestHost : IDisposable
         {
@@ -203,6 +217,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {

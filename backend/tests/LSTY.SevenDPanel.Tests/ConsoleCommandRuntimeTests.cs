@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "SevenDays")]
     public sealed class ConsoleCommandRuntimeTests
     {
         [Fact]
@@ -66,6 +68,10 @@ namespace LSTY.SevenDPanel.Tests
                 new[] { "inner:stop", "commands:stop", "audit:stop" },
                 order.GetRange(3, 3));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "SevenDays")]
 
         private sealed class RecordingRuntime : IModRuntime
         {

@@ -32,6 +32,7 @@ using LSTY.SevenDPanel.Application.Schedules;
 using LSTY.SevenDPanel.DependencyInjection;
 using LSTY.SevenDPanel.Domain.Jobs;
 using LSTY.SevenDPanel.Hosting;
+using LSTY.SevenDPanel.Adapters.Local.ServerOperations;
 using LSTY.SevenDPanel.Adapters.Persistence.Sqlite;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Bootstrap
 {
+    [Trait("Capability", "Platform")]
+    [Trait("Boundary", "Bootstrap")]
     public sealed class JobsAndSchedulingCompositionTests
     {
         [Fact]
@@ -341,6 +344,10 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
                 .PerformUpgrade();
             Assert.True(result.Successful, result.Error?.ToString());
         }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
 
         private sealed class RuntimeFixture : IDisposable
         {

@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Application")]
     public sealed class ConsoleCommandAuditServiceTests
     {
         [Fact]
@@ -163,6 +165,10 @@ namespace LSTY.SevenDPanel.Tests
                 null);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class BlockingAuditStore : IConsoleCommandAuditStore
         {
             private readonly object sync = new object();
@@ -194,6 +200,10 @@ namespace LSTY.SevenDPanel.Tests
                 lock (sync) Calls.Add("gap:" + gap.DroppedCount);
             }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TestSubscription : IDisposable
         {

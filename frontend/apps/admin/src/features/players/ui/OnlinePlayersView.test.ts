@@ -397,6 +397,20 @@ it('disables all future player kick actions after forbidden feedback', () => {
   expect(wrapper.getComponent(OnlinePlayersTable).props('canKick')).toBe(false)
 })
 
+it.each(['Admin', 'Viewer'] as const)('does not expose kick actions to %s when a stale player snapshot remains mounted', async (role) => {
+  authState.role = role
+  const { wrapper } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: onePlayerSnapshot(),
+  })
+
+  wrapper.getComponent(OnlinePlayersTable).vm.$emit('viewDetails', player)
+  await nextTick()
+
+  expect(wrapper.getComponent(OnlinePlayersTable).props('canKick')).toBe(false)
+  expect(wrapper.get('[data-testid="details-can-kick"]').text()).toBe('false')
+})
+
 it('expires the session before redirecting and disables open detail kicks', async () => {
   const { wrapper } = mountOnlinePlayersView({
     state: 'fresh',

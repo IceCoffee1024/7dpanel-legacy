@@ -11,23 +11,56 @@ using LSTY.SevenDPanel.Application;
 
 namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 {
-    [Authorize(Roles = "Owner")]
+    [Authorize]
     [RoutePrefix("api/v1/server-operations")]
     public sealed class ServerOperationsController : ApiController
     {
         private readonly RestartServerUseCase restartUseCase;
         private readonly ShutdownServerUseCase shutdownUseCase;
+        private readonly GetServerOperationUseCase getOperationUseCase;
 
         public ServerOperationsController(
             RestartServerUseCase restartUseCase,
-            ShutdownServerUseCase shutdownUseCase)
+            ShutdownServerUseCase shutdownUseCase,
+            GetServerOperationUseCase getOperationUseCase)
         {
             this.restartUseCase = restartUseCase ?? throw new ArgumentNullException(nameof(restartUseCase));
             this.shutdownUseCase = shutdownUseCase ?? throw new ArgumentNullException(nameof(shutdownUseCase));
+            this.getOperationUseCase = getOperationUseCase ?? throw new ArgumentNullException(nameof(getOperationUseCase));
+        }
+
+        [HttpGet]
+        [Route("{operationId}")]
+        [Authorize(Roles = "Owner,Admin,Viewer")]
+        [ResponseType(typeof(ServerOperationStatusHttpResponse))]
+        public HttpResponseMessage Get(string operationId)
+        {
+            try
+            {
+                var operation = getOperationUseCase.Execute(operationId);
+                if (operation == null)
+                {
+                    return ApiProblemDetailsFactory.CreateResponse(
+                        Request, HttpStatusCode.NotFound, "operation_not_found", "The server operation was not found.");
+                }
+                return Request.CreateResponse(HttpStatusCode.OK, new ServerOperationStatusHttpResponse(operation));
+            }
+            catch (ArgumentException)
+            {
+                return ApiProblemDetailsFactory.CreateResponse(
+                    Request, HttpStatusCode.NotFound, "operation_not_found", "The server operation was not found.");
+            }
+            catch (ServerOperationSourceUnavailableException)
+            {
+                return ApiProblemDetailsFactory.CreateResponse(
+                    Request, HttpStatusCode.ServiceUnavailable,
+                    "operation_status_unavailable", "The server operation status is unavailable.");
+            }
         }
 
         [HttpPost]
         [Route("restart")]
+        [Authorize(Roles = "Owner")]
         [ResponseType(typeof(RestartServerOperationHttpResponse))]
         public async Task<HttpResponseMessage> Restart(
             ConfirmedServerOperationRequest? request,
@@ -87,6 +120,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
 
         [HttpPost]
         [Route("shutdown")]
+        [Authorize(Roles = "Owner")]
         [ResponseType(typeof(ShutdownServerOperationHttpResponse))]
         public async Task<HttpResponseMessage> Shutdown(
             ConfirmedServerOperationRequest? request,

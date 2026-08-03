@@ -21,6 +21,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Web")]
     public sealed class GameResourcesHttpTests
     {
         private const string HttpNamespace =
@@ -486,6 +488,10 @@ namespace LSTY.SevenDPanel.Tests
             name?.IndexOf("tint", StringComparison.OrdinalIgnoreCase) >= 0 ||
             name?.IndexOf("iconName", StringComparison.OrdinalIgnoreCase) >= 0;
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class StubCatalog : IGameResourceCatalog
         {
             private readonly GameResourceCatalogReadResult read;
@@ -515,6 +521,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -539,6 +549,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {

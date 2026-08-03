@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using LSTY.SevenDPanel.Application;
 
-namespace LSTY.SevenDPanel.Hosting.Platform
+namespace LSTY.SevenDPanel.Adapters.Local.Platform
 {
     public sealed class HostStorageSampler
     {

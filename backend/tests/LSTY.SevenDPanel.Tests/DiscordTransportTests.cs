@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class DiscordTransportTests
     {
         private const string PrivateKeyHex =
@@ -445,6 +447,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private class RecordingInboundSink :
             IDiscordInboundTransportSink,
             IDiscordGatewayHealthSink
@@ -487,6 +493,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class BlockingInboundSink : RecordingInboundSink
         {
             public TaskCompletionSource<bool> Entered { get; } =
@@ -507,6 +517,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class QueueGatewaySocketFactory : IDiscordGatewaySocketFactory
         {
             private readonly ConcurrentQueue<IDiscordGatewaySocket> sockets;
@@ -525,6 +539,10 @@ namespace LSTY.SevenDPanel.Tests
                 return socket;
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ScriptedGatewaySocket : IDiscordGatewaySocket
         {
@@ -566,6 +584,10 @@ namespace LSTY.SevenDPanel.Tests
             public void Dispose() => receivedSignal.Dispose();
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class FailingGatewaySocket : IDiscordGatewaySocket
         {
             public Task ConnectAsync(Uri endpoint, CancellationToken cancellationToken) =>
@@ -581,6 +603,10 @@ namespace LSTY.SevenDPanel.Tests
             {
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class CancellationIgnoringGatewaySocket : IDiscordGatewaySocket
         {
@@ -625,6 +651,10 @@ namespace LSTY.SevenDPanel.Tests
                 receiveReleased.TrySetResult(null);
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ControlledGatewayDelay : IDiscordGatewayDelay
         {
@@ -682,6 +712,10 @@ namespace LSTY.SevenDPanel.Tests
                 }
                 return null;
             }
+
+            [Trait("Capability", "Community")]
+
+            [Trait("Boundary", "Application")]
 
             private sealed class PendingDelay
             {

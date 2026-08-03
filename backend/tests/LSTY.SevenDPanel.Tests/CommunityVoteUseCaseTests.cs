@@ -14,6 +14,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class CommunityVoteUseCaseTests
     {
         private static readonly DateTimeOffset Now =
@@ -234,6 +236,10 @@ namespace LSTY.SevenDPanel.Tests
                     TimeSpan.FromMinutes(player.OnlineMinutes)))
                 .ToArray();
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingVoteActionPort : ICommunityVoteActionPort
         {
             private readonly VoteActionResult result;
@@ -250,6 +256,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(result);
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

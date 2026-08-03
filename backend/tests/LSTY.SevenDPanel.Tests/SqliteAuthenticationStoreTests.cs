@@ -11,6 +11,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteAuthenticationStoreTests
     {
         [Fact]
@@ -622,6 +624,10 @@ namespace LSTY.SevenDPanel.Tests
 
         private static string GetApiKeySecret(string apiKey) =>
             apiKey.Substring("7dp_k_".Length + 22 + 1);
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Application;
 
-namespace LSTY.SevenDPanel.Hosting.Platform
+namespace LSTY.SevenDPanel.Adapters.Local.Platform
 {
     public enum HostPlatformFamily
     {

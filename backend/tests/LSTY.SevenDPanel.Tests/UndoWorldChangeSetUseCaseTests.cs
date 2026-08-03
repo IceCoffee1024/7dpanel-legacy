@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class UndoWorldChangeSetUseCaseTests
     {
         [Fact]
@@ -271,6 +273,10 @@ namespace LSTY.SevenDPanel.Tests
         private static DateTimeOffset Utc() =>
             new DateTimeOffset(2026, 7, 27, 8, 0, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class Fixture
         {
             internal Fixture()
@@ -342,6 +348,10 @@ namespace LSTY.SevenDPanel.Tests
                     Utc().AddDays(-1));
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingPreflightGateway : IWorldChangeSetPreflightGateway
         {
             private readonly string currentHash;
@@ -354,6 +364,10 @@ namespace LSTY.SevenDPanel.Tests
                 CancellationToken cancellationToken) =>
                 Task.FromResult(WorldChangeSetRuntimeHashResult.Available(currentHash));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingBridge : IWorldOperationJobBridge
         {
@@ -386,6 +400,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool RequestCancellation(string operationId, string actorSubject) => false;
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingMetadataStore : IWorldChangeSetMetadataStore
         {
             private readonly WorldChangeSetDescriptor descriptor;
@@ -406,6 +424,10 @@ namespace LSTY.SevenDPanel.Tests
 
             public void MarkApplied(string changeSetId, string afterHash) => MarkAppliedCalls++;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingBlobStore : IWorldChangeSetBlobStore
         {
@@ -429,6 +451,10 @@ namespace LSTY.SevenDPanel.Tests
             public WorldChangeSetBlobReadResult Read(string storageResourceId, string expectedHash) =>
                 new WorldChangeSetBlobReadResult(storageResourceId, expectedHash, content);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class HandlerFixture
         {
@@ -538,6 +564,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class HandlerMetadataStore : IWorldChangeSetMetadataStore
         {
             private WorldChangeSetDescriptor source;
@@ -584,6 +614,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class HandlerBlobStore : IWorldChangeSetBlobStore
         {
             private WorldChangeSetDescriptor source;
@@ -619,6 +653,10 @@ namespace LSTY.SevenDPanel.Tests
                     ReadContentHash ?? source.BeforeHash,
                     CorruptRead ? new byte[] { 9 } : before);
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingExecutionStore : IWorldOperationExecutionStore
         {

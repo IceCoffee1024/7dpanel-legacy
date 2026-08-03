@@ -13,6 +13,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Application")]
     public sealed class RecentActivitySourceTests
     {
         private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(5);
@@ -231,6 +233,10 @@ namespace LSTY.SevenDPanel.Tests
             CanceledTask
         }
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class TestCredentialStore : IPanelCredentialStore
         {
             private readonly PanelUserIdentity identity;
@@ -252,6 +258,10 @@ namespace LSTY.SevenDPanel.Tests
                 return true;
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecorderFixture
         {
@@ -288,6 +298,10 @@ namespace LSTY.SevenDPanel.Tests
                 return new Subscription(() => Trace.Add("dispose-" + name));
             }
 
+            [Trait("Capability", "Operations")]
+
+            [Trait("Boundary", "Application")]
+
             private sealed class Subscription : IDisposable
             {
                 private Action? dispose;
@@ -303,6 +317,10 @@ namespace LSTY.SevenDPanel.Tests
                 }
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingLog
         {
@@ -322,6 +340,10 @@ namespace LSTY.SevenDPanel.Tests
                 Written.Set();
             }
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingRecentActivityWriter : IRecentActivityWriter
         {

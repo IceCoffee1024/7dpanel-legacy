@@ -6,6 +6,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Web")]
     public sealed class PlayerHistoryWebContractTests
     {
         [Fact]

@@ -4,6 +4,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Economy")]
+    [Trait("Boundary", "Application")]
     public sealed class EconomyLedgerUseCaseTests
     {
         private static readonly DateTimeOffset Now =
@@ -117,6 +119,10 @@ namespace LSTY.SevenDPanel.Tests
                 createdAtUtc: Now,
                 updatedAtUtc: Now,
                 rowVersion: 0);
+
+        [Trait("Capability", "Economy")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingStore : IEconomyLedgerStore, IEconomyAccountAdministrationStore
         {

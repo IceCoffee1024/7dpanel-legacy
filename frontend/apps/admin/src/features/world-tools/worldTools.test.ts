@@ -8,6 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { defineComponent, isReadonly } from 'vue'
+import { HttpError } from '../../shared/api/http'
 
 import {
   fetchUndoWorldChangeSetPreflight,
@@ -16,7 +17,6 @@ import {
   parseWorldSummary,
   submitWorldOperation,
 } from './api/worldTools'
-import { HttpError } from '../../shared/api/http'
 import { useUndoPreflight } from './model/useUndoPreflight'
 import { useWorldOperations } from './model/useWorldOperations'
 import { useWorldResources } from './model/useWorldResources'
@@ -197,7 +197,9 @@ describe('world-tools transport', () => {
 
   it.each(['Queued', 'Running', 'Succeeded', 'Failed', 'Cancelled', 'Interrupted', 'ResultUnknown', 'RollbackFailed'] as const)(
     'parses the %s operation state without collapsing it',
-    status => expect(parseWorldOperation(operation(status))).toMatchObject({ status }),
+    (status) => {
+      expect(parseWorldOperation(operation(status))).toMatchObject({ status })
+    },
   )
 
   it('strictly parses undo preflight and keeps current hash distinct from the recorded after hash', () => {
@@ -378,7 +380,9 @@ describe('useUndoPreflight', () => {
     const fetchPreflight = vi.fn()
       .mockImplementationOnce((_header: string, _id: string, signal?: AbortSignal) => {
         firstSignal = signal
-        return new Promise<UndoWorldChangeSetPreflight>((resolve) => { resolveFirst = resolve })
+        return new Promise<UndoWorldChangeSetPreflight>((resolve) => {
+          resolveFirst = resolve
+        })
       })
       .mockResolvedValueOnce({ ...readyPreflight, sourceOperationId: 'operation-new' })
     const mounted = mountUndoPreflight({

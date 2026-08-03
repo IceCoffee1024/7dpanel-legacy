@@ -20,6 +20,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Web")]
     public sealed class MapTileWebContractTests
     {
         private const string TileUrl = "api/v1/map/tiles/world-guid/4/0/0";
@@ -228,6 +230,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class MetadataQuery : IMapMetadataQuery
         {
             public MapMetadataProjectionSnapshot Query() => MapMetadataProjectionSnapshot.Available(
@@ -242,10 +248,18 @@ namespace LSTY.SevenDPanel.Tests
                 new DateTimeOffset(2026, 7, 26, 9, 0, 0, TimeSpan.Zero));
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class GameTimeQuery : IMapGameTimeQuery
         {
             public MapGameTimeProjectionSnapshot Query() => MapGameTimeProjectionSnapshot.Unavailable();
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class TileStore : IMapTileStore
         {
@@ -272,6 +286,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class TrackStore : IPlayerHistoryStore
         {
             public void Append(PlayerSnapshot snapshot) => throw new NotSupportedException();
@@ -284,6 +302,10 @@ namespace LSTY.SevenDPanel.Tests
                 HistoricalPlayerLastLocationsStoreQuery query) => Array.Empty<HistoricalPlayerLastRetainedLocation>();
             public int Compact(DateTimeOffset utcNow, int maximumDeletes) => throw new NotSupportedException();
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class HttpTestHost : IDisposable
         {
@@ -315,6 +337,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class BearerPrincipalHandler : DelegatingHandler
         {

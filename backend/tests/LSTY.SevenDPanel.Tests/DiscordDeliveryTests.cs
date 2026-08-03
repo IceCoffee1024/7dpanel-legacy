@@ -15,6 +15,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class DiscordDeliveryTests
     {
         private const string BotToken = "BOT-TOKEN-SENTINEL";
@@ -568,6 +570,10 @@ namespace LSTY.SevenDPanel.Tests
                 .ToArray();
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingHandler : HttpMessageHandler
         {
             private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send;
@@ -580,6 +586,10 @@ namespace LSTY.SevenDPanel.Tests
                 HttpRequestMessage request,
                 CancellationToken cancellationToken) => send(request, cancellationToken);
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingDiscordApiClient : IDiscordApiClient
         {
@@ -601,6 +611,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class DelegateDiscordApiClient : IDiscordApiClient
         {
             private readonly Func<DiscordApiRequest, CancellationToken, Task<DiscordApiResult>> send;
@@ -613,6 +627,10 @@ namespace LSTY.SevenDPanel.Tests
                 DiscordApiRequest request,
                 CancellationToken cancellationToken) => send(request, cancellationToken);
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

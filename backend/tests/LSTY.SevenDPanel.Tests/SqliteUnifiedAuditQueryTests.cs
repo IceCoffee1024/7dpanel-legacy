@@ -9,6 +9,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteUnifiedAuditQueryTests
     {
         [Fact]
@@ -115,6 +117,10 @@ namespace LSTY.SevenDPanel.Tests
                   VALUES (@OccurredUtc, @OccurredUtc, 3, 'QueueFull');",
                 new { OccurredUtc = occurredUtc });
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryAuditDatabase : IDisposable
         {

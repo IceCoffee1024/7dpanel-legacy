@@ -22,6 +22,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class GameChatCommunityCommandBridgeTests
     {
         private static readonly DateTimeOffset Now =
@@ -250,11 +252,19 @@ namespace LSTY.SevenDPanel.Tests
             throw new InvalidOperationException("The Seven Days managed assembly directory was not found.");
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         public sealed class IsolatedGameChatRunner : MarshalByRefObject
         {
             public string ExecuteIncomingGlobalDailyChat() =>
                 GameChatCommunityCommandBridgeTests.ExecuteIncomingGlobalDailyChat();
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class DailyFixture : IDisposable
         {
@@ -304,6 +314,10 @@ namespace LSTY.SevenDPanel.Tests
             public void Dispose() => database.Dispose();
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingDelivery : IRewardDeliveryPort
         {
             private int calls;
@@ -320,6 +334,10 @@ namespace LSTY.SevenDPanel.Tests
                     Array.Empty<RewardDeliveryEntryResult>()));
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class FixedPlayers : ICommunityPlayerCommandSnapshotProvider
         {
@@ -341,6 +359,10 @@ namespace LSTY.SevenDPanel.Tests
             public IReadOnlyList<CommunityPlayerCommandSnapshot> CaptureOnline() => new[] { player };
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class UnusedCommandConsumer : ICommunityGameCommandConsumer
         {
             public UnusedCommandConsumer(CommunityGameCommandId command) => Command = command;
@@ -350,6 +372,10 @@ namespace LSTY.SevenDPanel.Tests
             public CommunityCommandConsumerResult Execute(CommunityGameCommandContext context) =>
                 CommunityCommandConsumerResult.Succeeded();
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ChatSettingsStore : IChatSettingsStore
         {
@@ -365,6 +391,10 @@ namespace LSTY.SevenDPanel.Tests
             public ChatSettings Save(ChatSettings settings) => settings;
             public ChatSettings Reset() => Settings;
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class ColoredChatStore : IColoredChatStore
         {
@@ -385,6 +415,10 @@ namespace LSTY.SevenDPanel.Tests
             public bool TryUpdateProfile(ColoredChatProfile profile) => false;
             public bool TryDeleteProfile(string crossplatformId) => false;
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class HistoryStore : IChatHistoryStore
         {

@@ -14,6 +14,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests.Persistence
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqliteScheduleStoreTests
     {
         [Fact]
@@ -304,12 +306,20 @@ namespace LSTY.SevenDPanel.Tests.Persistence
         private static DateTimeOffset Utc(int minute) =>
             new DateTimeOffset(2026, 7, 26, 0, minute, 0, TimeSpan.Zero);
 
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class ScheduleRunRow
         {
             public string ScheduleId { get; set; } = string.Empty;
             public string JobId { get; set; } = string.Empty;
             public string Outcome { get; set; } = string.Empty;
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

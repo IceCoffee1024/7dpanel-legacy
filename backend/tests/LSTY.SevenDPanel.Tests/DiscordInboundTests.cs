@@ -14,6 +14,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Application")]
     public sealed class DiscordInboundTests
     {
         private static readonly DateTimeOffset Now =
@@ -431,6 +433,10 @@ namespace LSTY.SevenDPanel.Tests
             return columns;
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingChatSender : IChatMessageSender
         {
             public List<string> GlobalMessages { get; } = new List<string>();
@@ -449,6 +455,10 @@ namespace LSTY.SevenDPanel.Tests
                 CancellationToken cancellationToken) =>
                 Task.FromResult(ChatSendResult.Failed(ChatSendStatus.TargetOffline));
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingCommandDispatcher : IDiscordInboundCommandDispatcher
         {
@@ -475,6 +485,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingInteractionResponseSender : IDiscordInteractionResponseSender
         {
             public List<DiscordInteractionResponse> Responses { get; } =
@@ -488,6 +502,10 @@ namespace LSTY.SevenDPanel.Tests
                 return Task.FromResult(DiscordInteractionResponseDisposition.Succeeded);
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporaryDatabase : IDisposable
         {

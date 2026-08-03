@@ -20,6 +20,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Community")]
+    [Trait("Boundary", "Web")]
     public sealed class ChatMuteHttpAuthorizationTests
     {
         public static TheoryData<string, string, string?, HttpStatusCode> MuteAuthorizationMatrix => new()
@@ -119,6 +121,10 @@ namespace LSTY.SevenDPanel.Tests
             return new HttpTestHost(provider, configuration);
         }
 
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class HttpTestHost : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -143,6 +149,10 @@ namespace LSTY.SevenDPanel.Tests
                 provider.Dispose();
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -171,6 +181,10 @@ namespace LSTY.SevenDPanel.Tests
                 return base.SendAsync(request, cancellationToken);
             }
         }
+
+        [Trait("Capability", "Community")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class TestChatPorts :
             IRecentChatMessageQuery,

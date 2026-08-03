@@ -62,3 +62,27 @@ test('releasing a chat mute requires confirmation and refreshes the list', async
   expect(browserErrors.errors).toEqual([])
   browserErrors.dispose()
 })
+
+test('chat live, history, and settings remain available in Chinese on the mobile browser contract', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Chromium - mock 390x844')
+
+  await page.addInitScript(() => {
+    localStorage.setItem('7dpanel.locale.v1', JSON.stringify({ version: 1, locale: 'zh-CN' }))
+  })
+  await useStoredSession(page, 'Owner')
+  await mockAdminApi(page)
+
+  for (const [route, title] of [
+    ['/community/chat/live', '实时聊天'],
+    ['/community/chat/history', '历史聊天'],
+    ['/community/chat/settings', '聊天设置'],
+  ] as const) {
+    await gotoAdmin(page, route)
+    await expect(page, route).toHaveURL(url => url.pathname === route)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
+    await expect(page.getByText(title, { exact: true })).toBeVisible()
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+    expect(overflow, `${route} overflows horizontally at 390px`).toBeLessThanOrEqual(0)
+  }
+})

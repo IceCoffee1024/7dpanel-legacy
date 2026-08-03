@@ -18,6 +18,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Administration")]
+    [Trait("Boundary", "Web")]
     public sealed class GamePermissionHttpTests
     {
         [Theory]
@@ -100,6 +102,10 @@ namespace LSTY.SevenDPanel.Tests
             return new Host(provider, configuration);
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class Host : IDisposable
         {
             private readonly ServiceProvider provider;
@@ -113,6 +119,10 @@ namespace LSTY.SevenDPanel.Tests
             public HttpClient Client { get; }
             public void Dispose() { Client.Dispose(); configuration.Dispose(); provider.Dispose(); }
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class PrincipalHandler : DelegatingHandler
         {
@@ -133,6 +143,10 @@ namespace LSTY.SevenDPanel.Tests
             }
         }
 
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
+
         private sealed class RecordingControl : IGamePermissionControl
         {
             private readonly GamePermissionMutationResult result;
@@ -145,6 +159,10 @@ namespace LSTY.SevenDPanel.Tests
             public Task<GamePermissionMutationResult> UpsertCommandAsync(string command, int level, CancellationToken cancellationToken) => Task.FromResult(result);
             public Task<GamePermissionMutationResult> RemoveCommandAsync(string command, CancellationToken cancellationToken) => Task.FromResult(result);
         }
+
+        [Trait("Capability", "Administration")]
+
+        [Trait("Boundary", "Web")]
 
         private sealed class NoOpActivityWriter : IRecentActivityWriter
         {

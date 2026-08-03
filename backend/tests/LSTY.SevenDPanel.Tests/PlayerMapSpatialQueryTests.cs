@@ -11,6 +11,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class PlayerMapSpatialQueryTests
     {
         [Fact]
@@ -362,6 +364,10 @@ namespace LSTY.SevenDPanel.Tests
                 currentLifeMinutes: 0,
                 observedAtUtc: observedAtUtc);
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
+
         private sealed class RecordingSpatialStore : IPlayerMapSpatialQueryStore
         {
             private readonly IReadOnlyList<PlayerAreaObservationCandidate> candidates;
@@ -379,6 +385,10 @@ namespace LSTY.SevenDPanel.Tests
                 return candidates.Take(query.CandidateObservationLimit).ToArray();
             }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class TemporarySpatialDatabase : IDisposable
         {

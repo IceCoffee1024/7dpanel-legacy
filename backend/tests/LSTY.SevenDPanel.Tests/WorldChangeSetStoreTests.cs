@@ -8,6 +8,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Operations")]
+    [Trait("Boundary", "Persistence")]
     public sealed class WorldChangeSetStoreTests
     {
         [Fact]
@@ -82,6 +84,10 @@ namespace LSTY.SevenDPanel.Tests
             using var sha256 = SHA256.Create();
             return string.Concat(sha256.ComputeHash(content).Select(value => value.ToString("x2")));
         }
+
+        [Trait("Capability", "Operations")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class BlobFixture : IDisposable
         {

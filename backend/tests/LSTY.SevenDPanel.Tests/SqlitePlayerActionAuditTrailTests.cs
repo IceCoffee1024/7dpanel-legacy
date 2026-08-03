@@ -10,6 +10,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Persistence")]
     public sealed class SqlitePlayerActionAuditTrailTests
     {
         [Fact]
@@ -245,6 +247,10 @@ namespace LSTY.SevenDPanel.Tests
                 requestedAtUtc);
         }
 
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
+
         private sealed class PlayerActionAuditRow
         {
             public string action_type { get; set; } = string.Empty;
@@ -259,6 +265,10 @@ namespace LSTY.SevenDPanel.Tests
             public string status { get; set; } = string.Empty;
             public string? failure_code { get; set; }
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Persistence")]
 
         private sealed class TemporaryAuditDatabase : IDisposable
         {

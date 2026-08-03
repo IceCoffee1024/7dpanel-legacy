@@ -7,6 +7,8 @@ using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
 {
+    [Trait("Capability", "Players")]
+    [Trait("Boundary", "Application")]
     public sealed class OnlinePlayerQueryTests
     {
         [Fact]
@@ -262,6 +264,10 @@ namespace LSTY.SevenDPanel.Tests
                 currentLifeMinutes,
                 observedAtUtc ?? new DateTimeOffset(2026, 7, 24, 9, 30, 0, TimeSpan.Zero));
         }
+
+        [Trait("Capability", "Players")]
+
+        [Trait("Boundary", "Application")]
 
         private sealed class RecordingOnlinePlayerQuery : IOnlinePlayerQuery
         {

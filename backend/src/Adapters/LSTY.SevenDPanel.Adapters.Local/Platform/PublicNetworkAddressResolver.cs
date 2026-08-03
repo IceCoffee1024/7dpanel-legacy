@@ -6,8 +6,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using LSTY.SevenDPanel.Application;
+using LSTY.SevenDPanel.Hosting;
 
-namespace LSTY.SevenDPanel.Hosting.Platform
+namespace LSTY.SevenDPanel.Adapters.Local.Platform
 {
     public sealed class PublicNetworkAddressResolver
     {
