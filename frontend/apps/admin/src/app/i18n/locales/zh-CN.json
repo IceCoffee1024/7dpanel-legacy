@@ -202,6 +202,7 @@
   },
   "shell": {
     "navigation": "导航",
+    "primaryNavigation": "任务域",
     "playersAndWorld": "玩家与世界",
     "auditAndEvents": "审计与事件",
     "muteManagement": "禁言管理",
@@ -218,20 +219,25 @@
     "shop": "商店商品",
     "redeemCodes": "兑换码",
     "achievementsAndOnlineRewards": "成就与在线奖励",
-    "community": "传送与投票",
+    "community": "社区",
     "teleportSettings": "传送设置",
     "cities": "城市管理",
     "votes": "社区投票",
     "integrations": "集成与访问策略",
+    "systemManagement": "系统管理",
     "discord": "Discord 集成",
     "geoIp": "GeoIP 访问策略",
     "search": "搜索",
     "searchPages": "搜索页面",
+    "breadcrumbs": "面包屑",
     "account": "{name} 账号",
     "signOut": "退出登录"
   },
   "dashboardSearch": {
     "description": "搜索页面和导航"
+  },
+  "serverOperations": {
+    "title": "服务器控制"
   },
   "backups": {
     "title": "备份与恢复",
@@ -656,7 +662,9 @@
       "playerActions": "玩家操作：{name}",
       "viewDetails": "查看玩家详情：{name}",
       "kickPlayer": "踢出玩家：{name}",
-      "kick": "踢出玩家"
+      "kick": "踢出玩家",
+      "viewHistory": "查看玩家记录",
+      "viewMap": "在地图中查看"
     },
     "details": {
       "title": "玩家详情",
@@ -694,6 +702,7 @@
     "profile": {
       "title": "玩家档案",
       "navigation": "玩家档案与证据",
+      "detail": "当前玩家详情",
       "viewReadOnly": "查看只读档案",
       "readOnlyNotice": "当前为只读档案",
       "state": {
@@ -1054,62 +1063,62 @@
         "staleDescription": "最新刷新失败；筛选结果可能已过期。"
       }
     },
-  "mutes": {
-    "title": "禁言管理",
-    "create": "新增禁言",
-    "permanent": "永久",
-    "state": {
-      "loading": "正在加载禁言列表",
-      "empty": "当前没有生效中的禁言",
-      "failed": "禁言列表加载失败",
-      "forbidden": "当前账号无权管理禁言",
-      "stale": "刷新失败，当前显示上一次成功结果"
+    "mutes": {
+      "title": "禁言管理",
+      "create": "新增禁言",
+      "permanent": "永久",
+      "state": {
+        "loading": "正在加载禁言列表",
+        "empty": "当前没有生效中的禁言",
+        "failed": "禁言列表加载失败",
+        "forbidden": "当前账号无权管理禁言",
+        "stale": "刷新失败，当前显示上一次成功结果"
+      },
+      "table": {
+        "aria": "生效中的禁言",
+        "crossplatformId": "跨平台身份",
+        "displayName": "显示名",
+        "reason": "原因",
+        "expires": "期限",
+        "updatedAtUtc": "更新时间（UTC）",
+        "actions": "操作"
+      },
+      "cards": {
+        "aria": "小屏幕上的生效禁言",
+        "missingDisplayName": "未提供显示名"
+      },
+      "actions": {
+        "release": "解除",
+        "editAria": "编辑 {id} 的禁言",
+        "releaseAria": "解除 {id} 的禁言"
+      },
+      "form": {
+        "createTitle": "新增禁言",
+        "editTitle": "编辑禁言",
+        "createDescription": "创建永久或有明确 UTC 截止时间的禁言。",
+        "editDescription": "更新当前禁言并立即应用。",
+        "crossplatformId": "跨平台身份",
+        "displayName": "显示名",
+        "reason": "原因",
+        "permanent": "永久禁言",
+        "expiresAtUtc": "截止时间（UTC）",
+        "correlationId": "关联 ID",
+        "create": "创建",
+        "save": "保存"
+      },
+      "validation": {
+        "required": "跨平台身份和原因不能为空",
+        "utcTimestamp": "期限必须是 UTC 时间，例如 2026-07-26T08:00:00Z"
+      },
+      "release": {
+        "title": "解除禁言",
+        "description": "解除后该玩家可立即恢复发送聊天消息。",
+        "confirmation": "确认解除 {id} 的禁言？",
+        "confirm": "确认解除",
+        "confirmAria": "确认解除 {id} 的禁言"
+      }
     },
-    "table": {
-      "aria": "生效中的禁言",
-      "crossplatformId": "跨平台身份",
-      "displayName": "显示名",
-      "reason": "原因",
-      "expires": "期限",
-      "updatedAtUtc": "更新时间（UTC）",
-      "actions": "操作"
-    },
-    "cards": {
-      "aria": "小屏幕上的生效禁言",
-      "missingDisplayName": "未提供显示名"
-    },
-    "actions": {
-      "release": "解除",
-      "editAria": "编辑 {id} 的禁言",
-      "releaseAria": "解除 {id} 的禁言"
-    },
-    "form": {
-      "createTitle": "新增禁言",
-      "editTitle": "编辑禁言",
-      "createDescription": "创建永久或有明确 UTC 截止时间的禁言。",
-      "editDescription": "更新当前禁言并立即应用。",
-      "crossplatformId": "跨平台身份",
-      "displayName": "显示名",
-      "reason": "原因",
-      "permanent": "永久禁言",
-      "expiresAtUtc": "截止时间（UTC）",
-      "correlationId": "关联 ID",
-      "create": "创建",
-      "save": "保存"
-    },
-    "validation": {
-      "required": "跨平台身份和原因不能为空",
-      "utcTimestamp": "期限必须是 UTC 时间，例如 2026-07-26T08:00:00Z"
-    },
-    "release": {
-      "title": "解除禁言",
-      "description": "解除后该玩家可立即恢复发送聊天消息。",
-      "confirmation": "确认解除 {id} 的禁言？",
-      "confirm": "确认解除",
-      "confirmAria": "确认解除 {id} 的禁言"
-    }
-  },
-  "settings": {
+    "settings": {
       "title": "聊天设置",
       "loading": "正在加载聊天设置",
       "forbidden": "无权管理聊天设置",

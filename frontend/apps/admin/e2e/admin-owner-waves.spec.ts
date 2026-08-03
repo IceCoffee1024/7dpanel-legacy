@@ -59,7 +59,7 @@ test('wave 1 mute loading and empty states remain reachable at 390x844', async (
     })
   })
 
-  await gotoAdmin(page, '/game-chat/mutes')
+  await gotoAdmin(page, '/community/chat/mutes')
   const loadingState = page.getByRole('status', { name: /Loading active mutes|正在加载禁言列表/u })
   await expect(loadingState).toBeVisible()
   finishLoading?.()

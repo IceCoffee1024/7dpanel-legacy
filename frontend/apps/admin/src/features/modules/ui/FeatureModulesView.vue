@@ -91,6 +91,13 @@ async function confirmDisable() {
         <template #right>
           <UButton
             color="neutral"
+            icon="i-lucide-server"
+            :label="t('serverOperations.title')"
+            href="/operations/server"
+            variant="ghost"
+          />
+          <UButton
+            color="neutral"
             icon="i-lucide-refresh-cw"
             :label="t('modules.common.refresh')"
             :loading="featureModules.state.value === 'loading'"

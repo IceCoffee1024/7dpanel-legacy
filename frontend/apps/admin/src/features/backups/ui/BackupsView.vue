@@ -65,6 +65,13 @@ function refresh() {
         <template #right>
           <UButton
             color="neutral"
+            icon="i-lucide-server"
+            :label="t('serverOperations.title')"
+            href="/operations/server"
+            variant="ghost"
+          />
+          <UButton
+            color="neutral"
             :disabled="controller.isMutating.value || policyController.isSaving.value"
             icon="i-lucide-refresh-cw"
             :label="t('common.reload')"

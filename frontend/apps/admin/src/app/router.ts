@@ -7,6 +7,8 @@ import { routes } from 'vue-router/auto-routes'
 
 import { useAuthStore } from '../features/auth'
 import { resolveSafeRedirect } from '../features/auth/model/safeRedirect'
+import { navigationRedirects } from './navigation/navigationRedirects'
+import { canAccessRoute } from './navigation/routeAccess'
 
 const forbiddenRoute: RouteRecordRaw = {
   path: '/forbidden',
@@ -29,14 +31,8 @@ const forbiddenRoute: RouteRecordRaw = {
   meta: { requiresAuth: true },
 }
 
-function allowedRoles(metaRoles: unknown): readonly string[] | null {
-  return Array.isArray(metaRoles) && metaRoles.every(role => typeof role === 'string')
-    ? metaRoles
-    : null
-}
-
 export function createAdminRouter(pinia: Pinia, history: RouterHistory = createWebHistory()) {
-  const router = createRouter({ routes: [...routes, forbiddenRoute], history })
+  const router = createRouter({ routes: [...navigationRedirects, ...routes, forbiddenRoute], history })
   const auth = useAuthStore(pinia)
 
   router.beforeEach((to) => {
@@ -50,8 +46,7 @@ export function createAdminRouter(pinia: Pinia, history: RouterHistory = createW
       }
     }
 
-    const roles = allowedRoles(to.meta.roles)
-    if (roles !== null && (auth.role === null || !roles.includes(auth.role))) {
+    if (!canAccessRoute(to.meta, auth.role, auth.isAuthenticated)) {
       return {
         path: '/forbidden',
         query: { from: to.fullPath },

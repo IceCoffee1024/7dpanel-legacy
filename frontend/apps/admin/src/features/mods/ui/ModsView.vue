@@ -11,7 +11,7 @@ import ModStateDialog from './ModStateDialog.vue'
 const { t } = useI18n()
 const router = useRouter()
 const controller = useMods({
-  onSessionExpired: () => router.replace({ path: '/login', query: { redirect: '/mods' } }),
+  onSessionExpired: () => router.replace({ path: '/login', query: { redirect: '/operations/extensions/mods' } }),
 })
 const search = shallowRef('')
 const selected = shallowRef<ModMetadata | null>(null)
@@ -70,6 +70,13 @@ async function confirmChange() {
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
+          <UButton
+            color="neutral"
+            icon="i-lucide-server"
+            :label="t('serverOperations.title')"
+            href="/operations/server"
+            variant="ghost"
+          />
           <UButton
             icon="i-lucide-refresh-cw"
             color="neutral"

@@ -1,13 +1,13 @@
 ---
 state: Current
-last_updated: "2026-07-31"
+last_updated: "2026-08-03"
 ---
 
 # 7DPanel 测试策略
 
 ## 范围与可追踪性
 
-本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-07-30 当前工作树的后端 Release 聚合 xUnit `1787/1787` 通过；测试程序集使用 xUnit v3 `conservative` 算法并把并发线程固定为 4，避免大量后台生命周期测试同时创建专用消费者时形成测试基础设施饥饿。Admin 全量 Vitest `887/887`、ESLint、typecheck 和 Vite 8 生产构建通过，测试默认阻止真实网络，图标夹具使用本地数据，未再出现 Happy DOM `AbortError`、外部图标请求或 worker 退出噪声。OpenAPI 快照与 Hey API 客户端已按当前运行时合同重新生成；未提交工作树中的 `api:check` 会按设计把预期生成差异视为 Git 漂移，提交后仍需再执行该基线门禁。2026-07-31 已执行 Windows 真实发布、7DTD 启停/健康、当前认证 OWIN 浏览器主路径；Discord/GeoIP sandbox、备份恢复演练、危险世界副作用和 Linux 候选发布 smoke 仍未执行，不能由本地自动化替代。
+本文档定义目标版本产品合同、[界面设计](design.md)和[系统架构](architecture.md)风险的验证方式。旧版本功能对齐的固定证据与分阶段顺序见[目标蓝图](architecture/legacy-feature-parity-target-blueprint.md)。当前后端解决方案包含八个产品项目和一个迁移保护测试项目；启用 C# `11.0`、Nullable Reference Types 和 Implicit Usings。2026-08-03 当前工作树的 Admin 全量 Vitest 为 `137` 个文件、`937/937` 项通过；typecheck、`api:check` 和 Vite 生产构建通过。此次重构触及文件的 ESLint 显式范围通过，但全量 ESLint 仍有 6 个既有格式错误（`e2e/admin-routes.spec.ts` 与 `features/world-tools`），因此不能宣称全局 lint 门禁通过。Playwright 已尝试运行，但本机缺少 `chrome-headless-shell`，没有取得有效 mock 或真实 OWIN 浏览器证据；真实 7DTD、Discord/GeoIP sandbox、备份恢复演练、危险世界副作用和 Linux 候选发布 smoke 仍未执行，不能由本地静态检查替代。
 
 2026-07-26 游戏资源目录第一切片完成后，后端 `GameResource` 聚焦过滤 `55/55`、组合根 `12/12`、OpenAPI 快照语义与刷新后复验 `1/1` 通过；Admin 游戏资源、导航、路由和 i18n 共 `12` 个文件、`99/99` 项断言通过，修正请求生命周期后又以 `2` 个文件、`8/8` 项完成干净定向复验。Admin typecheck、聚焦 ESLint、Vite 生产构建和 Hey API 客户端生成通过。没有重复后端全量、Admin 全量、Playwright、publish、真实 7DTD 或跨平台 smoke。
 
@@ -45,7 +45,7 @@ last_updated: "2026-07-31"
 
 2026-07-31 可靠性收口以 canonical `net48` 过滤运行 `PendingRestoreApplierTests`、`DiscordTransportTests`、`PlayerEvidenceScalarAdapterTests`、`RewardGrantUseCaseTests` 和 `DependencyRulesTests`，结果 `56/56`；发布物 validator 的自包含合成夹具通过；Admin Chat Mutes 与 locale 聚焦为 `49/49` 且 typecheck 通过。本轮没有运行 publish、真实 7DTD、Discord sandbox、OWIN 或浏览器 smoke。
 
-2026-07-31 第二批收口完成一次临时目录实际 `dotnet publish` 和 Admin `wwwroot` 组装；清理禁止 DLL 与非目标 RID native 后，实际 artifact 通过同一 validator。Restore、Discord/GeoIP 与世界操作分别取得 `82/82`、`118/118`、`64/64` 的隔离聚焦证据；主工作区受影响组合为 `159/160`，唯一旧结构断言修正后 `1/1` 通过。Admin 本地 mock Playwright 首轮为 `154/160`，据此修复 `/players/map`、`/access-lists` 权限元数据、Chat Mutes query mock 和玩家 Profile 非法响应处理，定向桌面/`390x844` 复验 `4/4` 通过。没有运行真实 7DTD、Discord/MaxMind sandbox、真实 OWIN、恢复演练或危险世界副作用。
+2026-07-31 第二批收口完成一次临时目录实际 `dotnet publish` 和 Admin `wwwroot` 组装；清理禁止 DLL 与非目标 RID native 后，实际 artifact 通过同一 validator。Restore、Discord/GeoIP 与世界操作分别取得 `82/82`、`118/118`、`64/64` 的隔离聚焦证据；主工作区受影响组合为 `159/160`，唯一旧结构断言修正后 `1/1` 通过。Admin 本地 mock Playwright 首轮为 `154/160`，据此修复 `/players/map`、`/players/access-lists` 权限元数据、Chat Mutes query mock 和玩家 Profile 非法响应处理，定向桌面/`390x844` 复验 `4/4` 通过。没有运行真实 7DTD、Discord/MaxMind sandbox、真实 OWIN、恢复演练或危险世界副作用。
 
 2026-07-31 当前工作树进一步完成世界恢复强确认、真实 timing evidence gate、undo preflight、Admin 的“撤销预检 → 强确认”闭环、Discord secret HTTP 和 GeoIP MMDB 路径传递；后端受影响组合 `158/158`、OpenAPI snapshot `1/1`、Admin World Tools 定向单元 `62/62`、typecheck 和生产构建通过。Admin 撤销界面不再接受手填 `changeSetId` 或 `currentRegionHash`，并覆盖来源变化清理、并发取消、哈希不匹配和运行时不可用阻断。真实 Windows 编排多次完成优雅关服、UNC 发布物清理/校验、启服和健康 200；最新日志中 7DPanel Mod 创建、类型加载和缺失程序集错误均为 0。真实 OWIN 的 API Key、locale、导航和在线玩家 17 个场景在修复内联脚本 CSP、语言菜单关闭、详情内刷新与 alert 语义后均取得通过结果。Discord 与 GeoIP readiness API 可访问但当前未启用，因此未发送外部消息；未执行恢复、undo 或其他危险世界副作用。
 
@@ -76,6 +76,22 @@ last_updated: "2026-07-31"
 | `NFR-03` | `zh-CN`/`en` 浏览器语言匹配与回退；登录前后切换和持久化；多表单 Valibot 内置错误；Nuxt UI 文案；日期数字格式；稳定服务端错误码映射；技术标识保持原样 | 单元、组件、浏览器 E2E | 两种语言页面断言、缺失键报告、格式化结果、切换前后表单状态和错误码映射报告 |
 | `NFR-04` | 当前初始化开发阶段默认凭据和明文 HTTP 可用；配置继续引导固定持久 Owner；用户管理不触发迁移；受保护资源保持认证；错误/过期/撤销/QueryString Token 被拒绝且不泄漏 | 单元、SQLite/OWIN/API 集成、安全 | 配置与用户同步、最后 Owner 不变量、Authorization Header、401/403/429、SSE 关闭和敏感值扫描 |
 | `NFR-05` | 服务器本地文件读取者属于受信任运维边界；不要求配置、SQLite、备份和服务端日志静态保密；网络、API、前端资产、产品日志和版本库仍不得意外披露凭据或有效 Token | 安全审查、API 集成、发布物与版本库扫描 | 威胁模型审查结论、认证/授权结果、敏感值扫描和发布清单 |
+| `NFR-06` | 六个一级任务域；唯一页面归属；侧栏、移动导航、Dashboard Search、面包屑和角色可达集合一致；旧 URL 保留查询与片段跳转；刷新、登录返回、前进和后退连续 | 导航/Router 单元、组件、Playwright mock、真实 OWIN browser smoke | typed 导航目录完整性、角色矩阵、新旧深链接、redirect 目标与参数、桌面/`390x844` 截图和浏览器 trace |
+
+### Admin 信息架构重构当前证据
+
+本次重构的导航、路由和组合页边界已取得以下证据：
+
+| 边界 | 实际结果 | 说明 |
+|---|---:|---|
+| Admin 单元测试 | `137` 个文件，`937/937` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
+| Admin typecheck | 通过 | `vue-tsc -p ./tsconfig.app.json` 与 `tsc -p ./tsconfig.node.json` |
+| OpenAPI 漂移 | 通过 | `pnpm api:check` 重新生成 SDK 后无 `openapi/` 或生成客户端差异 |
+| Admin production build | 通过 | Vite `8.1.5` 生成包含规范任务域路由的静态产物 |
+| 触及文件 ESLint | 通过 | 对本轮修改/新增文件执行显式 lint；全量 lint 的 6 个既有错误仍未改变 |
+| Playwright mock/真实 OWIN | 未取得有效证据 | 本机缺少 Playwright `chrome-headless-shell`；受控 OWIN 环境变量也未提供 |
+
+因此 `NFR-06` 的静态与单元部分已具备当前证据，但桌面、`390x844`、前进/后退、旧 URL 视觉行为和真实 OWIN 仍不能标记为发布完成。
 
 ### 服务器治理变更的精简验证
 
@@ -120,7 +136,7 @@ last_updated: "2026-07-31"
 
 - 后端聚焦测试覆盖 Application 查询/权限、游戏线程标量复制、Localization 映射、批准根 PNG 索引、版本化不可变 snapshot、替换/删除复核、runtime 启停、DI、HTTP/Problem Details、角色矩阵、ETag/304、取消透传和 OpenAPI 合同。
 - Admin 聚焦测试覆盖严格 parser、URL 筛选、搜索 debounce、取消/单飞、Building 重试、Stale/Partial/Forbidden、Header Bearer Blob 图标、桌面/窄屏只读呈现、导航、快捷键和双语键。typecheck、聚焦 ESLint 与 Vite build 均为成功退出。
-- OpenAPI snapshot 已在受控环境变量下刷新，清除变量后同一测试再次通过；`pnpm api:gen` 随后生成并由 `/game-resources` 的真实 Feature adapter 消费，生成目录没有手工修改。
+- OpenAPI snapshot 已在受控环境变量下刷新，清除变量后同一测试再次通过；`pnpm api:gen` 随后生成并由 `/players/resources` 的真实 Feature adapter 消费，生成目录没有手工修改。
 - 本切片没有 SQLite migration、状态变更或玩家动作，因此未运行数据库 migration、审计、真实玩家、副作用恢复或发布验证。完整 `api:check` 仍需在用户授权提交后的干净生成基线上执行。
 
 #### 证据基础第一波当前实现证据
@@ -143,7 +159,7 @@ last_updated: "2026-07-31"
 
 本切片继续采用[变更风险分级验证](#变更风险分级验证)：迭代证据聚焦新增 schema、原子状态、事件/gap、授权、协议 parser 和页面状态；共享合同稳定后仍应执行一次后端 Release 聚合与 Admin 既有聚合门禁。当前全局 ESLint 存在 `337 errors`、`312 warnings` 的既有积压；2026-07-27 全量 Vitest 以退出码 `0` 结束（`128/128` 个文件、`874/874` 项通过），但 Happy DOM/Nuxt UI 外部资源请求和 fork worker 退出仍不稳定。上述定向 Vitest、typecheck 与生产构建成功，但不能据此宣称全局 ESLint 或稳定的全量 Vitest 发布门禁已经通过，也不改变[发布门槛](#发布门槛)。
 
-本轮没有运行真实 `v3.0.1-b4`、Playwright 或人工浏览器验收。自动化仍不能证明十一项指标在真实服中的来源兼容、四类游戏事件的真实字段、禁言阻止与到期提示、`help` 私发、第三方聊天 Mod 顺序，或 `/audit`、`/game-chat/mutes` 在桌面与窄屏浏览器中的交互和双语表现。
+本轮没有运行真实 `v3.0.1-b4`、Playwright 或人工浏览器验收。自动化仍不能证明十一项指标在真实服中的来源兼容、四类游戏事件的真实字段、禁言阻止与到期提示、`help` 私发、第三方聊天 Mod 顺序，或 `/system/audit`、`/community/chat/mutes` 在桌面与窄屏浏览器中的交互和双语表现。
 
 ### 综合概览第一阶段
 
@@ -323,6 +339,10 @@ dotnet test backend/tests/LSTY.SevenDPanel.Tests/LSTY.SevenDPanel.Tests.csproj -
 
 ### 浏览器端到端测试
 
+[Admin 信息架构重构设计规格](superpowers/specs/2026-08-03-admin-information-architecture-refactor-design.md)在实现前新增 `NFR-06` 门禁：Owner、Admin、Viewer 必须分别验证六个一级任务域中的可达子集、规范路由、旧 URL redirect、搜索、面包屑、上下文入口、刷新与浏览器历史；mock desktop/`390x844` 和受控真实 OWIN 证据均完成前，不得把该信息架构变更记为发布就绪。该条目定义目标验证要求，不表示当前实现或浏览器证据已经存在。
+
+2026-08-03 执行 `pnpm test:e2e` 时，Playwright 枚举了 197 个场景，但本机 `chrome-headless-shell` 可执行文件缺失；单独运行 Chromium mock 路由矩阵明确失败于 `browserType.launch`，未进入页面断言。`SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME` 和 `PANEL_PASSWORD` 未提供，因此真实 OWIN 项目也不计入通过。该结果是环境阻塞，不是导航行为通过证据；安装受支持浏览器并提供受控 OWIN 后必须重新运行完整 NFR-06 矩阵。
+
 2026-07-26 完成控制台工作台本地实现证据：后端最近日志 tail、动态目录、Viewer SSE 过滤、Katana 权限/错误边界、DI 和运行时 OpenAPI 共 36 项聚焦测试通过；OpenAPI 快照由运行时测试更新，Hey API SDK/types/Pinia Colada definitions 重新生成。Admin 类型检查通过，控制台相关 7 个测试文件共 47 项通过，生产构建成功生成独立 `console-logs` 资源。2026-07-30 的全量 Admin 门禁已进一步覆盖该切片并干净退出；Playwright 或真实 7DTD 仍不能由本地自动化替代。
 
 - 覆盖引导 `Owner` 登录、未来用户与角色管理、状态页、玩家危险操作确认、即时/定时公告、备份、恢复确认和审计检索。
@@ -398,7 +418,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 首版候选发布必须同时满足：
 
-1. 所有 P0 能力 `CAP-01` 至 `CAP-07` 及 `NFR-01` 至 `NFR-04` 均有自动化或可重复人工验收结果，且没有未说明的失败。
+1. 所有 P0 能力 `CAP-01` 至 `CAP-07`、`NFR-01` 至 `NFR-04` 及 `NFR-06` 均有自动化或可重复人工验收结果，且没有未说明的失败。
 2. 单元、SQLite/文件系统、OWIN/API、浏览器 E2E 测试全部通过；不允许通过重新运行隐藏失败。
 3. Windows x64 和 Linux x64 官方 `v3.0.1-b4` 进程 smoke 全部通过，程序集和发布物清单符合兼容矩阵，且不包含 `7dtd-reference/` 内容。
 4. 正常关服、重复启动、队列饱和、备份损坏、磁盘失败、恢复中断和进程异常终止场景均产生明确、可追踪且可恢复的状态。

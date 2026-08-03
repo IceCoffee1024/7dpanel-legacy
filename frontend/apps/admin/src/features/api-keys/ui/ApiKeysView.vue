@@ -29,7 +29,7 @@ const {
 } = useApiKeys({
   onSessionExpired: () => router.replace({
     path: '/login',
-    query: { redirect: '/api-keys' },
+    query: { redirect: '/system/api-keys' },
   }),
 })
 

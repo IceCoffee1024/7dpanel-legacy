@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router'
 import type { OnlinePlayer } from '../api/onlinePlayers'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -21,6 +22,13 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
 const title = computed(() => props.player === null ? t('players.details.title') : `${props.player.name} · ${props.player.isDead ? t('players.fields.dead') : t('players.fields.alive')}`)
+const stableId = computed(() => props.player?.crossplatformIdentity?.combinedId ?? null)
+const historyTarget = computed<RouteLocationRaw | undefined>(() => stableId.value === null
+  ? undefined
+  : { name: '/players/history/[crossplatformId]', params: { crossplatformId: stableId.value } } as never)
+const mapTarget = computed<RouteLocationRaw | undefined>(() => stableId.value === null
+  ? undefined
+  : { name: '/players/map', query: { player: stableId.value } } as never)
 function copy(value: string | null) {
   if (value !== null)
     emit('copyValue', value)
@@ -100,6 +108,20 @@ function copy(value: string | null) {
         icon="i-lucide-contact-round"
         variant="soft"
         @click="emit('openProfile', player.crossplatformIdentity.combinedId)"
+      /><UButton
+        v-if="canOpenProfile && stableId && !unavailable"
+        color="neutral"
+        :label="t('players.actions.viewHistory')"
+        icon="i-lucide-history"
+        :to="historyTarget"
+        variant="ghost"
+      /><UButton
+        v-if="canOpenProfile && stableId && !unavailable"
+        color="neutral"
+        :label="t('players.actions.viewMap')"
+        icon="i-lucide-map"
+        :to="mapTarget"
+        variant="ghost"
       /><UButton
         v-if="canKick && player && !unavailable"
         color="error"

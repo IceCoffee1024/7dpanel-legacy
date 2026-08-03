@@ -40,7 +40,7 @@ test('releasing a chat mute requires confirmation and refreshes the list', async
     await route.fulfill({ status: 204 })
   })
 
-  await gotoAdmin(page, '/game-chat/mutes')
+  await gotoAdmin(page, '/community/chat/mutes')
   const releaseButton = page.getByTestId(
     test.info().project.name.includes('390x844')
       ? `release-mute-mobile-${muteId}`

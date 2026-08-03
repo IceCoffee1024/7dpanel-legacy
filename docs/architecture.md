@@ -42,7 +42,7 @@ last_updated: "2026-07-31"
 - `ServerEventSseSession` 只向 `Owner` 输出聊天 replay/live；`Admin` 和 `Viewer` 过滤聊天内容，但过滤事件仍推进连接内部游标。REST 的 18 条 `/api/v1/chat` 路由同样为 Owner-only，并使用稳定 Problem Details。
 - `SevenDaysChatMessageSender` 使用独立容量 16 的 FIFO，经现有 `GameThreadDispatcher` 和 `NetPackageChat` 类型化发送全局或私聊消息；私聊在投递前和主线程执行时都按 `targetCrossplatformId` 精确确认在线身份，不拼接控制台命令。
 - migration `007_GameChat.sql` 创建 `chat_messages`、`chat_history_gaps`、`chat_settings`、`colored_chat_settings`、`colored_chat_profiles` 和 `chat_operation_audit` 六张表及查询索引。历史队满、Store 失败和排空超时形成 gap，不阻塞或撤回游戏聊天。
-- Admin 的 `features/game-chat` 拥有严格 Valibot parser、实时页面局部窗口、发送 Mutation、历史 URL 筛选、设置与 Profile Query/Mutation、禁言 Query/Mutation 及纯文本 UI；五个 `/game-chat/*` 页面、父导航和搜索入口只对 `Owner` 可见。所有正文和预览使用文本节点，不使用 `v-html`；在线私聊目标复用 Players 公开查询且要求稳定跨平台身份。
+- Admin 的 `features/game-chat` 拥有严格 Valibot parser、实时页面局部窗口、发送 Mutation、历史 URL 筛选、设置与 Profile Query/Mutation、禁言 Query/Mutation 及纯文本 UI；五个 `/community/chat/*` 页面、父导航和搜索入口只对 `Owner` 可见。所有正文和预览使用文本节点，不使用 `v-html`；在线私聊目标复用 Players 公开查询且要求稳定跨平台身份。
 - 前端未新增包或第二条 SSE。Pinia Colada 继续使用全局 `staleTime: 0`、`refetchOnWindowFocus: false`；实时消息不进入 Colada/Pinia/Storage，设置、历史和 Profile 通过查询层管理，Mutation 不做乐观成功。
 
 上述代码边界已有聚焦自动化证据，但真实 `v3.0.1-b4` 中的字段分类、广播顺序、第三方聊天 Mod 冲突、关服排空，以及桌面/窄屏浏览器主路径仍待人工验收，详见[测试策略](test.md#游戏聊天完整切片)。
@@ -94,7 +94,7 @@ last_updated: "2026-07-31"
 - `SevenDaysGameResourceCatalog` 在第一次 `GameStartDone` 后执行一次后台构建，完成图标索引后原子发布不可变 snapshot。`GameResourceCatalogRuntime` 是当前 `IModRuntime` 最外层装饰器，只复用现有 ready 转发链，不增加第二条游戏生命周期订阅。
 - 图标索引只接受采集阶段复制的批准根描述和安全 PNG 叶文件名，按确定性根顺序解析覆盖。公开目录和响应不包含磁盘路径或图标字节；读取时重新核对目录版本、资源 ID、文件身份和受控根，替换或删除后的文件返回 Missing。
 - `GET /api/v1/game-resources` 提供搜索、类型、语言、分页和 Owner-only 隐藏筛选；`GET /api/v1/game-resources/{resourceId}/icon` 只返回 `image/png`，支持 Header Bearer、ETag/304、private cache 和 `nosniff`。Building、Unavailable、Forbidden、Missing 和内部失败使用稳定 Problem Details。
-- Admin `features/game-resources` 拥有严格 parser、URL 筛选、取消/单飞、Building 有界重试、最后成功页 Stale 保留和 Header Bearer Blob 图标生命周期。`/game-resources` 对 `Owner`、`Admin`、`Viewer` 均可达，隐藏开关只对 `Owner` 显示；页面不提供发放、删除、商店、奖励或自动化动作。
+- Admin `features/game-resources` 拥有严格 parser、URL 筛选、取消/单飞、Building 有界重试、最后成功页 Stale 保留和 Header Bearer Blob 图标生命周期。`/players/resources` 对 `Owner`、`Admin`、`Viewer` 均可达，隐藏开关只对 `Owner` 显示；页面不提供发放、删除、商店、奖励或自动化动作。
 - 本切片没有新增 SQLite 表、审计、通用 registry/file service/cache abstraction，也不复用聊天 `gap`。背包、物品来源、补偿、奖励和商店仍是后续独立纵向切片。
 
 字段、路径、HTTP/OpenAPI、页面状态和构建已有聚焦自动化证据；真实 `v3.0.1-b4` 采集与桌面/窄屏浏览器主路径未执行，详见[测试策略](test.md#游戏资源目录当前实现证据)。
@@ -108,7 +108,17 @@ last_updated: "2026-07-31"
 - 第五波的 Automation 只接受固定 trigger、条件字段和类型化 action，保存 trigger snapshot、条件证据和逐动作结果；Discord 出站由专用 delivery worker 处理，Gateway runtime 负责连接、心跳、重连和停止。Gateway 启动时只装载一次 Bot Token 指纹；持久 Secret 轮换后，健康端点在已加载指纹与当前指纹不一致时返回 `Degraded / discord_gateway_restart_required`，且不公开 Secret 或指纹。心跳 ACK 失效时 runtime 先释放当前 socket 再等待 receive loop，避免 transport 忽略 cancellation 时永久阻塞重连；interaction HTTP transport 校验 Ed25519 签名并把持久 Slash 结果通过原 interaction token 私密 follow-up。`012_AutomationIntegrations.sql` 在建表时直接初始化启用的 `bind`/`status` 与禁用的 `players` Slash 命令设置；GeoIP 在加入边界执行固定策略。`RewardEvidenceRuntime` 订阅已持久化的玩家历史与证据写入完成入口，驱动成就与在线奖励评估；它不新增静态事件总线或逐事件 `Task.Run`。这些 Discord 链路尚未取得 sandbox 或真实环境往返证据。
 - 第六波把世界只读摘要、领地/车辆/无人机/容器、地图作业、类型化世界操作、change set/undo 与 17 个固定功能模块接入生产对象图。block/prefab handler 会逐项核对 change-set Store 返回的来源操作、世界、区域、前后 hash、storage ID 和时间，拒绝伪造或串线 descriptor；Admin 通过独立 composable 消费 undo preflight，取消可编辑的 `changeSetId` 和 `currentRegionHash`，并在来源操作、世界版本或区域哈希不匹配时阻止强确认。模块状态从 `IFeatureModuleStateStore` 读取并约束 Automation 与 Community 游戏命令。危险世界操作仍要求真实测试实例、备份与回滚目标后才能执行 smoke。
 - 阻塞型单消费者后台边界不占用共享线程池等待队列：控制台审计、游戏事件、玩家证据、游戏资源目录、近期活动、GeoIP 等 worker 通过 `TaskCreationOptions.LongRunning` 启动专用消费者，并使用启动就绪信号、完成事件和有界排空期限协调 `Start`、`Stop` 与 `Dispose`。SSE heartbeat、Discord 排空和地图元数据等待同样以事件或完成信号驱动，避免轮询和线程池饥饿改变生命周期时序。
-- Web Adapter 暴露固定 `/api/v1` Controller 和独立 DTO，OpenAPI snapshot 已刷新，Admin SDK 已由 `pnpm api:gen` 重新生成。Admin Feature 使用严格 parser、readonly composable、无乐观成功和 Owner-only route meta；页面入口由 `AppShell` 分组到服务器运维、经济与奖励、传送与投票、集成与访问策略。
+- Web Adapter 暴露固定 `/api/v1` Controller 和独立 DTO，OpenAPI snapshot 已刷新，Admin SDK 已由 `pnpm api:gen` 重新生成。Admin Feature 使用严格 parser、readonly composable、无乐观成功和 Owner-only route meta；页面入口由类型化 `navigationCatalog` 投影到六个一级任务域，服务器运维、玩家、社区、经济与奖励和系统管理各自拥有二级入口。
+
+### Admin 信息架构与导航边界
+
+当前 Admin 导航的唯一展示事实位于 `frontend/apps/admin/src/app/navigation/navigationCatalog.ts`。`routeAccess.ts` 提供路由 meta 与认证角色的纯权限判断，`useNavigation.ts` 只派生可达一级任务域、二级入口、搜索项、面包屑和快捷键；`AppShell.vue` 只装配布局状态、账号、搜索和导航组件，不维护业务页面数组或角色分组。
+
+`frontend/apps/admin/src/app/navigation/navigationRedirects.ts` 提供旧 URL 到规范 URL 的显式 `RouteRecordRaw`，redirect 保留 query/hash，最终目标继续执行认证和 Forbidden 守卫。规范 route page 位于 `src/pages/operations/`、`src/pages/players/`、`src/pages/community/`、`src/pages/economy/` 和 `src/pages/system/`；旧 page wrapper 已删除，不生成第二套路由。
+
+`src/components/navigation/PrimaryNavigation.vue`、`SecondaryNavigation.vue`、`AppBreadcrumbs.vue` 和 `SectionTabs.vue` 是无业务状态的展示边界，使用 typed props/events。`SectionTabs` 和局部页签通过规范 URL 表达可刷新状态；当前详情面包屑为普通文本，父项才可点击。`features/server-operations/ui/ServerOperationsView.vue` 只组合既有服务器状态、重启策略和 Quick Actions，不接收浏览器命令、脚本路径或参数。玩家、备份、配置、Mods、功能模块等 Feature 仅提供上下文入口，危险动作状态机仍由原 Feature 拥有。
+
+本边界保持前端导航复杂度局部化：目录是静态 typed data，不扫描 Feature、程序集或运行时 API；没有新增全局 Store、插件注册表、BFF、API 或 SQLite migration。导航、路由、组件和组合页的当前证据见[测试策略](test.md#浏览器端到端测试)与[信息架构重构设计规格](superpowers/specs/2026-08-03-admin-information-architecture-refactor-design.md)。
 
 本节只提升当前代码结构和本轮可复查命令支持的事实。当前八项目已完成 `dotnet publish`、Admin 产物组装和 manifest 布局校验，并已写入 Windows `Mods/7DPanel` 后通过 Unity Mono 启停与健康检查；发布 smoke 编排支持显式输出脱敏的步骤日志与无 BOM UTF-8 机器可读摘要，默认不归档，子脚本遗留的非零原生退出码会原值进入步骤与总体摘要并立即停止后续步骤。当前认证真实 OWIN Playwright 已覆盖 API Key、locale、导航和在线玩家主路径，本地 Playwright mock 另覆盖桌面与 `390x844` 路由、权限和 Chat Mutes 关键交互；六波次 Owner 页面已配置 Chromium/Firefox/WebKit 矩阵，并在 Chrome 真实 Owner 会话中完成 37 条路由的桌面与 `390x844` 基础可达性、浏览器错误和根级水平溢出检查。新增多浏览器矩阵尚因本机 Playwright 浏览器包下载阻塞而未取得执行证据；真实备份恢复、真实玩家和世界危险副作用、Discord/MaxMind sandbox 以及 Linux 候选发布门禁仍未完成。
 
@@ -193,7 +203,7 @@ flowchart LR
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/` | 隔离静态生命周期、日志、玩家、地图、治理、聊天/游戏事件和游戏资源标量采集；提供运行指标与世界只读快照、玩家证据、类型化玩家/Community/世界动作、公告、Automation trigger、GeoIP 加入策略、各有界 writer/runtime 和 `GameThreadDispatcher` | Application、Hosting、`Assembly-CSharp.dll`、游戏 `0Harmony.dll`/`LogLibrary.dll`/Unity 类型、`System.Threading.Channels` |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/` | `data/7dpanel.db` 短连接工厂、WAL、DbUp migration `001` 至 `016`；持久身份/Token、专用审计和 `gap`；作业、备份、调度、玩家证据/动作、经济/奖励/商业/Community、Daily 奖励策略、Automation/Discord/GeoIP、Discord interaction token 与处理状态、传送/投票/Slash 命令配置、世界操作/change set 与功能模块状态；逐波次扩展的只读统一审计投影 | Application、Hosting、Dapper、DbUp、Microsoft.Data.Sqlite、SQLitePCLRaw/e_sqlite3 |
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Local/` | 批准存储根与路径约束、原子文件发布、备份归档与待恢复文件边界、后台作业、Discord HTTP 投递、MaxMind Web Service 查询、地图资源发布和世界 change set blob | Application、Domain、System.IO.Compression、System.Net.Http |
-| `frontend/apps/admin/` | 响应式应用壳、认证和双语运行时、既有管理页面，以及六波次 Owner-only 备份/调度、玩家 Profile/动作、经济/奖励/商业、Community、Automation、Discord、GeoIP、世界工具和功能模块页面；路由 meta、守卫、侧栏与 Dashboard Search 共用角色边界 | Vue 3、Vue Router、Pinia、Pinia Colada、Vue I18n、Valibot、Nuxt UI、Hey API 生成客户端、OpenLayers、Vite |
+| `frontend/apps/admin/` | 响应式应用壳、认证和双语运行时、规范任务域页面与 Feature View；`navigationCatalog`、`routeAccess`、`useNavigation`、显式旧 URL redirects、局部 `SectionTabs` 和服务器运维组合页共同拥有 Admin 导航边界；路由 meta、守卫、侧栏、移动抽屉、Dashboard Search、面包屑和快捷键复用同一角色投影 | Vue 3、Vue Router、Pinia、Pinia Colada、Vue I18n、Valibot、Nuxt UI、Hey API 生成客户端、OpenLayers、Vite |
 
 当前后端解决方案包含八个产品项目，Application 直接依赖 Domain，SQLite Persistence Adapter 与 Local Adapter 分别拥有数据库和受控本地文件系统边界。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
@@ -277,15 +287,15 @@ GET /
 - `useServerHealth` 只拥有页面局部状态。首次请求是 loading；成功后是 fresh；没有成功数据的失败是 offline；已有成功数据后失败或 60 秒未获得新样本是 stale。
 - 新请求取消旧请求，组件卸载时取消当前请求并清理 stale timer。
 - 开发期 Vite proxy 从 `.env.local` 的 `VITE_BACKEND_URL` 读取上游目标；生产代码和构建产物不包含该目标地址。
-- `createAdminRouter` 显式接收与应用相同的 Pinia 实例；未认证访问带 `requiresAuth` 的 `/`、`/players` 或 `/api-keys` 时跳转 `/login`，已认证访问 `/login` 时跳转安全返回目标或 `/players`。它还订阅 Auth Store 的认证状态：到期、401 或其他标签页删除会话时，当前受保护路由立即带完整站内返回目标跳转登录。安全返回目标只接受生成路由表中存在的站内路径。
+- `createAdminRouter` 显式接收与应用相同的 Pinia 实例；未认证访问带 `requiresAuth` 的 `/`、`/players` 或 `/system/api-keys` 时跳转 `/login`，已认证访问 `/login` 时跳转安全返回目标或 `/players`。它还订阅 Auth Store 的认证状态：到期、401 或其他标签页删除会话时，当前受保护路由立即带完整站内返回目标跳转登录。安全返回目标只接受生成路由表中存在的站内路径。
 - Auth Setup Store 保存 Token、到期时间及服务端确认的用户名和角色，按到期时间清理会话并计算 `Authorization` Header。其 Feature 自有的严格 codec 和 Browser Repository 只接受版本化 `{ version, token, expiresAt, username, role }` 记录：默认会话只写 `sessionStorage`，显式“保持登录”只写 `localStorage`；有效 local 记录优先，损坏、到期、登出、401 和同源 `storage` 删除事件清除相关状态。每次 Storage getter 与操作都可失败并降级为当前页面内存会话，不安装通用持久化插件。密码只存在于登录表单局部 state 和请求调用栈，提交结束后清空。
 - `shared/api/requestJson` 继续服务尚未迁移的手写 API。综合概览、重启、SSE、统一审计、游戏事件和聊天禁言使用 `src/shared/api/generated/` 中由受控 OpenAPI 快照生成的类型、SDK 和 Pinia Colada definitions；`generatedClient` 固定同源 `/api/v1/`、`credentials: 'omit'`、Bearer Header 与脱敏 Problem Details。普通请求使用 10 秒超时，显式 `Accept: text/event-stream` 的长连接免除此超时但仍服从调用者 `AbortSignal`。生成目录禁止手工修改，Feature parser 与领域状态仍是浏览器运行时信任边界。
-- `ApiKeysView` 只接受 Auth Store 当前 Access Token 的 Authorization Header，维护 API Key 列表、创建、撤销与会话过期状态；完整 Key 只存于一次性创建结果对话框，关闭后清除，复制反馈不包含该值。`/api-keys` 已加入受保护生成路由、侧栏导航和 `g-k` 快捷键。
+- `ApiKeysView` 只接受 Auth Store 当前 Access Token 的 Authorization Header，维护 API Key 列表、创建、撤销与会话过期状态；完整 Key 只存于一次性创建结果对话框，关闭后清除，复制反馈不包含该值。`/system/api-keys` 已加入受保护生成路由、侧栏导航和 `g-k` 快捷键。
 - `useOnlinePlayers` 首次进入立即请求，每 10 秒刷新；页面隐藏时暂停，恢复后立即刷新；请求使用 single-flight 与取消。任何通过完整 31 字段严格 DTO 校验的成功响应进入 Fresh；Admin 以 90 秒作为自己的行级展示策略，只对旧 observation 标记“数据可能已过期”。401 或本地会话到期清除会话并回到登录页；403 映射 Forbidden、暂停自动轮询但保留手动刷新；有旧快照的刷新失败映射 Stale 并提示正在显示上次结果，无旧快照映射 Offline。
 - `PlayerSnapshot` 已扩充为 31 字段。每个有效 `crossplatformIdentity.combinedId` 的 Save observation 经容量 `1024`、单消费者的有界 Channel 尽力写入 SQLite 摘要、快照和 gap 三表；生产者只 `TryWrite`，不会等待 SQLite 或为单次 Save 创建任务。`GET /api/v1/players/history`、`/{crossplatformId}` 和 `/snapshots` 均为 Owner-only、只读且不依赖游戏 ready。历史列表与详情页面使用页面局部 Composition API 状态、严格冻结 DTO、取消过期请求和 keyset 分页；不轮询、不查询在线状态，也没有危险操作。`lastLoginUtc` 仅表示持久玩家记录的最近登录时间，不能推导持续在线。
 - Owner-only 玩家坐标地图已实现为 `/players/map`。Admin 使用 OpenLayers、自有固定背景、在线标记、游戏时间、单玩家分段历史轨迹、Header Bearer 瓦片、按需业务图层和矩形/圆形区域调查；地图、列表和时间控件共享 observation 标识，普通响应与界面不暴露 gap 原因或数量。后端复用在线 `PlayerSnapshot.position` 和 `player_history_snapshots`，没有增加第二位置表、历史写入消费者或 Save 回调工作；历史范围、空间范围、缩放和条数均在 Application/SQLite 边界受限。第六波已经接入世界快照、商人/领地/载具/无人机及短生命周期实体投影、地图作业、受控本地地图资源发布与 `mapResourceVersion`，并以类型化用例处理领地、传送和地图操作；HTTP 不直接读取 `World` 或用反射猜测字段。真实字段兼容、真实瓦片发布和游戏/世界副作用尚未验证，不能把代码路径表述为真实服成功。详细设计见[玩家坐标地图设计规格](superpowers/specs/2026-07-26-player-coordinate-map-design.md)、[地图管理操作设计规格](superpowers/specs/2026-07-26-map-management-actions-design.md)和两个 Target 蓝图。
 - 玩家桌面表格和移动列表只呈现高频比较字段并向 `OnlinePlayersView` 上抛完整玩家快照；详情抽屉按身份、连接、当前状态和累计统计分区显示完整 observation。`OnlinePlayersView` 在页面局部持有 `{ entityId, combinedId }` 选择键、最后 observation 和 unavailable 锁存：Fresh 刷新只更新同一实体与主身份；缺失或身份变化时保留最后值并禁用详情踢出直到关闭，不会把重用的 entity ID 偷换为新目标。`useKickPlayer` 在页面局部维护单次 HTTP 提交、`AbortController` 和稳定反馈；确认对话框固定目标，原因 trim 后限制为 1 至 200 字符，提交期间不可关闭。成功关闭并通知后刷新；离线、身份变化和 403 关闭旧目标；busy、未就绪、超时和审计意图不可用保留输入；网络或审计终态不可确认显示未知且不自动重试。
-- 生成的客户端路由表显式包含全部已实现页面；第一波新增 Owner-only `/audit` 和 `/game-chat/mutes`，并使游戏聊天子路由达到五个。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
+- 生成的客户端路由表显式包含全部已实现页面；第一波新增 Owner-only `/system/audit` 和 `/community/chat/mutes`，并使游戏聊天子路由达到五个。OWIN 会为其他无扩展名路径返回 `index.html`，但不存在的客户端路由仍不会成为有效页面。
 
 ## 数据与接口
 

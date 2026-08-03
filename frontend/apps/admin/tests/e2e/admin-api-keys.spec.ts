@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await setInitialAdminLocale(page, 'zh-CN')
 })
 
-async function loginOwner(page: import('@playwright/test').Page, destination: '/api-keys' | '/players') {
+async function loginOwner(page: import('@playwright/test').Page, destination: '/system/api-keys' | '/players') {
   const tokenResponsePromise = page.waitForResponse(response => (
     response.request().method() === 'POST' && response.url().includes('/api/v1/auth/token')
   ))
@@ -42,8 +42,8 @@ test('owner creates, uses, and revokes an API Key without recovering its one-tim
     consoleContainsApiKey ||= createdApiKey !== null && message.text().includes(createdApiKey)
   })
 
-  await page.goto('/api-keys')
-  await loginOwner(page, '/api-keys')
+  await page.goto('/system/api-keys')
+  await loginOwner(page, '/system/api-keys')
   await expect(page.getByRole('heading', { name: 'API Keys' })).toBeVisible()
 
   await page.getByTestId('create-api-key').click()
@@ -90,13 +90,13 @@ test('owner creates, uses, and revokes an API Key without recovering its one-tim
 
 test('client-side session expiry redirects to login and permits owner relogin', async ({ page }) => {
   await page.clock.install({ time: new Date() })
-  await page.goto('/api-keys')
-  await loginOwner(page, '/api-keys')
+  await page.goto('/system/api-keys')
+  await loginOwner(page, '/system/api-keys')
 
   await page.clock.fastForward('08:00:01')
 
   await expect(page).toHaveURL(url => (
-    url.pathname === '/login' && url.searchParams.get('redirect') === '/api-keys'
+    url.pathname === '/login' && url.searchParams.get('redirect') === '/system/api-keys'
   ))
   const authStorageIsAbsent = await page.evaluate(storageKey => (
     localStorage.getItem(storageKey) === null
@@ -104,6 +104,6 @@ test('client-side session expiry redirects to login and permits owner relogin', 
   ), authSessionStorageKey)
   expect(authStorageIsAbsent).toBe(true)
 
-  await loginOwner(page, '/api-keys')
+  await loginOwner(page, '/system/api-keys')
   await expect(page.getByRole('heading', { name: 'API Keys', exact: true })).toBeVisible()
 })

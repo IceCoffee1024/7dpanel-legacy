@@ -11,7 +11,7 @@ import ServerConfigurationFieldEditor from './ServerConfigurationFieldEditor.vue
 const router = useRouter()
 const { t } = useI18n()
 const controller = useServerConfiguration({
-  onSessionExpired: () => router.replace({ path: '/login', query: { redirect: '/server-configuration' } }),
+  onSessionExpired: () => router.replace({ path: '/login', query: { redirect: '/operations/configuration' } }),
 })
 const selected = shallowRef<ServerConfigurationField | null>(null)
 const inputValue = shallowRef('')
@@ -47,6 +47,13 @@ async function save() {
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
+          <UButton
+            color="neutral"
+            icon="i-lucide-server"
+            :label="t('serverOperations.title')"
+            href="/operations/server"
+            variant="ghost"
+          />
           <UButton
             icon="i-lucide-refresh-cw"
             color="neutral"

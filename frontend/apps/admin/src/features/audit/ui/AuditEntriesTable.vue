@@ -163,7 +163,7 @@ function clearFilters() {
             color="neutral"
             label="查看详情"
             size="xs"
-            :to="{ path: '/audit', query: { sourceKind: row.original.sourceKind, sourceId: row.original.sourceId } }"
+            :to="{ path: '/system/audit', query: { sourceKind: row.original.sourceKind, sourceId: row.original.sourceId } }"
             variant="outline"
           />
           <span v-else>—</span>

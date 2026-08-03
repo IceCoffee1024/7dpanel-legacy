@@ -65,6 +65,7 @@ function mountView(overrides: Partial<ModsController> = {}) {
         UDashboardSidebarCollapse: true,
         UInput: { props: ['modelValue'], template: '<input data-testid="search" :value="modelValue" />' },
         UButton: { props: ['label'], template: '<button><slot/>{{ label }}</button>' },
+        Button: { props: ['label'], template: '<button><slot/>{{ label }}</button>' },
         UBadge: { template: '<span><slot/></span>' },
         ModStateDialog: true,
       },

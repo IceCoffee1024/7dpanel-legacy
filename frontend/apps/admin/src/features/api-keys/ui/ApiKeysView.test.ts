@@ -230,6 +230,6 @@ it('redirects to login when the controller reports an expired session', () => {
 
   expect(routerReplaceMock).toHaveBeenCalledWith({
     path: '/login',
-    query: { redirect: '/api-keys' },
+    query: { redirect: '/system/api-keys' },
   })
 })

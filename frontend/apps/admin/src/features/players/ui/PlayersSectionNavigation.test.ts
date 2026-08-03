@@ -7,13 +7,15 @@ it('links online, history and the protected player map as peer views', () => {
   const wrapper = mount(PlayersSectionNavigation, {
     global: {
       stubs: {
-        Button: { props: ['label', 'to', 'exact'], template: '<a :href="to" :data-exact="exact">{{ label }}</a>' },
+        SectionTabs: {
+          props: ['items'],
+          template: '<nav><a v-for="item in items" :key="item.id" :href="String(item.routeName)">{{ item.labelKey }}</a></nav>',
+        },
       },
     },
   })
 
-  expect(wrapper.get('a[href="/players"]').text()).toBe('在线')
-  expect(wrapper.get('a[href="/players"]').attributes()).toHaveProperty('data-exact')
-  expect(wrapper.get('a[href="/players/history"]').text()).toBe('历史')
-  expect(wrapper.get('a[href="/players/map"]').text()).toBe('地图')
+  expect(wrapper.get('a[href="/players/"]').text()).toBe('players.navigation')
+  expect(wrapper.get('a[href="/players/history/"]').text()).toBe('players.profile.navigation')
+  expect(wrapper.get('a[href="/players/map"]').text()).toBe('players.map.navigation')
 })

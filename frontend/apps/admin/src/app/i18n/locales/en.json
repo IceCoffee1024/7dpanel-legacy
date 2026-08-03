@@ -202,6 +202,7 @@
   },
   "shell": {
     "navigation": "Navigation",
+    "primaryNavigation": "Task domains",
     "playersAndWorld": "Players and world",
     "auditAndEvents": "Audit and events",
     "muteManagement": "Mute management",
@@ -218,20 +219,25 @@
     "shop": "Shop products",
     "redeemCodes": "Redeem codes",
     "achievementsAndOnlineRewards": "Achievements and online rewards",
-    "community": "Teleport and voting",
+    "community": "Community",
     "teleportSettings": "Teleport settings",
     "cities": "City management",
     "votes": "Community voting",
     "integrations": "Integrations and access policies",
+    "systemManagement": "System management",
     "discord": "Discord integration",
     "geoIp": "GeoIP access policy",
     "search": "Search",
     "searchPages": "Search pages",
+    "breadcrumbs": "Breadcrumbs",
     "account": "{name} account",
     "signOut": "Sign out"
   },
   "dashboardSearch": {
     "description": "Search pages and navigation"
+  },
+  "serverOperations": {
+    "title": "Server control"
   },
   "backups": {
     "title": "Backups and restore",
@@ -656,7 +662,9 @@
       "playerActions": "Actions for {name}",
       "viewDetails": "View player details: {name}",
       "kickPlayer": "Kick player: {name}",
-      "kick": "Kick player"
+      "kick": "Kick player",
+      "viewHistory": "View player history",
+      "viewMap": "View on map"
     },
     "details": {
       "title": "Player details",
@@ -694,6 +702,7 @@
     "profile": {
       "title": "Player profile",
       "navigation": "Player profiles and evidence",
+      "detail": "Current player details",
       "viewReadOnly": "View read-only profile",
       "readOnlyNotice": "This profile is read-only",
       "state": {
@@ -1054,62 +1063,62 @@
         "staleDescription": "The latest refresh failed; these filtered results may be stale."
       }
     },
-  "mutes": {
-    "title": "Chat mutes",
-    "create": "Add mute",
-    "permanent": "Permanent",
-    "state": {
-      "loading": "Loading chat mutes",
-      "empty": "No active chat mutes",
-      "failed": "Chat mutes are unavailable",
-      "forbidden": "You cannot manage chat mutes",
-      "stale": "Refresh failed; showing the last successful result"
+    "mutes": {
+      "title": "Chat mutes",
+      "create": "Add mute",
+      "permanent": "Permanent",
+      "state": {
+        "loading": "Loading chat mutes",
+        "empty": "No active chat mutes",
+        "failed": "Chat mutes are unavailable",
+        "forbidden": "You cannot manage chat mutes",
+        "stale": "Refresh failed; showing the last successful result"
+      },
+      "table": {
+        "aria": "Active chat mutes",
+        "crossplatformId": "Cross-platform ID",
+        "displayName": "Display name",
+        "reason": "Reason",
+        "expires": "Expires",
+        "updatedAtUtc": "Updated (UTC)",
+        "actions": "Actions"
+      },
+      "cards": {
+        "aria": "Active chat mutes on small screens",
+        "missingDisplayName": "Display name not provided"
+      },
+      "actions": {
+        "release": "Release",
+        "editAria": "Edit mute for {id}",
+        "releaseAria": "Release mute for {id}"
+      },
+      "form": {
+        "createTitle": "Add chat mute",
+        "editTitle": "Edit chat mute",
+        "createDescription": "Create a permanent mute or one with an explicit UTC expiration.",
+        "editDescription": "Update this mute and apply it immediately.",
+        "crossplatformId": "Cross-platform ID",
+        "displayName": "Display name",
+        "reason": "Reason",
+        "permanent": "Permanent mute",
+        "expiresAtUtc": "Expiration (UTC)",
+        "correlationId": "Correlation ID",
+        "create": "Create",
+        "save": "Save"
+      },
+      "validation": {
+        "required": "Cross-platform ID and reason are required",
+        "utcTimestamp": "Expiration must be a UTC timestamp, for example 2026-07-26T08:00:00Z"
+      },
+      "release": {
+        "title": "Release chat mute",
+        "description": "The player can send chat messages immediately after release.",
+        "confirmation": "Release the chat mute for {id}?",
+        "confirm": "Confirm release",
+        "confirmAria": "Confirm releasing the chat mute for {id}"
+      }
     },
-    "table": {
-      "aria": "Active chat mutes",
-      "crossplatformId": "Cross-platform ID",
-      "displayName": "Display name",
-      "reason": "Reason",
-      "expires": "Expires",
-      "updatedAtUtc": "Updated (UTC)",
-      "actions": "Actions"
-    },
-    "cards": {
-      "aria": "Active chat mutes on small screens",
-      "missingDisplayName": "Display name not provided"
-    },
-    "actions": {
-      "release": "Release",
-      "editAria": "Edit mute for {id}",
-      "releaseAria": "Release mute for {id}"
-    },
-    "form": {
-      "createTitle": "Add chat mute",
-      "editTitle": "Edit chat mute",
-      "createDescription": "Create a permanent mute or one with an explicit UTC expiration.",
-      "editDescription": "Update this mute and apply it immediately.",
-      "crossplatformId": "Cross-platform ID",
-      "displayName": "Display name",
-      "reason": "Reason",
-      "permanent": "Permanent mute",
-      "expiresAtUtc": "Expiration (UTC)",
-      "correlationId": "Correlation ID",
-      "create": "Create",
-      "save": "Save"
-    },
-    "validation": {
-      "required": "Cross-platform ID and reason are required",
-      "utcTimestamp": "Expiration must be a UTC timestamp, for example 2026-07-26T08:00:00Z"
-    },
-    "release": {
-      "title": "Release chat mute",
-      "description": "The player can send chat messages immediately after release.",
-      "confirmation": "Release the chat mute for {id}?",
-      "confirm": "Confirm release",
-      "confirmAria": "Confirm releasing the chat mute for {id}"
-    }
-  },
-  "settings": {
+    "settings": {
       "title": "Chat settings",
       "loading": "Loading chat settings",
       "forbidden": "You cannot manage chat settings",

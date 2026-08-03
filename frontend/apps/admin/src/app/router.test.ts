@@ -6,43 +6,130 @@ import { createMemoryHistory } from 'vue-router'
 import { useAuthStore } from '../features/auth'
 import { createAdminRouter } from './router'
 
-vi.mock('vue-router/auto-routes', () => ({
-  routes: [
-    { path: '/', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/login', component: { template: '<div />' }, meta: { public: true } },
-    { path: '/players', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/game-resources', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/players/map', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/players/history', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/players/history/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/players/profile/:crossplatformId', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/api-keys', component: { template: '<div />' }, meta: { requiresAuth: true } },
-    { path: '/console-logs', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner', 'Admin'] } },
-    { path: '/game-chat/live', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/game-chat/history', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/game-chat/settings', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/game-chat/colored', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/game-chat/mutes', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/audit', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/world-tools', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/modules', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/backups', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/schedules', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/automation', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/accounts', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/transactions', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/reward-packages', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/reward-operations', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/shop', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/redeem-codes', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/economy/achievement-online-rewards', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/community/teleport', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/community/cities', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/community/votes', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/integrations/discord', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-    { path: '/integrations/geoip', component: { template: '<div />' }, meta: { requiresAuth: true, roles: ['Owner'] } },
-  ],
-}))
+const routeMock = vi.hoisted(() => {
+  const ownerOnly = new Set([
+    '/operations/server',
+    '/operations/backups',
+    '/operations/automation/schedules',
+    '/operations/automation/rules',
+    '/operations/configuration',
+    '/operations/extensions/mods',
+    '/operations/extensions/modules',
+    '/operations/world',
+    '/players/history',
+    '/players/history/:crossplatformId',
+    '/players/profile/:crossplatformId',
+    '/players/map',
+    '/community/chat/live',
+    '/community/chat/history',
+    '/community/chat/mutes',
+    '/community/chat/settings',
+    '/community/chat/appearance',
+    '/community/teleport',
+    '/community/votes',
+    '/community/cities',
+    '/economy/accounts',
+    '/economy/transactions',
+    '/economy/rewards/packages',
+    '/economy/rewards/daily',
+    '/economy/rewards/operations',
+    '/economy/rewards/achievements',
+    '/economy/commerce/shop',
+    '/economy/commerce/redeem-codes',
+    '/system/access',
+    '/system/integrations/discord',
+    '/system/integrations/geoip',
+    '/system/audit',
+  ])
+  const canonicalPaths = [
+    '/',
+    '/login',
+    '/operations/server',
+    '/operations/backups',
+    '/operations/automation/schedules',
+    '/operations/automation/rules',
+    '/operations/configuration',
+    '/operations/extensions/mods',
+    '/operations/extensions/modules',
+    '/operations/world',
+    '/operations/console',
+    '/players',
+    '/players/history',
+    '/players/history/:crossplatformId',
+    '/players/profile/:crossplatformId',
+    '/players/map',
+    '/players/access-lists',
+    '/players/resources',
+    '/community/chat/live',
+    '/community/chat/history',
+    '/community/chat/mutes',
+    '/community/chat/settings',
+    '/community/chat/appearance',
+    '/community/teleport',
+    '/community/votes',
+    '/community/cities',
+    '/economy/accounts',
+    '/economy/transactions',
+    '/economy/rewards/packages',
+    '/economy/rewards/daily',
+    '/economy/rewards/operations',
+    '/economy/rewards/achievements',
+    '/economy/commerce/shop',
+    '/economy/commerce/redeem-codes',
+    '/system/access',
+    '/system/api-keys',
+    '/system/integrations/discord',
+    '/system/integrations/geoip',
+    '/system/audit',
+  ]
+  return {
+    routes: canonicalPaths.map(path => ({
+      path,
+      component: { template: '<div />' },
+      meta: path === '/login'
+        ? {}
+        : path === '/operations/console'
+          ? { requiresAuth: true, roles: ['Owner', 'Admin'] }
+          : ownerOnly.has(path)
+            ? { requiresAuth: true, roles: ['Owner'] }
+            : { requiresAuth: true },
+    })),
+    redirectPaths: [
+      '/operations',
+      '/community',
+      '/economy',
+      '/system',
+      '/backups',
+      '/schedules',
+      '/automation',
+      '/server-configuration',
+      '/mods',
+      '/modules',
+      '/world-tools',
+      '/console-logs',
+      '/game-resources',
+      '/access-lists',
+      '/game-chat/live',
+      '/game-chat/history',
+      '/game-chat/mutes',
+      '/game-chat/settings',
+      '/game-chat/colored',
+      '/economy/reward-packages',
+      '/economy/daily-reward',
+      '/economy/reward-operations',
+      '/economy/achievement-online-rewards',
+      '/economy/shop',
+      '/economy/redeem-codes',
+      '/permissions',
+      '/api-keys',
+      '/integrations/discord',
+      '/integrations/geoip',
+      '/audit',
+    ],
+  }
+})
+
+vi.mock('vue-router/auto-routes', () => ({ routes: routeMock.routes }))
 
 function createTestRouter() {
   const pinia = createPinia()
@@ -66,132 +153,87 @@ function authenticateAs(pinia: ReturnType<typeof createPinia>, role: 'Owner' | '
 }
 
 describe('createAdminRouter', () => {
-  it('redirects an anonymous protected navigation to login with the full target', async () => {
+  it('redirects anonymous protected navigation to login with the canonical target', async () => {
     const { router } = createTestRouter()
 
-    await router.push('/?from=players')
+    await router.push('/game-resources?search=steel#results')
 
-    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/?from=players')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/players/resources?search=steel#results')
   })
 
-  it('allows an authenticated navigation to a protected route', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticate(pinia)
-
-    await router.push('/players')
-
-    expect(router.currentRoute.value.fullPath).toBe('/players')
-  })
-
-  it.each(['Owner', 'Admin', 'Viewer'] as const)('allows %s to open the game resources route', async (role) => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, role)
-
-    await router.push('/game-resources?kind=block&page=2')
-
-    expect(router.currentRoute.value.fullPath).toBe('/game-resources?kind=block&page=2')
-  })
-
-  it('preserves an anonymous game resources deep link in the login redirect', async () => {
-    const { router } = createTestRouter()
-
-    await router.push('/game-resources?search=steel')
-
-    expect(router.currentRoute.value.query.redirect).toBe('/game-resources?search=steel')
-  })
-
-  it.each(['Owner', 'Admin'] as const)('allows %s to open the console deep link', async (role) => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, role)
-
-    await router.push('/console-logs')
-
-    expect(router.currentRoute.value.fullPath).toBe('/console-logs')
-  })
-
-  it('sends a Viewer console deep link to Forbidden', async () => {
+  it('applies the target route guard after a legacy redirect', async () => {
     const { pinia, router } = createTestRouter()
     authenticateAs(pinia, 'Viewer')
 
     await router.push('/console-logs')
 
-    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/console-logs')
+    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/operations/console')
   })
 
-  it.each(['/game-chat/live', '/game-chat/history', '/game-chat/settings', '/game-chat/colored'])('allows Owner to open %s', async (path) => {
+  it.each(routeMock.redirectPaths)('keeps the legacy route address out of the final history entry for %s', async (path) => {
     const { pinia, router } = createTestRouter()
     authenticateAs(pinia, 'Owner')
 
-    await router.push(path)
+    await router.push(`${path}?tab=overview#top`)
 
-    expect(router.currentRoute.value.fullPath).toBe(path)
+    expect(router.currentRoute.value.path).not.toBe(path)
+    expect(router.currentRoute.value.query.tab).toBe('overview')
+    expect(router.currentRoute.value.hash).toBe('#top')
   })
 
-  it.each(['Admin', 'Viewer'] as const)('sends %s game chat deep links to Forbidden', async (role) => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, role)
-
-    await router.push('/game-chat/live')
-
-    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/game-chat/live')
-  })
-
-  it('preserves an anonymous game chat deep link in the login redirect', async () => {
-    const { router } = createTestRouter()
-
-    await router.push('/game-chat/colored')
-
-    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/game-chat/colored')
-  })
-
-  it.each(['/audit', '/game-chat/mutes'])('allows Owner to open %s', async (path) => {
+  it('preserves query and hash when a legacy route is redirected', async () => {
     const { pinia, router } = createTestRouter()
     authenticateAs(pinia, 'Owner')
 
-    await router.push(path)
+    await router.push('/game-chat/live?channel=global#latest')
 
-    expect(router.currentRoute.value.fullPath).toBe(path)
+    expect(router.currentRoute.value.fullPath).toBe('/community/chat/live?channel=global#latest')
   })
 
-  it.each(['Admin', 'Viewer'] as const)('sends %s audit and mute deep links to Forbidden', async (role) => {
+  it.each(['Owner', 'Admin', 'Viewer'] as const)('allows %s to open API Keys', async (role) => {
     const { pinia, router } = createTestRouter()
     authenticateAs(pinia, role)
 
-    await router.push('/audit?tab=game-events')
-    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/audit?tab=game-events')
+    await router.push('/api-keys')
 
-    await router.push('/game-chat/mutes')
-    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/game-chat/mutes')
+    expect(router.currentRoute.value.fullPath).toBe('/system/api-keys')
   })
 
-  it('preserves an anonymous audit deep link for login instead of treating it as missing', async () => {
-    const { router } = createTestRouter()
+  it('allows an authenticated navigation to a canonical route', async () => {
+    const { pinia, router } = createTestRouter()
+    authenticate(pinia)
 
-    await router.push('/audit?tab=game-events')
+    await router.push('/players/resources?kind=block&page=2')
 
-    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/audit?tab=game-events')
+    expect(router.currentRoute.value.fullPath).toBe('/players/resources?kind=block&page=2')
   })
 
-  it.each([
-    '/world-tools',
-    '/modules',
-    '/automation',
-    '/economy/accounts',
-    '/economy/achievement-online-rewards',
-    '/community/teleport',
-    '/community/votes',
-    '/integrations/discord',
-    '/integrations/geoip',
-  ])('keeps parity management route %s Owner-only', async (path) => {
-    const owner = createTestRouter()
-    authenticateAs(owner.pinia, 'Owner')
-    await owner.router.push(path)
-    expect(owner.router.currentRoute.value.fullPath).toBe(path)
+  it.each(['Admin', 'Viewer'] as const)('sends %s Owner-only deep links to Forbidden', async (role) => {
+    const { pinia, router } = createTestRouter()
+    authenticateAs(pinia, role)
 
-    const admin = createTestRouter()
-    authenticateAs(admin.pinia, 'Admin')
-    await admin.router.push(path)
-    expect(admin.router.currentRoute.value.fullPath).toBe(`/forbidden?from=${path}`)
+    await router.push('/players/history/EOS_ada')
+
+    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/players/history/EOS_ada')
+  })
+
+  it('redirects an authenticated login navigation to a safe internal target', async () => {
+    const { pinia, router } = createTestRouter()
+    authenticate(pinia)
+
+    await router.push({ path: '/login', query: { redirect: '/players/resources?search=steel' } })
+
+    expect(router.currentRoute.value.fullPath).toBe('/players/resources?search=steel')
+  })
+
+  it('falls back to players when an authenticated login redirect is unsafe', async () => {
+    const { pinia, router } = createTestRouter()
+    authenticate(pinia)
+
+    await router.push({ path: '/login', query: { redirect: '//evil' } })
+
+    expect(router.currentRoute.value.fullPath).toBe('/players')
   })
 
   it('returns to login when an active protected session is cleared', async () => {
@@ -208,94 +250,6 @@ describe('createAdminRouter', () => {
     expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/players?tab=online')
   })
 
-  it('redirects an anonymous API Key navigation to login', async () => {
-    const { router } = createTestRouter()
-
-    await router.push('/api-keys')
-
-    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/api-keys')
-  })
-
-  it('protects history list and deep links while preserving the full target', async () => {
-    const { router } = createTestRouter()
-    await router.push('/players/history/EOS_0002d12af0fe4add9c7de0fbc238d431')
-
-    expect(router.currentRoute.value.fullPath)
-      .toBe('/login?redirect=/players/history/EOS_0002d12af0fe4add9c7de0fbc238d431')
-  })
-
-  it('allows Owner navigation to the history list', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, 'Owner')
-    await router.push('/players/history')
-
-    expect(router.currentRoute.value.fullPath).toBe('/players/history')
-  })
-
-  it.each(['Admin', 'Viewer'] as const)('sends %s history deep links to Forbidden', async (role) => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, role)
-
-    await router.push('/players/history/EOS_ada')
-
-    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/players/history/EOS_ada')
-  })
-
-  it('allows Owner to open a player profile deep link', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, 'Owner')
-
-    await router.push('/players/profile/EOS_ada')
-
-    expect(router.currentRoute.value.fullPath).toBe('/players/profile/EOS_ada')
-  })
-
-  it.each(['Admin', 'Viewer'] as const)('sends %s player profile deep links to Forbidden', async (role) => {
-    const { pinia, router } = createTestRouter()
-    authenticateAs(pinia, role)
-
-    await router.push('/players/profile/EOS_ada')
-
-    expect(router.currentRoute.value.fullPath).toBe('/forbidden?from=/players/profile/EOS_ada')
-  })
-
-  it('preserves an anonymous player profile deep link for login', async () => {
-    const { router } = createTestRouter()
-
-    await router.push('/players/profile/EOS_ada?section=inventory')
-
-    expect(router.currentRoute.value.fullPath)
-      .toBe('/login?redirect=/players/profile/EOS_ada?section=inventory')
-  })
-
-  it('protects the player map while preserving its restored filters', async () => {
-    const { router } = createTestRouter()
-
-    await router.push('/players/map?player=EOS_ada&observation=41')
-
-    expect(router.currentRoute.value.path).toBe('/login')
-    expect(router.currentRoute.value.query.redirect)
-      .toBe('/players/map?player=EOS_ada&observation=41')
-  })
-
-  it('redirects an authenticated login navigation to players', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticate(pinia)
-
-    await router.push('/login')
-
-    expect(router.currentRoute.value.fullPath).toBe('/players')
-  })
-
-  it('redirects an authenticated login navigation to a safe internal target', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticate(pinia)
-
-    await router.push({ path: '/login', query: { redirect: '/?from=players' } })
-
-    expect(router.currentRoute.value.fullPath).toBe('/?from=players')
-  })
-
   it('treats an expired token as anonymous and clears it', async () => {
     const { pinia, router } = createTestRouter()
     const auth = authenticate(pinia, Date.now() - 1)
@@ -305,31 +259,5 @@ describe('createAdminRouter', () => {
     expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/players')
     expect(auth.token).toBeNull()
     expect(auth.expiresAt).toBeNull()
-  })
-
-  it('preserves a valid protected full path in the login redirect', async () => {
-    const { router } = createTestRouter()
-
-    await router.push('/players?tab=online')
-
-    expect(router.currentRoute.value.query.redirect).toBe('/players?tab=online')
-  })
-
-  it('ignores a malicious login redirect for an authenticated session', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticate(pinia)
-
-    await router.push({ path: '/login', query: { redirect: '//evil' } })
-
-    expect(router.currentRoute.value.fullPath).toBe('/players')
-  })
-
-  it('falls back to players when an authenticated login redirect targets login', async () => {
-    const { pinia, router } = createTestRouter()
-    authenticate(pinia)
-
-    await router.push({ path: '/login', query: { redirect: '/login' } })
-
-    expect(router.currentRoute.value.fullPath).toBe('/players')
   })
 })

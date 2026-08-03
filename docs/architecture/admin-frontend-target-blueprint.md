@@ -150,7 +150,7 @@ OnlinePlayersView
 
 ### 游戏资源目录状态（阶段 1 已采用）
 
-`/game-resources` 的响应式只读页面、生成 SDK adapter、URL 筛选、严格 parser、Header Bearer Blob 图标和三角色导航已经实现；当前界面事实见[产品设计](../design.md#游戏资源目录)，技术与验证事实见[系统架构](../architecture.md#游戏资源目录切片)和[测试策略](../test.md#游戏资源目录当前实现证据)。
+`/players/resources` 的响应式只读页面、生成 SDK adapter、URL 筛选、严格 parser、Header Bearer Blob 图标和三角色导航已经实现；当前界面事实见[产品设计](../design.md#游戏资源目录)，技术与验证事实见[系统架构](../architecture.md#游戏资源目录切片)和[测试策略](../test.md#游戏资源目录当前实现证据)。
 
 后续背包、奖励、商店或自动化 Feature 可以通过类型化资源选择器消费公开目录，但不得共享 `useGameResources` 的页面状态、持久化目录响应、显示隐藏条目给非 Owner，或把“选择资源”扩展成自由文本命令。只有第二个真实消费者出现时才提取最小可复用选择器；当前 `features/game-resources` 继续独立拥有目录页面和图标生命周期。
 

@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'happy-dom',
-      exclude: [...configDefaults.exclude, 'tests/e2e/**'],
+      exclude: [...configDefaults.exclude, 'e2e/**', 'tests/e2e/**'],
       setupFiles: ['./src/shared/testing/setup.ts'],
       clearMocks: true,
       restoreMocks: true,
