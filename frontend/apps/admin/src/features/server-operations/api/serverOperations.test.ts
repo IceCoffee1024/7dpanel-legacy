@@ -123,7 +123,7 @@ describe('server operation API', () => {
 
     expect(requestJson).toHaveBeenCalledWith('/api/v1/server-operations/restart-1', {
       expectedStatus: 200,
-      headers: { 'Authorization': 'Bearer owner' },
+      headers: { Authorization: 'Bearer owner' },
       method: 'GET',
       signal: controller.signal,
     })
@@ -131,10 +131,16 @@ describe('server operation API', () => {
 
   it('rejects sensitive or unsupported fields from operation status responses', () => {
     expect(() => parseServerOperationStatus({
-      operationId: 'restart-1', kind: 'restart_script', status: 'running',
-      requestedAtUtc: '2026-07-25T01:02:03Z', startedAtUtc: '2026-07-25T01:02:04Z',
-      completedAtUtc: null, completionDeadlineUtc: '2026-07-25T01:07:04Z',
-      failureCode: null, auditStatus: 'recorded', scriptPath: 'C:\\private\\restart.cmd',
+      operationId: 'restart-1',
+      kind: 'restart_script',
+      status: 'running',
+      requestedAtUtc: '2026-07-25T01:02:03Z',
+      startedAtUtc: '2026-07-25T01:02:04Z',
+      completedAtUtc: null,
+      completionDeadlineUtc: '2026-07-25T01:07:04Z',
+      failureCode: null,
+      auditStatus: 'recorded',
+      scriptPath: 'C:\\private\\restart.cmd',
     })).toThrow(ServerOperationError)
   })
 })

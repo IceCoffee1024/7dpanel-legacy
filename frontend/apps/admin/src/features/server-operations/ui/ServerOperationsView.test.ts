@@ -11,8 +11,10 @@ const snapshot = shallowRef<OverviewSnapshot | null>(null)
 const role = shallowRef<'Owner' | 'Admin' | 'Viewer' | null>('Owner')
 const restartState = shallowRef<'idle' | 'confirming' | 'submitting' | 'accepted' | 'failed'>('idle')
 const restartError = shallowRef<{ code: 'unknown' } | null>(null)
+const restartOperationId = shallowRef<string | null>(null)
 const shutdownState = shallowRef<'idle' | 'confirming' | 'submitting' | 'accepted' | 'failed'>('idle')
 const shutdownError = shallowRef<{ code: 'unknown' } | null>(null)
+const shutdownOperationId = shallowRef<string | null>(null)
 
 const refresh = vi.fn()
 const restartConfirm = vi.fn(() => Promise.resolve(null))
@@ -24,6 +26,7 @@ vi.mock('../../server-status/model/useOverview', () => ({
 vi.mock('../model/useRestartServer', () => ({
   useRestartServer: () => ({
     error: restartError,
+    operationId: restartOperationId,
     state: restartState,
     startConfirmation: () => { restartState.value = 'confirming' },
     cancelConfirmation: () => { restartState.value = 'idle' },
@@ -33,6 +36,7 @@ vi.mock('../model/useRestartServer', () => ({
 vi.mock('../model/useShutdownServer', () => ({
   useShutdownServer: () => ({
     error: shutdownError,
+    operationId: shutdownOperationId,
     state: shutdownState,
     startConfirmation: () => { shutdownState.value = 'confirming' },
     cancelConfirmation: () => { shutdownState.value = 'idle' },
@@ -117,8 +121,10 @@ beforeEach(() => {
   role.value = 'Owner'
   restartState.value = 'idle'
   restartError.value = null
+  restartOperationId.value = null
   shutdownState.value = 'idle'
   shutdownError.value = null
+  shutdownOperationId.value = null
 })
 
 describe('serverOperationsView', () => {
@@ -152,5 +158,14 @@ describe('serverOperationsView', () => {
     expect(wrapper.find('[data-testid="shutdown-action"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="restart-dialog"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="shutdown-dialog"]').exists()).toBe(false)
+  })
+
+  it('keeps a tracked operation receipt visible after its confirmation closes', async () => {
+    const wrapper = render()
+    restartOperationId.value = 'restart-42'
+    restartState.value = 'accepted'
+    await nextTick()
+
+    expect(wrapper.text()).toContain('restart-42')
   })
 })

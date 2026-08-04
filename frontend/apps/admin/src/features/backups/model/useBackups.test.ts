@@ -83,4 +83,26 @@ describe('useBackups', () => {
 
     expect(mounted.result.backups.value[0]?.id).toBe('newer')
   })
+
+  it('resumes a persisted backup or restore job from its stable operation ID', async () => {
+    api.listBackups.mockResolvedValue(page('initial'))
+    api.getJob.mockResolvedValue({
+      id: 'restore-42',
+      kind: 'Restore',
+      status: 'Succeeded',
+      createdAtUtc: '2026-08-03T01:02:03Z',
+      startedAtUtc: '2026-08-03T01:02:04Z',
+      completedAtUtc: '2026-08-03T01:02:05Z',
+      progress: null,
+      errorCode: null,
+    })
+    const mounted = mountComposable()
+    apps.push(mounted.app)
+    await flushPromises()
+
+    await mounted.result.resume('restore-42')
+
+    expect(api.getJob).toHaveBeenCalledWith({ path: { jobId: 'restore-42' }, signal: expect.any(AbortSignal) })
+    expect(mounted.result.activeJob.value).toMatchObject({ id: 'restore-42', status: 'Succeeded' })
+  })
 })

@@ -75,10 +75,12 @@ export function useServerOperationPolling(options: UseServerOperationPollingOpti
     catch (cause: unknown) {
       if (disposed || expectedGeneration !== generation || isAbortError(cause))
         return
-      if (cause instanceof HttpError && cause.status === 401)
+      if (cause instanceof HttpError && cause.status === 401) {
         options.onUnauthorized()
-      else if (cause instanceof HttpError && cause.status === 403)
+      }
+      else if (cause instanceof HttpError && cause.status === 403) {
         options.onForbidden()
+      }
       else {
         options.onTransientFailure()
         schedule(id, expectedGeneration)

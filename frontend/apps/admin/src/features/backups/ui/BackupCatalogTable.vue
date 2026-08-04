@@ -33,6 +33,10 @@ function formatBytes(value: number): string {
     return `${(value / 1024 / 1024).toFixed(1)} MiB`
   return `${(value / 1024 / 1024 / 1024).toFixed(1)} GiB`
 }
+
+function isVerified(backup: BackupRecord): boolean {
+  return backup.validationStatus === 'Verified'
+}
 </script>
 
 <template>
@@ -74,7 +78,8 @@ function formatBytes(value: number): string {
             @click="emit('download', row.original)"
           />
           <UButton
-            :disabled="disabled"
+            :data-testid="`restore-backup-${row.original.id}`"
+            :disabled="disabled || !isVerified(row.original)"
             icon="i-lucide-rotate-ccw"
             :label="t('backups.action.restore')"
             size="sm"

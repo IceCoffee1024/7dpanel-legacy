@@ -5,7 +5,11 @@ import { useI18n } from 'vue-i18n'
 
 import { operationStatus } from '../../../shared/model/operationStatus'
 
-const props = defineProps<{ state: ShutdownServerState, errorCode: ShutdownServerErrorCode | null }>()
+const props = defineProps<{
+  state: ShutdownServerState
+  errorCode: ShutdownServerErrorCode | null
+  operationId?: string | null
+}>()
 const emit = defineEmits<{ cancel: [], confirm: [] }>()
 const { t } = useI18n()
 const open = computed(() => props.state === 'confirming' || props.state === 'submitting')
@@ -71,4 +75,11 @@ function updateOpen(value: boolean) {
     :title="t(status.i18nKey)"
     :description="t('overview.shutdownDialog.failed')"
   />
+  <p
+    v-if="operationId && state !== 'idle' && state !== 'confirming' && state !== 'submitting'"
+    class="mt-3 break-all text-xs text-muted"
+    data-testid="shutdown-operation-receipt"
+  >
+    {{ t('overview.operationReceipt', { operationId }) }}
+  </p>
 </template>

@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-08-03"
+last_updated: "2026-08-04"
 ---
 
 # 7DPanel 测试策略
@@ -47,6 +47,16 @@ last_updated: "2026-08-03"
 
 `tests/journeys/Test-PlayerJourney.ps1` 只接受显式稳定 `ExpectedCrossplatformId`、`EnvironmentId` 和 `EvidenceDirectory`；`-ConfirmKickTestPlayer` 不会绕过精确身份匹配。没有受控访问 Token、玩家不在线或身份不唯一时只写脱敏 `Skipped/Blocked` 证据，不执行踢出。`tests/journeys/Test-RestoreDrill.ps1` 要求隔离 `ServerRoot`/`EvidenceDirectory`、`IsolationRoot`、预期世界名、`BackupId` 或 `CreateBackup` 和 `-ConfirmDestructiveRestoreDrill`，拒绝盘符根、系统/用户根、仓库路径和 reparse point。当前脚本只完成安全预检；没有冻结候选、空间、备份、回滚目标和真实双平台进程时，J2/J3 不得提升成熟度。
 
+## 2026-08-04 验证复验
+
+Task 13 的 Admin 核心旅程局部实现已完成：定向 Vitest 为 `6` 个文件、`20` 项通过；Admin 全量 Vitest 为 `141` 个文件、`963/963` 项通过。串行 `pnpm lint`、`pnpm typecheck`、`pnpm build` 和 `pnpm api:check` 均通过，OpenAPI/SDK 没有 tracked drift。成熟度台账、复杂性预算、后端测试 taxonomy、玩家旅程安全和恢复安全夹具也全部通过。此次复验没有运行真实 OWIN、7DTD、破坏性恢复或 Linux 进程。
+
+2026-08-04 Chromium mock 复验：使用 `pnpm exec playwright test --project="Chromium - mock desktop" --project="Chromium - mock 390x844" --workers=1 --reporter=line`，共执行 `174` 个场景，`172` 个通过、`2` 个按项目条件跳过。跳过项是桌面项目中的移动专属测试，移动项目已执行对应场景；本次没有失败、浏览器启动错误、根级水平溢出或浏览器错误。该结果只证明本地 mock UI 与用户任务合同，不提升真实 OWIN、7DTD、候选 artifact、恢复副作用或发布成熟度。
+
+Task 17 的 `Invoke-CandidateValidation.ps1` 及其夹具在 Windows PowerShell 5.1 与 PowerShell 7 通过，并复验了 evidence manifest、release artifact 和 release smoke 合成测试。该编排默认拒绝缺少完整游戏引用、版本、clean worktree、隔离实例或显式确认；当前仓库仍没有私有 CI provider、受控 Runner、Secret、并发锁或 evidence retention，因此 O4 保持 `Blocked`，没有生成候选发布证据。
+
+当前机器仍缺少 `v3.0.1-b4` 的五个只读运行时程序集；锁定的 Playwright Chromium/headless shell 已可执行。后端聚合、真实 OWIN 全量门禁、候选 artifact、双平台进程、性能、恢复回滚和 O1/O2 真实服务 lane 继续保持 `Blocked`，不能由上述本地 mock 结果替代。
+
 ## 2026-08-03 收口波证据
 
 本波实际执行的治理与局部自动化命令均在当前工作树通过：成熟度台账 `15` 行、复杂性预算 `577` 个生产 C# 文件/`8` 个产品项目/`197` 个后端测试源/`27` 个 Admin Feature、测试分类 `197` 个源文件、artifact identity/manifest/release smoke 三组 PowerShell 合成测试、J2/J3 旅程安全测试。J2 玩家相关 Admin Vitest 为 `264/264`，CAP-04 至 CAP-07 聚焦 Admin Vitest 为 `147/147`，Admin `pnpm typecheck` 通过；Admin operation status 聚焦 Vitest 为 `18` 个文件/`122` 项通过。两个后端 Capability 过滤命令已写入脚本和 README，但当前工作树缺少只读 `7dtd-reference` 中的 Harmony/Newtonsoft 运行时程序集，因此无法完成测试发现；这保持为环境阻塞，不计为通过。
@@ -73,7 +83,7 @@ last_updated: "2026-08-03"
 | Discord Gateway/interaction 收口 | 持久 Slash `/status` 私密 follow-up 回归 `1/1` | 运行时组装后的持久交互使用原 interaction token 发出私密回执 | Discord Gateway WebSocket、Ed25519 请求和投递限流在 sandbox 或真实环境的往返 |
 | 本轮运行时可靠性收口 | canonical `net48` 聚焦组合 `56/56` | 恢复回滚中断续作、Discord heartbeat 失效重连、背包 `CosmeticMods` 标量合并、奖励 grant 并发补偿和发布依赖规则 | 真实文件占用、Discord sandbox、真实游戏字段与经济副作用 |
 | 第二批运行时与交付收口 | Restore `82/82`、Discord/GeoIP `118/118`、世界操作 `64/64`；主工作区合并过滤 `159/160` 后修正结构门禁并复验 `1/1` | 恢复启动阶段与可重试失败、Discord/GeoIP transport 故障、世界 descriptor 防伪/取消/undo/回滚失败、实际发布物清理规则 | 真实文件占用、Discord/MaxMind sandbox、真实游戏线程和世界 API |
-| Admin 浏览器门禁 | 本地 mock 首轮桌面与 `390x844` 共 `154/160`，修复后定向 `4/4`；2026-07-31 当前认证真实 OWIN 的 API Key、locale、导航和在线玩家共 17 个场景均取得通过结果；本轮 Chrome 真实 Owner 会话完成 37 条路由的桌面与 `390x844` 基础矩阵 | 登录/会话/登出、API Key 生命周期、语言协商与切换、主要导航、在线玩家详情刷新、不可用锁存、六波次页面基础可达性、桌面/窄屏根级溢出和浏览器错误 | Chromium/Firefox/WebKit 六波次 Playwright 项目已配置但本机浏览器包下载未完成，尚无执行证据；Discord/GeoIP 外部服务和危险世界操作仍未验证 |
+| Admin 浏览器门禁 | 本地 mock 首轮桌面与 `390x844` 共 `154/160`，修复后定向 `4/4`；2026-08-04 单一 Playwright 进程、单 worker 的 Chromium mock desktop 与 `390x844` 共 `174` 个场景，`172` 个通过、`2` 个按项目条件跳过；2026-07-31 当前认证真实 OWIN 的 API Key、locale、导航和在线玩家共 17 个场景均取得通过结果；本轮 Chrome 真实 Owner 会话完成 37 条路由的桌面与 `390x844` 基础矩阵 | 登录/会话/登出、API Key 生命周期、语言协商与切换、主要导航、在线玩家详情刷新、不可用锁存、六波次页面基础可达性、上下文入口、桌面/窄屏根级溢出和浏览器错误 | Firefox/WebKit 六波次 Playwright 项目、真实 OWIN 全量复验、Discord/GeoIP 外部服务和危险世界操作仍未验证 |
 | 实际八项目发布目录 | Admin build、`net48` `dotnet publish`、UNC 清理、真实 `Mods/7DPanel` 组装和 validator 通过；新编排完成关服、发布、启服与健康 200 | 精确八项目、托管闭包、游戏 JSON 排除、目标双 RID native、Admin 产物和当前 Windows Unity Mono 启动 | Linux Unity Mono、Discord/MaxMind sandbox、恢复与危险世界副作用 |
 | 发布证据、聊天审计与 Home CAS 收口 | 脚本合成门禁通过；后端聚焦及扩大 Chat/Community 组合 `76/76`；Home 删除语义聚焦 `19/19` | smoke 脱敏步骤归档、命令审计意图失败不执行、完成失败不重放、SQLite `pending` 恢复、私人家覆盖版本冲突，以及删除后新实例重建时拒绝陈旧 writer 复活 | 真实 smoke 证据包、真实命令回调、玩家传送与经济副作用 |
 | City CAS、Discord 轮换与跨平台证据收口 | 后端 Community/Discord 组合 `69/69`；Windows PowerShell 5.1 与 PowerShell 7 的 smoke/artifact 合成门禁通过 | 城市陈旧 writer 冲突、Bot Token 轮换重启诊断、Secret/指纹不回显、原生退出码 fail-fast 与无 BOM UTF-8 摘要 | 真实 Discord/MaxMind sandbox、Windows 候选证据包、Linux artifact 与 Unity Mono smoke |
@@ -132,14 +142,14 @@ last_updated: "2026-08-03"
 
 | 边界 | 实际结果 | 说明 |
 |---|---:|---|
-| Admin 单元测试 | `137` 个文件，`937/937` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
+| Admin 单元测试 | `141` 个文件，`963/963` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
 | Admin typecheck | 通过 | `vue-tsc -p ./tsconfig.app.json` 与 `tsc -p ./tsconfig.node.json` |
 | OpenAPI 漂移 | 通过 | `pnpm api:check` 重新生成 SDK 后无 `openapi/` 或生成客户端差异 |
 | Admin production build | 通过 | Vite `8.1.5` 生成包含规范任务域路由的静态产物 |
-| 触及文件 ESLint | 通过 | 对本轮修改/新增文件执行显式 lint；全量 lint 的 6 个既有错误仍未改变 |
-| Playwright mock/真实 OWIN | 未取得有效证据 | 本机缺少 Playwright `chrome-headless-shell`；受控 OWIN 环境变量也未提供 |
+| 触及文件 ESLint | 通过 | 2026-08-04 全量 `pnpm lint` 通过 |
+| Playwright mock/真实 OWIN | Chromium mock 已取得有效证据；真实 OWIN 未执行 | 单一 worker 的 desktop/`390x844` 共 `174` 个场景，`172` 个通过、`2` 个桌面项目跳过；受控 OWIN 环境变量未提供 |
 
-因此 `NFR-06` 的静态与单元部分已具备当前证据，但桌面、`390x844`、前进/后退、旧 URL 视觉行为和真实 OWIN 仍不能标记为发布完成。
+因此 `NFR-06` 的静态、单元和 Chromium mock 部分已具备当前证据，但真实 OWIN、前进/后退的受控全量复验、旧 URL 视觉行为以及 Firefox/WebKit 支持范围仍不能标记为发布完成。
 
 ### 服务器治理变更的精简验证
 

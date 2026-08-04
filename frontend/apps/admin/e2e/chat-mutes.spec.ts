@@ -73,14 +73,14 @@ test('chat live, history, and settings remain available in Chinese on the mobile
   await mockAdminApi(page)
 
   for (const [route, title] of [
-    ['/community/chat/live', '实时聊天'],
+    ['/community/chat/live', '游戏聊天'],
     ['/community/chat/history', '历史聊天'],
     ['/community/chat/settings', '聊天设置'],
   ] as const) {
     await gotoAdmin(page, route)
     await expect(page, route).toHaveURL(url => url.pathname === route)
     await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
-    await expect(page.getByText(title, { exact: true })).toBeVisible()
+    await expect(page.getByTestId('app-breadcrumbs').getByText(title, { exact: true })).toBeVisible()
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow, `${route} overflows horizontally at 390px`).toBeLessThanOrEqual(0)

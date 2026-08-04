@@ -16,10 +16,6 @@ export const ownerNavigationRoutes = [
   '/players/resources',
   '/system/api-keys',
   '/community/chat/live',
-  '/community/chat/history',
-  '/community/chat/mutes',
-  '/community/chat/settings',
-  '/community/chat/appearance',
   '/system/audit',
   '/operations/server',
   '/operations/extensions/modules',
@@ -46,8 +42,16 @@ export const ownerNavigationRoutes = [
   '/operations/console',
 ] as const
 
+export const ownerContextRoutes = [
+  '/community/chat/history',
+  '/community/chat/mutes',
+  '/community/chat/settings',
+  '/community/chat/appearance',
+] as const
+
 export const majorAdminRoutes = [
   ...ownerNavigationRoutes,
+  ...ownerContextRoutes,
   '/players/map',
   '/players/history/EOS_browser_smoke',
   '/players/profile/EOS_browser_smoke',

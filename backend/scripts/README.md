@@ -161,6 +161,69 @@ reference-content exclusion.
 `Test-ReleaseArtifact.ps1` is the independent fail-closed validation boundary.
 Publishing must run cleanup first and validation last.
 
+## Candidate Validation
+
+`Invoke-CandidateValidation.ps1` is the provider-neutral candidate entry
+point for a manual operator or a private, controlled runner. It does not
+implement a second set of release rules: it invokes supplied existing
+automation and real-lane scripts, then reuses `Publish-Mod.ps1`,
+`Test-ReleaseArtifact.ps1`, `Get-ReleaseArtifactIdentity.ps1`, and
+`New-EvidenceManifest.ps1` for the shared artifact and final manifest.
+
+It fails before starting any automation or real lane unless all of the
+following are explicit: the complete game-reference assembly set for the
+declared game version, product/game/OS/browser/environment versions, a clean
+Git worktree, an isolated server root, an artifact directory under that
+server, an evidence directory under the same isolation root, and
+`-ConfirmIsolatedInstance`. The isolation root must not overlap the
+repository. This prevents a local command or runner configuration from using
+a shared server instance by default.
+
+Supply each existing gate and lane as a descriptor with `Name`, `ScriptPath`,
+and optional `Parameters`. The orchestrator creates and owns each lane's
+`EvidenceDirectory`, so lane parameters must not set it. For example, prepare
+the descriptors in a local PowerShell session, then invoke the same command
+from a private runner:
+
+```powershell
+$automation = @(
+  @{ Name = 'capability-maturity'; ScriptPath = 'tests/docs/Test-CapabilityMaturity.ps1' },
+  @{ Name = 'artifact-fixtures'; ScriptPath = 'backend/scripts/tests/Test-ReleaseArtifact.Tests.ps1' }
+)
+$lanes = @(
+  @{ Name = 'windows-smoke'; ScriptPath = 'backend/scripts/Test-ReleaseSmoke.ps1'; Parameters = @{ Local = $true; ServerRoot = '<IsolatedServerRoot>'; PublishDirectory = '<IsolatedServerRoot>/Mods/7DPanel' } },
+  @{ Name = 'player-journey'; ScriptPath = 'tests/journeys/Test-PlayerJourney.ps1'; Parameters = @{ ExpectedCrossplatformId = '<ControlledPlayerId>'; EnvironmentId = '<EnvironmentId>'; ConfirmKickTestPlayer = $true } }
+)
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/Invoke-CandidateValidation.ps1 `
+  -SevenDaysReferenceRoot '<PrivateReferenceRoot>' `
+  -GameVersion 'v3.0.1-b4' `
+  -ProductVersion '<ProductVersion>' `
+  -OperatingSystem 'Windows Server 2022' `
+  -BrowserVersion '<ChromiumVersion>' `
+  -EnvironmentId '<EnvironmentId>' `
+  -IsolationRoot '<IsolationRoot>' `
+  -ServerRoot '<IsolatedServerRoot>' `
+  -CandidateArtifactDirectory '<IsolatedServerRoot>/Mods/7DPanel' `
+  -EvidenceDirectory '<IsolationRoot>/evidence' `
+  -Automation $automation `
+  -Lane $lanes `
+  -ConfirmIsolatedInstance
+```
+
+The final `candidate-release` manifest is written only after every supplied
+gate and lane succeeds. It contains the same artifact identity and candidate
+manifest semantics for a local operator and any CI provider. This repository
+does not currently configure a CI provider or private runner workflow; do not
+add one until its runner, secret, retention, and concurrency model are known.
+
+Run the synthetic orchestrator coverage without a server, private reference,
+or provider credentials:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Test-CandidateValidation.Tests.ps1
+```
+
 ## Evidence Manifest
 
 `Get-ReleaseArtifactIdentity.ps1` is the single artifact identity calculator.

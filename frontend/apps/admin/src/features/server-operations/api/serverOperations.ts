@@ -105,8 +105,15 @@ function optionalString(value: unknown): string | null {
 
 export function parseServerOperationStatus(value: unknown): ServerOperationStatusRecord {
   const source = record(value, [
-    'operationId', 'kind', 'status', 'requestedAtUtc', 'startedAtUtc', 'completedAtUtc',
-    'completionDeadlineUtc', 'failureCode', 'auditStatus',
+    'operationId',
+    'kind',
+    'status',
+    'requestedAtUtc',
+    'startedAtUtc',
+    'completedAtUtc',
+    'completionDeadlineUtc',
+    'failureCode',
+    'auditStatus',
   ])
   if (source.kind !== 'restart_script' && source.kind !== 'shutdown')
     return invalid()
@@ -199,7 +206,7 @@ export async function getServerOperation(
     `/api/v1/server-operations/${encodeURIComponent(operationId)}`,
     {
       expectedStatus: 200,
-      headers: { 'Authorization': authorizationHeader },
+      headers: { Authorization: authorizationHeader },
       method: 'GET',
       signal,
     },

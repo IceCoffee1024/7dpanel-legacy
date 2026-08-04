@@ -44,7 +44,7 @@ test('wave 1 mute loading and empty states remain reachable at 390x844', async (
   test.skip(testInfo.project.name !== 'Chromium - mock 390x844')
 
   let finishLoading: (() => void) | undefined
-  await page.route('**/api/v1/chat/mutes?**', async (route) => {
+  await page.route(/\/api\/v1\/chat\/mutes(?:\?.*)?$/u, async (route) => {
     await new Promise<void>((resolve) => {
       finishLoading = resolve
     })
@@ -60,7 +60,7 @@ test('wave 1 mute loading and empty states remain reachable at 390x844', async (
   })
 
   await gotoAdmin(page, '/community/chat/mutes')
-  const loadingState = page.getByRole('status', { name: /Loading active mutes|正在加载禁言列表/u })
+  const loadingState = page.getByRole('status', { name: /Loading chat mutes|Loading active mutes|正在加载禁言列表/u })
   await expect(loadingState).toBeVisible()
   finishLoading?.()
   await expect(loadingState).toHaveCount(0)
@@ -81,9 +81,18 @@ test('configuration masks secrets and configuration/mod changes clearly state ne
         readAtUtc: '2026-08-03T00:00:00Z',
         fields: [
           {
-            key: 'ServerPassword', value: '', group: 'Security', valueType: 'text', editable: true,
-            advanced: false, sensitive: true, isSet: true, restartRequired: true,
-            allowedValues: [], minimum: null, maximum: null,
+            key: 'ServerPassword',
+            value: '',
+            group: 'Security',
+            valueType: 'text',
+            editable: true,
+            advanced: false,
+            sensitive: true,
+            isSet: true,
+            restartRequired: true,
+            allowedValues: [],
+            minimum: null,
+            maximum: null,
           },
         ],
       }),
@@ -96,15 +105,23 @@ test('configuration masks secrets and configuration/mod changes clearly state ne
       contentType: 'application/json',
       body: JSON.stringify([
         {
-          directoryId: 'ExampleMod', name: 'Example Mod', displayName: 'Example Mod', author: 'Panel', version: '1.0',
-          website: null, description: null, isLoadedNow: true, isEnabledNextStart: false, isProtected: false,
+          directoryId: 'ExampleMod',
+          name: 'Example Mod',
+          displayName: 'Example Mod',
+          author: 'Panel',
+          version: '1.0',
+          website: null,
+          description: null,
+          isLoadedNow: true,
+          isEnabledNextStart: false,
+          isProtected: false,
         },
       ]),
     })
   })
 
   await gotoAdmin(page, '/operations/configuration')
-  await expect(page.getByTestId('configuration-value-ServerPassword')).toHaveText(/Set|已设置/u)
+  await expect(page.getByTestId('configuration-value-ServerPassword')).toHaveText(/Configured|已配置/u)
   await expect(page.locator('body')).not.toContainText('ServerPasswordValueShouldNeverRender')
   await expect(page.locator('body')).toContainText(/Restart required|重启后生效/u)
 

@@ -54,6 +54,7 @@ export interface BackupsController {
   download: (backup: BackupRecord) => Promise<boolean>
   remove: (backup: BackupRecord) => Promise<boolean>
   restore: (backup: BackupRecord, restartAfterStage: boolean) => Promise<boolean>
+  resume: (jobId: string) => Promise<void>
   refresh: () => Promise<void>
   dispose: () => void
 }
@@ -384,6 +385,13 @@ export function useBackups(options: { onSessionExpired?: () => void } = {}): Bac
     return true
   }
 
+  async function resume(jobId: string) {
+    if (disposed || jobId.trim() === '')
+      return
+    errorCode.value = null
+    await pollJob(jobId)
+  }
+
   function dispose() {
     if (disposed)
       return
@@ -410,6 +418,7 @@ export function useBackups(options: { onSessionExpired?: () => void } = {}): Bac
     download,
     remove,
     restore,
+    resume,
     refresh,
     dispose,
   }

@@ -1,6 +1,6 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
-import type { RestartServerAccepted, ServerOperationStatusRecord } from '../api/serverOperations'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
+import type { RestartServerAccepted, ServerOperationStatusRecord } from '../api/serverOperations'
 
 import { useMutation, useQueryCache } from '@pinia/colada'
 import { onUnmounted, readonly, shallowRef, watch } from 'vue'
@@ -39,6 +39,7 @@ export interface RestartServerError {
 export interface RestartServerController {
   state: DeepReadonly<ShallowRef<RestartServerState>>
   result: DeepReadonly<ShallowRef<RestartServerAccepted | null>>
+  operationId: DeepReadonly<ShallowRef<string | null>>
   error: DeepReadonly<ShallowRef<RestartServerError | null>>
   startConfirmation: () => void
   cancelConfirmation: () => void
@@ -117,6 +118,7 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
   const router = options.router ?? optionalRouter()
   const state = shallowRef<RestartServerState>('idle')
   const result = shallowRef<RestartServerAccepted | null>(null)
+  const operationId = shallowRef<string | null>(null)
   const error = shallowRef<RestartServerError | null>(null)
   let inFlight: Promise<RestartServerAccepted | null> | null = null
   let controller: AbortController | null = null
@@ -127,6 +129,7 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
     authorizationHeader: () => auth.authorizationHeader,
     getOperation: options.getOperation ?? getServerOperation,
     onOperation(operation) {
+      operationId.value = operation.operationId
       state.value = operation.status
       error.value = operation.failureCode === null ? null : Object.freeze({ code: errorCodeFromFailure(operation.failureCode) })
     },
@@ -184,6 +187,7 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
         if (disposed)
           return null
         result.value = accepted
+        operationId.value = accepted.operationId
         state.value = 'accepted'
         sessionExpiryNotified = false
         rememberOperation(accepted.operationId)
@@ -227,9 +231,10 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
   }
 
   function resumeFromRoute() {
-    const operationId = routeOperationId(route, 'restart_script')
-    polling.resume(operationId)
-    if (operationId !== null && state.value === 'idle')
+    const routedOperationId = routeOperationId(route, 'restart_script')
+    operationId.value = routedOperationId
+    polling.resume(routedOperationId)
+    if (routedOperationId !== null && state.value === 'idle')
       state.value = 'running'
   }
 
@@ -252,6 +257,7 @@ export function useRestartServer(options: UseRestartServerOptions = {}): Restart
   return {
     state: readonly(state),
     result: readonly(result),
+    operationId: readonly(operationId),
     error: readonly(error),
     startConfirmation,
     cancelConfirmation,
@@ -271,9 +277,19 @@ function routeOperationId(route: Pick<RouteLocationNormalizedLoaded, 'query'> | 
 }
 
 function optionalRoute(): Pick<RouteLocationNormalizedLoaded, 'query'> | null {
-  try { return useRoute() ?? null } catch { return null }
+  try {
+    return useRoute() ?? null
+  }
+  catch {
+    return null
+  }
 }
 
 function optionalRouter(): Pick<Router, 'replace'> | null {
-  try { return useRouter() ?? null } catch { return null }
+  try {
+    return useRouter() ?? null
+  }
+  catch {
+    return null
+  }
 }

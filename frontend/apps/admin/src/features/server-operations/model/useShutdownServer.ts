@@ -1,6 +1,6 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
-import type { ServerOperationStatusRecord, ShutdownServerAccepted } from '../api/serverOperations'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
+import type { ServerOperationStatusRecord, ShutdownServerAccepted } from '../api/serverOperations'
 
 import { onUnmounted, readonly, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -30,6 +30,7 @@ export interface ShutdownServerError {
 export interface ShutdownServerController {
   state: DeepReadonly<ShallowRef<ShutdownServerState>>
   result: DeepReadonly<ShallowRef<ShutdownServerAccepted | null>>
+  operationId: DeepReadonly<ShallowRef<string | null>>
   error: DeepReadonly<ShallowRef<ShutdownServerError | null>>
   startConfirmation: () => void
   cancelConfirmation: () => void
@@ -85,6 +86,7 @@ export function useShutdownServer(options: UseShutdownServerOptions = {}): Shutd
   const router = options.router ?? optionalRouter()
   const state = shallowRef<ShutdownServerState>('idle')
   const result = shallowRef<ShutdownServerAccepted | null>(null)
+  const operationId = shallowRef<string | null>(null)
   const error = shallowRef<ShutdownServerError | null>(null)
   let inFlight: Promise<ShutdownServerAccepted | null> | null = null
   let controller: AbortController | null = null
@@ -95,6 +97,7 @@ export function useShutdownServer(options: UseShutdownServerOptions = {}): Shutd
     authorizationHeader: () => auth.authorizationHeader,
     getOperation: options.getOperation ?? getServerOperation,
     onOperation(operation) {
+      operationId.value = operation.operationId
       state.value = operation.status
       error.value = operation.failureCode === null ? null : Object.freeze({ code: errorCodeFromFailure(operation.failureCode) })
     },
@@ -152,6 +155,7 @@ export function useShutdownServer(options: UseShutdownServerOptions = {}): Shutd
         if (disposed)
           return null
         result.value = accepted
+        operationId.value = accepted.operationId
         state.value = 'accepted'
         sessionExpiryNotified = false
         rememberOperation(accepted.operationId)
@@ -195,9 +199,10 @@ export function useShutdownServer(options: UseShutdownServerOptions = {}): Shutd
   }
 
   function resumeFromRoute() {
-    const operationId = routeOperationId(route, 'shutdown')
-    polling.resume(operationId)
-    if (operationId !== null && state.value === 'idle')
+    const routedOperationId = routeOperationId(route, 'shutdown')
+    operationId.value = routedOperationId
+    polling.resume(routedOperationId)
+    if (routedOperationId !== null && state.value === 'idle')
       state.value = 'running'
   }
 
@@ -220,6 +225,7 @@ export function useShutdownServer(options: UseShutdownServerOptions = {}): Shutd
   return {
     state: readonly(state),
     result: readonly(result),
+    operationId: readonly(operationId),
     error: readonly(error),
     startConfirmation,
     cancelConfirmation,
@@ -239,9 +245,19 @@ function routeOperationId(route: Pick<RouteLocationNormalizedLoaded, 'query'> | 
 }
 
 function optionalRoute(): Pick<RouteLocationNormalizedLoaded, 'query'> | null {
-  try { return useRoute() ?? null } catch { return null }
+  try {
+    return useRoute() ?? null
+  }
+  catch {
+    return null
+  }
 }
 
 function optionalRouter(): Pick<Router, 'replace'> | null {
-  try { return useRouter() ?? null } catch { return null }
+  try {
+    return useRouter() ?? null
+  }
+  catch {
+    return null
+  }
 }

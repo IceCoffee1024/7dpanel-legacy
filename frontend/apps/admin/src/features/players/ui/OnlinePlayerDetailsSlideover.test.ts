@@ -187,6 +187,8 @@ it('does not expose the owner profile entry when profile access is unavailable',
   const wrapper = mountSlideover({ canOpenProfile: false })
 
   expect(wrapper.find('[data-icon="i-lucide-contact-round"]').exists()).toBe(false)
+  expect(wrapper.find('[data-icon="i-lucide-history"]').exists()).toBe(false)
+  expect(wrapper.find('[data-icon="i-lucide-map"]').exists()).toBe(false)
 })
 
 it('closes through the controlled open model', async () => {

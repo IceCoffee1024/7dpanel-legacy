@@ -203,6 +203,7 @@
       "accepted": "Restart script started",
       "failed": "The restart script could not be started. Try again later."
     },
+    "operationReceipt": "Operation receipt: {operationId}",
     "shutdownDialog": {
       "title": "Confirm server shutdown",
       "description": "This action asks the game service to save and shut down.",
@@ -307,6 +308,9 @@
     "restore": {
       "title": "Confirm backup restore",
       "description": "The server validates and stages the restore; the page never reports optimistic success.",
+      "backupId": "Backup ID",
+      "world": "World",
+      "size": "Archive size",
       "warning": "This is a dangerous operation",
       "nextStart": "Staged content is applied before the world opens on the next start. The server rejects world restore when timing evidence is unavailable.",
       "panelDatabaseReceipt": "Panel database history may be reconciled from a restore receipt after restart.",
