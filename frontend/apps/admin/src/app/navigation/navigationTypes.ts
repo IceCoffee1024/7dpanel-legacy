@@ -4,6 +4,14 @@ import type { RouteNamedMap } from 'vue-router/auto-routes'
 import type { AuthRole } from '../../features/auth'
 
 export type NavigationGroupId = 'overview' | 'operations' | 'players' | 'community' | 'economy' | 'system'
+export type NavigationSectionId
+  = 'players-core'
+    | 'operations-automation'
+    | 'operations-extensions'
+    | 'community-chat'
+    | 'economy-rewards'
+    | 'economy-commerce'
+    | 'system-integrations'
 export type NavigationRouteName = keyof RouteNamedMap
 
 export interface NavigationEntry {
@@ -13,6 +21,8 @@ export interface NavigationEntry {
   readonly icon: string
   readonly searchable?: boolean
   readonly shortcut?: string
+  readonly primary?: boolean
+  readonly sectionId?: NavigationSectionId
 }
 
 export interface NavigationGroup {

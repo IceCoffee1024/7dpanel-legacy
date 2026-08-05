@@ -103,6 +103,40 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
         }
 
         [Fact]
+        public void Scheduler_start_failure_rolls_back_the_started_worker_in_reverse_order()
+        {
+            var events = new List<string>();
+            using var runtime = new JobsAndSchedulingRuntime(
+                RecordingStartup(events),
+                cancellationToken =>
+                {
+                    events.Add("worker:start");
+                    return WaitUntilCancelled(cancellationToken, events, "worker:stop");
+                },
+                _ =>
+                {
+                    events.Add("scheduler:start");
+                    throw new InvalidOperationException("scheduler failed");
+                },
+                new RecordingRuntime(events),
+                TimeSpan.FromSeconds(1));
+
+            Assert.Throws<InvalidOperationException>(() => runtime.Start());
+
+            Assert.Equal(
+                new[]
+                {
+                    "restore",
+                    "migration",
+                    "reconcile",
+                    "worker:start",
+                    "scheduler:start",
+                    "worker:stop"
+                },
+                events);
+        }
+
+        [Fact]
         public void Recovery_finishes_before_background_work_and_http_are_exposed()
         {
             var events = new List<string>();
@@ -247,6 +281,22 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+            }
+        }
+
+        private static async Task WaitUntilCancelled(
+            CancellationToken cancellationToken,
+            ICollection<string> events,
+            string stopEvent)
+        {
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                events.Add(stopEvent);
             }
         }
 

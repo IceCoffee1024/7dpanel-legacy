@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { GrantOperation, GrantRewardInput } from '../../../features/rewards/api/rewards'
 import { onMounted } from 'vue'
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { RewardOperationsView, useRewardOperations } from '../../../features/rewards'
 
 const controller = useRewardOperations()
@@ -25,6 +26,7 @@ function compensate(operation: GrantOperation) {
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <RewardOperationsView
     :controller="controller"
     @refresh="refresh"

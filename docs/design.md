@@ -18,6 +18,7 @@ last_updated: "2026-08-04"
 - 匿名访问 `/`、`/players` 或 `/system/api-keys` 时进入 `/login`，并在查询参数中保留安全的站内返回目标；登录页刷新后保持登录页。登录成功后进入原目标：默认“保持登录”不选中，刷新当前标签页会恢复会话而关闭该标签页后需要重新登录；选择后可在同一浏览器关闭标签页或重启后、原 Access Token 到期前恢复。浏览器 Storage 不可用时保持当前页登录并显示非阻断提示。
 - 认证后的侧栏、移动抽屉、Dashboard Search、面包屑和快捷键都来自同一个类型化导航目录，只显示已实现且当前角色可达的二级入口；无权的直接深链接进入 Forbidden，匿名深链接保留安全返回目标后进入登录页。账号入口显示服务端确认的当前用户名和角色，并提供退出登录；退出、到期、401 或其他标签页删除会话后立即离开受保护页面。
 - 六个一级任务域固定为“概览”“服务器运维”“玩家”“社区”“经济与奖励”和“系统管理”。备份、重启、配置、Mod、世界工具归入服务器运维；在线玩家、历史、档案、地图、名单归入玩家；聊天、传送、投票、城市归入社区；Discord、GeoIP、API Key、用户、权限归入系统管理。具体页面通过二级入口、局部页签、详情或上下文动作到达，不再作为一级任务入口。
+- 当前导航目录包含六个一级任务域和 24 个固定二级入口；每个一级域的固定入口不超过七个。侧栏、移动抽屉、搜索、面包屑、快捷键和局部页签均从同一目录投影，规范路由由目录和显式 redirect 共同拥有。
 - 新规范 URL 使用 `/operations/**`、`/players/**`、`/community/**`、`/economy/**` 和 `/system/**` 任务域前缀；旧站内 URL 由显式 redirect 保留 query/hash 后进入规范地址。规范路由和完整映射由[信息架构重构设计规格](superpowers/specs/2026-08-03-admin-information-architecture-refactor-design.md)维护。
 - 新管理页面继续使用薄 route page、Feature 内严格 parser 和 readonly composable。写操作等待服务端结果，不做乐观成功；`Queued`、`Running`、`PendingReconciliation`、`ResultUnknown`、`ActionResultUnknown`、Stale、Forbidden 和 unavailable 都以独立状态呈现。后端缺少全量列表合同时显示稳定 unavailable，不用浏览器缓存或假数据补合同。
 - `/economy/rewards/daily` 只向 `Owner` 展示唯一 `daily` 规则的奖励包绑定与启用状态。页面把未配置、加载、保存中、已保存、冲突、权限不足和不可用明确区分；版本冲突保留表单草稿，不把保存请求或领取结果乐观显示为成功。
@@ -36,7 +37,7 @@ last_updated: "2026-08-04"
 - `/community/chat/mutes` 提供游标分页的当前禁言列表，桌面使用表格、窄屏使用单列卡片；创建和编辑共用表单对话框，解除使用独立确认对话框。永久禁言与 UTC 截止时间明确区分，提交期间锁定重复操作，成功后刷新权威列表而不做乐观成功。
 - 审计、游戏事件和禁言数据都先经过 Feature 的严格 Valibot parser。首次请求显示骨架，空集合显示正常空状态；首次请求或协议校验失败进入 Failed。普通刷新或继续分页时，已有成功结果可在请求或协议失败后保留并进入 Stale；应用新筛选会先清空旧页，失败时进入 Failed。403 进入 Forbidden，401 清理会话并回到登录页。未通过 parser 的 payload 不进入表格、列表或卡片。
 - 运行指标文案已接入当前 i18n；审计、游戏事件和禁言页面仍存在直接写入的中文可见文案，因此本切片不能宣称 `NFR-03` 双语合同已经闭环。
-- 导航目录、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页和上下文入口已有代码与 Admin 全量 Vitest `141` 个文件、`963/963` 项通过证据；Admin lint、typecheck、OpenAPI 漂移检查和 Vite 生产构建也通过。2026-08-04 的 Chromium mock 桌面与 `390x844` 单 worker 矩阵共 `174` 个场景，`172` 个通过、`2` 个按项目条件跳过；该证据覆盖可达性、角色入口、上下文操作、溢出和浏览器错误，但不替代真实 OWIN、7DTD、外部服务、危险恢复或跨平台发布证据。
+- 导航目录、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页和上下文入口已有代码与 Admin 全量 Vitest `145` 个文件、`1010/1010` 项通过证据；Admin lint、typecheck、OpenAPI 漂移检查和 Vite 生产构建也通过。2026-08-04 的 Chromium mock desktop 与 `390x844` 项目各有 `2` 个场景通过；本轮受控真实 OWIN 所需的 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME` 和 `PANEL_PASSWORD` 未提供，因此未执行真实 OWIN。上述证据覆盖本地 mock 的可达性、角色入口、局部交互、溢出和浏览器错误，但不替代真实 OWIN、7DTD、外部服务、危险恢复或跨平台发布证据。
 
 ### Admin 综合概览第一阶段
 

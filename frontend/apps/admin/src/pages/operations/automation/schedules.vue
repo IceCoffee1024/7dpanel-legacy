@@ -10,6 +10,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { useSchedules } from '../../../features/schedules/model/useSchedules'
 import SchedulesView from '../../../features/schedules/ui/SchedulesView.vue'
 
@@ -22,5 +23,6 @@ const controller = useSchedules({
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <SchedulesView :controller="controller" />
 </template>

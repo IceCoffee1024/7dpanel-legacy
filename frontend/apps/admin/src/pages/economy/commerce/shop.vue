@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PurchaseProductInput, ShopProductDraft } from '../../../features/commerce/api/commerce'
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { ShopProductsView, useShopProducts } from '../../../features/commerce'
 
 const controller = useShopProducts()
@@ -15,6 +16,7 @@ function purchase(input: PurchaseProductInput) {
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <ShopProductsView
     :controller="controller"
     @load="load"

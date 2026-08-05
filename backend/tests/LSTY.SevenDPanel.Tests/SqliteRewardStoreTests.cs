@@ -129,6 +129,77 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal("manual-confirm", completed.CorrelationId);
         }
 
+        [Fact]
+        public void Referenced_package_rejects_entry_changes_without_replacing_the_stored_package()
+        {
+            using var database = new RewardTestDatabase();
+            var store = new SqliteRewardStore(database.ConnectionFactory);
+            store.SavePackage(Package(), Utc(0));
+            store.GetOrCreateGrant(Grant("operation-1", "idempotency-1", "eligibility-1"));
+
+            var changed = new RewardPackageDraft(
+                "starter-package",
+                "Changed name",
+                "A typed package",
+                true,
+                7,
+                new[]
+                {
+                    RewardPackageEntryDraft.Item(
+                        "package-item",
+                        "medicalBandage",
+                        GameResourceKind.Item,
+                        2,
+                        null,
+                        null,
+                        "catalog-v1"),
+                    RewardPackageEntryDraft.Currency("package-currency", 51),
+                    RewardPackageEntryDraft.RegisteredActionEntry(
+                        "package-reset",
+                        RewardRegisteredActions.ResetSkills)
+                });
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                store.SavePackage(changed, Utc(1)));
+
+            Assert.Equal("reward_package_entries_are_in_use", exception.Message);
+            var persisted = store.GetPackage("starter-package");
+            Assert.Equal("Starter Package", persisted.Name);
+            Assert.Equal(50, persisted.Entries[1].CurrencyAmount);
+        }
+
+        [Fact]
+        public void Delivery_journal_retries_are_idempotent_and_conflicting_operations_are_rejected()
+        {
+            using var database = new RewardTestDatabase();
+            var store = new SqliteRewardStore(database.ConnectionFactory);
+            store.SavePackage(Package(), Utc(0));
+            var created = store.GetOrCreateGrant(Grant("operation-1", "idempotency-1", "eligibility-1"));
+            Assert.True(store.TryStartDispatch(created.Operation.OperationId, 0, Utc(1)));
+            var entry = store.GetGrant(created.Operation.OperationId).Entries[0];
+
+            store.RecordDeliveryOperation(
+                created.Operation.OperationId,
+                entry.OperationEntryId,
+                "delivery-1",
+                Utc(2));
+            store.RecordDeliveryOperation(
+                created.Operation.OperationId,
+                entry.OperationEntryId,
+                "delivery-1",
+                Utc(3));
+
+            Assert.Throws<RewardIdempotencyConflictException>(() =>
+                store.RecordDeliveryOperation(
+                    created.Operation.OperationId,
+                    entry.OperationEntryId,
+                    "delivery-2",
+                    Utc(4)));
+            Assert.Equal(
+                "delivery-1",
+                store.GetGrant(created.Operation.OperationId).Entries[0].DeliveryOperationId);
+        }
+
         internal static RewardPackageDraft Package() => new RewardPackageDraft(
             "starter-package",
             "Starter Package",

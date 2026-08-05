@@ -70,10 +70,15 @@ export function useNavigation(options: UseNavigationOptions = {}) {
     return meta !== undefined && canAccessRoute(meta, access.value.role, access.value.isAuthenticated)
   }
 
-  const groups = computed<readonly NavigationGroupProjection[]>(() => Object.freeze(catalog.groups
-    .map((group) => {
-      const children = Object.freeze(group.children
-        .filter(child => canAccess(child.routeName))
+  const accessibleEntries = computed(() => catalog.groups.map(group => ({
+    group,
+    children: group.children.filter(child => canAccess(child.routeName)),
+  })))
+
+  const groups = computed<readonly NavigationGroupProjection[]>(() => Object.freeze(accessibleEntries.value
+    .map(({ group, children: accessibleChildren }) => {
+      const children = Object.freeze(accessibleChildren
+        .filter(child => child.primary !== false)
         .map(child => Object.freeze({ ...child, groupId: group.id })))
       return Object.freeze({
         id: group.id,
@@ -94,9 +99,25 @@ export function useNavigation(options: UseNavigationOptions = {}) {
 
   const currentGroup = computed(() => groups.value.find(group => group.id === activeGroupId.value))
 
-  const searchItems = computed<readonly NavigationEntryProjection[]>(() => groups.value
-    .flatMap(group => group.children)
-    .filter(entry => entry.searchable))
+  const searchItems = computed<readonly NavigationEntryProjection[]>(() => Object.freeze(accessibleEntries.value
+    .flatMap(({ group, children }) => children
+      .filter(entry => entry.searchable)
+      .map(entry => Object.freeze({ ...entry, groupId: group.id })))))
+
+  const sectionItems = computed<readonly NavigationEntryProjection[]>(() => {
+    const routeName = route.value.name
+    if (routeName === undefined)
+      return []
+    const sectionId = routeChain(catalog, routeName)
+      .map(name => findEntry(catalog, name)?.entry.sectionId)
+      .find((candidate): candidate is NonNullable<typeof candidate> => candidate !== undefined)
+    if (sectionId === undefined)
+      return []
+    return Object.freeze(accessibleEntries.value
+      .flatMap(({ group, children }) => children
+        .filter(entry => entry.sectionId === sectionId)
+        .map(entry => Object.freeze({ ...entry, groupId: group.id }))))
+  })
 
   const breadcrumbs = computed<readonly NavigationBreadcrumb[]>(() => {
     const routeName = route.value.name
@@ -117,8 +138,8 @@ export function useNavigation(options: UseNavigationOptions = {}) {
     return Object.freeze(items)
   })
 
-  const shortcuts = computed<readonly NavigationShortcut[]>(() => groups.value
-    .flatMap(group => group.children)
+  const shortcuts = computed<readonly NavigationShortcut[]>(() => accessibleEntries.value
+    .flatMap(({ children }) => children)
     .flatMap(entry => entry.shortcut === undefined ? [] : [Object.freeze({ shortcut: entry.shortcut, routeName: entry.routeName })]))
 
   return {
@@ -126,6 +147,7 @@ export function useNavigation(options: UseNavigationOptions = {}) {
     activeGroupId,
     currentGroup: currentGroup as ComputedRef<NavigationGroupProjection | undefined>,
     searchItems: searchItems as ComputedRef<readonly NavigationEntryProjection[]>,
+    sectionItems: sectionItems as ComputedRef<readonly NavigationEntryProjection[]>,
     breadcrumbs: breadcrumbs as ComputedRef<readonly NavigationBreadcrumb[]>,
     shortcuts: shortcuts as ComputedRef<readonly NavigationShortcut[]>,
   }

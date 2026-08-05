@@ -3,10 +3,10 @@ import type { MapBusinessFeature, MapLayerQuery } from './useMapVectorLayer'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  createMapVectorLayerController,
   mapLayerPath,
   parseMapVectorLayerResponse,
-} from './useMapVectorLayer'
+} from './mapVectorLayerAdapter'
+import { createMapVectorLayerController } from './useMapVectorLayer'
 
 const query: MapLayerQuery = {
   worldId: 'world/id',

@@ -1,4 +1,5 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
+import type { BackupKind, BackupRecord, BackupsViewState, JobRecord } from './backups.types'
 
 import { onMounted, onUnmounted, readonly, shallowRef } from 'vue'
 
@@ -14,35 +15,9 @@ import {
 } from '../../../shared/api/generated'
 import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
+import { backupKinds, parseBackupPage, parseJob, terminalStatuses } from './backups.protocol'
 
-export type BackupKind = 'World' | 'PanelDatabase' | 'ServerConfiguration'
-export type JobKind = BackupKind | 'Restore' | 'ScheduledConsoleCommand' | 'ScheduledRestart' | 'ScheduledAnnouncement'
-export type JobStatus = 'Queued' | 'Running' | 'PendingRestart' | 'Succeeded' | 'Failed' | 'Cancelled' | 'Interrupted' | 'ResultUnknown'
-export type BackupsViewState = 'loading' | 'ready' | 'stale' | 'failed' | 'forbidden' | 'protocol-error'
-
-export interface BackupRecord {
-  readonly id: string
-  readonly kind: BackupKind
-  readonly sizeBytes: number
-  readonly sha256: string
-  readonly worldId: string | null
-  readonly gameVersion: string | null
-  readonly validationStatus: string
-  readonly createdAtUtc: string
-  readonly sourceJobId: string
-  readonly manifestVersion: number
-}
-
-export interface JobRecord {
-  readonly id: string
-  readonly kind: JobKind
-  readonly status: JobStatus
-  readonly createdAtUtc: string
-  readonly startedAtUtc: string | null
-  readonly completedAtUtc: string | null
-  readonly progress: Readonly<{ current: number | null, total: number | null }> | null
-  readonly errorCode: string | null
-}
+export type * from './backups.types'
 
 export interface BackupsController {
   state: DeepReadonly<ShallowRef<BackupsViewState>>
@@ -57,125 +32,6 @@ export interface BackupsController {
   resume: (jobId: string) => Promise<void>
   refresh: () => Promise<void>
   dispose: () => void
-}
-
-const backupKinds = new Set<BackupKind>(['World', 'PanelDatabase', 'ServerConfiguration'])
-const jobKinds = new Set<JobKind>([
-  'World',
-  'PanelDatabase',
-  'ServerConfiguration',
-  'Restore',
-  'ScheduledConsoleCommand',
-  'ScheduledRestart',
-  'ScheduledAnnouncement',
-])
-const jobStatuses = new Set<JobStatus>([
-  'Queued',
-  'Running',
-  'PendingRestart',
-  'Succeeded',
-  'Failed',
-  'Cancelled',
-  'Interrupted',
-  'ResultUnknown',
-])
-const terminalStatuses = new Set<JobStatus>(['Succeeded', 'Failed', 'Cancelled', 'Interrupted', 'ResultUnknown'])
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function isUtc(value: unknown): value is string {
-  return typeof value === 'string'
-    && /(?:Z|\+00:00)$/.test(value)
-    && Number.isFinite(Date.parse(value))
-}
-
-function nullableString(value: unknown): string | null {
-  if (value === null)
-    return null
-  if (typeof value !== 'string')
-    throw new Error('Invalid server protocol')
-  return value
-}
-
-function nullableUtc(value: unknown): string | null {
-  if (value === null)
-    return null
-  if (!isUtc(value))
-    throw new Error('Invalid server protocol')
-  return value
-}
-
-function parseBackup(value: unknown): BackupRecord {
-  if (!isRecord(value)
-    || typeof value.id !== 'string'
-    || typeof value.kind !== 'string'
-    || !backupKinds.has(value.kind as BackupKind)
-    || typeof value.sizeBytes !== 'number'
-    || !Number.isSafeInteger(value.sizeBytes)
-    || value.sizeBytes < 0
-    || typeof value.sha256 !== 'string'
-    || !/^[a-f\d]{64}$/i.test(value.sha256)
-    || typeof value.validationStatus !== 'string'
-    || value.validationStatus.trim() === ''
-    || !isUtc(value.createdAtUtc)
-    || typeof value.sourceJobId !== 'string'
-    || typeof value.manifestVersion !== 'number'
-    || !Number.isSafeInteger(value.manifestVersion)
-    || value.manifestVersion < 1) {
-    throw new Error('Invalid server protocol')
-  }
-
-  return Object.freeze({
-    id: value.id,
-    kind: value.kind as BackupKind,
-    sizeBytes: value.sizeBytes,
-    sha256: value.sha256,
-    worldId: nullableString(value.worldId),
-    gameVersion: nullableString(value.gameVersion),
-    validationStatus: value.validationStatus,
-    createdAtUtc: value.createdAtUtc,
-    sourceJobId: value.sourceJobId,
-    manifestVersion: value.manifestVersion,
-  })
-}
-
-function parseBackupPage(value: unknown): readonly BackupRecord[] {
-  if (!isRecord(value) || !Array.isArray(value.items))
-    throw new Error('Invalid server protocol')
-  return Object.freeze(value.items.map(parseBackup))
-}
-
-function parseJob(value: unknown): JobRecord {
-  if (!isRecord(value)
-    || typeof value.id !== 'string'
-    || typeof value.kind !== 'string'
-    || !jobKinds.has(value.kind as JobKind)
-    || typeof value.status !== 'string'
-    || !jobStatuses.has(value.status as JobStatus)
-    || !isUtc(value.createdAtUtc)
-    || (value.progress !== null && (!isRecord(value.progress)
-      || (value.progress.current !== null && typeof value.progress.current !== 'number')
-      || (value.progress.total !== null && typeof value.progress.total !== 'number')))) {
-    throw new Error('Invalid server protocol')
-  }
-
-  return Object.freeze({
-    id: value.id,
-    kind: value.kind as JobKind,
-    status: value.status as JobStatus,
-    createdAtUtc: value.createdAtUtc,
-    startedAtUtc: nullableUtc(value.startedAtUtc),
-    completedAtUtc: nullableUtc(value.completedAtUtc),
-    progress: value.progress === null
-      ? null
-      : Object.freeze({
-          current: value.progress.current as number | null,
-          total: value.progress.total as number | null,
-        }),
-    errorCode: nullableString(value.errorCode),
-  })
 }
 
 function idempotencyKey(): string {

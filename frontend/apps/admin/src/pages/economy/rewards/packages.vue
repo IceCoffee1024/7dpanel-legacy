@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RewardPackageDraft } from '../../../features/rewards/api/rewards'
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { RewardPackagesView, useRewardPackages } from '../../../features/rewards'
 
 const controller = useRewardPackages()
@@ -12,6 +13,7 @@ function save(draft: RewardPackageDraft) {
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <RewardPackagesView :controller="controller" @load="load" @save="save" />
 </template>
 

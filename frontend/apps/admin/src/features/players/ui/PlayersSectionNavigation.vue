@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
-import { navigationCatalog } from '../../../app/navigation/navigationCatalog'
+import { useNavigation } from '../../../app/navigation/useNavigation'
 import SectionTabs from '../../../components/navigation/SectionTabs.vue'
 
-const items = computed(() => navigationCatalog.groups
-  .find(group => group.id === 'players')
-  ?.children
-  .filter(entry => entry.id === 'online-players' || entry.id === 'player-history' || entry.id === 'player-map')
-  .map(entry => Object.freeze({ ...entry, groupId: 'players' as const })) ?? [])
+const navigation = useNavigation()
 </script>
 
 <template>
-  <SectionTabs :items="items" />
+  <SectionTabs
+    v-if="navigation.sectionItems.value.length > 1"
+    :items="navigation.sectionItems.value"
+  />
 </template>

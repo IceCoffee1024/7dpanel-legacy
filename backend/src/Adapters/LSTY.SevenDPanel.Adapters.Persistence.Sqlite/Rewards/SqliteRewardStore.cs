@@ -11,14 +11,14 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
 {
     public sealed class SqliteRewardStore : IRewardStore
     {
-        private const string PackageSelect = @"SELECT
+        internal const string PackageSelect = @"SELECT
             package_id AS PackageId, name AS Name, description AS Description,
             enabled AS Enabled, sort_order AS SortOrder,
             created_at_utc AS CreatedAtUtc, updated_at_utc AS UpdatedAtUtc,
             row_version AS RowVersion
             FROM reward_packages";
 
-        private const string PackageEntrySelect = @"SELECT
+        internal const string PackageEntrySelect = @"SELECT
             entry_id AS EntryId, package_id AS PackageId, ordinal AS Ordinal,
             entry_kind AS EntryKind, item_internal_name AS ItemInternalName,
             item_kind AS ItemKind, quantity AS Quantity,
@@ -27,7 +27,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
             registered_action AS RegisteredAction
             FROM reward_package_entries";
 
-        private const string GrantSelect = @"SELECT
+        internal const string GrantSelect = @"SELECT
             operation_id AS OperationId, package_id AS PackageId,
             crossplatform_id AS CrossplatformId,
             expected_entity_id AS ExpectedEntityId,
@@ -44,7 +44,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
             row_version AS RowVersion
             FROM grant_operations";
 
-        private const string GrantEntrySelect = @"SELECT
+        internal const string GrantEntrySelect = @"SELECT
             operation_entry_id AS OperationEntryId, operation_id AS OperationId,
             package_entry_id AS PackageEntryId, ordinal AS Ordinal,
             entry_kind AS EntryKind, state AS State,
@@ -76,8 +76,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 new { package.PackageId }, transaction) > 0;
             if (referenced)
             {
-                var storedEntries = LoadPackageEntryRows(connection, transaction, package.PackageId);
-                if (!PackageEntriesMatch(storedEntries, package.Entries))
+                var storedEntries = RewardPersistence.LoadPackageEntryRows(connection, transaction, package.PackageId);
+                if (!RewardPersistence.PackageEntriesMatch(storedEntries, package.Entries))
                     throw new InvalidOperationException("reward_package_entries_are_in_use");
             }
 
@@ -141,7 +141,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 }
             }
 
-            var result = LoadPackage(connection, transaction, package.PackageId);
+            var result = RewardPersistence.LoadPackage(connection, transaction, package.PackageId);
             transaction.Commit();
             return result;
         }
@@ -150,7 +150,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
         {
             packageId = RequireText(packageId, nameof(packageId));
             using var connection = connectionFactory.Open();
-            return LoadPackage(connection, null, packageId);
+            return RewardPersistence.LoadPackage(connection, null, packageId);
         }
 
         public GrantCreationResult GetOrCreateGrant(GrantOperationDraft operation)
@@ -163,8 +163,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 new { operation.IdempotencyKey }, transaction);
             if (existing != null)
             {
-                EnsureGrantMatches(existing, operation, requireIdempotency: true);
-                var replay = LoadGrant(connection, transaction, existing.OperationId);
+                RewardPersistence.EnsureGrantMatches(existing, operation, requireIdempotency: true);
+                var replay = RewardPersistence.LoadGrant(connection, transaction, existing.OperationId);
                 transaction.Commit();
                 return new GrantCreationResult(replay, false);
             }
@@ -184,14 +184,14 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                     }, transaction);
                 if (existing != null)
                 {
-                    EnsureGrantMatches(existing, operation, requireIdempotency: false);
-                    var duplicate = LoadGrant(connection, transaction, existing.OperationId);
+                    RewardPersistence.EnsureGrantMatches(existing, operation, requireIdempotency: false);
+                    var duplicate = RewardPersistence.LoadGrant(connection, transaction, existing.OperationId);
                     transaction.Commit();
                     return new GrantCreationResult(duplicate, false);
                 }
             }
 
-            var packageEntries = LoadPackageEntryRows(connection, transaction, operation.PackageId);
+            var packageEntries = RewardPersistence.LoadPackageEntryRows(connection, transaction, operation.PackageId);
             if (packageEntries.Length == 0) throw new RewardPackageNotFoundException();
             if (operation.Entries.Count != packageEntries.Length ||
                 operation.Entries.Any(entry => !packageEntries.Any(packageEntry =>
@@ -257,7 +257,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                     }, transaction);
             }
 
-            var created = LoadGrant(connection, transaction, operation.OperationId);
+            var created = RewardPersistence.LoadGrant(connection, transaction, operation.OperationId);
             transaction.Commit();
             return new GrantCreationResult(created, true);
         }
@@ -266,7 +266,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
         {
             operationId = RequireText(operationId, nameof(operationId));
             using var connection = connectionFactory.Open();
-            return LoadGrant(connection, null, operationId);
+            return RewardPersistence.LoadGrant(connection, null, operationId);
         }
 
         public bool TryStartDispatch(
@@ -359,7 +359,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 transaction.Commit();
                 return true;
             }
-            var current = ParseState(operation.State);
+            var current = RewardPersistence.ParseState(operation.State);
             if (operation.RowVersion != resolution.ExpectedRowVersion ||
                 !GrantStateMachine.CanTransition(current, resolution.State))
             {
@@ -495,7 +495,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                   WHERE state = 'PendingReconciliation'
                   ORDER BY updated_at_utc ASC, operation_id ASC LIMIT @Take;",
                 new { Take = take }).ToArray();
-            return ids.Select(id => LoadGrant(connection, null, id)).ToArray();
+            return ids.Select(id => RewardPersistence.LoadGrant(connection, null, id)).ToArray();
         }
 
         public bool TryConfirmReconciled(
@@ -518,7 +518,9 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 GrantSelect + " WHERE operation_id = @OperationId;",
                 new { OperationId = operationId }, transaction);
             if (operation == null ||
-                !GrantStateMachine.CanTransition(ParseState(operation.State), GrantOperationState.Completed))
+                !GrantStateMachine.CanTransition(
+                    RewardPersistence.ParseState(operation.State),
+                    GrantOperationState.Completed))
             {
                 transaction.Commit();
                 return false;
@@ -623,7 +625,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 GrantSelect + " WHERE operation_id = @OperationId;",
                 new { OperationId = sourceOperationId }, transaction) ??
                 throw new RewardGrantNotFoundException();
-            var state = ParseState(source.State);
+            var state = RewardPersistence.ParseState(source.State);
             if (!GrantStateMachine.CanTransition(state, GrantOperationState.Compensated))
                 throw new InvalidOperationException("reward_grant_not_compensatable");
             var changed = connection.Execute(
@@ -648,159 +650,6 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 new { OperationId = sourceOperationId, OccurredUtc = occurredUtc }, transaction);
         }
 
-        private static RewardPackageSnapshot LoadPackage(
-            SqliteConnection connection,
-            SqliteTransaction? transaction,
-            string packageId)
-        {
-            var row = connection.QuerySingleOrDefault<PackageRow>(
-                PackageSelect + " WHERE package_id = @PackageId;",
-                new { PackageId = packageId }, transaction) ??
-                throw new RewardPackageNotFoundException();
-            return ToPackage(row, LoadPackageEntryRows(connection, transaction, packageId));
-        }
-
-        private static PackageEntryRow[] LoadPackageEntryRows(
-            SqliteConnection connection,
-            SqliteTransaction? transaction,
-            string packageId) => connection.Query<PackageEntryRow>(
-                PackageEntrySelect + " WHERE package_id = @PackageId ORDER BY ordinal ASC;",
-                new { PackageId = packageId }, transaction).ToArray();
-
-        private static GrantOperationSnapshot LoadGrant(
-            SqliteConnection connection,
-            SqliteTransaction? transaction,
-            string operationId)
-        {
-            var row = connection.QuerySingleOrDefault<GrantRow>(
-                GrantSelect + " WHERE operation_id = @OperationId;",
-                new { OperationId = operationId }, transaction) ??
-                throw new RewardGrantNotFoundException();
-            var entries = connection.Query<GrantEntryRow>(
-                GrantEntrySelect + " WHERE operation_id = @OperationId ORDER BY ordinal ASC;",
-                new { OperationId = operationId }, transaction).ToArray();
-            return ToGrant(row, entries);
-        }
-
-        private static RewardPackageSnapshot ToPackage(
-            PackageRow row,
-            IEnumerable<PackageEntryRow> entries) => new RewardPackageSnapshot(
-                row.PackageId,
-                row.Name,
-                row.Description,
-                row.Enabled != 0,
-                row.SortOrder,
-                DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc),
-                DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-                row.RowVersion,
-                entries.Select(entry => new RewardPackageEntrySnapshot(
-                    entry.EntryId,
-                    entry.Ordinal,
-                    ParseEntryKind(entry.EntryKind),
-                    entry.ItemInternalName,
-                    entry.ItemKind == null
-                        ? (GameResourceKind?)null
-                        : (GameResourceKind)Enum.Parse(typeof(GameResourceKind), entry.ItemKind),
-                    entry.Quantity,
-                    entry.MinQuality,
-                    entry.MaxQuality,
-                    entry.CatalogVersion,
-                    entry.CurrencyAmount,
-                    entry.RegisteredAction)));
-
-        private static GrantOperationSnapshot ToGrant(
-            GrantRow row,
-            IEnumerable<GrantEntryRow> entries) => new GrantOperationSnapshot(
-                row.OperationId,
-                row.PackageId,
-                row.CrossplatformId,
-                row.ExpectedEntityId,
-                row.ExpectedWorldId,
-                ParseState(row.State),
-                row.IdempotencyKey,
-                row.EligibilityKey,
-                row.SourceKind,
-                row.SourceId,
-                row.ActorKind,
-                row.ActorId,
-                row.ReservationId,
-                row.CompensatesOperationId,
-                row.CorrelationId,
-                row.ErrorCode,
-                DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc),
-                DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-                row.CompletedAtUtc.HasValue
-                    ? DateTimeOffset.FromUnixTimeMilliseconds(row.CompletedAtUtc.Value)
-                    : (DateTimeOffset?)null,
-                row.ReconciledAtUtc.HasValue
-                    ? DateTimeOffset.FromUnixTimeMilliseconds(row.ReconciledAtUtc.Value)
-                    : (DateTimeOffset?)null,
-                row.ReconciledBy,
-                row.RowVersion,
-                entries.Select(entry => new GrantOperationEntrySnapshot(
-                    entry.OperationEntryId,
-                    entry.PackageEntryId,
-                    entry.Ordinal,
-                    ParseEntryKind(entry.EntryKind),
-                    ParseState(entry.State),
-                    entry.DeliveryOperationId,
-                    entry.LedgerTransactionId,
-                    entry.ErrorCode,
-                    DateTimeOffset.FromUnixTimeMilliseconds(entry.UpdatedAtUtc),
-                    entry.RowVersion)));
-
-        private static void EnsureGrantMatches(
-            GrantRow row,
-            GrantOperationDraft operation,
-            bool requireIdempotency)
-        {
-            if (!string.Equals(row.PackageId, operation.PackageId, StringComparison.Ordinal) ||
-                !string.Equals(row.CrossplatformId, operation.CrossplatformId, StringComparison.Ordinal) ||
-                row.ExpectedEntityId != operation.ExpectedEntityId ||
-                !string.Equals(row.ExpectedWorldId, operation.ExpectedWorldId, StringComparison.Ordinal) ||
-                !string.Equals(row.EligibilityKey, operation.EligibilityKey, StringComparison.Ordinal) ||
-                !string.Equals(row.SourceKind, operation.SourceKind, StringComparison.Ordinal) ||
-                !string.Equals(row.SourceId, operation.SourceId, StringComparison.Ordinal) ||
-                !string.Equals(row.CompensatesOperationId, operation.CompensatesOperationId, StringComparison.Ordinal) ||
-                (requireIdempotency &&
-                 !string.Equals(row.IdempotencyKey, operation.IdempotencyKey, StringComparison.Ordinal)))
-            {
-                throw new RewardIdempotencyConflictException();
-            }
-        }
-
-        private static bool PackageEntriesMatch(
-            IReadOnlyList<PackageEntryRow> rows,
-            IReadOnlyList<RewardPackageEntryDraft> entries)
-        {
-            if (rows.Count != entries.Count) return false;
-            for (var index = 0; index < rows.Count; index++)
-            {
-                var row = rows[index];
-                var entry = entries[index];
-                if (row.Ordinal != index ||
-                    !string.Equals(row.EntryId, entry.EntryId, StringComparison.Ordinal) ||
-                    !string.Equals(row.EntryKind, entry.Kind.ToString(), StringComparison.Ordinal) ||
-                    !string.Equals(row.ItemInternalName, entry.ItemInternalName, StringComparison.Ordinal) ||
-                    !string.Equals(row.ItemKind, entry.ItemKind?.ToString(), StringComparison.Ordinal) ||
-                    row.Quantity != entry.Quantity || row.MinQuality != entry.MinQuality ||
-                    row.MaxQuality != entry.MaxQuality ||
-                    !string.Equals(row.CatalogVersion, entry.CatalogVersion, StringComparison.Ordinal) ||
-                    row.CurrencyAmount != entry.CurrencyAmount ||
-                    !string.Equals(row.RegisteredAction, entry.RegisteredAction, StringComparison.Ordinal))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static RewardEntryKind ParseEntryKind(string value) =>
-            (RewardEntryKind)Enum.Parse(typeof(RewardEntryKind), value);
-
-        private static GrantOperationState ParseState(string value) =>
-            (GrantOperationState)Enum.Parse(typeof(GrantOperationState), value);
-
         private static string RequireText(string value, string parameterName)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -817,7 +666,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
                 throw new ArgumentException("A UTC timestamp is required.", parameterName);
         }
 
-        private sealed class PackageRow
+        internal sealed class PackageRow
         {
             public string PackageId { get; set; } = string.Empty;
             public string Name { get; set; } = string.Empty;
@@ -829,7 +678,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
             public long RowVersion { get; set; }
         }
 
-        private sealed class PackageEntryRow
+        internal sealed class PackageEntryRow
         {
             public string EntryId { get; set; } = string.Empty;
             public string PackageId { get; set; } = string.Empty;
@@ -845,7 +694,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
             public string? RegisteredAction { get; set; }
         }
 
-        private sealed class GrantRow
+        internal sealed class GrantRow
         {
             public string OperationId { get; set; } = string.Empty;
             public string PackageId { get; set; } = string.Empty;
@@ -871,7 +720,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Rewards
             public long RowVersion { get; set; }
         }
 
-        private sealed class GrantEntryRow
+        internal sealed class GrantEntryRow
         {
             public string OperationEntryId { get; set; } = string.Empty;
             public string OperationId { get; set; } = string.Empty;

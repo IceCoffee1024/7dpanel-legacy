@@ -1,29 +1,35 @@
 import type { ComputedRef, DeepReadonly, ShallowRef } from 'vue'
 import type { LocationQueryRaw } from 'vue-router'
-import type { FetchHistoricalPlayersOptions, HistoricalPlayerDetails, HistoricalPlayersPage, HistoricalPlayerSummary } from '../../players/api/historyPlayers'
+import type { HistoricalPlayerSummary } from '../../players/api/historyPlayers'
 import type { OnlinePlayersSnapshot } from '../../players/api/onlinePlayers'
-import type { MapGameTime, MapGameTimeEnvelope, MapMetadata, MapMetadataEnvelope, PlayerTrack, PlayerTrackFilters } from '../api/playerMap'
+import type { MapGameTime, MapMetadata, MapMetadataEnvelope, PlayerTrack, PlayerTrackFilters } from '../api/playerMap'
+import type { FetchGameTime, FetchPlayer, FetchPlayers, PlayerMapDataOperations } from './playerMapDataOperations'
+import type { PlayerMapVisibility } from './playerMapLifecycle'
+import type { PlayerMapFilters, PlayerMapPageState } from './playerMapProjection'
 
 import { computed, onMounted, onUnmounted, readonly, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
 import { fetchHistoricalPlayer, fetchHistoricalPlayers } from '../../players/api/historyPlayers'
 import { fetchOnlinePlayers } from '../../players/api/onlinePlayers'
-import { isValidUtcTimestamp } from '../../players/api/playerSnapshot'
 import { fetchMapGameTime, fetchMapMetadata, fetchPlayerTrack } from '../api/playerMap'
-import { toMapCoordinate } from './mapProjection'
+import { createPlayerMapDataOperations, isPlayerMapAborted, isPlayerMapForbidden } from './playerMapDataOperations'
+import { createPlayerMapLifecycle } from './playerMapLifecycle'
+import {
+  mapPlayerMapPageState,
+  playerMapWorldIdentity,
+  playerTrackFitExtent,
+  playerTrackQueryKey,
+  restorePlayerMapFilters,
+  restorePlayerMapObservation,
+} from './playerMapProjection'
 
-export type PlayerMapPageState = 'loading' | 'ready' | 'empty' | 'partial' | 'stale' | 'forbidden' | 'failed'
+export type { PlayerMapVisibility } from './playerMapLifecycle'
+export type { PlayerMapFilters, PlayerMapPageState } from './playerMapProjection'
+
 export type GameTimeState = 'loading' | 'ready' | 'stale' | 'unavailable'
 export type PlayerMapDataState = 'loading' | 'ready' | 'empty' | 'stale' | 'forbidden' | 'failed'
-
-export interface PlayerMapFilters {
-  readonly player: string | null
-  readonly fromUtc: string | null
-  readonly toUtc: string | null
-}
 
 export interface OnlineMapPlayer {
   readonly combinedId: string
@@ -37,20 +43,8 @@ export interface FitRequest {
   readonly extent: readonly [number, number, number, number]
 }
 
-export interface PlayerMapVisibility {
-  isVisible: () => boolean
-  subscribe: (listener: () => void) => () => void
-}
-
 type FetchMetadata = (authorizationHeader: string, signal?: AbortSignal) => Promise<MapMetadataEnvelope>
-type FetchGameTime = (authorizationHeader: string, signal?: AbortSignal) => Promise<MapGameTimeEnvelope>
 type FetchOnline = (authorizationHeader: string, signal?: AbortSignal) => Promise<OnlinePlayersSnapshot>
-type FetchPlayers = (
-  authorizationHeader: string,
-  options: FetchHistoricalPlayersOptions,
-  signal?: AbortSignal,
-) => Promise<HistoricalPlayersPage>
-type FetchPlayer = (authorizationHeader: string, crossplatformId: string, signal?: AbortSignal) => Promise<HistoricalPlayerDetails>
 type FetchTrack = (authorizationHeader: string, filters: PlayerTrackFilters, signal?: AbortSignal) => Promise<PlayerTrack>
 
 export interface CreatePlayerMapControllerOptions {
@@ -100,63 +94,6 @@ const browserVisibility: PlayerMapVisibility = {
   },
 }
 
-function restoredFilters(query: URLSearchParams): PlayerMapFilters {
-  const player = query.get('player')?.trim() || null
-  const fromUtc = query.get('from')
-  const toUtc = query.get('to')
-  const validRange = fromUtc !== null && toUtc !== null
-    && isValidUtcTimestamp(fromUtc) && isValidUtcTimestamp(toUtc)
-    && Date.parse(fromUtc) <= Date.parse(toUtc)
-  return Object.freeze({
-    player,
-    fromUtc: validRange ? fromUtc : null,
-    toUtc: validRange ? toUtc : null,
-  })
-}
-
-function restoredObservation(query: URLSearchParams): number | null {
-  const value = Number(query.get('observation'))
-  return Number.isSafeInteger(value) && value > 0 ? value : null
-}
-
-function isForbidden(error: unknown): boolean {
-  return error instanceof HttpError && error.status === 403
-}
-
-function isAborted(error: unknown): boolean {
-  return error instanceof HttpError && error.code === 'aborted'
-}
-
-function trackQueryKey(filters: PlayerTrackFilters): string {
-  return `${filters.player}\n${filters.fromUtc}\n${filters.toUtc}`
-}
-
-function worldIdentity(value: MapMetadata): string {
-  const { minimumX, minimumZ, maximumX, maximumZ } = value.extent
-  return `${value.worldId}\n${minimumX}\n${minimumZ}\n${maximumX}\n${maximumZ}`
-}
-
-function fitExtent(track: PlayerTrack): readonly [number, number, number, number] | null {
-  const coordinates = track.segments.flatMap(segment => segment.points.map(toMapCoordinate))
-  if (coordinates.length === 0)
-    return null
-  const xs = coordinates.map(coordinate => coordinate[0] ?? 0)
-  const ys = coordinates.map(coordinate => coordinate[1] ?? 0)
-  let minX = Math.min(...xs)
-  let minY = Math.min(...ys)
-  let maxX = Math.max(...xs)
-  let maxY = Math.max(...ys)
-  if (minX === maxX) {
-    minX -= 1
-    maxX += 1
-  }
-  if (minY === maxY) {
-    minY -= 1
-    maxY += 1
-  }
-  return Object.freeze([minX, minY, maxX, maxY])
-}
-
 export function createPlayerMapController(options: CreatePlayerMapControllerOptions): PlayerMapController {
   const requestMetadata = options.fetchMetadata ?? fetchMapMetadata
   const requestGameTime = options.fetchGameTime ?? fetchMapGameTime
@@ -178,24 +115,40 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
   const trackState = shallowRef<PlayerMapDataState>('empty')
   const gameTime = shallowRef<MapGameTime | null>(null)
   const gameTimeState = shallowRef<GameTimeState>('loading')
-  const filters = shallowRef<PlayerMapFilters>(restoredFilters(options.initialQuery ?? new URLSearchParams()))
-  const selectedSnapshotId = shallowRef<number | null>(restoredObservation(options.initialQuery ?? new URLSearchParams()))
+  const filters = shallowRef<PlayerMapFilters>(restorePlayerMapFilters(options.initialQuery ?? new URLSearchParams()))
+  const selectedSnapshotId = shallowRef<number | null>(restorePlayerMapObservation(options.initialQuery ?? new URLSearchParams()))
   const fitRequest = shallowRef<FitRequest | null>(null)
   const observationCount = computed(() => track.value?.segments.reduce((total, segment) => total + segment.points.length, 0) ?? 0)
 
   const fittedQueries = new Set<string>()
-  let coreController: AbortController | null = null
-  let timeController: AbortController | null = null
-  let historyController: AbortController | null = null
-  let trackController: AbortController | null = null
-  let coreSequence = 0
-  let historySequence = 0
-  let trackSequence = 0
-  let timer: ReturnType<typeof setInterval> | null = null
-  let unsubscribeVisibility: (() => void) | null = null
-  let started = false
-  let disposed = false
-
+  let dataOperations!: PlayerMapDataOperations
+  const lifecycle = createPlayerMapLifecycle({
+    visibility,
+    onVisible() {
+      void refresh()
+      void dataOperations.refreshGameTime()
+    },
+    onInterval() {
+      void dataOperations.refreshGameTime()
+    },
+  })
+  dataOperations = createPlayerMapDataOperations({
+    authorizationHeader: options.authorizationHeader,
+    visibility,
+    lifecycle,
+    fetchGameTime: requestGameTime,
+    fetchPlayers: requestPlayers,
+    fetchPlayer: requestPlayer,
+    state: {
+      historicalPlayers,
+      historyState,
+      playerSearch,
+      gameTime,
+      gameTimeState,
+      filters,
+      state,
+    },
+  })
   function syncUrl() {
     const query = new URLSearchParams()
     if (filters.value.player !== null)
@@ -210,8 +163,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
   }
 
   function setPlayer(player: string | null) {
-    trackController?.abort()
-    trackSequence++
+    lifecycle.invalidate('track')
     track.value = null
     trackState.value = player === null ? 'empty' : 'loading'
     selectedSnapshotId.value = null
@@ -220,8 +172,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
   }
 
   function setRange(fromUtc: string | null, toUtc: string | null) {
-    trackController?.abort()
-    trackSequence++
+    lifecycle.invalidate('track')
     track.value = null
     trackState.value = filters.value.player === null ? 'empty' : 'loading'
     selectedSnapshotId.value = null
@@ -235,9 +186,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
   }
 
   function clearWorldBoundState(nextOnlineState: PlayerMapDataState = 'loading') {
-    trackController?.abort()
-    trackController = null
-    trackSequence++
+    lifecycle.invalidate('track')
     onlinePlayers.value = Object.freeze([])
     onlineState.value = nextOnlineState
     track.value = null
@@ -250,108 +199,8 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
     syncUrl()
   }
 
-  function updatePageState(failedCount: number, hadPreviousData: boolean) {
-    if (metadata.value === null) {
-      state.value = 'failed'
-      return
-    }
-    if (failedCount > 0) {
-      state.value = hadPreviousData ? 'stale' : 'partial'
-      return
-    }
-    state.value = onlinePlayers.value.length === 0 && historicalPlayers.value.length === 0
-      ? 'empty'
-      : 'ready'
-  }
-
-  async function searchHistoricalPlayers(query: string): Promise<void> {
-    if (disposed)
-      return
-    playerSearch.value = query
-    const authorizationHeader = options.authorizationHeader()
-    if (authorizationHeader === null) {
-      historyState.value = historicalPlayers.value.length === 0 ? 'failed' : 'stale'
-      return
-    }
-    historyController?.abort()
-    const controller = new AbortController()
-    historyController = controller
-    const sequence = ++historySequence
-    if (historicalPlayers.value.length === 0)
-      historyState.value = 'loading'
-    try {
-      const trimmed = query.trim()
-      const page = await requestPlayers(authorizationHeader, {
-        query: trimmed === '' ? null : trimmed,
-        pageSize: 50,
-        cursor: null,
-      }, controller.signal)
-      if (disposed || sequence !== historySequence)
-        return
-      let players = [...page.players]
-      const restoredPlayerId = filters.value.player
-      if (restoredPlayerId !== null && !players.some(player => player.crossplatformId === restoredPlayerId)) {
-        const restored = await requestPlayer(authorizationHeader, restoredPlayerId, controller.signal)
-        if (disposed || sequence !== historySequence)
-          return
-        players = [restored.player, ...players]
-      }
-      historicalPlayers.value = Object.freeze(players)
-      historyState.value = players.length === 0 ? 'empty' : 'ready'
-    }
-    catch (error) {
-      if (disposed || sequence !== historySequence || isAborted(error))
-        return
-      if (isForbidden(error)) {
-        historyState.value = 'forbidden'
-        state.value = 'forbidden'
-      }
-      else {
-        historyState.value = historicalPlayers.value.length === 0 ? 'failed' : 'stale'
-      }
-    }
-    finally {
-      if (historyController === controller)
-        historyController = null
-    }
-  }
-
-  async function refreshGameTime() {
-    if (disposed || !visibility.isVisible())
-      return
-    const authorizationHeader = options.authorizationHeader()
-    if (authorizationHeader === null) {
-      gameTimeState.value = gameTime.value === null ? 'unavailable' : 'stale'
-      return
-    }
-    timeController?.abort()
-    const controller = new AbortController()
-    timeController = controller
-    try {
-      const result = await requestGameTime(authorizationHeader, controller.signal)
-      if (!disposed && timeController === controller) {
-        if (result.availability === 'unavailable') {
-          gameTime.value = null
-          gameTimeState.value = 'unavailable'
-        }
-        else {
-          gameTime.value = result
-          gameTimeState.value = result.availability === 'stale' ? 'stale' : 'ready'
-        }
-      }
-    }
-    catch (error) {
-      if (!disposed && timeController === controller && !isAborted(error))
-        gameTimeState.value = gameTime.value === null ? 'unavailable' : 'stale'
-    }
-    finally {
-      if (timeController === controller)
-        timeController = null
-    }
-  }
-
   async function refresh(): Promise<void> {
-    if (disposed || !visibility.isVisible())
+    if (lifecycle.isDisposed() || !visibility.isVisible())
       return
     const authorizationHeader = options.authorizationHeader()
     if (authorizationHeader === null) {
@@ -359,25 +208,23 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
       return
     }
     const hadPreviousData = metadata.value !== null || onlinePlayers.value.length > 0 || historicalPlayers.value.length > 0
-    coreController?.abort()
-    const controller = new AbortController()
-    coreController = controller
-    const sequence = ++coreSequence
+    const request = lifecycle.begin('core')
     if (!hadPreviousData)
       state.value = 'loading'
 
-    const historyRequest = searchHistoricalPlayers(playerSearch.value)
+    const historyRequest = dataOperations.searchHistoricalPlayers(playerSearch.value)
     const results = await Promise.allSettled([
-      requestMetadata(authorizationHeader, controller.signal),
-      requestOnline(authorizationHeader, controller.signal),
+      requestMetadata(authorizationHeader, request.controller.signal),
+      requestOnline(authorizationHeader, request.controller.signal),
     ])
     await historyRequest
-    if (disposed || sequence !== coreSequence)
+    if (!lifecycle.isCurrent(request))
       return
-    if (results.some(result => result.status === 'rejected' && isForbidden(result.reason)) || historyState.value === 'forbidden') {
+    if (results.some(result => result.status === 'rejected' && isPlayerMapForbidden(result.reason)) || historyState.value === 'forbidden') {
       onlineState.value = 'forbidden'
       historyState.value = 'forbidden'
       state.value = 'forbidden'
+      lifecycle.finish(request)
       return
     }
     let failedCount = 0
@@ -392,7 +239,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
         failedCount++
       }
       else {
-        if (metadata.value !== null && worldIdentity(metadata.value) !== worldIdentity(metadataResult.value))
+        if (metadata.value !== null && playerMapWorldIdentity(metadata.value) !== playerMapWorldIdentity(metadataResult.value))
           clearWorldBoundState()
         metadata.value = metadataResult.value
         if (metadataResult.value.availability === 'stale') {
@@ -401,7 +248,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
         }
       }
     }
-    else if (!isAborted(metadataResult.reason)) {
+    else if (!isPlayerMapAborted(metadataResult.reason)) {
       failedCount++
     }
     const onlineResult = results[1]
@@ -418,16 +265,22 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
       })))
       onlineState.value = onlinePlayers.value.length === 0 ? 'empty' : 'ready'
     }
-    else if (!isAborted(onlineResult.reason)) {
+    else if (!isPlayerMapAborted(onlineResult.reason)) {
       failedCount++
       onlineState.value = onlinePlayers.value.length === 0 ? 'failed' : 'stale'
     }
     if (historyState.value === 'failed' || historyState.value === 'stale')
       failedCount++
-    updatePageState(failedCount, hadPreviousData)
+    state.value = mapPlayerMapPageState(
+      metadata.value,
+      onlinePlayers.value.length,
+      historicalPlayers.value.length,
+      failedCount,
+      hadPreviousData,
+    )
     if (metadataWasStale)
       state.value = 'stale'
-    coreController = null
+    lifecycle.finish(request)
 
     if (metadata.value !== null && visibility.isVisible()
       && filters.value.player !== null && filters.value.fromUtc !== null && filters.value.toUtc !== null) {
@@ -436,7 +289,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
   }
 
   async function refreshTrack(): Promise<void> {
-    if (disposed)
+    if (lifecycle.isDisposed())
       return
     const authorizationHeader = options.authorizationHeader()
     const current = filters.value
@@ -447,16 +300,13 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
       fromUtc: current.fromUtc,
       toUtc: current.toUtc,
     }
-    const key = trackQueryKey(requestFilters)
-    trackController?.abort()
-    const controller = new AbortController()
-    trackController = controller
-    const sequence = ++trackSequence
+    const key = playerTrackQueryKey(requestFilters)
+    const request = lifecycle.begin('track')
     if (track.value === null)
       trackState.value = 'loading'
     try {
-      const result = await requestTrack(authorizationHeader, requestFilters, controller.signal)
-      if (disposed || sequence !== trackSequence)
+      const result = await requestTrack(authorizationHeader, requestFilters, request.controller.signal)
+      if (!lifecycle.isCurrent(request))
         return
       track.value = result
       trackState.value = observationCount.value === 0 ? 'empty' : 'ready'
@@ -470,7 +320,7 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
         selectedSnapshotId.value = nextSelectedSnapshotId
         syncUrl()
       }
-      const extent = fitExtent(result)
+      const extent = playerTrackFitExtent(result)
       if (extent !== null && !fittedQueries.has(key)) {
         fittedQueries.add(key)
         fitRequest.value = Object.freeze({ queryKey: key, extent })
@@ -479,8 +329,8 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
         state.value = 'empty'
     }
     catch (error) {
-      if (!disposed && sequence === trackSequence && !isAborted(error)) {
-        if (isForbidden(error)) {
+      if (lifecycle.isCurrent(request) && !isPlayerMapAborted(error)) {
+        if (isPlayerMapForbidden(error)) {
           trackState.value = 'forbidden'
           state.value = 'forbidden'
         }
@@ -491,69 +341,8 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
       }
     }
     finally {
-      if (trackController === controller)
-        trackController = null
+      lifecycle.finish(request)
     }
-  }
-
-  function clearTimer() {
-    if (timer !== null) {
-      clearInterval(timer)
-      timer = null
-    }
-  }
-
-  function startTimer() {
-    clearTimer()
-    if (!disposed && visibility.isVisible())
-      timer = setInterval(() => void refreshGameTime(), 30_000)
-  }
-
-  function handleVisibility() {
-    if (!visibility.isVisible()) {
-      clearTimer()
-      coreSequence++
-      historySequence++
-      trackSequence++
-      coreController?.abort()
-      timeController?.abort()
-      historyController?.abort()
-      trackController?.abort()
-      return
-    }
-    startTimer()
-    void refresh()
-    void refreshGameTime()
-  }
-
-  function start() {
-    if (started || disposed)
-      return
-    started = true
-    unsubscribeVisibility = visibility.subscribe(handleVisibility)
-    startTimer()
-    void refresh()
-    void refreshGameTime()
-  }
-
-  function dispose() {
-    if (disposed)
-      return
-    disposed = true
-    coreSequence++
-    historySequence++
-    trackSequence++
-    coreController?.abort()
-    timeController?.abort()
-    historyController?.abort()
-    trackController?.abort()
-    coreController = null
-    timeController = null
-    historyController = null
-    trackController = null
-    clearTimer()
-    unsubscribeVisibility?.()
-    unsubscribeVisibility = null
   }
 
   return {
@@ -574,12 +363,12 @@ export function createPlayerMapController(options: CreatePlayerMapControllerOpti
     fitRequest: readonly(fitRequest),
     setPlayer,
     setRange,
-    searchHistoricalPlayers,
+    searchHistoricalPlayers: dataOperations.searchHistoricalPlayers,
     selectObservation,
     refresh,
     refreshTrack,
-    start,
-    dispose,
+    start: lifecycle.start,
+    dispose: lifecycle.dispose,
   }
 }
 

@@ -12,6 +12,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { useAuthStore } from '../../../features/auth'
 import {
   createRecentChatMessagesLoader,
@@ -45,6 +46,7 @@ const sendError = computed(() => sender.error.value === null
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <LiveChatView
     :messages="live.messages.value"
     :channel-filter="live.channelFilter.value"

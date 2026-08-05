@@ -1,4 +1,4 @@
-import type { City, FriendshipRecord, FriendshipStatus, PlayerHome, TeleportOperation, TeleportSettings, VoteRound } from '../api/community'
+import type { City, FriendshipRecord, FriendshipStatus, PlayerHome, TeleportOperation, TeleportSettings, VoteRound, VoteSettlement } from '../api/community'
 
 import { describe, expect, it, vi } from 'vitest'
 import { isReadonly } from 'vue'
@@ -331,6 +331,65 @@ describe('useCommunity', () => {
     expect(fetchFriendshipRecords).toHaveBeenCalledWith('Bearer owner', expect.any(AbortSignal))
     expect(fetchTeleportOperations).toHaveBeenCalledWith('Bearer owner', expect.any(AbortSignal))
     expect(fetchVoteRounds).toHaveBeenCalledWith('Bearer owner', expect.any(AbortSignal))
+  })
+
+  it('updates both city projections after an authoritative mutation', async () => {
+    const enabledCity = Object.freeze({ ...city, enabled: true })
+    const authoritative = Object.freeze({ ...enabledCity, enabled: false, rowVersion: 3n })
+    const controller = useCommunity({
+      auth,
+      fetchCities: vi.fn().mockResolvedValue([enabledCity]),
+      fetchAllCities: vi.fn().mockResolvedValue([enabledCity]),
+      upsertCity: vi.fn().mockResolvedValue(authoritative),
+    })
+
+    await controller.loadCities()
+    await controller.loadAllCities()
+    await expect(controller.saveCity({
+      cityId: enabledCity.cityId,
+      name: enabledCity.name,
+      description: enabledCity.description,
+      enabled: false,
+      position: enabledCity.position,
+      sortOrder: enabledCity.sortOrder,
+    })).resolves.toBe(true)
+
+    expect(controller.cities.value).toEqual([])
+    expect(controller.fullCities.value).toEqual([])
+    expect(controller.citiesState.value).toBe('empty')
+    expect(controller.fullCityListState.value).toBe('empty')
+  })
+
+  it('updates the full vote projection while removing terminal rounds from the action queue', async () => {
+    const queuedRound = Object.freeze({ ...voteRound, state: 'ActionQueued' as const })
+    const settledRound = Object.freeze({
+      ...queuedRound,
+      state: 'ActionSucceeded' as const,
+      settledAtUtc: '2026-07-27T01:02:00Z',
+    })
+    const settlement: VoteSettlement = {
+      status: 'Settled',
+      round: settledRound,
+      participantCount: 3,
+      yesCount: 2,
+      noCount: 1,
+      wasSettled: true,
+    }
+    const controller = useCommunity({
+      auth,
+      fetchActionQueuedVoteRounds: vi.fn().mockResolvedValue([queuedRound]),
+      fetchVoteRounds: vi.fn().mockResolvedValue([queuedRound]),
+      settleVoteRound: vi.fn().mockResolvedValue(settlement),
+    })
+
+    await controller.loadVoteRounds()
+    await controller.loadAllVoteRounds()
+    await expect(controller.settleVote('round-1')).resolves.toBe(true)
+
+    expect(controller.voteRounds.value).toEqual([])
+    expect(controller.fullVoteRounds.value).toEqual([settledRound])
+    expect(controller.voteRoundsState.value).toBe('empty')
+    expect(controller.fullVoteRoundListState.value).toBe('ready')
   })
 
   it('clears mutation state and target when disposing an in-flight mutation', async () => {

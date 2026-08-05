@@ -12,6 +12,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { ChatSettingsView, useChatSettings } from '../../../features/game-chat'
 
 const router = useRouter()
@@ -31,6 +32,7 @@ onBeforeRouteLeave(() => settings.canLeave())
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <UDashboardPanel id="game-chat-settings">
     <template #header>
       <UDashboardNavbar :title="t('gameChat.settings.title')">

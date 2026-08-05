@@ -44,9 +44,13 @@ using LSTY.SevenDPanel.Hosting;
 using LSTY.SevenDPanel.Hosting.Authentication;
 using LSTY.SevenDPanel.Adapters.Local.Platform;
 using LSTY.SevenDPanel.Adapters.Local.ServerOperations;
+using LSTY.SevenDPanel.Adapters.Local.GeoIp;
 using LSTY.SevenDPanel.Hosting.ServerEvents;
+using LSTY.SevenDPanel.Adapters.Web.Inbound.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Owin;
+using LSTY.SevenDPanel.Application.GeoIp;
+using LSTY.SevenDPanel.Tests.Bootstrap;
 using Xunit;
 
 namespace LSTY.SevenDPanel.Tests
@@ -811,6 +815,141 @@ namespace LSTY.SevenDPanel.Tests
                 if (Directory.Exists(dataDirectory))
                     Directory.Delete(dataDirectory, recursive: true);
             }
+        }
+
+        [Fact]
+        public void Production_provider_resolves_the_validated_runtime_graph_and_preserves_lifetimes()
+        {
+            var snapshot = RunCompositionCharacterizationInIsolatedAppDomain(
+                worker => worker.CaptureValidatedRuntimeGraph(18080));
+
+            Assert.Equal(
+                "ServerOperationRecoveryRuntime -> ChatCommandMixedTestRuntime -> WorldOperationRuntime",
+                snapshot.RuntimeChain);
+            Assert.Equal(
+                new[] { "LocalMmdbGeoIpProvider", "MaxMindWebServiceGeoIpProvider" },
+                snapshot.GeoIpProviders);
+            Assert.True(snapshot.SqliteConnectionFactoryRegistrationIsUnique);
+            Assert.True(snapshot.SqliteConnectionFactoryIsRootSingleton);
+            Assert.True(snapshot.SqliteConnectionFactoryIsSharedAcrossScopes);
+            Assert.True(snapshot.RootResolveOfScopedServiceFails);
+        }
+
+        [Fact]
+        public void Production_web_request_scope_is_scoped_and_does_not_own_the_root_provider()
+        {
+            var snapshot = RunCompositionCharacterizationInIsolatedAppDomain(
+                worker => worker.CaptureWebRequestScope(18081));
+
+            Assert.True(snapshot.SameServiceIsReusedWithinScope);
+            Assert.True(snapshot.DifferentScopeGetsDifferentService);
+            Assert.True(snapshot.RootProviderRemainsUsableAfterScopeDispose);
+        }
+
+        [Fact]
+        public void Composition_root_registers_before_one_validated_provider_and_resolves_after_build()
+        {
+            var sourcePath = Path.Combine(
+                FindCompositionCharacterizationRepositoryRoot(),
+                "backend",
+                "src",
+                "Bootstrap",
+                "LSTY.SevenDPanel",
+                "DependencyInjection",
+                "PanelServiceProviderFactory.cs");
+            var source = File.ReadAllText(sourcePath);
+            var registrationRoot = Path.Combine(
+                Path.GetDirectoryName(sourcePath)!,
+                "Registration");
+            var registrationSource = string.Join(
+                Environment.NewLine,
+                Directory.GetFiles(registrationRoot, "*.cs", SearchOption.AllDirectories)
+                    .Select(File.ReadAllText));
+            const string buildCall = "services.BuildServiceProvider(";
+            var buildIndex = source.IndexOf(buildCall, StringComparison.Ordinal);
+
+            Assert.True(buildIndex >= 0);
+            Assert.Equal(1, CountCompositionCharacterizationOccurrences(source, buildCall));
+            Assert.True(
+                source.IndexOf("services.Add", buildIndex, StringComparison.Ordinal) < 0,
+                "All service registrations must precede provider construction.");
+            Assert.True(
+                source.IndexOf(
+                    "provider.GetRequiredService<SqliteDatabaseBootstrapper>()",
+                    buildIndex,
+                    StringComparison.Ordinal) > buildIndex);
+            Assert.True(
+                source.IndexOf(
+                    "provider.GetRequiredService<IModRuntime>()",
+                    buildIndex,
+                    StringComparison.Ordinal) > buildIndex);
+            var firstResolveIndex = source.IndexOf(
+                "provider.GetRequiredService",
+                StringComparison.Ordinal);
+            Assert.True(firstResolveIndex > buildIndex);
+            Assert.Contains("ValidateOnBuild = true", source, StringComparison.Ordinal);
+            Assert.Contains("ValidateScopes = true", source, StringComparison.Ordinal);
+            Assert.Equal(
+                1,
+                CountCompositionCharacterizationOccurrences(
+                    registrationSource,
+                    "services.AddScoped<ServerEventSseSession>();"));
+            Assert.DoesNotContain("services.AddTransient", registrationSource, StringComparison.Ordinal);
+        }
+
+        private static TSnapshot RunCompositionCharacterizationInIsolatedAppDomain<TSnapshot>(
+            Func<ProductionCompositionIsolationWorker, TSnapshot> capture)
+        {
+            var setup = new AppDomainSetup
+            {
+                ApplicationBase = AppContext.BaseDirectory,
+                ShadowCopyFiles = "false"
+            };
+            var domain = AppDomain.CreateDomain(
+                "7dpanel-bootstrap-characterization-" + Guid.NewGuid().ToString("N"),
+                null,
+                setup);
+            try
+            {
+                var worker = (ProductionCompositionIsolationWorker)
+                    domain.CreateInstanceAndUnwrap(
+                        typeof(ProductionCompositionIsolationWorker).Assembly.FullName!,
+                        typeof(ProductionCompositionIsolationWorker).FullName!);
+                return capture(worker);
+            }
+            finally
+            {
+                AppDomain.Unload(domain);
+            }
+        }
+
+        private static int CountCompositionCharacterizationOccurrences(
+            string source,
+            string value)
+        {
+            var count = 0;
+            var index = 0;
+            while ((index = source.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+            {
+                count++;
+                index += value.Length;
+            }
+
+            return count;
+        }
+
+        private static string FindCompositionCharacterizationRepositoryRoot()
+        {
+            for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+                 directory != null;
+                 directory = directory.Parent)
+            {
+                if (File.Exists(Path.Combine(directory.FullName, "backend", "7DPanel.sln")))
+                    return directory.FullName;
+            }
+
+            throw new InvalidOperationException(
+                "Repository root containing backend/7DPanel.sln was not found.");
         }
 
         private static int GetAvailablePort()

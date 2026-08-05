@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AchievementDefinitionDraft, ManualOnlineRewardInput, OnlineRewardRuleDraft } from '../../../features/commerce/api/commerce'
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { AchievementOnlineRewardsView, useAchievementOnlineRewards } from '../../../features/commerce'
 
 const controller = useAchievementOnlineRewards()
@@ -21,6 +22,7 @@ function manualGrant(input: ManualOnlineRewardInput) {
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <AchievementOnlineRewardsView
     :controller="controller"
     @save-achievement="saveAchievement"

@@ -3,13 +3,12 @@ import type { AreaInvestigationQuery, AreaInvestigationResponse } from './useAre
 import { describe, expect, it, vi } from 'vitest'
 
 import { requestJson } from '../../../shared/api/http'
+import { fetchAreaInvestigation, parseAreaInvestigationResponse } from './areaInvestigationAdapter'
 import {
   areaInvestigationPath,
-  createAreaInvestigationController,
-  fetchAreaInvestigation,
-  parseAreaInvestigationResponse,
   restoreAreaInvestigationUrlState,
-} from './useAreaInvestigation'
+} from './areaInvestigationProjection'
+import { createAreaInvestigationController } from './useAreaInvestigation'
 
 vi.mock('../../../shared/api/http', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../shared/api/http')>()

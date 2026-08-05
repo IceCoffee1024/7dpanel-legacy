@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CreateRedeemCodeInput } from '../../../features/commerce/api/commerce'
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { RedeemCodesView, useRedeemCodes } from '../../../features/commerce'
 
 const controller = useRedeemCodes()
@@ -12,6 +13,7 @@ function create(input: CreateRedeemCodeInput) {
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <RedeemCodesView
     :controller="controller"
     @load="load"

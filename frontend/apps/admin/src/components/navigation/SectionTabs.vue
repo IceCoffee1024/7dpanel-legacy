@@ -16,7 +16,7 @@ function toRoute(item: NavigationEntryProjection): RouteLocationRaw {
 </script>
 
 <template>
-  <nav class="border-b border-default" :aria-label="t('shell.navigation')">
+  <nav class="border-b border-default" :aria-label="t('shell.navigation')" data-testid="section-tabs">
     <ul class="flex gap-1 overflow-x-auto" role="list">
       <li v-for="item in items" :key="item.id" class="shrink-0">
         <RouterLink

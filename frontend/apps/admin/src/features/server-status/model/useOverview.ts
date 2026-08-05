@@ -1,6 +1,7 @@
 import type { DeepReadonly, ShallowRef } from 'vue'
 import type { ServerEventType } from '../../../app/serverEvents'
 import type { OverviewSnapshot } from './overview'
+import type { OverviewLoadError, OverviewStatus } from './overviewProjection'
 
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { onMounted, onUnmounted, readonly, shallowRef } from 'vue'
@@ -10,14 +11,10 @@ import { overviewGetQuery, overviewGetQueryKey } from '../../../shared/api/gener
 import { HttpError } from '../../../shared/api/http'
 import { useAuthStore } from '../../auth'
 import { parseOverview } from './overview'
+import { isOverviewAbortError, mapSnapshotStatus, toSafeOverviewError } from './overviewProjection'
 import { usePageVisibilityRefresh } from './usePageVisibilityRefresh'
 
-export type OverviewStatus = 'loading' | 'fresh' | 'partial' | 'stale' | 'offline'
-export type OverviewLoadErrorCode = 'network' | 'timeout' | 'unavailable'
-
-export interface OverviewLoadError {
-  code: OverviewLoadErrorCode
-}
+export type { OverviewLoadError, OverviewStatus } from './overviewProjection'
 
 export interface OverviewController {
   snapshot: DeepReadonly<ShallowRef<OverviewSnapshot | null>>
@@ -40,40 +37,6 @@ export interface UseOverviewOptions {
   subscribeServerEvents?: (
     listener: (event: { type: ServerEventType }) => void,
   ) => () => void
-}
-
-const availabilityProblemStates = new Set(['unavailable', 'forbidden'])
-
-function mapSnapshotStatus(snapshot: OverviewSnapshot): Exclude<OverviewStatus, 'loading'> {
-  const partitions = [
-    snapshot.game.availability,
-    snapshot.host.availability,
-    snapshot.restartPolicy.availability,
-    snapshot.recentActivity.availability,
-  ]
-  if (snapshot.availability === 'unavailable')
-    return 'offline'
-  if (snapshot.availability === 'forbidden'
-    || partitions.some(value => availabilityProblemStates.has(value))) {
-    return 'partial'
-  }
-  if (snapshot.availability === 'stale' || partitions.includes('stale'))
-    return 'stale'
-  return 'fresh'
-}
-
-function isAbortError(error: unknown): boolean {
-  return (error instanceof HttpError && error.code === 'aborted')
-    || (error instanceof DOMException && error.name === 'AbortError')
-    || (error instanceof Error && error.name === 'AbortError')
-}
-
-function mapError(error: unknown): OverviewLoadError {
-  if (error instanceof HttpError && error.code === 'timeout')
-    return Object.freeze({ code: 'timeout' })
-  if (error instanceof HttpError && error.code === 'network')
-    return Object.freeze({ code: 'network' })
-  return Object.freeze({ code: 'unavailable' })
 }
 
 export function useOverview(options: UseOverviewOptions = {}): OverviewController {
@@ -148,7 +111,7 @@ export function useOverview(options: UseOverviewOptions = {}): OverviewControlle
       sessionExpiryNotified = false
     }
     catch (cause) {
-      if (disposed || currentGeneration !== generation || isAbortError(cause))
+      if (disposed || currentGeneration !== generation || isOverviewAbortError(cause))
         return
       if (cause instanceof HttpError && cause.status === 401) {
         if (auth.authorizationHeader !== null)
@@ -161,7 +124,7 @@ export function useOverview(options: UseOverviewOptions = {}): OverviewControlle
         }
         return
       }
-      error.value = mapError(cause)
+      error.value = toSafeOverviewError(cause)
       status.value = snapshot.value === null ? 'offline' : 'stale'
     }
     finally {

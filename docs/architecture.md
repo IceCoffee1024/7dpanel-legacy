@@ -120,6 +120,13 @@ last_updated: "2026-07-31"
 
 本边界保持前端导航复杂度局部化：目录是静态 typed data，不扫描 Feature、程序集或运行时 API；没有新增全局 Store、插件注册表、BFF、API 或 SQLite migration。导航、路由、组件和组合页的当前证据见[测试策略](test.md#浏览器端到端测试)与[信息架构重构设计规格](superpowers/specs/2026-08-03-admin-information-architecture-refactor-design.md)。
 
+### 持续复杂度收敛后的当前边界
+
+- `PanelServiceProviderFactory.cs` 当前只负责输入校验、composition context、按稳定顺序调用 registration 模块、唯一一次 `BuildServiceProvider`、验证和 runtime 返回；registration/context 文件不持有 Provider，不调用 `BuildServiceProvider`，也不在注册阶段启动后台工作。Bootstrap 对象图、生命周期和释放顺序由 characterization 与 registration 边界测试保护。
+- Commerce/Economy、Community/Rewards Persistence 与 Web/OpenAPI 热点已按真实聚合、事务/读写合同和纯规则边界拆为同一 Adapter 内的内部文件；公开 Store/facade、SQLite schema/migration、路由、OpenAPI snapshot 和生成客户端没有新增语义。继续保留的世界操作、Automation Store、Discord Store、Community Store 与 Application commerce model 热点由复杂度预算中的路径、原因、所有者和复审条件明确记录，不通过提高阈值隐藏。
+- Admin 四个选定热点已保持 `page -> feature -> shared` 边界，类型、协议、View composable 和生命周期协作者留在各自 Feature 内；没有新增全局 Store、公共生命周期框架或跨 Feature 的未登记依赖。当前前端跨 Feature 访问由依赖门禁的 `75/75` allowlist hits 覆盖，未匹配和未使用规则均为 `0`；固定导航仍为六个一级任务域、24 个二级入口。
+- 本轮结构变化不改变产品项目数、测试项目数、唯一 Provider、API、SQLite schema、权限或危险状态语义。原始复杂度测量与例外调整结果、聚合命令和未执行环境由[测试策略](test.md#复杂性预算与趋势)和[已知缺口](test.md#已知缺口)拥有。
+
 本节只提升当前代码结构和本轮可复查命令支持的事实。当前八项目已完成 `dotnet publish`、Admin 产物组装和 manifest 布局校验，并已写入 Windows `Mods/7DPanel` 后通过 Unity Mono 启停与健康检查；发布 smoke 编排支持显式输出脱敏的步骤日志与无 BOM UTF-8 机器可读摘要，默认不归档，子脚本遗留的非零原生退出码会原值进入步骤与总体摘要并立即停止后续步骤。当前认证真实 OWIN Playwright 已覆盖 API Key、locale、导航和在线玩家主路径，本地 Playwright mock 另覆盖桌面与 `390x844` 路由、权限和 Chat Mutes 关键交互；六波次 Owner 页面已配置 Chromium/Firefox/WebKit 矩阵，并在 Chrome 真实 Owner 会话中完成 37 条路由的桌面与 `390x844` 基础可达性、浏览器错误和根级水平溢出检查。新增多浏览器矩阵尚因本机 Playwright 浏览器包下载阻塞而未取得执行证据；真实备份恢复、真实玩家和世界危险副作用、Discord/MaxMind sandbox 以及 Linux 候选发布门禁仍未完成。
 
 目标运行环境是 7DTD Dedicated Server `v3.0.1-b4` 随附的 Unity Mono 进程。运行时与反编译行为证据来自根目录只读私有子模块 `7dtd-reference/`；该子模块不是产品源码或发布内容。
@@ -205,7 +212,7 @@ flowchart LR
 | `backend/src/Adapters/LSTY.SevenDPanel.Adapters.Local/` | 批准存储根与路径约束、原子文件发布、备份归档与待恢复文件边界、后台作业、Discord HTTP 投递、MaxMind Web Service 查询、地图资源发布和世界 change set blob；Windows/Linux 主机采样、平台适配器与重启脚本进程边界 | Application、Domain、Hosting 契约、System.IO.Compression、System.Net.Http |
 | `frontend/apps/admin/` | 响应式应用壳、认证和双语运行时、规范任务域页面与 Feature View；`navigationCatalog`、`routeAccess`、`useNavigation`、显式旧 URL redirects、局部 `SectionTabs` 和服务器运维组合页共同拥有 Admin 导航边界；路由 meta、守卫、侧栏、移动抽屉、Dashboard Search、面包屑和快捷键复用同一角色投影 | Vue 3、Vue Router、Pinia、Pinia Colada、Vue I18n、Valibot、Nuxt UI、Hey API 生成客户端、OpenLayers、Vite |
 
-当前后端解决方案包含八个产品项目，Application 直接依赖 Domain，SQLite Persistence Adapter 与 Local Adapter 分别拥有数据库和受控本地文件系统边界。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向和唯一入口约束。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
+当前后端解决方案包含八个产品项目，Application 直接依赖 Domain，SQLite Persistence Adapter 与 Local Adapter 分别拥有数据库和受控本地文件系统边界。只有 `LSTY.SevenDPanel.dll` 实现 `IModApi`；`DependencyRulesTests` 校验后端项目引用白名单、Adapter 方向和唯一入口约束。Bootstrap 的唯一组合根由 `PanelServiceProviderFactory.cs` 保留，能力注册由同项目内部的九个 registration/context 文件按 Platform、Operations、Players、Community、Economy、Automation 和 Administration 分组；这些模块只接收 `IServiceCollection` 与已验证 context，不创建 Provider、不解析服务、不启动后台工作。未来项目、目录和抽象只在真实纵向切片需要时按[后端目标架构蓝图](architecture/backend-target-blueprint.md)创建。
 
 ### Mod 生命周期
 
@@ -433,7 +440,7 @@ GET /
 
 ### 未解决风险
 
-- 第一波代码和聚焦自动化已经覆盖运行指标、游戏事件/gap、统一审计、禁言/到期、`help`、DI/OWIN/OpenAPI 和 Admin 页面；后端 Release 聚合已有 `29` 项失败，Admin 全量 ESLint 仍有既有积压。2026-07-27 Admin 全量 Vitest `128/128` 个文件、`874/874` 项通过且 typecheck、生产构建通过，但 teardown/外网资源/worker 噪声尚未治理，不能作为稳定发布门禁；真实 `v3.0.1-b4` 与浏览器 E2E 仍未形成当前证据。精确结果与已接受测试基础设施缺口见[测试策略](test.md#已知缺口)。
+- 当前代码的 Release build 已以 `0` warnings、`0` errors 通过；后端 Release 全量测试为 `1881` passed、`2` failed、`1883` total。两个失败是已知未修改边界：`OwinWebHostOpenApiSnapshotTests` 的 runtime OpenAPI 与已登记 snapshot drift，以及 `SqliteServerOperationStore` 的非法状态转换。Admin 全量 Vitest 为 `145` 个文件、`1010/1010` 项通过，lint、typecheck、production build 和 `pnpm api:check` 通过；精确结果与剩余环境缺口见[测试策略](test.md#2026-08-04-验证复验)和[测试策略](test.md#已知缺口)。
 - 游戏聊天完整代码切片已实现，SQLite 历史 gap 聚焦语义、运行时 OpenAPI 快照和生成客户端已有自动化证据；仍需在真实 `v3.0.1-b4` 进程验证 `ModEvents.ChatMessage` 字段、处理器顺序、替换消息重入抑制、`StopHandlersAndVanilla` 单次广播、命令绕过、关服排空以及与其他聊天 Mod 的冲突。全量 lint/build、浏览器 E2E 和 Git 基线式 OpenAPI 漂移门禁尚未执行；自动化不能替代真实游戏或浏览器边界证据。
 - 聊天命令动态配置、原子目录重建、保存后热更新、`AllowNoPrefix`、参数分隔符、同源命令清单和统一聊天命令审计已形成可编译纵向切片；当前证据限于产品编译、目录/SQLite 聚焦测试、OpenAPI 快照和 Admin typecheck，真实 `v3.0.1-b4`、浏览器 E2E、审计故障注入及跨介质提交异常恢复仍未执行。
 

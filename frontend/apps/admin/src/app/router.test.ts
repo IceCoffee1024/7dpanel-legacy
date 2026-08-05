@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 
 import { useAuthStore } from '../features/auth'
+import { navigationCatalog } from './navigation/navigationCatalog'
 import { createAdminRouter } from './router'
 
 const routeMock = vi.hoisted(() => {
@@ -152,6 +153,11 @@ function authenticateAs(pinia: ReturnType<typeof createPinia>, role: 'Owner' | '
   return auth
 }
 
+const catalogRoutePaths = navigationCatalog.groups.flatMap(group => group.children.map((entry) => {
+  const path = String(entry.routeName).replace(/\/$/, '')
+  return path === '' ? '/' : path
+}))
+
 describe('createAdminRouter', () => {
   it('redirects anonymous protected navigation to login with the canonical target', async () => {
     const { router } = createTestRouter()
@@ -207,6 +213,15 @@ describe('createAdminRouter', () => {
     await router.push('/players/resources?kind=block&page=2')
 
     expect(router.currentRoute.value.fullPath).toBe('/players/resources?kind=block&page=2')
+  })
+
+  it.each(catalogRoutePaths)('keeps every catalog route directly addressable: %s', async (path) => {
+    const { pinia, router } = createTestRouter()
+    authenticate(pinia)
+
+    await router.push(path)
+
+    expect(router.currentRoute.value.path).toBe(path)
   })
 
   it.each(['Admin', 'Viewer'] as const)('sends %s Owner-only deep links to Forbidden', async (role) => {

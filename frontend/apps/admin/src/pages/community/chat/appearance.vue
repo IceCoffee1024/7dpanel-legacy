@@ -11,6 +11,7 @@
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { ColoredChatView, useColoredChat } from '../../../features/game-chat'
 
 const router = useRouter()
@@ -26,6 +27,7 @@ onBeforeRouteLeave(() => colored.canLeave())
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <UDashboardPanel id="game-chat-colored">
     <template #header>
       <UDashboardNavbar :title="t('gameChat.colored.title')">

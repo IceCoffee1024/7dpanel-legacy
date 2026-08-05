@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "phase": "Wave4",
+  "baseline": {
+    "productProjectCount": 8,
+    "productionCsFileCount": 583,
+    "productionHandwrittenFilesOver500Count": 49,
+    "productionHandwrittenFilesOver800Count": 21,
+    "productionHandwrittenFilesOver1000Count": 10,
+    "backendTestProjectCount": 1,
+    "backendTestFileCount": 197,
+    "adminSourceFileCount": 447,
+    "adminHandwrittenFilesOver400Count": 22,
+    "adminHandwrittenFilesOver600Count": 3,
+    "adminFeatureCount": 27,
+    "compositionRootCount": 1,
+    "panelServiceProviderFactoryLineCount": 1433,
+    "bootstrapRegistrationLineCount": 1433,
+    "registrationFileCount": 0,
+    "publicInterfaceTotalCount": 143,
+    "publicInterfaceCount": 143,
+    "featureInternalCrossDomainImportCount": 75,
+    "firstLevelNavigationTaskCount": 6,
+    "fixedNavigationEntryCount": 32,
+    "documentActivityRecordCount": 66,
+    "hostingApplicationProjectReferences": 0,
+    "unknownCapabilityCount": 0,
+    "newPublicInterfaceCount": 0
+  },
+  "targets": {
+    "productProjectCount": 8,
+    "productionHandwrittenFilesOver500Count": 34,
+    "productionHandwrittenFilesOver800Count": 8,
+    "productionHandwrittenFilesOver1000Count": 0,
+    "backendTestProjectCount": 1,
+    "adminHandwrittenFilesOver400Count": 12,
+    "adminHandwrittenFilesOver600Count": 0,
+    "compositionRootCount": 1,
+    "panelServiceProviderFactoryLineCount": 250,
+    "bootstrapRegistrationLineCount": 250,
+    "registrationFileCount": 7,
+    "publicInterfaceTotalCount": 143,
+    "publicInterfaceCount": 143,
+    "featureInternalCrossDomainImportCount": 0,
+    "firstLevelNavigationTaskCount": 6,
+    "fixedNavigationEntryCount": 25,
+    "documentActivityRecordCount": 1,
+    "hostingApplicationProjectReferences": 0,
+    "unknownCapabilityCount": 0,
+    "newPublicInterfaceCount": 0
+  },
+  "exclusions": [
+    "generated",
+    "migration",
+    "snapshot",
+    "7dtd-reference",
+    "bin",
+    "obj",
+    "node_modules",
+    ".pnpm-store",
+    "dist",
+    "build",
+    "coverage",
+    "artifact"
+  ],
+  "featureDependencyAllowlist": [
+    {
+      "importerPattern": "frontend/apps/admin/src/features/access-lists/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Access-list requests use the auth feature's session and role contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/api-keys/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "API key requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/audit/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Audit requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/automation/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Automation requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/backups/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Backup requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/commerce/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Commerce requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/community/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Community requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/console-logs/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Console log requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/discord/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Discord requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/economy/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Economy requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/game-chat/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Chat requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/game-events/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Game-event requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/game-resources/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Game-resource requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/geoip/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "GeoIP requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/mods/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Mod-management requests use the auth feature's session and role contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/modules/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Module-management requests use the auth feature's session and role contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/permissions/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Permission views use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-map/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Map requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-profile/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Player-profile requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/players/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Player requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/rewards/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Reward requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/schedules/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Schedule requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/server-configuration/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Server-configuration requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/server-operations/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Server-operation requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/server-status/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "Server-status requests use the auth feature's session contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/world-tools/*",
+      "targetFeature": "auth",
+      "specifierPattern": "../../auth*",
+      "reason": "World-tool requests use the auth feature's session and role contract.",
+      "owner": "admin-auth-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared auth contract or remove when the feature no longer consumes authentication state."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/audit/ui/AuditWorkspace.vue",
+      "targetFeature": "game-events",
+      "specifierPattern": "../../game-events/*",
+      "reason": "Audit composes the game-events read-only controller and table for the shared audit view.",
+      "owner": "admin-audit-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared audit projection or remove when the audit view no longer embeds game events."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/audit/ui/AuditWorkspace.test.ts",
+      "targetFeature": "game-events",
+      "specifierPattern": "../../game-events/*",
+      "reason": "Audit tests cover the same production game-events composition contract.",
+      "owner": "admin-audit-boundary",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Remove with the corresponding production composition import."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/game-chat/ui/Chat*.vue",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/api/onlinePlayers",
+      "reason": "Chat displays the players feature's read-only online-player snapshot.",
+      "owner": "admin-player-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared read-only player snapshot contract."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/game-chat/ui/LiveChatView.*",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/api/onlinePlayers",
+      "reason": "Live chat displays the players feature's read-only online-player snapshot.",
+      "owner": "admin-player-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared read-only player snapshot contract."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-map/api/mapLayerAdapter.ts",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/api/playerSnapshot",
+      "reason": "Map layers consume the players feature's validated snapshot primitives.",
+      "owner": "admin-player-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared read-only player snapshot contract."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-map/api/playerMap.ts",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/api/historyPlayers",
+      "reason": "Map history queries consume the players feature's history read contract.",
+      "owner": "admin-player-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared map observation contract."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-map/model/*",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/api/*",
+      "reason": "Map state consumes validated read-only player snapshot and history contracts.",
+      "owner": "admin-player-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared read-only player map contract."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-map/ui/PlayerMapView.vue",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/ui/PlayersSectionNavigation.vue",
+      "reason": "The map page reuses the players task's local section navigation.",
+      "owner": "admin-player-navigation",
+      "reviewAfter": "next Admin navigation wave",
+      "reviewCondition": "Replace with a shared player task navigation component."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/player-profile/ui/PlayerProfileView.vue",
+      "targetFeature": "players",
+      "specifierPattern": "../../players/model/useOnlinePlayers",
+      "reason": "Player profile resolves the current player through the players read contract.",
+      "owner": "admin-player-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared read-only player identity contract."
+    },
+    {
+      "importerPattern": "frontend/apps/admin/src/features/server-operations/ui/*",
+      "targetFeature": "server-status",
+      "specifierPattern": "../../server-status/*",
+      "reason": "Server operations composes the server-status read-only overview contract.",
+      "owner": "admin-server-read-contract",
+      "reviewAfter": "next Admin feature boundary wave",
+      "reviewCondition": "Replace with a shared server overview projection."
+    }
+  ],
+  "exceptions": [
+    {
+      "path": "backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/Community/SqliteCommunityStore.cs",
+      "reason": "Current community command and relationship persistence remains a single transaction-aware Store until the approved Community/Rewards split is characterized.",
+      "owner": "agent-11",
+      "reviewAfter": "Wave2 aggregate gate",
+      "reviewCondition": "Recount after Task 6 focused persistence tests and before the Wave 2 aggregate gate."
+    },
+    {
+      "path": "backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/SqliteDiscordIntegrationStore.cs",
+      "reason": "Discord integration persistence is a current adapter hotspot and is retained while ownership and transaction boundaries are reviewed.",
+      "owner": "agent-11",
+      "reviewAfter": "Wave2 aggregate gate",
+      "reviewCondition": "Review ownership and recount before the Wave 2 aggregate gate; do not add a second persistence boundary without a design decision."
+    },
+    {
+      "path": "backend/src/Adapters/LSTY.SevenDPanel.Adapters.Persistence.Sqlite/SqliteAutomationStore.cs",
+      "reason": "The existing automation Store owns a transaction-aware persistence boundary for rule and execution scheduling state.",
+      "owner": "coordinator",
+      "reviewAfter": "next hotspot wave",
+      "reviewCondition": "Split only after characterization exists at its owning persistence boundary; do not raise the threshold."
+    },
+    {
+      "path": "backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Outbound/World/SevenDaysBlockPrefabOperationHandler.cs",
+      "reason": "World operation compatibility logic currently exceeds the hotspot threshold and is outside the approved Wave 2 persistence and Web split write sets.",
+      "owner": "coordinator",
+      "reviewAfter": "next hotspot wave",
+      "reviewCondition": "Assign or approve an adapter-specific characterization task before the next hotspot wave; recount without raising the threshold."
+    },
+    {
+      "path": "backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Outbound/World/SevenDaysMapWorldOperationHandler.cs",
+      "reason": "World operation compatibility logic currently exceeds the hotspot threshold and is outside the approved Wave 2 persistence and Web split write sets.",
+      "owner": "coordinator",
+      "reviewAfter": "next hotspot wave",
+      "reviewCondition": "Assign or approve an adapter-specific characterization task before the next hotspot wave; recount without raising the threshold."
+    },
+    {
+      "path": "backend/src/Adapters/LSTY.SevenDPanel.Adapters.SevenDays/Outbound/World/SevenDaysRegionOperationHandler.cs",
+      "reason": "World operation compatibility logic currently exceeds the hotspot threshold and is outside the approved Wave 2 persistence and Web split write sets.",
+      "owner": "coordinator",
+      "reviewAfter": "next hotspot wave",
+      "reviewCondition": "Assign or approve an adapter-specific characterization task before the next hotspot wave; recount without raising the threshold."
+    },
+    {
+      "path": "backend/src/Core/LSTY.SevenDPanel.Application/Commerce/CommerceModels.cs",
+      "reason": "The application commerce model hotspot is retained until its stable contracts are separated without introducing new product boundaries.",
+      "owner": "coordinator",
+      "reviewAfter": "Wave2 aggregate gate",
+      "reviewCondition": "Review with the Commerce/Economy persistence work before the Wave 2 aggregate gate; recount without changing the target upward."
+    },
+    {
+      "path": "docs/superpowers/*.md",
+      "reason": "Historical specs and plans retain their existing front matter until the approved Change Record index establishes the canonical activity view.",
+      "owner": "agent-15",
+      "reviewAfter": "Task11 index review",
+      "reviewCondition": "Recount after Task 11 creates docs/superpowers/README.md and use the index activity records instead of the compatibility fallback."
+    }
+  ]
+}

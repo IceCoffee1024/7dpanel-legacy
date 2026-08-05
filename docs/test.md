@@ -39,6 +39,8 @@ last_updated: "2026-08-04"
 
 当前基线为 8 个产品项目、1 个后端测试项目、1 个 Bootstrap 根 Provider、6 个一级任务域；Hosting 对 Application 的项目引用已清零，平台实现归入 Local Adapter。预算门禁不要求为了降低数字而合并 Domain/Application/Adapter，也不把单纯文件增长当作失败。
 
+2026-08-04 Wave 4 原始测量结果为：生产 C# 文件 `614`，生产手写文件 `>500/>800/>1000` 分别为 `49/15/6`；后端测试源文件 `205`；Admin 源文件 `497`、手写文件 `>400/>600` 为 `8/0`、Feature `27`；组合根 `1`、`PanelServiceProviderFactory.cs` `51` 行、Bootstrap registration `51` 行、registration/context 文件 `9`；公共接口 `143`、Feature 内部跨域导入 `75`、一级任务域 `6`、固定二级入口 `24`、文档活动记录 `0`、Hosting 对 Application 项目引用 `0`、未知 Capability `0`、新增公共接口 `0`。预算配置已切换至 `phase=Wave4` 并通过；`75/75` 个跨 Feature 导入命中已登记 allowlist，未匹配/未使用规则均为 `0`。八个显式生产热点例外调整后的 `>500` 有效趋势计数为 `42`，高于目标 `34`，脚本仅输出非阻塞 advisory；Wave 4 阻塞目标仍通过。
+
 ## 候选 artifact 与证据 manifest
 
 `backend/scripts/Get-ReleaseArtifactIdentity.ps1` 为候选发布物提供唯一确定性 SHA-256；`backend/scripts/New-EvidenceManifest.ps1` 将证据绑定到 clean commit、artifact hash、版本字段、环境摘要和相对子证据。`summary.json` 记录步骤级退出码与状态，`manifest.json` 记录证据合同；开发 smoke 可以留存 `Skipped`，但不能提升成熟度。候选 artifact 必须由同一 identity 经过 validator，代码变更后旧 manifest 失效。
@@ -49,13 +51,13 @@ last_updated: "2026-08-04"
 
 ## 2026-08-04 验证复验
 
-Task 13 的 Admin 核心旅程局部实现已完成：定向 Vitest 为 `6` 个文件、`20` 项通过；Admin 全量 Vitest 为 `141` 个文件、`963/963` 项通过。串行 `pnpm lint`、`pnpm typecheck`、`pnpm build` 和 `pnpm api:check` 均通过，OpenAPI/SDK 没有 tracked drift。成熟度台账、复杂性预算、后端测试 taxonomy、玩家旅程安全和恢复安全夹具也全部通过。此次复验没有运行真实 OWIN、7DTD、破坏性恢复或 Linux 进程。
+Task 13/14 的当前聚合证据已完成：Admin 全量 Vitest 为 `145` 个文件、`1010/1010` 项通过；串行 `pnpm lint`、`pnpm typecheck`、`pnpm build` 和 `pnpm api:check` 均通过，OpenAPI/SDK 没有 tracked drift。后端 Release build 为 `0` warnings、`0` errors；后端全量测试为 `1881` passed、`2` failed、`1883` total。失败保持为已知未修改问题：`OwinWebHostOpenApiSnapshotTests` 的 runtime OpenAPI snapshot drift，以及 `SqliteServerOperationStore` 的非法状态转换；没有通过更新 snapshot 或绕过测试来隐藏失败。后端测试 taxonomy、复杂度预算、前端依赖、玩家旅程安全和恢复安全夹具均通过。
 
-2026-08-04 Chromium mock 复验：使用 `pnpm exec playwright test --project="Chromium - mock desktop" --project="Chromium - mock 390x844" --workers=1 --reporter=line`，共执行 `174` 个场景，`172` 个通过、`2` 个按项目条件跳过。跳过项是桌面项目中的移动专属测试，移动项目已执行对应场景；本次没有失败、浏览器启动错误、根级水平溢出或浏览器错误。该结果只证明本地 mock UI 与用户任务合同，不提升真实 OWIN、7DTD、候选 artifact、恢复副作用或发布成熟度。
+2026-08-04 Chromium mock 复验：`Chromium - mock desktop` 入口 `2` 个场景通过，`Chromium - mock 390x844` 入口 `2` 个场景通过；没有失败或浏览器启动错误。受控真实 OWIN 所需的 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME` 和 `PANEL_PASSWORD` 未提供，因此真实 OWIN 深链接、认证、静态 fallback 和角色裁剪本轮未执行。mock 结果只证明本地 UI 与用户任务合同，不提升真实 OWIN、7DTD、候选 artifact、恢复副作用或发布成熟度。
 
 Task 17 的 `Invoke-CandidateValidation.ps1` 及其夹具在 Windows PowerShell 5.1 与 PowerShell 7 通过，并复验了 evidence manifest、release artifact 和 release smoke 合成测试。该编排默认拒绝缺少完整游戏引用、版本、clean worktree、隔离实例或显式确认；当前仓库仍没有私有 CI provider、受控 Runner、Secret、并发锁或 evidence retention，因此 O4 保持 `Blocked`，没有生成候选发布证据。
 
-当前机器仍缺少 `v3.0.1-b4` 的五个只读运行时程序集；锁定的 Playwright Chromium/headless shell 已可执行。后端聚合、真实 OWIN 全量门禁、候选 artifact、双平台进程、性能、恢复回滚和 O1/O2 真实服务 lane 继续保持 `Blocked`，不能由上述本地 mock 结果替代。
+当前机器仍缺少 `v3.0.1-b4` 的五个只读运行时程序集；锁定的 Playwright Chromium/headless shell 已可执行。后端聚合已经执行，但因上述两个已知测试失败仍保持 `Blocked`；真实 OWIN 全量门禁、候选 artifact、双平台进程、性能、恢复回滚和 O1/O2 真实服务 lane 继续保持 `Blocked`，不能由上述本地 mock 结果替代。
 
 ## 2026-08-03 收口波证据
 
@@ -83,7 +85,7 @@ Task 17 的 `Invoke-CandidateValidation.ps1` 及其夹具在 Windows PowerShell 
 | Discord Gateway/interaction 收口 | 持久 Slash `/status` 私密 follow-up 回归 `1/1` | 运行时组装后的持久交互使用原 interaction token 发出私密回执 | Discord Gateway WebSocket、Ed25519 请求和投递限流在 sandbox 或真实环境的往返 |
 | 本轮运行时可靠性收口 | canonical `net48` 聚焦组合 `56/56` | 恢复回滚中断续作、Discord heartbeat 失效重连、背包 `CosmeticMods` 标量合并、奖励 grant 并发补偿和发布依赖规则 | 真实文件占用、Discord sandbox、真实游戏字段与经济副作用 |
 | 第二批运行时与交付收口 | Restore `82/82`、Discord/GeoIP `118/118`、世界操作 `64/64`；主工作区合并过滤 `159/160` 后修正结构门禁并复验 `1/1` | 恢复启动阶段与可重试失败、Discord/GeoIP transport 故障、世界 descriptor 防伪/取消/undo/回滚失败、实际发布物清理规则 | 真实文件占用、Discord/MaxMind sandbox、真实游戏线程和世界 API |
-| Admin 浏览器门禁 | 本地 mock 首轮桌面与 `390x844` 共 `154/160`，修复后定向 `4/4`；2026-08-04 单一 Playwright 进程、单 worker 的 Chromium mock desktop 与 `390x844` 共 `174` 个场景，`172` 个通过、`2` 个按项目条件跳过；2026-07-31 当前认证真实 OWIN 的 API Key、locale、导航和在线玩家共 17 个场景均取得通过结果；本轮 Chrome 真实 Owner 会话完成 37 条路由的桌面与 `390x844` 基础矩阵 | 登录/会话/登出、API Key 生命周期、语言协商与切换、主要导航、在线玩家详情刷新、不可用锁存、六波次页面基础可达性、上下文入口、桌面/窄屏根级溢出和浏览器错误 | Firefox/WebKit 六波次 Playwright 项目、真实 OWIN 全量复验、Discord/GeoIP 外部服务和危险世界操作仍未验证 |
+| Admin 浏览器门禁 | 本轮 Chromium mock desktop `2` 个通过、mock `390x844` `2` 个通过；2026-07-31 的窄认证真实 OWIN 证据按历史记录保留；本轮真实 OWIN 未执行 | 本轮 mock 入口无失败，覆盖导航发现、角色入口、局部交互、刷新和溢出边界；`SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 未提供 | 真实 OWIN 全量复验、Firefox/WebKit 六波次 Playwright 项目、Discord/GeoIP 外部服务和危险世界操作仍未验证 |
 | 实际八项目发布目录 | Admin build、`net48` `dotnet publish`、UNC 清理、真实 `Mods/7DPanel` 组装和 validator 通过；新编排完成关服、发布、启服与健康 200 | 精确八项目、托管闭包、游戏 JSON 排除、目标双 RID native、Admin 产物和当前 Windows Unity Mono 启动 | Linux Unity Mono、Discord/MaxMind sandbox、恢复与危险世界副作用 |
 | 发布证据、聊天审计与 Home CAS 收口 | 脚本合成门禁通过；后端聚焦及扩大 Chat/Community 组合 `76/76`；Home 删除语义聚焦 `19/19` | smoke 脱敏步骤归档、命令审计意图失败不执行、完成失败不重放、SQLite `pending` 恢复、私人家覆盖版本冲突，以及删除后新实例重建时拒绝陈旧 writer 复活 | 真实 smoke 证据包、真实命令回调、玩家传送与经济副作用 |
 | City CAS、Discord 轮换与跨平台证据收口 | 后端 Community/Discord 组合 `69/69`；Windows PowerShell 5.1 与 PowerShell 7 的 smoke/artifact 合成门禁通过 | 城市陈旧 writer 冲突、Bot Token 轮换重启诊断、Secret/指纹不回显、原生退出码 fail-fast 与无 BOM UTF-8 摘要 | 真实 Discord/MaxMind sandbox、Windows 候选证据包、Linux artifact 与 Unity Mono smoke |
@@ -142,12 +144,12 @@ Task 17 的 `Invoke-CandidateValidation.ps1` 及其夹具在 Windows PowerShell 
 
 | 边界 | 实际结果 | 说明 |
 |---|---:|---|
-| Admin 单元测试 | `141` 个文件，`963/963` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
+| Admin 单元测试 | `145` 个文件，`1010/1010` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
 | Admin typecheck | 通过 | `vue-tsc -p ./tsconfig.app.json` 与 `tsc -p ./tsconfig.node.json` |
 | OpenAPI 漂移 | 通过 | `pnpm api:check` 重新生成 SDK 后无 `openapi/` 或生成客户端差异 |
 | Admin production build | 通过 | Vite `8.1.5` 生成包含规范任务域路由的静态产物 |
 | 触及文件 ESLint | 通过 | 2026-08-04 全量 `pnpm lint` 通过 |
-| Playwright mock/真实 OWIN | Chromium mock 已取得有效证据；真实 OWIN 未执行 | 单一 worker 的 desktop/`390x844` 共 `174` 个场景，`172` 个通过、`2` 个桌面项目跳过；受控 OWIN 环境变量未提供 |
+| Playwright mock/真实 OWIN | Chromium mock desktop `2` 个通过、mock `390x844` `2` 个通过；真实 OWIN 未执行 | 两个 mock 入口均无失败；`SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME`、`PANEL_PASSWORD` 未提供 |
 
 因此 `NFR-06` 的静态、单元和 Chromium mock 部分已具备当前证据，但真实 OWIN、前进/后退的受控全量复验、旧 URL 视觉行为以及 Firefox/WebKit 支持范围仍不能标记为发布完成。
 
@@ -492,6 +494,7 @@ CI 应按“快速测试 -> 平台集成 -> 真实进程/浏览器 -> 恢复演�
 
 | 缺口 | 影响与处理 |
 |---|---|
+| 后端 Release 聚合保留两个已知失败 | 2026-08-04 build 为 `0` warnings、`0` errors；全量测试为 `1881/1883` 通过，失败为 `OwinWebHostOpenApiSnapshotTests` 的 runtime OpenAPI snapshot drift 和 `SqliteServerOperationStore` 的非法状态转换，均未由本轮写集引入。它们继续阻止后端聚合门禁标记为全通过；修复前不得更新 snapshot 或绕过测试。 |
 | 游戏资源目录真实 7DTD 与浏览器验收未执行 | 当前自动化证明标量边界、路径安全、HTTP/OpenAPI、Admin 状态与生产构建，但不能替代 `v3.0.1-b4` 真实 `ItemClass`/`Block`/Localization/Mod 图标覆盖采集、关服中目录构建收束，以及 Owner/Admin/Viewer 在桌面与 `390x844` 浏览器中的主路径。进入候选发布或字段兼容性出现差异时再执行一次窄 smoke，不提前扩大本切片。 |
 | 游戏聊天真实 7DTD 与浏览器验收未执行 | 当前代码和聚焦自动化不能证明 `v3.0.1-b4` 的原始字段、六类颜色、命令绕过、全局/私聊广播、Profile、关闭彩色恢复原版、异常 fail-open、第三方聊天 Mod 顺序，以及 Owner/非 Owner 桌面和 `390x844` 浏览器流程；按设计只执行一次集中人工验收并保留日志、网络 trace 和冲突观察。 |
 | 游戏聊天真实门禁仍待闭环 | 后端聊天、统一事件、SSE、OpenAPI 与 Admin 游戏聊天已被 2026-07-30 的后端 `1787/1787`、Admin `887/887`、ESLint、typecheck 和生产构建覆盖；SQLite 历史 gap 另有聚焦证据。Playwright、真实 7DTD 和提交后的 OpenAPI Git 基线漂移门禁仍待执行。 |

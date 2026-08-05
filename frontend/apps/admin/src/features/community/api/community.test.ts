@@ -1,28 +1,37 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { requestJson } from '../../../shared/api/http'
+import * as communityApi from './community'
 import {
-  fetchActionQueuedVoteRounds,
   fetchAllCities,
   fetchCities,
+  parseCity,
+} from './community.city'
+import { parseGameCommandConfiguration } from './community.config'
+import {
   fetchFriendship,
   fetchFriendshipRecords,
+  parseFriendshipRecord,
+  parseFriendshipStatus,
+} from './community.friendship'
+import {
   fetchHomes,
   fetchTeleportOperation,
   fetchTeleportOperations,
-  fetchVoteRounds,
-  parseCity,
-  parseFriendshipRecord,
-  parseFriendshipStatus,
   parsePlayerHome,
   parseTeleportOperation,
   parseTeleportSettings,
+  updateTeleportSetting,
+} from './community.teleport'
+import { COMMUNITY_GAME_COMMAND_IDS } from './community.types'
+import {
+  fetchActionQueuedVoteRounds,
+  fetchVoteRounds,
   parseVoteConfiguration,
   parseVoteRound,
   parseVoteSettlement,
   settleVoteRound,
-  updateTeleportSetting,
-} from './community'
+} from './community.vote'
 
 vi.mock('../../../shared/api/http', () => ({ requestJson: vi.fn() }))
 
@@ -155,6 +164,12 @@ const voteRound = {
 afterEach(() => vi.clearAllMocks())
 
 describe('community protocol parsers', () => {
+  it('keeps the public API entry point as a re-export surface', () => {
+    expect(communityApi.parseCity).toBe(parseCity)
+    expect(communityApi.parseTeleportSettings).toBe(parseTeleportSettings)
+    expect(communityApi.parseVoteRound).toBe(parseVoteRound)
+  })
+
   it('parses and freezes the approved community response shapes', () => {
     const setting = parseTeleportSettings(teleportSetting)
     const parsedHome = parsePlayerHome(home)
@@ -170,6 +185,17 @@ describe('community protocol parsers', () => {
     expect(parsedCity.sortOrder).toBe(10)
     expect(friendship.areFriends).toBe(true)
     expect(Object.isFrozen(parsedHome.position)).toBe(true)
+  })
+
+  it('keeps game command configuration closed and complete', () => {
+    const configuration = {
+      commands: COMMUNITY_GAME_COMMAND_IDS.map(commandId => ({ commandId, name: commandId, aliases: [] })),
+      updatedAtUtc: '2026-07-27T02:00:00Z',
+      rowVersion: 1,
+    }
+
+    expect(parseGameCommandConfiguration(configuration).commands).toHaveLength(COMMUNITY_GAME_COMMAND_IDS.length)
+    expect(() => parseGameCommandConfiguration({ ...configuration, commands: configuration.commands.slice(1) })).toThrow('Invalid community response')
   })
 
   it('rejects unknown fields, illegal states, non-UTC timestamps, and invalid row versions', () => {

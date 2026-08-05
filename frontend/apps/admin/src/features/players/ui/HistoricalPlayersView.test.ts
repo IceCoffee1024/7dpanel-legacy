@@ -42,7 +42,9 @@ function mountView(state: HistoricalPlayersController['state']['value'] = 'ready
     wrapper: mount(HistoricalPlayersView, {
       global: {
         stubs: {
+          PlayersSectionNavigation: { template: '<nav />' },
           RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+          UDashboardSidebarToggle: true,
           UButton: { props: ['label', 'to'], emits: ['click'], template: '<button :data-to="to" @click="$emit(\'click\')">{{ label }}<slot /></button>' },
           UInput: { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
         },

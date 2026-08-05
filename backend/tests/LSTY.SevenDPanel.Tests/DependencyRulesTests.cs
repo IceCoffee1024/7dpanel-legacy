@@ -137,6 +137,16 @@ namespace LSTY.SevenDPanel.Tests
                 "PlayerActionRecoveryRuntime.cs");
             var modMainSource = File.ReadAllText(modMainPath);
             var providerFactorySource = File.ReadAllText(providerFactoryPath);
+            var registrationRoot = Path.Combine(
+                Path.GetDirectoryName(providerFactoryPath)!,
+                "Registration");
+            var registrationSource = string.Join(
+                Environment.NewLine,
+                Directory.GetFiles(registrationRoot, "*.cs", SearchOption.AllDirectories)
+                    .Select(File.ReadAllText));
+            var administrationRegistrationSource = File.ReadAllText(Path.Combine(
+                registrationRoot,
+                "AdministrationServiceRegistration.cs"));
             var lifecycleSource = File.ReadAllText(lifecyclePath);
             var jobsRuntimeSource = File.ReadAllText(jobsRuntimePath);
             var playerActionRecoveryRuntimeSource = File.ReadAllText(
@@ -146,42 +156,42 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("PanelServiceProviderFactory.CreateRuntime(", modMainSource);
             Assert.DoesNotContain("enableUnauthenticatedDevelopmentConsoleLogStream", modMainSource, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("events.SubscribeGameStartDone", lifecycleSource);
-            Assert.Contains("services.AddSingleton(_ => new ConsoleLogService(log));", providerFactorySource);
-            Assert.Contains("services.AddScoped<ServerEventSseSession>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton(serviceProvider => new SevenDaysOnlinePlayerProjection(", providerFactorySource);
-            Assert.Contains("serviceProvider.GetRequiredService<PlayerHistoryWriteService>()", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IOnlinePlayerQuery>", providerFactorySource);
-            Assert.Contains("services.AddSingleton(serviceProvider => new OnlinePlayerProjectionRuntime(", providerFactorySource);
-            Assert.DoesNotContain("SevenDaysOnlinePlayerQuery", providerFactorySource);
-            Assert.Contains("services.AddSingleton<GetOnlinePlayersUseCase>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<SqlitePlayerActionAuditTrail>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IPlayerActionAuditTrail>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<SevenDaysPlayerActions>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IPlayerActions>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<KickPlayerUseCase>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<SqlitePlayerEvidenceStore>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IPlayerEvidenceStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IGrantItemOperationStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IRemoveItemOperationStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IResetSkillsOperationStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IClearInventoryOperationStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IResetPlayerDataOperationStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IPlayerActionOperationQuery>", providerFactorySource);
-            Assert.Contains("services.AddSingleton(serviceProvider => new PlayerEvidenceRuntime(", providerFactorySource);
-            Assert.Contains("services.AddSingleton(serviceProvider => new PlayerActionRecoveryRuntime(", providerFactorySource);
-            Assert.Contains("services.AddSingleton<SqliteConsoleCommandAuditStore>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IConsoleCommandAuditStore>", providerFactorySource);
-            Assert.Contains("services.AddSingleton<SevenDaysConsoleCommandService>();", providerFactorySource);
-            Assert.Contains("services.AddSingleton<IConsoleCommandGateway>", providerFactorySource);
-            Assert.Contains("services.AddSingleton(serviceProvider => new ConsoleCommandRuntime(", providerFactorySource);
-            Assert.Contains("playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);", providerFactorySource);
+            Assert.Contains("services.AddSingleton(_ => new ConsoleLogService(log));", registrationSource);
+            Assert.Contains("services.AddScoped<ServerEventSseSession>();", registrationSource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new SevenDaysOnlinePlayerProjection(", registrationSource);
+            Assert.Contains("serviceProvider.GetRequiredService<PlayerHistoryWriteService>()", registrationSource);
+            Assert.Contains("services.AddSingleton<IOnlinePlayerQuery>", registrationSource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new OnlinePlayerProjectionRuntime(", registrationSource);
+            Assert.DoesNotContain("SevenDaysOnlinePlayerQuery", registrationSource);
+            Assert.Contains("services.AddSingleton<GetOnlinePlayersUseCase>();", registrationSource);
+            Assert.Contains("services.AddSingleton<SqlitePlayerActionAuditTrail>();", registrationSource);
+            Assert.Contains("services.AddSingleton<IPlayerActionAuditTrail>", registrationSource);
+            Assert.Contains("services.AddSingleton<SevenDaysPlayerActions>();", registrationSource);
+            Assert.Contains("services.AddSingleton<IPlayerActions>", registrationSource);
+            Assert.Contains("services.AddSingleton<KickPlayerUseCase>();", registrationSource);
+            Assert.Contains("services.AddSingleton<SqlitePlayerEvidenceStore>();", registrationSource);
+            Assert.Contains("services.AddSingleton<IPlayerEvidenceStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<IGrantItemOperationStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<IRemoveItemOperationStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<IResetSkillsOperationStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<IClearInventoryOperationStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<IResetPlayerDataOperationStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<IPlayerActionOperationQuery>", registrationSource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new PlayerEvidenceRuntime(", registrationSource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new PlayerActionRecoveryRuntime(", registrationSource);
+            Assert.Contains("services.AddSingleton<SqliteConsoleCommandAuditStore>();", registrationSource);
+            Assert.Contains("services.AddSingleton<IConsoleCommandAuditStore>", registrationSource);
+            Assert.Contains("services.AddSingleton<SevenDaysConsoleCommandService>();", registrationSource);
+            Assert.Contains("services.AddSingleton<IConsoleCommandGateway>", registrationSource);
+            Assert.Contains("services.AddSingleton(serviceProvider => new ConsoleCommandRuntime(", registrationSource);
+            Assert.Contains("playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);", administrationRegistrationSource);
             Assert.Contains("ValidateOnBuild = true", providerFactorySource);
             Assert.Contains("ValidateScopes = true", providerFactorySource);
 
-            var recoveryIndex = providerFactorySource.IndexOf(
+            var recoveryIndex = administrationRegistrationSource.IndexOf(
                 "playerActionAuditTrail.MarkPendingUnknown(DateTimeOffset.UtcNow);",
                 StringComparison.Ordinal);
-            var webHostIndex = providerFactorySource.IndexOf(
+            var webHostIndex = administrationRegistrationSource.IndexOf(
                 "return new OwinWebHost(",
                 StringComparison.Ordinal);
             Assert.True(recoveryIndex >= 0 && webHostIndex > recoveryIndex,

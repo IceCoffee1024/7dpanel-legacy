@@ -11,6 +11,7 @@
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { ChatHistoryView, useChatHistory } from '../../../features/game-chat'
 
 const router = useRouter()
@@ -24,6 +25,7 @@ const history = useChatHistory({
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <UDashboardPanel id="game-chat-history">
     <template #header>
       <UDashboardNavbar :title="t('gameChat.history.title')">

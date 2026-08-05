@@ -6,6 +6,8 @@ import {
   parsePlayerSnapshot,
 } from './playerSnapshot'
 
+export { isRecord, isValidUtcTimestamp } from './playerSnapshot'
+
 export interface HistoricalPlayerSummary {
   readonly crossplatformId: string
   readonly latestName: string

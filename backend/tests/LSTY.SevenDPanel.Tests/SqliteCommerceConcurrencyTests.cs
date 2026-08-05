@@ -76,6 +76,63 @@ namespace LSTY.SevenDPanel.Tests
                 "SELECT redemption_count FROM redeem_codes WHERE code_id = 'code-1';"));
         }
 
+        [Fact]
+        public void Daily_claim_replay_and_stale_row_versions_preserve_the_authoritative_state()
+        {
+            using var database = new RewardTestDatabase();
+            var store = Prepare(database);
+            var claim = new DailyRewardClaimDraft(
+                "claim-1",
+                "daily-rule",
+                "starter-package",
+                "EOS-player",
+                "2026-07-27",
+                Now,
+                Now.AddDays(1),
+                "daily-key",
+                42,
+                "world-1",
+                "daily-correlation",
+                Now);
+
+            var first = store.GetOrCreateDailyRewardClaim(claim);
+            var replay = store.GetOrCreateDailyRewardClaim(claim);
+
+            Assert.True(first.Created);
+            Assert.False(replay.Created);
+            Assert.Equal(first.Claim.ClaimId, replay.Claim.ClaimId);
+            Assert.Equal(first.Claim.RowVersion, replay.Claim.RowVersion);
+            Assert.False(store.TryStartDailyRewardClaim(
+                claim.ClaimId,
+                first.Claim.RowVersion + 1,
+                Now.AddSeconds(1)));
+            Assert.True(store.TryStartDailyRewardClaim(
+                claim.ClaimId,
+                first.Claim.RowVersion,
+                Now.AddSeconds(1)));
+
+            var dispatching = store.GetDailyRewardClaim(claim.ClaimId);
+            Assert.False(store.TryResolveDailyRewardClaim(
+                claim.ClaimId,
+                first.Claim.RowVersion,
+                DailyRewardClaimState.Completed,
+                "grant-stale",
+                null,
+                Now.AddSeconds(2)));
+            Assert.True(store.TryResolveDailyRewardClaim(
+                claim.ClaimId,
+                dispatching.RowVersion,
+                DailyRewardClaimState.Failed,
+                null,
+                "grant-failed",
+                Now.AddSeconds(2)));
+
+            var resolved = store.GetDailyRewardClaim(claim.ClaimId);
+            Assert.Equal(DailyRewardClaimState.Failed, resolved.State);
+            Assert.Equal("grant-failed", resolved.ErrorCode);
+            Assert.Equal(dispatching.RowVersion + 1, resolved.RowVersion);
+        }
+
         private static readonly DateTimeOffset Now =
             new DateTimeOffset(2026, 7, 27, 9, 0, 0, TimeSpan.Zero);
 

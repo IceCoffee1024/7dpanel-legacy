@@ -132,6 +132,7 @@ function mountOnlinePlayersView(values: ControllerValues = {}, kickOptions: {
           DashboardSidebarCollapse: true,
           DashboardSidebarToggle: true,
           Icon: true,
+          PlayersSectionNavigation: { template: '<nav />' },
           RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
           Tooltip: { template: '<div><slot /></div>' },
           KickPlayerDialog: {

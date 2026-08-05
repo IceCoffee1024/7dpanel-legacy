@@ -13,7 +13,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
         ICommunityGameCommandConfigurationStore,
         ITeleportFriendRequestStore
     {
-        private const string SettingsSelect = @"
+        internal const string SettingsSelect = @"
             SELECT teleport_kind AS Kind, enabled AS Enabled, max_homes AS MaxHomes,
                    cooldown_ms AS CooldownMs, global_cooldown_ms AS GlobalCooldownMs,
                    deny_during_blood_moon AS DenyDuringBloodMoon, fee_amount AS FeeAmount,
@@ -30,21 +30,21 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                    updated_at_utc AS UpdatedAtUtc, row_version AS RowVersion
             FROM teleport_settings";
 
-        private const string HomeSelect = @"
+        internal const string HomeSelect = @"
             SELECT home_id AS HomeId, crossplatform_id AS CrossplatformId, name AS Name,
                    world_id AS WorldId, x AS X, y AS Y, z AS Z, yaw AS Yaw,
                    created_at_utc AS CreatedAtUtc, updated_at_utc AS UpdatedAtUtc,
                    row_version AS RowVersion
             FROM player_homes";
 
-        private const string CitySelect = @"
+        internal const string CitySelect = @"
             SELECT city_id AS CityId, name AS Name, description AS Description,
                    enabled AS Enabled, world_id AS WorldId, x AS X, y AS Y, z AS Z,
                    yaw AS Yaw, sort_order AS SortOrder, created_at_utc AS CreatedAtUtc,
                    updated_at_utc AS UpdatedAtUtc, row_version AS RowVersion
             FROM cities";
 
-        private const string FriendRequestSelect = @"
+        internal const string FriendRequestSelect = @"
             SELECT request_id AS RequestId,
                    requester_crossplatform_id AS RequesterCrossplatformId,
                    target_crossplatform_id AS TargetCrossplatformId,
@@ -53,7 +53,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                    responded_at_utc AS RespondedAtUtc, row_version AS RowVersion
             FROM friend_requests";
 
-        private const string TeleportFriendRequestSelect = @"
+        internal const string TeleportFriendRequestSelect = @"
             SELECT request_id AS RequestId, idempotency_key AS IdempotencyKey,
                    requester_crossplatform_id AS RequesterCrossplatformId,
                    requester_entity_id AS RequesterEntityId,
@@ -66,7 +66,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                    responded_at_utc AS RespondedAtUtc, row_version AS RowVersion
             FROM teleport_friend_requests";
 
-        private const string OperationSelect = @"
+        internal const string OperationSelect = @"
             SELECT operation_id AS OperationId, teleport_kind AS Kind,
                    crossplatform_id AS CrossplatformId,
                    target_crossplatform_id AS TargetCrossplatformId,
@@ -85,7 +85,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                    row_version AS RowVersion
             FROM teleport_operations";
 
-        private const string GameCommandTokenSelect = @"
+        internal const string GameCommandTokenSelect = @"
             SELECT token AS Token, command_id AS CommandId,
                    is_primary AS IsPrimary, sort_order AS SortOrder
             FROM community_game_command_tokens";
@@ -98,7 +98,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
         public CommunityGameCommandConfiguration GetGameCommandConfiguration()
         {
             using var connection = connectionFactory.Open();
-            return ReadGameCommandConfiguration(connection, null);
+            return GameCommandConfigurationPersistence.Read(connection, null);
         }
 
         public CommunityGameCommandConfiguration SaveGameCommandConfiguration(
@@ -107,7 +107,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             using var connection = connectionFactory.Open();
             using var transaction = connection.BeginTransaction(deferred: false);
-            var current = ReadGameCommandConfiguration(connection, transaction);
+            var current = GameCommandConfigurationPersistence.Read(connection, transaction);
             if (connection.Execute(
                     @"UPDATE community_game_command_configurations
                       SET updated_at_utc = @UpdatedAtUtc, row_version = row_version + 1
@@ -122,10 +122,10 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 throw new CommunityConflictException();
             }
 
-            ReplaceGameCommandTokens(connection, transaction, configuration);
-            if (HomeCommandNamesChanged(current, configuration))
+            GameCommandConfigurationPersistence.ReplaceTokens(connection, transaction, configuration);
+            if (GameCommandConfigurationPersistence.HomeCommandNamesChanged(current, configuration))
             {
-                var home = HomeExperience(configuration);
+                var home = GameCommandConfigurationPersistence.HomeExperience(configuration);
                 if (connection.Execute(
                         @"UPDATE teleport_settings
                           SET list_command_name = @ListCommandName,
@@ -149,7 +149,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 }
             }
 
-            var stored = ReadGameCommandConfiguration(connection, transaction);
+            var stored = GameCommandConfigurationPersistence.Read(connection, transaction);
             transaction.Commit();
             return stored;
         }
@@ -161,7 +161,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             var row = connection.QuerySingleOrDefault<SettingsRow>(
                 SettingsSelect + " WHERE teleport_kind = @Kind;",
                 new { Kind = kind.ToString() }) ?? throw new CommunityNotFoundException();
-            return ToSettings(row);
+            return CommunityRowMapper.ToSettings(row);
         }
 
         public TeleportSettings SaveTeleportSettings(TeleportSettings settings)
@@ -173,8 +173,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             CommunityGameCommandConfiguration? updatedCommands = null;
             if (settings.Kind == TeleportKind.Home)
             {
-                currentCommands = ReadGameCommandConfiguration(connection, transaction);
-                updatedCommands = WithHomeExperience(
+                currentCommands = GameCommandConfigurationPersistence.Read(connection, transaction);
+                updatedCommands = GameCommandConfigurationPersistence.WithHomeExperience(
                     currentCommands,
                     settings.HomeExperience!,
                     settings.UpdatedAtUtc);
@@ -268,7 +268,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 new { Kind = settings.Kind.ToString() },
                 transaction);
             if (currentCommands != null && updatedCommands != null &&
-                HomeCommandNamesChanged(currentCommands, updatedCommands))
+                GameCommandConfigurationPersistence.HomeCommandNamesChanged(currentCommands, updatedCommands))
             {
                 if (connection.Execute(
                         @"UPDATE community_game_command_configurations
@@ -283,10 +283,10 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 {
                     throw new CommunityConflictException();
                 }
-                ReplaceGameCommandTokens(connection, transaction, updatedCommands);
+                GameCommandConfigurationPersistence.ReplaceTokens(connection, transaction, updatedCommands);
             }
             transaction.Commit();
-            return ToSettings(stored);
+            return CommunityRowMapper.ToSettings(stored);
         }
 
         public PlayerHome SaveHome(PlayerHome home, int maxHomes, long? expectedRowVersion)
@@ -359,7 +359,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 new { home.HomeId },
                 transaction);
             transaction.Commit();
-            return ToHome(stored);
+            return CommunityRowMapper.ToHome(stored);
         }
 
         public IReadOnlyList<PlayerHome> ListHomes(string crossplatformId)
@@ -369,7 +369,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             return connection.Query<HomeRow>(
                     HomeSelect + " WHERE crossplatform_id = @CrossplatformId ORDER BY name ASC, home_id ASC;",
                     new { CrossplatformId = crossplatformId })
-                .Select(ToHome)
+                .Select(CommunityRowMapper.ToHome)
                 .ToArray();
         }
 
@@ -381,7 +381,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             var row = connection.QuerySingleOrDefault<HomeRow>(
                 HomeSelect + " WHERE crossplatform_id = @CrossplatformId AND name = @Name;",
                 new { CrossplatformId = crossplatformId, Name = name });
-            return row == null ? null : ToHome(row);
+            return row == null ? null : CommunityRowMapper.ToHome(row);
         }
 
         public bool DeleteHome(string crossplatformId, string name)
@@ -441,7 +441,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 new { city.CityId },
                 transaction);
             transaction.Commit();
-            return ToCity(stored);
+            return CommunityRowMapper.ToCity(stored);
         }
 
         public IReadOnlyList<City> ListEnabledCities()
@@ -449,7 +449,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             using var connection = connectionFactory.Open();
             return connection.Query<CityRow>(
                     CitySelect + " WHERE enabled = 1 ORDER BY sort_order ASC, city_id ASC;")
-                .Select(ToCity)
+                .Select(CommunityRowMapper.ToCity)
                 .ToArray();
         }
 
@@ -458,7 +458,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             using var connection = connectionFactory.Open();
             return connection.Query<CityRow>(
                     CitySelect + " ORDER BY sort_order ASC, city_id ASC;")
-                .Select(ToCity)
+                .Select(CommunityRowMapper.ToCity)
                 .ToArray();
         }
 
@@ -469,7 +469,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             var row = connection.QuerySingleOrDefault<CityRow>(
                 CitySelect + " WHERE enabled = 1 AND name = @Name;",
                 new { Name = name });
-            return row == null ? null : ToCity(row);
+            return row == null ? null : CommunityRowMapper.ToCity(row);
         }
 
         public FriendRequest CreateFriendRequest(FriendRequest request)
@@ -509,7 +509,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 transaction);
             var stored = GetFriendRequest(connection, transaction, request.RequestId);
             transaction.Commit();
-            return ToFriendRequest(stored);
+            return CommunityRowMapper.ToFriendRequest(stored);
         }
 
         public FriendRequest RespondToFriendRequest(
@@ -571,7 +571,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             if (changed != 1) throw new CommunityConflictException();
             var stored = GetFriendRequest(connection, transaction, requestId);
             transaction.Commit();
-            return ToFriendRequest(stored);
+            return CommunityRowMapper.ToFriendRequest(stored);
         }
 
         public bool AreFriends(string firstCrossplatformId, string secondCrossplatformId)
@@ -595,7 +595,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                              accepted_at_utc AS AcceptedAtUtc
                       FROM friendships
                       ORDER BY accepted_at_utc ASC, friendship_id ASC;")
-                .Select(ToFriendship)
+                .Select(CommunityRowMapper.ToFriendship)
                 .ToArray();
         }
 
@@ -644,7 +644,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             {
                 EnsureTeleportFriendRequestMatches(existing, request);
                 transaction.Commit();
-                return ToTeleportFriendRequest(existing);
+                return CommunityRowMapper.ToTeleportFriendRequest(existing);
             }
             if (connection.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM teleport_friend_requests WHERE request_id = @RequestId;",
@@ -686,7 +686,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 transaction);
             var stored = GetTeleportFriendRequest(connection, transaction, request.RequestId);
             transaction.Commit();
-            return ToTeleportFriendRequest(stored);
+            return CommunityRowMapper.ToTeleportFriendRequest(stored);
         }
 
         public TeleportFriendRequest? GetTeleportFriendRequest(string requestId)
@@ -696,7 +696,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             var row = connection.QuerySingleOrDefault<TeleportFriendRequestRow>(
                 TeleportFriendRequestSelect + " WHERE request_id = @RequestId;",
                 new { RequestId = requestId });
-            return row == null ? null : ToTeleportFriendRequest(row);
+            return row == null ? null : CommunityRowMapper.ToTeleportFriendRequest(row);
         }
 
         public TeleportFriendRequest? FindPendingTeleportFriendRequest(string targetCrossplatformId)
@@ -708,7 +708,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                     WHERE target_crossplatform_id = @TargetCrossplatformId AND state = 'Pending'
                     ORDER BY created_at_utc ASC, request_id ASC LIMIT 1;",
                 new { TargetCrossplatformId = targetCrossplatformId });
-            return row == null ? null : ToTeleportFriendRequest(row);
+            return row == null ? null : CommunityRowMapper.ToTeleportFriendRequest(row);
         }
 
         public bool TryRespondToTeleportFriendRequest(
@@ -761,7 +761,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                          saved_at_utc AS SavedAtUtc, row_version AS RowVersion
                   FROM player_return_points WHERE crossplatform_id = @CrossplatformId;",
                 new { CrossplatformId = crossplatformId });
-            return row == null ? null : ToReturnPoint(row);
+            return row == null ? null : CommunityRowMapper.ToReturnPoint(row);
         }
 
         public DateTimeOffset? GetCooldown(string crossplatformId, TeleportKind kind)
@@ -801,7 +801,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             if (existing != null)
             {
                 EnsureOperationMatches(existing, draft);
-                return ToOperation(existing);
+                return CommunityRowMapper.ToOperation(existing);
             }
             if (connection.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM teleport_operations WHERE operation_id = @OperationId;",
@@ -859,7 +859,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 OperationParameters(draft),
                 transaction);
             var stored = GetOperation(connection, transaction, draft.OperationId);
-            return ToOperation(stored);
+            return CommunityRowMapper.ToOperation(stored);
         }
 
         public TeleportOperation? FindTeleportOperation(string operationId)
@@ -869,7 +869,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             var row = connection.QuerySingleOrDefault<OperationRow>(
                 OperationSelect + " WHERE operation_id = @OperationId;",
                 new { OperationId = operationId });
-            return row == null ? null : ToOperation(row);
+            return row == null ? null : CommunityRowMapper.ToOperation(row);
         }
 
         public IReadOnlyList<TeleportOperation> ListTeleportOperations()
@@ -877,7 +877,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             using var connection = connectionFactory.Open();
             return connection.Query<OperationRow>(
                     OperationSelect + " ORDER BY created_at_utc ASC, operation_id ASC;")
-                .Select(ToOperation)
+                .Select(CommunityRowMapper.ToOperation)
                 .ToArray();
         }
 
@@ -937,7 +937,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             if (string.Equals(current.State, TeleportOperationState.Completed.ToString(), StringComparison.Ordinal))
             {
                 transaction.Commit();
-                return ToOperation(current);
+                return CommunityRowMapper.ToOperation(current);
             }
             if (!string.Equals(current.State, TeleportOperationState.Dispatching.ToString(), StringComparison.Ordinal))
                 throw new CommunityConflictException();
@@ -1009,7 +1009,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 transaction);
             var stored = GetOperation(connection, transaction, operationId);
             transaction.Commit();
-            return ToOperation(stored);
+            return CommunityRowMapper.ToOperation(stored);
         }
 
         private static void UpsertCooldown(
@@ -1163,140 +1163,6 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 new { OperationId = operationId },
                 transaction) ?? throw new CommunityNotFoundException();
 
-        private static TeleportSettings ToSettings(SettingsRow row) => new TeleportSettings(
-            Parse<TeleportKind>(row.Kind),
-            row.Enabled != 0,
-            row.MaxHomes,
-            TimeSpan.FromMilliseconds(row.CooldownMs),
-            TimeSpan.FromMilliseconds(row.GlobalCooldownMs),
-            row.DenyDuringBloodMoon != 0,
-            row.FeeAmount,
-            DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-            row.RowVersion,
-            string.Equals(row.Kind, TeleportKind.Home.ToString(), StringComparison.Ordinal)
-                ? new HomeTeleportExperience(
-                    row.SetFeeAmount, row.ListCommandName, row.SetCommandName,
-                    row.DeleteCommandName, row.TeleportCommandName, row.NoHomesMessage,
-                    row.HomeLimitMessage, row.SetSuccessMessage, row.OverwriteMessage,
-                    row.DeleteSuccessMessage, row.HomeNotFoundMessage, row.HomeCooldownMessage,
-                    row.TeleportSuccessMessage, row.SetInsufficientFundsMessage,
-                    row.TeleportInsufficientFundsMessage, row.BloodMoonMessage)
-                : null);
-
-        private static PlayerHome ToHome(HomeRow row) => new PlayerHome(
-            row.HomeId,
-            row.CrossplatformId,
-            row.Name,
-            Position(row.WorldId, row.X, row.Y, row.Z, row.Yaw),
-            DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc),
-            DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-            row.RowVersion);
-
-        private static City ToCity(CityRow row) => new City(
-            row.CityId,
-            row.Name,
-            row.Description,
-            row.Enabled != 0,
-            Position(row.WorldId, row.X, row.Y, row.Z, row.Yaw),
-            row.SortOrder,
-            DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc),
-            DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-            row.RowVersion);
-
-        private static Friendship ToFriendship(FriendshipRow row) => new Friendship(
-            row.FriendshipId,
-            row.MemberACrossplatformId,
-            row.MemberBCrossplatformId,
-            row.CreatedByCrossplatformId,
-            DateTimeOffset.FromUnixTimeMilliseconds(row.AcceptedAtUtc));
-
-        private static FriendRequest ToFriendRequest(FriendRequestRow row) => new FriendRequest(
-            row.RequestId,
-            row.RequesterCrossplatformId,
-            row.TargetCrossplatformId,
-            Parse<FriendRequestState>(row.State),
-            row.FriendshipId,
-            DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc),
-            DateTimeOffset.FromUnixTimeMilliseconds(row.ExpiresAtUtc),
-            row.RespondedAtUtc.HasValue
-                ? DateTimeOffset.FromUnixTimeMilliseconds(row.RespondedAtUtc.Value)
-                : null,
-            row.RowVersion);
-
-        private static TeleportFriendRequest ToTeleportFriendRequest(TeleportFriendRequestRow row) =>
-            new TeleportFriendRequest(
-                row.RequestId,
-                row.IdempotencyKey,
-                row.RequesterCrossplatformId,
-                row.RequesterEntityId,
-                row.RequesterWorldId,
-                row.TargetCrossplatformId,
-                row.TargetEntityId,
-                row.TargetWorldId,
-                Parse<TeleportFriendRequestState>(row.State),
-                row.TeleportOperationId,
-                DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc),
-                DateTimeOffset.FromUnixTimeMilliseconds(row.ExpiresAtUtc),
-                row.RespondedAtUtc.HasValue
-                    ? DateTimeOffset.FromUnixTimeMilliseconds(row.RespondedAtUtc.Value)
-                    : null,
-                row.RowVersion);
-
-        private static PlayerReturnPoint ToReturnPoint(ReturnPointRow row) => new PlayerReturnPoint(
-            row.CrossplatformId,
-            row.SourceOperationId,
-            Position(row.WorldId, row.X, row.Y, row.Z, row.Yaw),
-            DateTimeOffset.FromUnixTimeMilliseconds(row.SavedAtUtc),
-            row.RowVersion);
-
-        private static TeleportOperation ToOperation(OperationRow row)
-        {
-            var draft = new TeleportOperationDraft(
-                row.OperationId,
-                Parse<TeleportKind>(row.Kind),
-                row.CrossplatformId,
-                row.TargetCrossplatformId,
-                row.ExpectedEntityId,
-                row.ExpectedWorldId,
-                Position(
-                    row.DestinationWorldId,
-                    row.DestinationX,
-                    row.DestinationY,
-                    row.DestinationZ,
-                    row.DestinationYaw),
-                row.IdempotencyKey,
-                row.ReservationId,
-                row.ActorKind,
-                row.ActorId,
-                row.CorrelationId,
-                DateTimeOffset.FromUnixTimeMilliseconds(row.CreatedAtUtc));
-            var origin = row.OriginWorldId == null
-                ? null
-                : Position(
-                    row.OriginWorldId,
-                    row.OriginX!.Value,
-                    row.OriginY!.Value,
-                    row.OriginZ!.Value,
-                    row.OriginYaw!.Value);
-            return new TeleportOperation(
-                draft,
-                origin,
-                Parse<TeleportOperationState>(row.State),
-                row.ErrorCode,
-                DateTimeOffset.FromUnixTimeMilliseconds(row.UpdatedAtUtc),
-                row.CompletedAtUtc.HasValue
-                    ? DateTimeOffset.FromUnixTimeMilliseconds(row.CompletedAtUtc.Value)
-                    : null,
-                row.RowVersion);
-        }
-
-        private static WorldPosition Position(
-            string worldId,
-            double x,
-            double y,
-            double z,
-            double yaw) => new WorldPosition(worldId, x, y, z, yaw);
-
         private static void EnsureTeleportFriendRequestMatches(
             TeleportFriendRequestRow existing,
             TeleportFriendRequest request)
@@ -1326,120 +1192,6 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
                 : (second, first);
         }
 
-        private static CommunityGameCommandConfiguration ReadGameCommandConfiguration(
-            SqliteConnection connection,
-            SqliteTransaction? transaction)
-        {
-            var metadata = connection.QuerySingleOrDefault<GameCommandConfigurationRow>(
-                @"SELECT updated_at_utc AS UpdatedAtUtc, row_version AS RowVersion
-                  FROM community_game_command_configurations WHERE configuration_id = 1;",
-                transaction: transaction) ?? throw new CommunityNotFoundException();
-            var tokens = connection.Query<GameCommandTokenRow>(
-                    GameCommandTokenSelect + " ORDER BY command_id ASC, is_primary DESC, sort_order ASC;",
-                    transaction: transaction)
-                .ToArray();
-            var settings = Enum.GetValues(typeof(CommunityGameCommandId))
-                .Cast<CommunityGameCommandId>()
-                .Select(commandId =>
-                {
-                    var rows = tokens
-                        .Where(row => string.Equals(
-                            row.CommandId,
-                            commandId.ToString(),
-                            StringComparison.Ordinal))
-                        .ToArray();
-                    var primary = rows.Single(row => row.IsPrimary == 1);
-                    return new CommunityGameCommandSetting(
-                        commandId,
-                        primary.Token,
-                        rows.Where(row => row.IsPrimary == 0)
-                            .OrderBy(row => row.SortOrder)
-                            .Select(row => row.Token));
-                })
-                .ToArray();
-            return new CommunityGameCommandConfiguration(
-                settings,
-                DateTimeOffset.FromUnixTimeMilliseconds(metadata.UpdatedAtUtc),
-                metadata.RowVersion);
-        }
-
-        private static void ReplaceGameCommandTokens(
-            SqliteConnection connection,
-            SqliteTransaction transaction,
-            CommunityGameCommandConfiguration configuration)
-        {
-            connection.Execute("DELETE FROM community_game_command_tokens;", transaction: transaction);
-            var rows = configuration.Commands.SelectMany(command =>
-                new[]
-                {
-                    new
-                    {
-                        Token = command.Name,
-                        CommandId = command.CommandId.ToString(),
-                        IsPrimary = 1,
-                        SortOrder = 0
-                    }
-                }.Concat(command.Aliases.Select((alias, index) => new
-                {
-                    Token = alias,
-                    CommandId = command.CommandId.ToString(),
-                    IsPrimary = 0,
-                    SortOrder = index
-                }))).ToArray();
-            connection.Execute(
-                @"INSERT INTO community_game_command_tokens
-                      (token, command_id, is_primary, sort_order)
-                  VALUES (@Token, @CommandId, @IsPrimary, @SortOrder);",
-                rows,
-                transaction);
-        }
-
-        private static CommunityGameCommandConfiguration WithHomeExperience(
-            CommunityGameCommandConfiguration current,
-            HomeTeleportExperience home,
-            DateTimeOffset updatedAtUtc) =>
-            new CommunityGameCommandConfiguration(
-                current.Commands.Select(command => command.CommandId switch
-                {
-                    CommunityGameCommandId.Homes => Setting(command.CommandId, home.ListCommandName),
-                    CommunityGameCommandId.SetHome => Setting(command.CommandId, home.SetCommandName),
-                    CommunityGameCommandId.DeleteHome => Setting(command.CommandId, home.DeleteCommandName),
-                    CommunityGameCommandId.Home => Setting(command.CommandId, home.TeleportCommandName),
-                    _ => command
-                }),
-                updatedAtUtc,
-                current.RowVersion);
-
-        private static CommunityGameCommandSetting Setting(
-            CommunityGameCommandId commandId,
-            string name) =>
-            new CommunityGameCommandSetting(commandId, name, Array.Empty<string>());
-
-        private static HomeCommandNames HomeExperience(
-            CommunityGameCommandConfiguration configuration) =>
-            new HomeCommandNames(
-                configuration.Get(CommunityGameCommandId.Homes).Name,
-                configuration.Get(CommunityGameCommandId.SetHome).Name,
-                configuration.Get(CommunityGameCommandId.DeleteHome).Name,
-                configuration.Get(CommunityGameCommandId.Home).Name);
-
-        private static bool HomeCommandNamesChanged(
-            CommunityGameCommandConfiguration first,
-            CommunityGameCommandConfiguration second)
-        {
-            var firstHome = HomeExperience(first);
-            var secondHome = HomeExperience(second);
-            return !string.Equals(firstHome.ListCommandName, secondHome.ListCommandName, StringComparison.Ordinal) ||
-                   !string.Equals(firstHome.SetCommandName, secondHome.SetCommandName, StringComparison.Ordinal) ||
-                   !string.Equals(firstHome.DeleteCommandName, secondHome.DeleteCommandName, StringComparison.Ordinal) ||
-                   !string.Equals(firstHome.TeleportCommandName, secondHome.TeleportCommandName, StringComparison.Ordinal);
-        }
-
-        private static long ToMilliseconds(TimeSpan value) => checked((long)value.TotalMilliseconds);
-
-        private static T Parse<T>(string value) where T : struct, Enum =>
-            (T)Enum.Parse(typeof(T), value, ignoreCase: false);
-
         private static string RequireText(string? value, string parameterName)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -1449,6 +1201,8 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
 
         private static string? OptionalText(string? value) =>
             string.IsNullOrWhiteSpace(value) ? null : value!.Trim();
+
+        private static long ToMilliseconds(TimeSpan value) => checked((long)value.TotalMilliseconds);
 
         private static void RequireUtc(DateTimeOffset value, string parameterName)
         {
@@ -1468,7 +1222,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             if (value == TeleportKind.Global) throw new ArgumentOutOfRangeException(parameterName);
         }
 
-        private sealed class SettingsRow
+        internal sealed class SettingsRow
         {
             public string Kind { get; set; } = string.Empty;
             public int Enabled { get; set; }
@@ -1497,13 +1251,13 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long RowVersion { get; set; }
         }
 
-        private sealed class GameCommandConfigurationRow
+        internal sealed class GameCommandConfigurationRow
         {
             public long UpdatedAtUtc { get; set; }
             public long RowVersion { get; set; }
         }
 
-        private sealed class GameCommandTokenRow
+        internal sealed class GameCommandTokenRow
         {
             public string Token { get; set; } = string.Empty;
             public string CommandId { get; set; } = string.Empty;
@@ -1511,7 +1265,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public int SortOrder { get; set; }
         }
 
-        private sealed class HomeCommandNames
+        internal sealed class HomeCommandNames
         {
             public HomeCommandNames(
                 string listCommandName,
@@ -1531,7 +1285,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public string TeleportCommandName { get; }
         }
 
-        private sealed class HomeRow
+        internal sealed class HomeRow
         {
             public string HomeId { get; set; } = string.Empty;
             public string CrossplatformId { get; set; } = string.Empty;
@@ -1546,7 +1300,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long RowVersion { get; set; }
         }
 
-        private sealed class CityRow
+        internal sealed class CityRow
         {
             public string CityId { get; set; } = string.Empty;
             public string Name { get; set; } = string.Empty;
@@ -1563,7 +1317,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long RowVersion { get; set; }
         }
 
-        private sealed class FriendRequestRow
+        internal sealed class FriendRequestRow
         {
             public string RequestId { get; set; } = string.Empty;
             public string RequesterCrossplatformId { get; set; } = string.Empty;
@@ -1576,7 +1330,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long RowVersion { get; set; }
         }
 
-        private sealed class FriendshipRow
+        internal sealed class FriendshipRow
         {
             public string FriendshipId { get; set; } = string.Empty;
             public string MemberACrossplatformId { get; set; } = string.Empty;
@@ -1585,7 +1339,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long AcceptedAtUtc { get; set; }
         }
 
-        private sealed class TeleportFriendRequestRow
+        internal sealed class TeleportFriendRequestRow
         {
             public string RequestId { get; set; } = string.Empty;
             public string IdempotencyKey { get; set; } = string.Empty;
@@ -1609,7 +1363,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long AvailableAtUtc { get; set; }
         }
 
-        private sealed class ReturnPointRow
+        internal sealed class ReturnPointRow
         {
             public string CrossplatformId { get; set; } = string.Empty;
             public string SourceOperationId { get; set; } = string.Empty;
@@ -1622,7 +1376,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite.Community
             public long RowVersion { get; set; }
         }
 
-        private sealed class OperationRow
+        internal sealed class OperationRow
         {
             public string OperationId { get; set; } = string.Empty;
             public string Kind { get; set; } = string.Empty;

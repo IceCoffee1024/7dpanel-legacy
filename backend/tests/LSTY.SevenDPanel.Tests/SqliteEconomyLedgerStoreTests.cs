@@ -81,6 +81,31 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Stale_freeze_row_version_is_rejected_without_mutating_the_account()
+        {
+            using var database = new TemporaryDatabase();
+            var store = database.Store;
+            var account = store.GetOrCreatePlayerAccount("EOS-A", "open-a", 100, Now);
+
+            var frozen = store.SetFrozen(
+                account.AccountId,
+                true,
+                account.RowVersion,
+                Now.AddMilliseconds(1));
+
+            Assert.Throws<EconomyConcurrencyException>(() => store.SetFrozen(
+                account.AccountId,
+                false,
+                account.RowVersion,
+                Now.AddMilliseconds(2)));
+
+            var current = FindPlayer(store, "EOS-A");
+            Assert.True(current.IsFrozen);
+            Assert.Equal(frozen.RowVersion, current.RowVersion);
+            Assert.Equal(100, current.PostedBalance);
+        }
+
+        [Fact]
         public async Task Concurrent_reservations_do_not_overdraw_and_capture_or_release_are_atomic()
         {
             using var database = new TemporaryDatabase();

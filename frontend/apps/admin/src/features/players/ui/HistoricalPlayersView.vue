@@ -30,6 +30,7 @@ function loadMore() {
   <UDashboardPanel id="history-players">
     <template #header>
       <div class="space-y-3 p-3 sm:p-4">
+        <UDashboardSidebarToggle />
         <PlayersSectionNavigation />
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>

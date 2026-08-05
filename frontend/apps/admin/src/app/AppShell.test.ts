@@ -185,6 +185,8 @@ describe('appShell', () => {
 
     const search = wrapper.findComponent({ name: 'DashboardSearch' })
     const groups = search.props('groups') as Array<{ items: Array<{ label: string, onSelect: (event: Event) => Promise<void> }> }>
+    expect(groups[0]?.items.some(item => item.label === '游戏资源')).toBe(true)
+    expect(wrapper.get('[data-testid="secondary-navigation"]').text()).not.toContain('游戏资源')
     const destination = groups[0]?.items.find(item => item.label === '游戏资源')
     await destination?.onSelect(new Event('select'))
     await flushPromises()

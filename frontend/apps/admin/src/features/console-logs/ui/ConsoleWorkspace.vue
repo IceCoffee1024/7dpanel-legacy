@@ -84,28 +84,30 @@ function connectionColor(status: 'connecting' | 'live' | 'reconnecting' | 'stopp
       </div>
     </template>
 
-    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <ConsoleLogViewport
-        :entries="entries"
-        :unread-count="unreadCount"
-        @update-following-latest="emit('updateFollowingLatest', $event)"
-      />
-      <ConsoleCommandBar
-        :catalog-unavailable="commandCatalogUnavailable"
-        :feedback-code="commandFeedbackCode"
-        :input="commandInput"
-        :is-submitting="isSubmitting"
-        :selected-suggestion-index="selectedSuggestionIndex"
-        :suggestions="commandSuggestions"
-        :suggestions-open="suggestionsOpen"
-        @complete-suggestion="emit('completeSuggestion')"
-        @dismiss-suggestions="emit('dismissSuggestions')"
-        @move-suggestion="emit('moveSuggestion', $event)"
-        @select-suggestion="emit('selectSuggestion', $event)"
-        @navigate-history="emit('navigateHistory', $event)"
-        @submit="emit('submitCommand')"
-        @update-input="emit('updateCommandInput', $event)"
-      />
-    </div>
+    <template #body>
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <ConsoleLogViewport
+          :entries="entries"
+          :unread-count="unreadCount"
+          @update-following-latest="emit('updateFollowingLatest', $event)"
+        />
+        <ConsoleCommandBar
+          :catalog-unavailable="commandCatalogUnavailable"
+          :feedback-code="commandFeedbackCode"
+          :input="commandInput"
+          :is-submitting="isSubmitting"
+          :selected-suggestion-index="selectedSuggestionIndex"
+          :suggestions="commandSuggestions"
+          :suggestions-open="suggestionsOpen"
+          @complete-suggestion="emit('completeSuggestion')"
+          @dismiss-suggestions="emit('dismissSuggestions')"
+          @move-suggestion="emit('moveSuggestion', $event)"
+          @select-suggestion="emit('selectSuggestion', $event)"
+          @navigate-history="emit('navigateHistory', $event)"
+          @submit="emit('submitCommand')"
+          @update-input="emit('updateCommandInput', $event)"
+        />
+      </div>
+    </template>
   </UDashboardPanel>
 </template>

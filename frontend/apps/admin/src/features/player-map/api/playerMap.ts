@@ -1,5 +1,12 @@
 import { requestJson } from '../../../shared/api/http'
-import { isRecord, isValidUtcTimestamp } from '../../players/api/playerSnapshot'
+import * as historyPlayers from '../../players/api/historyPlayers'
+
+const { isRecord, isValidUtcTimestamp } = historyPlayers
+export type FetchHistoricalPlayersOptions = historyPlayers.FetchHistoricalPlayersOptions
+export type HistoricalPlayerDetails = historyPlayers.HistoricalPlayerDetails
+export type HistoricalPlayersPage = historyPlayers.HistoricalPlayersPage
+export type HistoricalPlayerSummary = historyPlayers.HistoricalPlayerSummary
+export { isRecord, isValidUtcTimestamp }
 
 export interface GameExtent {
   readonly minimumX: number

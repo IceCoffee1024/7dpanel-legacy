@@ -20,6 +20,10 @@ function createRouteAdapter(): NavigationRouteAdapter {
     '/players/history/',
     '/players/map',
     '/community/chat/live',
+    '/community/chat/history',
+    '/community/chat/mutes',
+    '/community/chat/settings',
+    '/community/chat/appearance',
     '/community/teleport',
     '/community/votes',
     '/community/cities',
@@ -74,7 +78,9 @@ describe('useNavigation', () => {
 
     expect(navigation.groups.value.map(group => group.id)).toEqual(['overview', 'players', 'system'])
     expect(navigation.groups.value.find(group => group.id === 'players')?.children.map(child => child.id))
-      .toEqual(['online-players', 'access-lists', 'game-resources'])
+      .toEqual(['online-players', 'access-lists'])
+    expect(navigation.searchItems.value.map(item => item.routeName)).toContain('/players/resources')
+    expect(navigation.shortcuts.value).toContainEqual({ shortcut: 'g-r', routeName: '/players/resources' })
   })
 
   it('derives the active domain, current children, search items, and shortcuts from one catalog', () => {
@@ -83,6 +89,9 @@ describe('useNavigation', () => {
     expect(navigation.activeGroupId.value).toBe('operations')
     expect(navigation.currentGroup.value?.children.map(child => child.id)).toEqual(['console'])
     expect(navigation.searchItems.value.map(item => item.routeName)).toContain('/operations/console')
+    expect(navigation.searchItems.value.map(item => item.routeName)).not.toContain('/operations/automation/rules')
+    const owner = createNavigation('/operations/console', { role: 'Owner', isAuthenticated: true })
+    expect(owner.navigation.searchItems.value.map(item => item.routeName)).toContain('/operations/automation/rules')
     expect(navigation.shortcuts.value).toContainEqual({ shortcut: 'g-c', routeName: '/operations/console' })
     expect(navigation.shortcuts.value).not.toContainEqual({ shortcut: 'g-g', routeName: '/community/chat/live' })
   })
@@ -95,6 +104,13 @@ describe('useNavigation', () => {
       .toEqual(['players.navigation', 'players.profile.navigation', 'players.profile.detail'])
     expect(chat.navigation.breadcrumbs.value.map(item => item.labelKey))
       .toEqual(['shell.community', 'gameChat.title', 'gameChat.history.title'])
+    expect(chat.navigation.sectionItems.value.map(item => item.routeName)).toEqual([
+      '/community/chat/live',
+      '/community/chat/history',
+      '/community/chat/mutes',
+      '/community/chat/settings',
+      '/community/chat/appearance',
+    ])
   })
 
   it('does not duplicate a task domain when its child uses the same label', () => {

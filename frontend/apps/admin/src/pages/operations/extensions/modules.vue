@@ -8,9 +8,11 @@
 </route>
 
 <script setup lang="ts">
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { FeatureModulesView } from '../../../features/modules'
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <FeatureModulesView />
 </template>

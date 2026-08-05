@@ -502,7 +502,9 @@ Task 11 环境与自动化
 
   只把实际运行结果写入 `docs/test.md`；缺环境或失败保持 `Blocked`/`Implemented`。这一阶段不生成候选 artifact，也不提升 `Verified`。
 
-## Task 12：把单一 Bootstrap 注册清单按能力拆分（M3）
+## Task 12：把单一 Bootstrap 注册清单按能力拆分（M3，已移交）
+
+> 执行所有权已于 2026-08-04 移交至[持续复杂度收敛实施计划](2026-08-04-continuous-complexity-convergence.md)，该计划随后完成 Wave 0 至 Wave 4 的复杂度收敛和 Current 文档提升。以下未完成步骤只保留历史设计上下文，不得从本计划并行执行或计为完成；本计划后续聚合、候选 artifact、真实 OWIN、真实 7DTD 和恢复门禁仍按原边界保持未完成。
 
 **Files:**
 
@@ -541,6 +543,8 @@ Task 11 环境与自动化
   ```
 
 ## Task 13：收口三个核心旅程的用户任务体验（M6）
+
+> 本任务已完成并保留既有证据。后续固定二级入口密度和文档入口收敛由[持续复杂度收敛实施计划](2026-08-04-continuous-complexity-convergence.md)唯一拥有，本任务不再重新打开同一文件范围。
 
 **Files:**
 
@@ -616,6 +620,8 @@ Task 11 环境与自动化
   2026-08-03 实际结果：`pnpm lint`、`pnpm typecheck`、`pnpm test`（`138/138` 文件、`956/956` 项）、`pnpm build` 和 `pnpm api:check` 均通过。后端聚合仍因只读 `7dtd-reference` 缺少 `0_TFP_Harmony/0Harmony.dll` 与游戏 `Newtonsoft.Json.dll` 阻塞。
 
   2026-08-04 复验结果：`pnpm lint`、`pnpm typecheck`、`pnpm test`（`141/141` 文件、`963/963` 项）、串行 `pnpm build` 和 `pnpm api:check` 均通过；本次 Task 13 变更的定向 Vitest 为 `6` 文件、`20` 项。首次并行启动 build/typecheck 时 API 生成目录正在重建，出现的 generated import 失败不计入结果；生成完成后串行复验通过。
+
+  上述 `141/963` 是本计划历史复验时点的记录，不代表当前工作树的最新聚合。最新 Current 证据由[持续复杂度收敛实施计划](2026-08-04-continuous-complexity-convergence.md)和[测试策略](../../test.md)拥有：Admin 为 `145/1010`，mock desktop 与 mock `390x844` 各 `2` 个场景通过；真实 OWIN 本轮未执行。
 
 - [ ] **Step 4：运行冻结前当前聚合**
 

@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import NavigationSectionTabs from '../../../components/navigation/NavigationSectionTabs.vue'
 import { DiscordView, useDiscord } from '../../../features/discord'
 
 const router = useRouter()
@@ -11,5 +12,6 @@ const controller = useDiscord({ onSessionExpired: () => void router.replace({ pa
 </script>
 
 <template>
+  <NavigationSectionTabs />
   <DiscordView :controller="controller" />
 </template>

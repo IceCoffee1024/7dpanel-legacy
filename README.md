@@ -122,7 +122,6 @@ skills, adoption status, and setup references.
 - [Backend target architecture blueprint](docs/architecture/backend-target-blueprint.md) - approved future backend flows and production layout, not current implementation evidence
 - [Admin frontend target architecture blueprint](docs/architecture/admin-frontend-target-blueprint.md) - approved future Admin SPA boundaries, runtime flows, and release responsibilities
 - [Legacy feature parity target blueprint](docs/architecture/legacy-feature-parity-target-blueprint.md) - pinned legacy evidence, capability disposition, and bottom-up delivery order
-- [Game resource catalog design](docs/superpowers/specs/2026-07-26-legacy-parity-game-resource-catalog-design.md) - implemented first vertical slice for legacy feature parity
-- [Game resource catalog implementation plan](docs/superpowers/plans/2026-07-26-legacy-parity-game-resource-catalog.md) - execution record, focused verification, and deferred high-cost gates
+- [Change Record index](docs/superpowers/README.md) - active, completed, superseded, and historical implementation records with reading order
 - [Test strategy](docs/test.md) - requirement traceability, test levels, environments, and release gates
 - [Backend script guide](backend/scripts/README.md) - publish, server control, and health-check helpers

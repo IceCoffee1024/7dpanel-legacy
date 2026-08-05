@@ -97,6 +97,44 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(votes.GetConfiguration(VoteKind.Kick)!.Enabled);
         }
 
+        [Fact]
+        public void Game_command_configuration_round_trip_preserves_aliases_and_updates_home_settings()
+        {
+            using var database = new TemporaryDatabase();
+            database.Upgrade();
+            var store = new SqliteCommunityStore(database.ConnectionFactory);
+            var current = store.GetGameCommandConfiguration();
+            var updated = new CommunityGameCommandConfiguration(
+                current.Commands.Select(command => command.CommandId switch
+                {
+                    CommunityGameCommandId.Balance => new CommunityGameCommandSetting(
+                        command.CommandId, "balances", new[] { "balance-alt" }),
+                    CommunityGameCommandId.Homes => new CommunityGameCommandSetting(
+                        command.CommandId, "homes-custom", Array.Empty<string>()),
+                    CommunityGameCommandId.SetHome => new CommunityGameCommandSetting(
+                        command.CommandId, "sethome-custom", Array.Empty<string>()),
+                    CommunityGameCommandId.DeleteHome => new CommunityGameCommandSetting(
+                        command.CommandId, "delhome-custom", Array.Empty<string>()),
+                    CommunityGameCommandId.Home => new CommunityGameCommandSetting(
+                        command.CommandId, "home-custom", Array.Empty<string>()),
+                    _ => command
+                }),
+                Now.AddMinutes(1),
+                current.RowVersion);
+
+            var saved = store.SaveGameCommandConfiguration(updated);
+            var reloaded = store.GetGameCommandConfiguration();
+            var home = store.GetTeleportSettings(TeleportKind.Home);
+
+            Assert.Equal(current.RowVersion + 1, saved.RowVersion);
+            Assert.Equal(saved.RowVersion, reloaded.RowVersion);
+            Assert.Equal(new[] { "balance-alt" }, reloaded.Get(CommunityGameCommandId.Balance).Aliases);
+            Assert.Equal("homes-custom", reloaded.Get(CommunityGameCommandId.Homes).Name);
+            Assert.Equal("sethome-custom", home.HomeExperience!.SetCommandName);
+            Assert.Equal("delhome-custom", home.HomeExperience.DeleteCommandName);
+            Assert.Equal("home-custom", home.HomeExperience.TeleportCommandName);
+        }
+
         private static readonly DateTimeOffset Now =
             new DateTimeOffset(2026, 7, 27, 3, 0, 0, TimeSpan.Zero);
 
