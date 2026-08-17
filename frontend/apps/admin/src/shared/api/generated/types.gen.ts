@@ -2540,6 +2540,18 @@ export type UpdateServerConfigurationHttpRequest = {
     version?: string | null;
 };
 
+export type ServerOperationStatusHttpResponse = {
+    operationId?: string;
+    kind?: string;
+    status?: string;
+    requestedAtUtc?: string;
+    startedAtUtc?: string | null;
+    completedAtUtc?: string | null;
+    completionDeadlineUtc?: string;
+    failureCode?: string | null;
+    auditStatus?: string;
+};
+
 export type RestartServerOperationHttpResponse = {
     operationId?: string;
     code?: string;
@@ -7485,6 +7497,21 @@ export type ServerEventsGetResponses = {
 };
 
 export type ServerEventsGetResponse = ServerEventsGetResponses[keyof ServerEventsGetResponses];
+
+export type ServerOperationsGetData = {
+    body?: never;
+    path: {
+        operationId: string;
+    };
+    query?: never;
+    url: '/api/v1/server-operations/{operationId}';
+};
+
+export type ServerOperationsGetResponses = {
+    200: ServerOperationStatusHttpResponse;
+};
+
+export type ServerOperationsGetResponse = ServerOperationsGetResponses[keyof ServerOperationsGetResponses];
 
 export type ServerOperationsRestartData = {
     body?: ConfirmedServerOperationRequest | null;

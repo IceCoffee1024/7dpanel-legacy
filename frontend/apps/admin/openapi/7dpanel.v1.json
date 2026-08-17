@@ -11367,6 +11367,42 @@
         ]
       }
     },
+    "/api/v1/server-operations/{operationId}": {
+      "get": {
+        "tags": [
+          "ServerOperations"
+        ],
+        "operationId": "ServerOperations_Get",
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerOperationStatusHttpResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/server-operations/restart": {
       "post": {
         "tags": [
@@ -21651,6 +21687,46 @@
           "version": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "ServerOperationStatusHttpResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "requestedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completionDeadlineUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "failureCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "auditStatus": {
+            "type": "string"
           }
         }
       },

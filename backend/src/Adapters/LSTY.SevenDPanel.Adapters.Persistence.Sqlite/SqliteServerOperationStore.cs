@@ -74,7 +74,7 @@ namespace LSTY.SevenDPanel.Adapters.Persistence.Sqlite
         {
             RequireOperationId(operationId);
             if (!ServerOperationSnapshot.IsLegalTransition(expectedStatus, nextStatus))
-                throw new ArgumentException("The server operation transition is not legal.", nameof(nextStatus));
+                return false;
             if (changedAtUtc.Offset != TimeSpan.Zero)
                 throw new ArgumentException("Server operation timestamps must be UTC.", nameof(changedAtUtc));
             var terminal = nextStatus != ServerOperationLifecycleStatus.Running;
