@@ -44,6 +44,20 @@ function Get-Sha256Hex {
     }
 }
 
+function Get-FileSha256Hex {
+    param([string] $Path)
+
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        return (($algorithm.ComputeHash($stream) | ForEach-Object { $_.ToString('X2') }) -join '')
+    }
+    finally {
+        $stream.Dispose()
+        $algorithm.Dispose()
+    }
+}
+
 $resolvedManifest = Resolve-Path -LiteralPath $ManifestPath -ErrorAction Stop
 try {
     $manifest = Get-Content -LiteralPath $resolvedManifest.ProviderPath -Raw | ConvertFrom-Json
@@ -64,6 +78,20 @@ if ($null -eq $admin) { throw "Release manifest property 'admin' is missing." }
 $adminIndex = Assert-RelativePath ([string] $admin.index) 'admin.index'
 $adminAssetsDirectory = Assert-RelativePath ([string] $admin.assetsDirectory) 'admin.assetsDirectory'
 $approvedFiles += $adminIndex
+$player = $manifest.PSObject.Properties['player'].Value
+if ($null -eq $player) { throw "Release manifest property 'player' is missing." }
+$playerIndex = Assert-RelativePath ([string] $player.index) 'player.index'
+$playerAssetsDirectory = Assert-RelativePath ([string] $player.assetsDirectory) 'player.assetsDirectory'
+$approvedFiles += $playerIndex
+
+$deploymentState = $manifest.PSObject.Properties['deploymentState'].Value
+if ($null -eq $deploymentState) { throw "Release manifest property 'deploymentState' is missing." }
+$deploymentStateFiles = @(Get-RequiredArray $deploymentState 'files' | ForEach-Object {
+    Assert-RelativePath $_ 'deploymentState.files'
+})
+$deploymentStateDirectories = @(Get-RequiredArray $deploymentState 'directories' | ForEach-Object {
+    Assert-RelativePath $_ 'deploymentState.directories'
+})
 
 $approvedByPath = @{}
 foreach ($file in $approvedFiles) {
@@ -71,6 +99,27 @@ foreach ($file in $approvedFiles) {
     $key = $normalized.ToUpperInvariant()
     if ($approvedByPath.ContainsKey($key)) { throw "Release manifest contains a duplicate approved file path: $normalized" }
     $approvedByPath[$key] = $true
+}
+
+$deploymentStateFilesByPath = @{}
+foreach ($file in $deploymentStateFiles) {
+    $key = $file.ToUpperInvariant()
+    if ($deploymentStateFilesByPath.ContainsKey($key)) { throw "Release manifest contains a duplicate deployment state file path: $file" }
+    if ($approvedByPath.ContainsKey($key)) { throw "Release manifest deployment state overlaps an approved file path: $file" }
+    $deploymentStateFilesByPath[$key] = $true
+}
+
+$deploymentStateDirectoryPrefixes = @()
+foreach ($directory in $deploymentStateDirectories) {
+    $prefix = $directory.TrimEnd('/') + '/'
+    $key = $prefix.ToUpperInvariant()
+    if (@($deploymentStateDirectoryPrefixes | Where-Object { $_.ToUpperInvariant() -eq $key }).Count -gt 0) {
+        throw "Release manifest contains a duplicate deployment state directory path: $directory"
+    }
+    if (@($approvedByPath.Keys | Where-Object { $_ -eq $directory.ToUpperInvariant() -or $_.StartsWith($key) }).Count -gt 0) {
+        throw "Release manifest deployment state directory overlaps an approved file path: $directory"
+    }
+    $deploymentStateDirectoryPrefixes += $prefix
 }
 
 $inputArtifact = Get-Item -LiteralPath $ArtifactPath -Force -ErrorAction Stop
@@ -88,16 +137,28 @@ $entries = @(Get-ChildItem -LiteralPath $artifactRoot -Recurse -Force)
 $reparsePoints = @($entries | Where-Object { $_.Attributes -band [System.IO.FileAttributes]::ReparsePoint })
 if ($reparsePoints.Count -gt 0) { throw "Release artifact contains reparse points: $($reparsePoints.FullName -join ', ')" }
 
-$assetPrefix = $adminAssetsDirectory + '/'
+$assetPrefixes = @(
+    ($adminAssetsDirectory + '/')
+    ($playerAssetsDirectory + '/')
+)
 $identityFiles = @()
 foreach ($file in @($entries | Where-Object { -not $_.PSIsContainer })) {
     $relativePath = $file.FullName.Substring($prefix.Length).Replace('\', '/')
     $key = $relativePath.ToUpperInvariant()
-    $isApprovedAsset = $relativePath.StartsWith($assetPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+    $isDeploymentState = $deploymentStateFilesByPath.ContainsKey($key)
+    if (-not $isDeploymentState) {
+        $isDeploymentState = @($deploymentStateDirectoryPrefixes | Where-Object {
+            $relativePath.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase)
+        }).Count -gt 0
+    }
+    if ($isDeploymentState) { continue }
+    $isApprovedAsset = @($assetPrefixes | Where-Object {
+        $relativePath.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase)
+    }).Count -gt 0
     if (-not $approvedByPath.ContainsKey($key) -and -not $isApprovedAsset) {
         throw "Release artifact file is not approved by the release manifest: $relativePath"
     }
-    $fileHash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
+    $fileHash = Get-FileSha256Hex $file.FullName
     $identityFiles += [pscustomobject]([ordered]@{
         path = $relativePath
         length = [Int64] $file.Length
@@ -110,8 +171,11 @@ foreach ($approvedPath in $approvedByPath.Keys) {
         throw "Release artifact is missing approved file: $approvedPath"
     }
 }
-if (@($identityFiles | Where-Object { $_.path.StartsWith($assetPrefix, [System.StringComparison]::OrdinalIgnoreCase) }).Count -eq 0) {
+if (@($identityFiles | Where-Object { $_.path.StartsWith($assetPrefixes[0], [System.StringComparison]::OrdinalIgnoreCase) }).Count -eq 0) {
     throw "Release artifact Admin assets are missing or empty: $adminAssetsDirectory"
+}
+if (@($identityFiles | Where-Object { $_.path.StartsWith($assetPrefixes[1], [System.StringComparison]::OrdinalIgnoreCase) }).Count -eq 0) {
+    throw "Release artifact Player assets are missing or empty: $playerAssetsDirectory"
 }
 
 $orderedFiles = @($identityFiles | Sort-Object -Property path)

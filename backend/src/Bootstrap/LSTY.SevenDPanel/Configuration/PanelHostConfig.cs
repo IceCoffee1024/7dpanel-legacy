@@ -14,6 +14,8 @@ namespace LSTY.SevenDPanel.Configuration
         public RestartScriptConfig? Restart { get; set; }
         public string? ServerConfigurationPath { get; set; }
         public string? GeoIpDatabasePath { get; set; }
+        public string? SteamOpenIdProxy { get; set; }
+        public string? PlayerStoreServerIp { get; set; }
 
         public static PanelHostConfig CreateDefault()
         {
@@ -28,7 +30,9 @@ namespace LSTY.SevenDPanel.Configuration
                 ChatCommandTesting = ChatCommandTestingConfig.CreateDefault(),
                 Restart = RestartScriptConfig.CreateDefault(),
                 ServerConfigurationPath = "../../serverconfig.xml",
-                GeoIpDatabasePath = PanelHostOptions.DefaultGeoIpDatabaseRelativePath
+                GeoIpDatabasePath = PanelHostOptions.DefaultGeoIpDatabaseRelativePath,
+                SteamOpenIdProxy = PanelHostOptions.DefaultSteamOpenIdProxy,
+                PlayerStoreServerIp = null
             };
         }
     }

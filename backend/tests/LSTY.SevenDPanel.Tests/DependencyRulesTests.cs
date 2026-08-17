@@ -217,15 +217,24 @@ namespace LSTY.SevenDPanel.Tests
                 "candidateCommandHarmony = ConsoleCommandHarmonyRuntime.Install(candidateRuntime);",
                 StringComparison.Ordinal);
             var candidateAdapterIndex = modMainSource.IndexOf(
-                "candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateCommandHarmony);",
+                "candidateAdapter = new SevenDaysGameLifecycleAdapter(",
                 StringComparison.Ordinal);
+            var adapterRuntimeIndex = candidateAdapterIndex < 0
+                ? -1
+                : modMainSource.IndexOf(
+                    "candidateCommandHarmony,",
+                    candidateAdapterIndex,
+                    StringComparison.Ordinal);
             var registerIndex = modMainSource.IndexOf("candidateAdapter.RegisterAndStart();", StringComparison.Ordinal);
             var publishRuntimeIndex = modMainSource.IndexOf("runtime = candidateRuntime;", StringComparison.Ordinal);
             var publishAdapterIndex = modMainSource.IndexOf("adapter = candidateAdapter;", StringComparison.Ordinal);
             Assert.True(registerIndex >= 0, "Bootstrap must start the candidate lifecycle adapter.");
             Assert.True(candidateRuntimeIndex >= 0 && commandHarmonyIndex > candidateRuntimeIndex,
                 "Bootstrap must build the validated service provider before installing command Harmony.");
-            Assert.True(candidateAdapterIndex > commandHarmonyIndex,
+            Assert.True(
+                candidateAdapterIndex > commandHarmonyIndex &&
+                adapterRuntimeIndex > candidateAdapterIndex &&
+                adapterRuntimeIndex < registerIndex,
                 "Bootstrap must bind lifecycle registration to the command Harmony runtime proxy.");
             Assert.True(publishRuntimeIndex > registerIndex, "Bootstrap must publish the runtime only after lifecycle registration succeeds.");
             Assert.True(publishAdapterIndex > registerIndex, "Bootstrap must publish the adapter only after lifecycle registration succeeds.");
@@ -570,6 +579,8 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Contains("config.example.json", manifest["configExamples"]!.Values<string>());
             Assert.Equal("wwwroot/index.html", (string)manifest["admin"]!["index"]!);
             Assert.Equal("wwwroot/assets", (string)manifest["admin"]!["assetsDirectory"]!);
+            Assert.Equal("wwwroot/player/index.html", (string)manifest["player"]!["index"]!);
+            Assert.Equal("wwwroot/player/assets", (string)manifest["player"]!["assetsDirectory"]!);
             Assert.Contains("release-manifest.json", publishScript);
             Assert.Contains("Test-ReleaseArtifact.ps1", publishScript);
             Assert.Contains("Remove-ForbiddenReleaseArtifactContent.ps1", publishScript);

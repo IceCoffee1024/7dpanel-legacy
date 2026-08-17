@@ -1,0 +1,25 @@
+{
+  "name": "@7dpanel/player",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.13.1",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -p ./tsconfig.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc -p ./tsconfig.json"
+  },
+  "dependencies": {
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.5",
+    "vue-tsc": "^3.3.7"
+  }
+}

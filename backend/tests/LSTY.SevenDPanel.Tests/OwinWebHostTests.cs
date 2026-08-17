@@ -1853,11 +1853,16 @@ namespace LSTY.SevenDPanel.Tests
                 "img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'";
             var assetRoot = Path.Combine(Path.GetTempPath(), "7dpanel-admin-" + Guid.NewGuid().ToString("N"));
             var assetsDirectory = Path.Combine(assetRoot, "assets");
+            var playerDirectory = Path.Combine(assetRoot, "player");
+            var playerAssetsDirectory = Path.Combine(playerDirectory, "assets");
             var conflictingApiDirectory = Path.Combine(assetRoot, "api", "v1");
             Directory.CreateDirectory(assetsDirectory);
+            Directory.CreateDirectory(playerAssetsDirectory);
             Directory.CreateDirectory(conflictingApiDirectory);
             File.WriteAllText(Path.Combine(assetRoot, "index.html"), "<html><body>7DPanel Admin</body></html>");
             File.WriteAllText(Path.Combine(assetsDirectory, "app.js"), "window.panelLoaded = true;");
+            File.WriteAllText(Path.Combine(playerDirectory, "index.html"), "<html><body>7DPanel Player</body></html>");
+            File.WriteAllText(Path.Combine(playerAssetsDirectory, "app.js"), "window.playerLoaded = true;");
             File.WriteAllText(Path.Combine(conflictingApiDirectory, "health"), "static content must not win");
 
             var port = GetAvailablePort();
@@ -1898,6 +1903,26 @@ namespace LSTY.SevenDPanel.Tests
                     Assert.DoesNotContain("unsafe-eval", expectedCsp);
                     Assert.DoesNotContain("http:", expectedCsp);
                     Assert.DoesNotContain("https:", expectedCsp);
+
+                    var playerSpaResponse = await client.GetAsync(url + "player/store", TestContext.Current.CancellationToken);
+                    var playerSpaBody = await playerSpaResponse.Content.ReadAsStringAsync();
+                    Assert.Equal(HttpStatusCode.OK, playerSpaResponse.StatusCode);
+                    Assert.Contains("7DPanel Player", playerSpaBody);
+                    Assert.Equal(
+                        expectedCsp,
+                        playerSpaResponse.Headers.GetValues("Content-Security-Policy").Single());
+
+                    var playerIndexResponse = await client.GetAsync(url + "player/index.html", TestContext.Current.CancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, playerIndexResponse.StatusCode);
+                    Assert.Equal(
+                        expectedCsp,
+                        playerIndexResponse.Headers.GetValues("Content-Security-Policy").Single());
+
+                    var playerAssetResponse = await client.GetAsync(url + "player/assets/app.js", TestContext.Current.CancellationToken);
+                    var playerAssetBody = await playerAssetResponse.Content.ReadAsStringAsync();
+                    Assert.Equal(HttpStatusCode.OK, playerAssetResponse.StatusCode);
+                    Assert.Contains("playerLoaded", playerAssetBody);
+                    Assert.False(playerAssetResponse.Headers.Contains("Content-Security-Policy"));
 
                     var assetResponse = await client.GetAsync(url + "assets/app.js", TestContext.Current.CancellationToken);
                     var assetBody = await assetResponse.Content.ReadAsStringAsync();

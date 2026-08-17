@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.ExceptionHandling;
 using LSTY.SevenDPanel.Adapters.Web.Inbound.Http.Authentication;
@@ -35,6 +37,22 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                     serviceProvider.GetRequiredService<PanelCredentialVerifier>(),
                     serviceProvider.GetRequiredService<LSTY.SevenDPanel.Application.IRecentActivityWriter>(),
                     log));
+            services.AddSingleton(_ => new PlayerWebSessionStore(() => DateTimeOffset.UtcNow));
+            services.AddSingleton(serviceProvider =>
+            {
+                var proxy = serviceProvider.GetRequiredService<PanelHostOptions>().SteamOpenIdProxy;
+                var handler = new HttpClientHandler { UseProxy = proxy != null };
+                if (proxy != null) handler.Proxy = new WebProxy(proxy);
+                return new SteamOpenIdClient(
+                    new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) },
+                    log);
+            });
+            services.AddSingleton<IPlayerOpenIdClient>(serviceProvider =>
+                serviceProvider.GetRequiredService<SteamOpenIdClient>());
+            services.AddSingleton(serviceProvider => new PlayerAuthenticationService(
+                serviceProvider.GetRequiredService<PlayerWebSessionStore>(),
+                serviceProvider.GetRequiredService<IPlayerOpenIdClient>(),
+                serviceProvider.GetRequiredService<LSTY.SevenDPanel.Application.IPlayerPersistentIdentityLookup>()));
         }
 
         public static void Configure(
@@ -74,7 +92,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 }
 
                 var originalPath = context.Request.Path;
-                context.Request.Path = new PathString("/index.html");
+                context.Request.Path = new PathString(GetSpaIndexPath(originalPath.Value));
                 try
                 {
                     await next();
@@ -175,6 +193,15 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
                 return false;
 
             return string.IsNullOrEmpty(Path.GetExtension(normalizedPath));
+        }
+
+        internal static string GetSpaIndexPath(string? path)
+        {
+            var normalizedPath = string.IsNullOrEmpty(path) ? "/" : path!;
+            return string.Equals(normalizedPath, "/player", StringComparison.OrdinalIgnoreCase) ||
+                   normalizedPath.StartsWith("/player/", StringComparison.OrdinalIgnoreCase)
+                ? "/player/index.html"
+                : "/index.html";
         }
     }
 }

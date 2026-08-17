@@ -221,6 +221,27 @@ if (-not (Test-Path -LiteralPath $adminAssetsPath -PathType Container) -or
     throw "Release artifact Admin assets are missing or empty: $adminAssetsDirectory"
 }
 
+$playerProperty = $manifest.PSObject.Properties['player']
+if ($null -eq $playerProperty -or $null -eq $playerProperty.Value) {
+    throw "Release manifest property 'player' is missing."
+}
+$player = $playerProperty.Value
+$playerRoot = Assert-RelativePath ([string]$player.root) 'player.root'
+$playerIndex = Assert-RelativePath ([string]$player.index) 'player.index'
+$playerAssetsDirectory = Assert-RelativePath ([string]$player.assetsDirectory) 'player.assetsDirectory'
+if (-not $playerIndex.StartsWith($playerRoot + '/', [System.StringComparison]::OrdinalIgnoreCase) -or
+    -not $playerAssetsDirectory.StartsWith($playerRoot + '/', [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Release manifest Player paths must be contained by player.root.'
+}
+if (-not (Test-Path -LiteralPath (Get-ArtifactPath $playerIndex) -PathType Leaf)) {
+    throw "Release artifact Player index is missing: $playerIndex"
+}
+$playerAssetsPath = Get-ArtifactPath $playerAssetsDirectory
+if (-not (Test-Path -LiteralPath $playerAssetsPath -PathType Container) -or
+    -not (Get-ChildItem -LiteralPath $playerAssetsPath -Recurse -File | Select-Object -First 1)) {
+    throw "Release artifact Player assets are missing or empty: $playerAssetsDirectory"
+}
+
 foreach ($configExample in $configExamples) {
     $configPath = Get-ArtifactPath $configExample
     try {

@@ -173,6 +173,9 @@ namespace LSTY.SevenDPanel.DependencyInjection.Registration
             services.AddSingleton<IPlayerAccessControl>(serviceProvider =>
                 serviceProvider.GetRequiredService<SevenDaysPlayerAccessControl>());
             services.AddSingleton<AccessListUseCases>();
+            services.AddSingleton<SevenDaysPersistentPlayerIdentityLookup>();
+            services.AddSingleton<IPlayerPersistentIdentityLookup>(serviceProvider =>
+                serviceProvider.GetRequiredService<SevenDaysPersistentPlayerIdentityLookup>());
             services.AddSingleton<SevenDaysGamePermissionControl>();
             services.AddSingleton<IGamePermissionControl>(serviceProvider =>
                 serviceProvider.GetRequiredService<SevenDaysGamePermissionControl>());

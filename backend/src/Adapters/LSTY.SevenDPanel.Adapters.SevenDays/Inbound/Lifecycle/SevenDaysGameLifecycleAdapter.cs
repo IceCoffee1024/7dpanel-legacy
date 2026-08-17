@@ -8,21 +8,26 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Lifecycle
     {
         private readonly IModRuntime runtime;
         private readonly ISevenDaysLifecycleEvents events;
+        private readonly Action? onGameStartDone;
         private readonly List<IDisposable> subscriptions = new List<IDisposable>();
         private bool registered;
         private bool disposed;
 
-        public SevenDaysGameLifecycleAdapter(IModRuntime runtime)
-            : this(runtime, new SevenDaysModEvents())
+        public SevenDaysGameLifecycleAdapter(
+            IModRuntime runtime,
+            Action? onGameStartDone = null)
+            : this(runtime, new SevenDaysModEvents(), onGameStartDone)
         {
         }
 
         internal SevenDaysGameLifecycleAdapter(
             IModRuntime runtime,
-            ISevenDaysLifecycleEvents events)
+            ISevenDaysLifecycleEvents events,
+            Action? onGameStartDone = null)
         {
             this.runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
             this.events = events ?? throw new ArgumentNullException(nameof(events));
+            this.onGameStartDone = onGameStartDone;
         }
 
         public void RegisterAndStart()
@@ -55,7 +60,11 @@ namespace LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Lifecycle
             }
         }
 
-        private void OnGameStartDone() { runtime.MarkGameReady(); }
+        private void OnGameStartDone()
+        {
+            runtime.MarkGameReady();
+            onGameStartDone?.Invoke();
+        }
         private void OnWorldShuttingDown() { runtime.Stop(); }
         private void OnGameShutdown() { runtime.Stop(); }
 

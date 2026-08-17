@@ -54,6 +54,10 @@ namespace LSTY.SevenDPanel.Tests
                 Assert.Equal(
                     Path.Combine(directory, "data", "GeoLite2-Country.mmdb"),
                     options.GeoIpDatabasePath);
+                Assert.Equal(
+                    PanelHostOptions.DefaultSteamOpenIdProxy,
+                    options.SteamOpenIdProxy?.AbsoluteUri.TrimEnd('/'));
+                Assert.Null(options.PlayerStoreServerIp);
                 Assert.True(File.Exists(path));
             }
             finally
@@ -201,6 +205,8 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(defaults.Port, example.Port);
             Assert.Equal(defaults.BindAddress, example.BindAddress);
             Assert.Equal(defaults.Scheme, example.Scheme);
+            Assert.Equal(defaults.SteamOpenIdProxy, example.SteamOpenIdProxy);
+            Assert.Equal(defaults.PlayerStoreServerIp, example.PlayerStoreServerIp);
             Assert.NotNull(example.Authentication);
             Assert.NotNull(defaults.Authentication);
             Assert.Equal(defaults.Authentication.Enabled, example.Authentication.Enabled);
@@ -229,6 +235,75 @@ namespace LSTY.SevenDPanel.Tests
             Assert.Equal(defaults.PlayerEvidence.TimeZoneId, example.PlayerEvidence.TimeZoneId);
             Assert.Equal("local", defaults.PlayerEvidence.ServerId);
             Assert.Equal("UTC", defaults.PlayerEvidence.TimeZoneId);
+        }
+
+        [Fact]
+        public void Invalid_Steam_proxy_is_disabled_without_replacing_other_configuration()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19098,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"SteamOpenIdProxy\":\"https://proxy.example:10808\"}");
+            string? message = null;
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path, value => message = value);
+
+                Assert.Equal("http://127.0.0.1:19098/", options.Url);
+                Assert.Null(options.SteamOpenIdProxy);
+                Assert.Contains("Steam OpenID proxy", message, StringComparison.Ordinal);
+                Assert.DoesNotContain("proxy.example", message ?? string.Empty, StringComparison.Ordinal);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Config_file_can_override_player_store_ServerIP()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19099,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"PlayerStoreServerIp\":\" 203.0.113.42 \"}");
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path);
+
+                Assert.Equal("203.0.113.42", options.PlayerStoreServerIp);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void Invalid_player_store_ServerIP_falls_back_to_GamePrefs()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "7dpanel-config-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(
+                path,
+                "{\"Port\":19099,\"BindAddress\":\"127.0.0.1\",\"Scheme\":\"http\"," +
+                "\"PlayerStoreServerIp\":\"127.0.0.1\"}");
+            string? message = null;
+
+            try
+            {
+                var options = PanelHostConfigurationLoader.FromConfigFile(path, value => message = value);
+
+                Assert.Null(options.PlayerStoreServerIp);
+                Assert.Contains("GamePrefs.ServerIP", message, StringComparison.Ordinal);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
         }
 
         [Fact]

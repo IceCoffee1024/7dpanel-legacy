@@ -29,6 +29,8 @@
   },
   "serverConfigurationPath": "../../serverconfig.xml",
   "geoIpDatabasePath": "data/GeoLite2-Country.mmdb",
+  "steamOpenIdProxy": "http://127.0.0.1:10808",
+  "playerStoreServerIp": null,
   "restart": {
     "windowsScript": "scripts/restart-server.cmd",
     "linuxScript": "scripts/restart-server.sh",

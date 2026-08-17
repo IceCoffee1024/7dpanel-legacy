@@ -42,6 +42,29 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void GameStartDone_invokes_the_registered_callback_after_marking_runtime_ready()
+        {
+            var trace = new List<string>();
+            var events = new FakeLifecycleEvents(trace);
+            var runtime = new RecordingRuntime(trace);
+            var adapter = new SevenDaysGameLifecycleAdapter(
+                runtime,
+                events,
+                () => trace.Add("callback"));
+            adapter.RegisterAndStart();
+
+            events.RaiseGameStartDone();
+
+            Assert.Equal(
+                new[]
+                {
+                    "subscribe-world", "subscribe-game-shutdown", "subscribe-game-ready", "start",
+                    "game-ready", "callback"
+                },
+                trace);
+        }
+
+        [Fact]
         public void Both_shutdown_events_stop_runtime_idempotently()
         {
             var events = new FakeLifecycleEvents();

@@ -37,6 +37,8 @@ function New-ValidArtifact {
     }
     New-FixtureFile $Root $manifest.admin.index '<!doctype html><html></html>'
     New-FixtureFile $Root ($manifest.admin.assetsDirectory + '/app.12345678.js') 'export default true'
+    New-FixtureFile $Root $manifest.player.index '<!doctype html><html></html>'
+    New-FixtureFile $Root ($manifest.player.assetsDirectory + '/app.12345678.js') 'export default true'
 }
 
 function Assert-ValidationFails {
@@ -65,9 +67,28 @@ try {
     if ($null -eq $identity -or $identity.artifactSha256 -notmatch '^[A-F0-9]{64}$') {
         throw 'Release validator must return the shared artifact identity.'
     }
-    $directIdentity = & $identityPath -ArtifactPath $validArtifact -ManifestPath $manifestPath
+    function Get-FileHash { throw 'Get-FileHash must not be required by release artifact identity calculation.' }
+    try {
+        $directIdentity = & $identityPath -ArtifactPath $validArtifact -ManifestPath $manifestPath
+    }
+    finally {
+        Remove-Item -LiteralPath Function:\Get-FileHash
+    }
     if ($identity.artifactSha256 -ne $directIdentity.artifactSha256) {
         throw 'Release validator must return the same artifact identity as Get-ReleaseArtifactIdentity.ps1.'
+    }
+
+    $deployedArtifact = Join-Path $temporaryRoot 'deployed'
+    New-ValidArtifact $deployedArtifact
+    New-FixtureFile $deployedArtifact 'config.json' '{"port":18080}'
+    New-FixtureFile $deployedArtifact 'data/7dpanel.db' 'database'
+    New-FixtureFile $deployedArtifact 'data/7dpanel.db-wal' 'write-ahead-log'
+    New-FixtureFile $deployedArtifact 'Config/XUi_InGame/windows.xml' '<configs />'
+    $deployedIdentity = & $validatorPath -ArtifactPath $deployedArtifact -ManifestPath $manifestPath |
+        Where-Object { $null -ne $_.PSObject.Properties['artifactSha256'] } |
+        Select-Object -Last 1
+    if ($identity.artifactSha256 -ne $deployedIdentity.artifactSha256) {
+        throw 'Server-owned deployment state must not change the release artifact identity.'
     }
 
     foreach ($productAssembly in @($manifest.productAssemblies)) {
@@ -118,6 +139,16 @@ try {
     Remove-Item -LiteralPath (Join-Path $emptyAdminAssetsArtifact 'wwwroot/assets/app.12345678.js') -Force
     Assert-ValidationFails $emptyAdminAssetsArtifact 'Admin assets are missing or empty'
 
+    $missingPlayerIndexArtifact = Join-Path $temporaryRoot 'missing-player-index'
+    New-ValidArtifact $missingPlayerIndexArtifact
+    Remove-Item -LiteralPath (Join-Path $missingPlayerIndexArtifact 'wwwroot/player/index.html') -Force
+    Assert-ValidationFails $missingPlayerIndexArtifact 'Player index is missing'
+
+    $emptyPlayerAssetsArtifact = Join-Path $temporaryRoot 'empty-player-assets'
+    New-ValidArtifact $emptyPlayerAssetsArtifact
+    Remove-Item -LiteralPath (Join-Path $emptyPlayerAssetsArtifact 'wwwroot/player/assets/app.12345678.js') -Force
+    Assert-ValidationFails $emptyPlayerAssetsArtifact 'Player assets are missing or empty'
+
     $invalidConfigArtifact = Join-Path $temporaryRoot 'invalid-config'
     New-ValidArtifact $invalidConfigArtifact
     Set-Content -LiteralPath (Join-Path $invalidConfigArtifact 'config.example.json') -Value '{' -Encoding UTF8
@@ -138,6 +169,12 @@ try {
     $missingAdminManifestPath = Join-Path $temporaryRoot 'missing-admin-release-manifest.json'
     $missingAdminManifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $missingAdminManifestPath -Encoding UTF8
     Assert-ValidationFails $validArtifact "property 'admin' is missing" $missingAdminManifestPath
+
+    $missingPlayerManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    $missingPlayerManifest.PSObject.Properties.Remove('player')
+    $missingPlayerManifestPath = Join-Path $temporaryRoot 'missing-player-release-manifest.json'
+    $missingPlayerManifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $missingPlayerManifestPath -Encoding UTF8
+    Assert-ValidationFails $validArtifact "property 'player' is missing" $missingPlayerManifestPath
 
     $unsafePathManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     $unsafePathManifest.forbiddenRelativePaths = @($unsafePathManifest.forbiddenRelativePaths) + 'payload:stream'

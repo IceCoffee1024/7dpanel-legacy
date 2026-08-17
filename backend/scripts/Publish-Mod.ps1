@@ -22,10 +22,18 @@ $projectDirectory = Split-Path $project -Parent
 $adminDistPath = Join-Path $repoRoot 'frontend\apps\admin\dist'
 $adminIndexPath = Join-Path $adminDistPath 'index.html'
 $adminAssetsPath = Join-Path $adminDistPath 'assets'
+$playerDistPath = Join-Path $repoRoot 'frontend\apps\player\dist'
+$playerIndexPath = Join-Path $playerDistPath 'index.html'
+$playerAssetsPath = Join-Path $playerDistPath 'assets'
 if (-not (Test-Path -LiteralPath $adminIndexPath -PathType Leaf) -or
     -not (Test-Path -LiteralPath $adminAssetsPath -PathType Container) -or
     -not (Get-ChildItem -LiteralPath $adminAssetsPath -File | Select-Object -First 1)) {
     throw 'Admin build output is missing or incomplete. Run pnpm build in frontend/apps/admin before publishing.'
+}
+if (-not (Test-Path -LiteralPath $playerIndexPath -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $playerAssetsPath -PathType Container) -or
+    -not (Get-ChildItem -LiteralPath $playerAssetsPath -File | Select-Object -First 1)) {
+    throw 'Player build output is missing or incomplete. Run pnpm build in frontend/apps/player before publishing.'
 }
 
 $configuredPublishPath = if ($PSBoundParameters.ContainsKey('PublishDirectory')) {
@@ -73,13 +81,23 @@ if (Test-Path -LiteralPath $wwwrootPath) {
 }
 New-Item -ItemType Directory -Path $wwwrootPath | Out-Null
 Get-ChildItem -LiteralPath $adminDistPath -Force | Copy-Item -Destination $wwwrootPath -Recurse -Force
+$publishedPlayerPath = Join-Path $wwwrootPath 'player'
+New-Item -ItemType Directory -Path $publishedPlayerPath | Out-Null
+Get-ChildItem -LiteralPath $playerDistPath -Force | Copy-Item -Destination $publishedPlayerPath -Recurse -Force
 
 $publishedIndexPath = Join-Path $wwwrootPath 'index.html'
 $publishedAssetsPath = Join-Path $wwwrootPath 'assets'
+$publishedPlayerIndexPath = Join-Path $publishedPlayerPath 'index.html'
+$publishedPlayerAssetsPath = Join-Path $publishedPlayerPath 'assets'
 if (-not (Test-Path -LiteralPath $publishedIndexPath -PathType Leaf) -or
     -not (Test-Path -LiteralPath $publishedAssetsPath -PathType Container) -or
     -not (Get-ChildItem -LiteralPath $publishedAssetsPath -File | Select-Object -First 1)) {
     throw "Published Admin assets are incomplete under $wwwrootPath"
+}
+if (-not (Test-Path -LiteralPath $publishedPlayerIndexPath -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $publishedPlayerAssetsPath -PathType Container) -or
+    -not (Get-ChildItem -LiteralPath $publishedPlayerAssetsPath -File | Select-Object -First 1)) {
+    throw "Published Player assets are incomplete under $publishedPlayerPath"
 }
 
 & (Join-Path $PSScriptRoot 'Test-ReleaseArtifact.ps1') `

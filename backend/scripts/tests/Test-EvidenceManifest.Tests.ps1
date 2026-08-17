@@ -47,12 +47,15 @@ function New-ValidArtifact {
         @($releaseManifest.requiredFiles) +
         @($releaseManifest.requiredNativeAssets) +
         @($releaseManifest.admin.index) +
-        ($releaseManifest.admin.assetsDirectory + '/app.12345678.js')
+        ($releaseManifest.admin.assetsDirectory + '/app.12345678.js') +
+        @($releaseManifest.player.index) +
+        ($releaseManifest.player.assetsDirectory + '/app.12345678.js')
     )
     if ($ReverseOrder) { [array]::Reverse($paths) }
     foreach ($path in $paths) {
         $content = if ($path -eq 'config.example.json') { '{"port":18080}' } else { 'fixture' }
         if ($path -eq $releaseManifest.admin.index) { $content = '<!doctype html><html></html>' }
+        if ($path -eq $releaseManifest.player.index) { $content = '<!doctype html><html></html>' }
         New-FixtureFile $Root $path $content
     }
 }

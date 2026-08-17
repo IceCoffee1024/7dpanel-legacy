@@ -32,6 +32,7 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http
             (string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase)) &&
             (string.Equals(path, "/index.html", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(path, "/player/index.html", StringComparison.OrdinalIgnoreCase) ||
                 OwinStartup.ShouldUseSpaFallback(method, path));
     }
 }

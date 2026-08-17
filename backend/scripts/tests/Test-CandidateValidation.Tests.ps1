@@ -116,12 +116,14 @@ $paths = @(
     @($manifest.requiredFiles) +
     @($manifest.requiredNativeAssets) +
     @($manifest.admin.index) +
-    ($manifest.admin.assetsDirectory + '/app.12345678.js')
+    ($manifest.admin.assetsDirectory + '/app.12345678.js') +
+    @($manifest.player.index) +
+    ($manifest.player.assetsDirectory + '/app.12345678.js')
 )
 foreach ($relativePath in $paths) {
     $path = Join-Path $PublishDirectory $relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar)
     New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force | Out-Null
-    $content = if ($relativePath -eq 'config.example.json') { '{"port":18080}' } elseif ($relativePath -eq $manifest.admin.index) { '<!doctype html><html></html>' } else { 'fixture' }
+    $content = if ($relativePath -eq 'config.example.json') { '{"port":18080}' } elseif ($relativePath -eq $manifest.admin.index -or $relativePath -eq $manifest.player.index) { '<!doctype html><html></html>' } else { 'fixture' }
     [System.IO.File]::WriteAllText($path, $content, (New-Object System.Text.UTF8Encoding($false)))
 }
 '@

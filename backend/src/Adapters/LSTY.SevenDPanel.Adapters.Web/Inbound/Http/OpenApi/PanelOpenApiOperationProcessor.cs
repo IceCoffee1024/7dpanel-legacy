@@ -7,6 +7,12 @@ namespace LSTY.SevenDPanel.Adapters.Web.Inbound.Http.OpenApi
     {
         public bool Process(OperationProcessorContext context)
         {
+            if (context.ControllerType == typeof(PlayerAuthenticationController) ||
+                context.ControllerType == typeof(PlayerSessionController))
+            {
+                return false;
+            }
+
             PanelOpenApiServerRules.DescribeServerEventStream(context);
             PanelOpenApiServerRules.DescribeApiKeyManagement(context);
             PanelOpenApiServerRules.DescribePlayerHistory(context);

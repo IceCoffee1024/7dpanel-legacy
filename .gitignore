@@ -27,3 +27,4 @@ backend/src/Bootstrap/LSTY.SevenDPanel/config.json
 *.user
 /.superpowers/
 /.venv/
+/.pnpm-store/

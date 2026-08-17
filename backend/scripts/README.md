@@ -229,8 +229,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File backend/scripts/tests/Te
 `Get-ReleaseArtifactIdentity.ps1` is the single artifact identity calculator.
 It hashes the approved relative files, lengths, and per-file SHA-256 values in
 sorted order and returns one overall `artifactSha256`; it rejects roots,
-reparse points, missing approved files, and unapproved files. It never emits an
-absolute machine path.
+reparse points, missing approved files, and unapproved files. The manifest's
+declared server-owned `config.json` and `data/` deployment state is preserved
+but excluded from the release identity. It never emits an absolute machine
+path.
 
 `New-EvidenceManifest.ps1` writes a UTF-8-without-BOM `manifest.json` next to
 the existing smoke `summary.json`. The summary records step-by-step status and

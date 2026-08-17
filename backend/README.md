@@ -77,6 +77,11 @@ Runtime defaults are defined by `PanelHostConfig.CreateDefault()`; an automated
 test compares those values with `config.example.json` so the operator template
 cannot silently drift from fallback behavior.
 
+Steam OpenID server-side verification uses the optional `steamOpenIdProxy`
+HTTP proxy from `config.json`; the generated default is
+`http://127.0.0.1:10808`. Set it to `null` to connect directly. Invalid or
+credential-bearing proxy URLs are disabled without replacing other settings.
+
 During the current framework-building phase, the `authentication` object is
 enabled by default with the known credentials `admin` / `password`, an
 8-hour access-token lifetime, and `allowInsecureHttp: true`. These values are

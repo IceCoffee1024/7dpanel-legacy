@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Security;
 using LSTY.SevenDPanel.Hosting;
 using Newtonsoft.Json;
@@ -65,6 +66,8 @@ namespace LSTY.SevenDPanel.Configuration
                     configDirectory,
                     config.GeoIpDatabasePath,
                     log);
+                var steamOpenIdProxy = CreateSteamOpenIdProxy(config.SteamOpenIdProxy, log);
+                var playerStoreServerIp = CreatePlayerStoreServerIp(config.PlayerStoreServerIp, log);
                 return PanelHostOptions.FromBinding(
                     config.Port,
                     config.BindAddress,
@@ -75,7 +78,9 @@ namespace LSTY.SevenDPanel.Configuration
                     serverConfigurationPath,
                     playerEvidence,
                     geoIpDatabasePath,
-                    chatCommandTesting);
+                    chatCommandTesting,
+                    steamOpenIdProxy,
+                    playerStoreServerIp);
             }
             catch (Exception ex)
             {
@@ -119,6 +124,40 @@ namespace LSTY.SevenDPanel.Configuration
                     configDirectory,
                     PanelHostOptions.DefaultGeoIpDatabaseRelativePath));
             }
+        }
+
+        private static Uri? CreateSteamOpenIdProxy(string? configuredProxy, Action<string>? log)
+        {
+            if (string.IsNullOrWhiteSpace(configuredProxy)) return null;
+            if (Uri.TryCreate(configuredProxy!.Trim(), UriKind.Absolute, out var proxy) &&
+                proxy!.Scheme == Uri.UriSchemeHttp &&
+                string.IsNullOrEmpty(proxy.UserInfo))
+            {
+                return proxy;
+            }
+
+            log?.Invoke(
+                "Invalid Steam OpenID proxy configuration; Steam verification will connect directly.");
+            return null;
+        }
+
+        private static string? CreatePlayerStoreServerIp(
+            string? configuredServerIp,
+            Action<string>? log)
+        {
+            if (string.IsNullOrWhiteSpace(configuredServerIp)) return null;
+            var normalized = configuredServerIp!.Trim().Trim('[', ']');
+            if (IPAddress.TryParse(normalized, out var address) &&
+                !IPAddress.Any.Equals(address) &&
+                !IPAddress.IPv6Any.Equals(address) &&
+                !IPAddress.IsLoopback(address))
+            {
+                return address.ToString();
+            }
+
+            log?.Invoke(
+                "Invalid player store ServerIP override; using GamePrefs.ServerIP.");
+            return null;
         }
 
         private static PanelPlayerEvidenceOptions CreatePlayerEvidenceOptions(

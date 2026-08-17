@@ -5,6 +5,7 @@ using LSTY.SevenDPanel.Adapters.SevenDays.Inbound.Lifecycle;
 using LSTY.SevenDPanel.Compatibility;
 using LSTY.SevenDPanel.Configuration;
 using LSTY.SevenDPanel.DependencyInjection;
+using LSTY.SevenDPanel.Mods;
 
 namespace LSTY.SevenDPanel
 {
@@ -57,7 +58,17 @@ namespace LSTY.SevenDPanel
                     assetRoot,
                     log);
                 candidateCommandHarmony = ConsoleCommandHarmonyRuntime.Install(candidateRuntime);
-                candidateAdapter = new SevenDaysGameLifecycleAdapter(candidateCommandHarmony);
+                candidateAdapter = new SevenDaysGameLifecycleAdapter(
+                    candidateCommandHarmony,
+                    () =>
+                    {
+                        SevenDaysMainThread.StartCoroutine(
+                            PlayerStoreXuiPatch.WriteWhenServerIpAvailable(
+                                modDirectory,
+                                options,
+                                () => GamePrefs.GetString(EnumGamePrefs.ServerIP),
+                                log));
+                    });
                 candidateAdapter.RegisterAndStart();
                 runtime = candidateRuntime;
                 adapter = candidateAdapter;

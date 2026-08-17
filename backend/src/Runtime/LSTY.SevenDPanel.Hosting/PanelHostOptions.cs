@@ -10,6 +10,7 @@ namespace LSTY.SevenDPanel.Hosting
         public const string DefaultBindAddress = "0.0.0.0";
         public const string DefaultScheme = "http";
         public const string DefaultGeoIpDatabaseRelativePath = "data/GeoLite2-Country.mmdb";
+        public const string DefaultSteamOpenIdProxy = "http://127.0.0.1:10808";
 
         public PanelHostOptions(string url)
             : this(
@@ -21,7 +22,9 @@ namespace LSTY.SevenDPanel.Hosting
                 PanelChatCommandTestingOptions.Disabled,
                 RestartScriptOptions.CreateDefault(Path.Combine(AppContext.BaseDirectory, "data")),
                 Path.Combine(AppContext.BaseDirectory, "serverconfig.xml"),
-                Path.Combine(AppContext.BaseDirectory, DefaultGeoIpDatabaseRelativePath))
+                Path.Combine(AppContext.BaseDirectory, DefaultGeoIpDatabaseRelativePath),
+                null,
+                null)
         {
         }
 
@@ -34,7 +37,9 @@ namespace LSTY.SevenDPanel.Hosting
             PanelChatCommandTestingOptions chatCommandTesting,
             RestartScriptOptions restart,
             string serverConfigurationPath,
-            string geoIpDatabasePath)
+            string geoIpDatabasePath,
+            Uri? steamOpenIdProxy,
+            string? playerStoreServerIp)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -53,6 +58,8 @@ namespace LSTY.SevenDPanel.Hosting
                 Restart = restart ?? throw new ArgumentNullException(nameof(restart));
                 ServerConfigurationPath = Path.GetFullPath(serverConfigurationPath);
                 GeoIpDatabasePath = Path.GetFullPath(geoIpDatabasePath);
+                SteamOpenIdProxy = steamOpenIdProxy;
+                PlayerStoreServerIp = playerStoreServerIp;
                 return;
             }
 
@@ -72,6 +79,8 @@ namespace LSTY.SevenDPanel.Hosting
             Restart = restart ?? throw new ArgumentNullException(nameof(restart));
             ServerConfigurationPath = Path.GetFullPath(serverConfigurationPath);
             GeoIpDatabasePath = Path.GetFullPath(geoIpDatabasePath);
+            SteamOpenIdProxy = steamOpenIdProxy;
+            PlayerStoreServerIp = playerStoreServerIp;
         }
 
         public string Url { get; }
@@ -82,6 +91,8 @@ namespace LSTY.SevenDPanel.Hosting
         public RestartScriptOptions Restart { get; }
         public string ServerConfigurationPath { get; }
         public string GeoIpDatabasePath { get; }
+        public Uri? SteamOpenIdProxy { get; }
+        public string? PlayerStoreServerIp { get; }
 
         public static PanelHostOptions FromBinding(
             int port,
@@ -93,7 +104,9 @@ namespace LSTY.SevenDPanel.Hosting
             string? serverConfigurationPath = null,
             PanelPlayerEvidenceOptions? playerEvidence = null,
             string? geoIpDatabasePath = null,
-            PanelChatCommandTestingOptions? chatCommandTesting = null)
+            PanelChatCommandTestingOptions? chatCommandTesting = null,
+            Uri? steamOpenIdProxy = null,
+            string? playerStoreServerIp = null)
         {
             if (port < 1 || port > 65535)
             {
@@ -107,6 +120,14 @@ namespace LSTY.SevenDPanel.Hosting
             if (normalizedScheme != Uri.UriSchemeHttp && normalizedScheme != Uri.UriSchemeHttps)
             {
                 throw new InvalidDataException("Scheme must be http or https.");
+            }
+            if (steamOpenIdProxy != null &&
+                (!steamOpenIdProxy.IsAbsoluteUri ||
+                 steamOpenIdProxy.Scheme != Uri.UriSchemeHttp ||
+                 !string.IsNullOrEmpty(steamOpenIdProxy.UserInfo)))
+            {
+                throw new InvalidDataException(
+                    "Steam OpenID proxy must be an absolute HTTP URL without embedded credentials.");
             }
 
             var listenerHost = normalizedAddress == "0.0.0.0" ? "*" : normalizedAddress;
@@ -123,7 +144,11 @@ namespace LSTY.SevenDPanel.Hosting
                     : serverConfigurationPath!,
                 string.IsNullOrWhiteSpace(geoIpDatabasePath)
                     ? Path.Combine(AppContext.BaseDirectory, DefaultGeoIpDatabaseRelativePath)
-                    : geoIpDatabasePath!);
+                    : geoIpDatabasePath!,
+                steamOpenIdProxy,
+                string.IsNullOrWhiteSpace(playerStoreServerIp)
+                    ? null
+                    : playerStoreServerIp!.Trim().Trim('[', ']'));
         }
     }
 }

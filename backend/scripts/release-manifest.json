@@ -11,17 +11,30 @@
     "LSTY.SevenDPanel.Adapters.Web.dll"
   ],
   "requiredManagedAssemblies": [
+    "BouncyCastle.Cryptography.dll",
+    "Cronos.dll",
     "Dapper.dll",
     "dbup-core.dll",
     "dbup-sqlite.dll",
+    "MaxMind.Db.dll",
+    "MaxMind.GeoIP2.dll",
     "Microsoft.Bcl.AsyncInterfaces.dll",
     "Microsoft.CSharp.dll",
     "Microsoft.Data.Sqlite.dll",
     "Microsoft.Extensions.DependencyInjection.dll",
     "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
     "Microsoft.Extensions.Logging.Abstractions.dll",
+    "Microsoft.Extensions.Options.dll",
+    "Microsoft.Extensions.Primitives.dll",
+    "Microsoft.Owin.dll",
+    "Microsoft.Owin.FileSystems.dll",
+    "Microsoft.Owin.Host.HttpListener.dll",
+    "Microsoft.Owin.Hosting.dll",
+    "Microsoft.Owin.Security.dll",
     "Microsoft.Owin.Security.OAuth.dll",
+    "Microsoft.Owin.StaticFiles.dll",
     "Namotion.Reflection.dll",
+    "Newtonsoft.Json.Bson.dll",
     "NJsonSchema.Annotations.dll",
     "NJsonSchema.dll",
     "NJsonSchema.NewtonsoftJson.dll",
@@ -29,6 +42,7 @@
     "NSwag.Core.dll",
     "NSwag.Generation.dll",
     "NSwag.Generation.WebApi.dll",
+    "Owin.dll",
     "SQLitePCLRaw.batteries_v2.dll",
     "SQLitePCLRaw.core.dll",
     "SQLitePCLRaw.provider.dynamic_cdecl.dll",
@@ -37,6 +51,7 @@
     "System.Dynamic.dll",
     "System.IO.Pipelines.dll",
     "System.Memory.dll",
+    "System.Net.Http.Formatting.dll",
     "System.Numerics.Vectors.dll",
     "System.Reflection.Emit.dll",
     "System.Runtime.CompilerServices.Unsafe.dll",
@@ -44,7 +59,9 @@
     "System.Text.Encodings.Web.dll",
     "System.Text.Json.dll",
     "System.Threading.Channels.dll",
-    "System.Threading.Tasks.Extensions.dll"
+    "System.Threading.Tasks.Extensions.dll",
+    "System.Web.Http.dll",
+    "System.Web.Http.Owin.dll"
   ],
   "requiredFiles": [
     "ModInfo.xml",
@@ -62,7 +79,18 @@
     "Newtonsoft.Json.dll",
     "UnityEngine.CoreModule.dll",
     "System.Data.SQLite.dll",
-    "SQLite.Interop.dll"
+    "SQLite.Interop.dll",
+    "LSTY.SevenDPanel.pdb",
+    "LSTY.SevenDPanel.Application.pdb",
+    "LSTY.SevenDPanel.Domain.pdb",
+    "LSTY.SevenDPanel.Hosting.pdb",
+    "LSTY.SevenDPanel.Adapters.Local.pdb",
+    "LSTY.SevenDPanel.Adapters.Persistence.Sqlite.pdb",
+    "LSTY.SevenDPanel.Adapters.SevenDays.pdb",
+    "LSTY.SevenDPanel.Adapters.Web.pdb",
+    "Microsoft.CSharp.resources.dll",
+    "System.ComponentModel.DataAnnotations.resources.dll",
+    "System.Dynamic.resources.dll"
   ],
   "forbiddenRelativePaths": [
     "e_sqlite3.dll",
@@ -77,7 +105,21 @@
     "index": "wwwroot/index.html",
     "assetsDirectory": "wwwroot/assets"
   },
+  "player": {
+    "root": "wwwroot/player",
+    "index": "wwwroot/player/index.html",
+    "assetsDirectory": "wwwroot/player/assets"
+  },
   "configExamples": [
     "config.example.json"
-  ]
+  ],
+  "deploymentState": {
+    "files": [
+      "config.json"
+    ],
+    "directories": [
+      "data",
+      "Config"
+    ]
+  }
 }
