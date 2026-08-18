@@ -49,6 +49,11 @@ function confirmDelete() {
   void props.controller.remove(backup)
 }
 
+function updateDeleteOpen(open: boolean) {
+  if (!open)
+    deleteTarget.value = null
+}
+
 function refresh() {
   void props.controller.refresh()
   void props.policyController.refresh()
@@ -120,7 +125,7 @@ function refresh() {
     :title="t('common.confirm')"
     :description="deleteTarget === null ? '' : t('backups.delete.confirm', { kind: t(`backups.kind.${deleteTarget.kind}`) })"
     :ui="{ footer: 'justify-end' }"
-    @update:open="open => { if (!open) deleteTarget = null }"
+    @update:open="updateDeleteOpen"
   >
     <template #footer>
       <UButton

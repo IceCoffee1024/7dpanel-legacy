@@ -72,6 +72,10 @@ function confirmRemove() {
 function closeRemove() {
   removeTarget.value = null
 }
+function updateRemoveOpen(open: boolean) {
+  if (!open)
+    closeRemove()
+}
 function refresh() {
   void controller.refreshBans()
   void controller.refreshWhitelist()
@@ -190,7 +194,7 @@ onUnmounted(controller.dispose)
         ? t('accessLists.confirm.removeWhitelist', { name: removeTarget.entry.displayName || removeTarget.entry.playerId })
         : ''"
     :ui="{ footer: 'justify-end' }"
-    @update:open="open => { if (!open) closeRemove() }"
+    @update:open="updateRemoveOpen"
   >
     <template #footer>
       <UButton

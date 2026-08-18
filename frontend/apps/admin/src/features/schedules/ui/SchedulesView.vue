@@ -40,6 +40,11 @@ function confirmDelete() {
   deleteTarget.value = null
   void props.controller.remove(schedule)
 }
+
+function updateDeleteOpen(open: boolean) {
+  if (!open)
+    deleteTarget.value = null
+}
 </script>
 
 <template>
@@ -123,7 +128,7 @@ function confirmDelete() {
     :title="t('common.confirm')"
     :description="deleteTarget === null ? '' : t('schedules.delete.confirm', { name: deleteTarget.name })"
     :ui="{ footer: 'justify-end' }"
-    @update:open="open => { if (!open) deleteTarget = null }"
+    @update:open="updateDeleteOpen"
   >
     <template #footer>
       <UButton

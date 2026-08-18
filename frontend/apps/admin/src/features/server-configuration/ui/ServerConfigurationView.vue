@@ -37,6 +37,11 @@ async function save() {
   if (await controller.update(selected.value.key, inputValue.value))
     selected.value = null
 }
+
+function updateOpen(open: boolean) {
+  if (!open && controller.updatingKey.value === null)
+    selected.value = null
+}
 </script>
 
 <template>
@@ -110,7 +115,7 @@ async function save() {
     </template>
   </UDashboardPanel>
 
-  <UModal :open="selected !== null" :title="selected ? t(`serverConfiguration.fields.${selected.key}`, selected.key) : ''" @update:open="open => { if (!open && controller.updatingKey.value === null) selected = null }">
+  <UModal :open="selected !== null" :title="selected ? t(`serverConfiguration.fields.${selected.key}`, selected.key) : ''" @update:open="updateOpen">
     <template #body>
       <div v-if="selected" class="space-y-4">
         <UAlert v-if="selected.advanced" color="warning" :title="t('serverConfiguration.advancedWarning')" />

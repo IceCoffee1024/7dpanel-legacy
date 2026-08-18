@@ -152,6 +152,11 @@ function confirmDeleteProfile() {
   if (deleteTarget.value)
     emit('deleteProfile', deleteTarget.value.crossplatformId)
 }
+
+function updateDeleteOpen(open: boolean) {
+  if (!open && !props.isMutatingProfile)
+    deleteTarget.value = null
+}
 </script>
 
 <template>
@@ -372,7 +377,7 @@ function confirmDeleteProfile() {
       :description="t('gameChat.colored.dialog.deleteDescription')"
       :dismissible="!isMutatingProfile"
       :close="isMutatingProfile ? false : undefined"
-      @update:open="open => { if (!open && !isMutatingProfile) deleteTarget = null }"
+      @update:open="updateDeleteOpen"
     >
       <template #body>
         <p class="break-all text-sm text-default">
