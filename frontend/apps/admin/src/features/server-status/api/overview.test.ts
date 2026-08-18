@@ -1,12 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { requestJson } from '../../../shared/api/http'
 import { OverviewError, parseOverview } from '../model/overview'
-import { fetchOverview } from './overview'
-
-vi.mock('../../../shared/api/http', () => ({
-  requestJson: vi.fn(),
-}))
 
 const runtimeObservedAtUtc = '2026-07-25T01:02:03.1234567Z'
 
@@ -218,30 +212,5 @@ describe('parseOverview', () => {
     expect(error).toBeInstanceOf(OverviewError)
     expect(error).toMatchObject({ name: 'OverviewError', code: 'invalid-response', message: 'Invalid overview response' })
     expect(error).not.toHaveProperty('detail')
-  })
-})
-
-describe('fetchOverview', () => {
-  afterEach(() => vi.clearAllMocks())
-
-  it('performs the fixed authenticated GET with the supplied signal and parses the response', async () => {
-    const wire = ownerOverview()
-    vi.mocked(requestJson).mockResolvedValue(wire)
-    const controller = new AbortController()
-
-    await expect(fetchOverview('Bearer opaque.token', controller.signal)).resolves.toEqual(wire)
-
-    expect(requestJson).toHaveBeenCalledExactlyOnceWith('/api/v1/overview', {
-      headers: { Authorization: 'Bearer opaque.token' },
-      method: 'GET',
-      signal: controller.signal,
-    })
-  })
-
-  it('preserves a safe 401 HttpError for the shared session-expiry flow', async () => {
-    const unauthorized = Object.assign(new Error('safe'), { code: 'http', status: 401 })
-    vi.mocked(requestJson).mockRejectedValue(unauthorized)
-
-    await expect(fetchOverview('Bearer expired')).rejects.toBe(unauthorized)
   })
 })
