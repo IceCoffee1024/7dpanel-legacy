@@ -70,10 +70,23 @@ feat(api)!: replace the player action response
 - Keep changes scoped to one concern where practical. Separate unrelated
   documentation, repository maintenance, and implementation changes.
 
-## Complexity Review Fields
+## Complexity and Cognitive-Budget Review Fields
 
 For a non-trivial change, the review description must state:
 
+- `risk level`: `A`, `B`, or `C`, selected using the definitions in
+  `docs/simplification/README.md#风险分级与设计强度`;
+- `Golden Path`: `simple query`, `ordinary modification`, or `dangerous
+  asynchronous operation`; a fourth path must name the concrete production
+  constraint that prevents use of the three standard paths;
+- `concepts added/removed`: the named concepts, layers, state records,
+  interfaces, routes, or operational steps added and removed, and why the
+  resulting path is easier to understand;
+- `fact source`: the authoritative document that owns every changed product,
+  design, architecture, or test fact, or `none` when the change creates no
+  such fact;
+- `AI-generated surface`: `none`, or the generated paths, generator/input
+  source, and the human-reviewed invariants and failure semantics;
 - `primary capability`: the single Operations, Players, Community, Economy,
   Automation, Administration, or Platform owner;
 - `production reason for new interface`: the external boundary, second
@@ -84,9 +97,10 @@ For a non-trivial change, the review description must state:
   behavior for new persisted state;
 - `navigation task`: the user task and existing secondary/context location for
   any new page or route;
-- `real-boundary evidence`: the concrete game, browser, external-service, or
-  release artifact evidence required before claiming verification;
-- `rollback`: the recoverable operator action and failure handling.
+- `verification/rollback`: the targeted and aggregate checks, required
+  real-boundary evidence, recoverable operator action, and failure handling.
 
-Changes that cannot answer these fields remain `Implemented` or `Blocked` in
-the maturity ledger until the missing boundary is resolved.
+These review fields describe the proposed change; they do not establish
+capability maturity or verification status. `docs/test.md` is the sole
+capability-maturity ledger and must be updated only when its authoritative
+evidence or gate facts change.

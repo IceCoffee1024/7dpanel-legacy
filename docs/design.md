@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-08-04"
+last_updated: "2026-08-18"
 ---
 
 # 7DPanel 产品设计
@@ -37,7 +37,7 @@ last_updated: "2026-08-04"
 - `/community/chat/mutes` 提供游标分页的当前禁言列表，桌面使用表格、窄屏使用单列卡片；创建和编辑共用表单对话框，解除使用独立确认对话框。永久禁言与 UTC 截止时间明确区分，提交期间锁定重复操作，成功后刷新权威列表而不做乐观成功。
 - 审计、游戏事件和禁言数据都先经过 Feature 的严格 Valibot parser。首次请求显示骨架，空集合显示正常空状态；首次请求或协议校验失败进入 Failed。普通刷新或继续分页时，已有成功结果可在请求或协议失败后保留并进入 Stale；应用新筛选会先清空旧页，失败时进入 Failed。403 进入 Forbidden，401 清理会话并回到登录页。未通过 parser 的 payload 不进入表格、列表或卡片。
 - 运行指标文案已接入当前 i18n；审计、游戏事件和禁言页面仍存在直接写入的中文可见文案，因此本切片不能宣称 `NFR-03` 双语合同已经闭环。
-- 导航目录、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页和上下文入口已有代码与 Admin 全量 Vitest `145` 个文件、`1010/1010` 项通过证据；Admin lint、typecheck、OpenAPI 漂移检查和 Vite 生产构建也通过。2026-08-04 的 Chromium mock desktop 与 `390x844` 项目各有 `2` 个场景通过；本轮受控真实 OWIN 所需的 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME` 和 `PANEL_PASSWORD` 未提供，因此未执行真实 OWIN。上述证据覆盖本地 mock 的可达性、角色入口、局部交互、溢出和浏览器错误，但不替代真实 OWIN、7DTD、外部服务、危险恢复或跨平台发布证据。
+- 导航目录、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页和上下文入口已有代码与 当前精确自动化结果见[测试策略](test.md#2026-08-18-简化阶段一基线)。2026-08-04 的 Chromium mock desktop 与 `390x844` 项目各有 `2` 个场景通过；本轮受控真实 OWIN 所需的 `SEVENDPANEL_ADMIN_URL`、`PANEL_USERNAME` 和 `PANEL_PASSWORD` 未提供，因此未执行真实 OWIN。上述证据覆盖本地 mock 的可达性、角色入口、局部交互、溢出和浏览器错误，但不替代真实 OWIN、7DTD、外部服务、危险恢复或跨平台发布证据。
 
 ### Admin 综合概览第一阶段
 

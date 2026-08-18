@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-07-31"
+last_updated: "2026-08-18"
 ---
 
 # 7DPanel 系统架构
@@ -196,6 +196,7 @@ flowchart LR
 - 7DTD 拥有 Mod 生命周期；当前 SevenDays Adapter 把 `GameStartDone` 转换为 `IModRuntime.MarkGameReady()`，并把两个关闭事件转换为 `IModRuntime.Stop()`。
 - 默认配置提供唯一引导 `Owner` 的启动同步来源；password grant 实际验证 SQLite 中固定 `Subject=owner` 的当前用户，并在成功 OAuth 响应中附加服务端确认的 `username` 和 `role`，同时签发跨进程持久化的 8 小时默认不透明 Access Token。Bearer 验证按结构严格分流 Access Token 与 API Key、重新读取当前用户状态和角色；静态资源和健康 API 保持匿名，浏览器不能直接访问 7DTD 对象、Mod 配置文件或数据库。
 - 当前身份切片保留固定引导 `Owner` 同步，同时已经提供 `Owner`/`Admin`/`Viewer` 面板用户管理与服务端角色复验；产品不提供 Cookie、refresh token，也不把面板角色映射为 7DTD 游戏权限。健康 `ok` 不能推导游戏已经就绪或可管理。
+- `IPlayerPersistentIdentityLookup` 是从 Steam OpenID 认证到 SevenDays 持久玩家注册表的 Application 端口。它只接受已验证的 SteamID64，并返回窄的 `PlayerWebIdentity`（`SteamId`、`PrimaryId`、`DisplayName`）或无匹配；只有 `SevenDaysPersistentPlayerIdentityLookup` 可以访问 `persistentPlayers`，且必须通过 `GameThreadDispatcher` 调度。Web 和 Application 不得引用 7DTD 玩家对象或集合。
 - 首版目标仍是单服自托管，但当前切片只验证所在 Mod 进程的 HTTP 存活。
 
 ## 组件与职责
@@ -440,7 +441,7 @@ GET /
 
 ### 未解决风险
 
-- 当前代码的 Release build 已以 `0` warnings、`0` errors 通过；后端 Release 全量测试为 `1881` passed、`2` failed、`1883` total。两个失败是已知未修改边界：`OwinWebHostOpenApiSnapshotTests` 的 runtime OpenAPI 与已登记 snapshot drift，以及 `SqliteServerOperationStore` 的非法状态转换。Admin 全量 Vitest 为 `145` 个文件、`1010/1010` 项通过，lint、typecheck、production build 和 `pnpm api:check` 通过；精确结果与剩余环境缺口见[测试策略](test.md#2026-08-04-验证复验)和[测试策略](test.md#已知缺口)。
+- 当前代码的 Release build 已以 `0` errors、`108` warnings 通过；后端 Release 全量测试为 `1924/1924` 通过、`0` 失败、`0` 跳过。Admin 全量 Vitest 为 `145` 个文件、`1008/1008` 项通过，lint、typecheck、production build 和 `pnpm api:check` 通过；Capability maturity、前端 Feature 依赖、后端测试 taxonomy 和复杂性预算门禁均通过。精确结果、非阻塞复杂度 advisory 与剩余环境缺口见[测试策略](test.md#2026-08-18-简化阶段一基线)和[测试策略](test.md#已知缺口)。
 - 游戏聊天完整代码切片已实现，SQLite 历史 gap 聚焦语义、运行时 OpenAPI 快照和生成客户端已有自动化证据；仍需在真实 `v3.0.1-b4` 进程验证 `ModEvents.ChatMessage` 字段、处理器顺序、替换消息重入抑制、`StopHandlersAndVanilla` 单次广播、命令绕过、关服排空以及与其他聊天 Mod 的冲突。全量 lint/build、浏览器 E2E 和 Git 基线式 OpenAPI 漂移门禁尚未执行；自动化不能替代真实游戏或浏览器边界证据。
 - 聊天命令动态配置、原子目录重建、保存后热更新、`AllowNoPrefix`、参数分隔符、同源命令清单和统一聊天命令审计已形成可编译纵向切片；当前证据限于产品编译、目录/SQLite 聚焦测试、OpenAPI 快照和 Admin typecheck，真实 `v3.0.1-b4`、浏览器 E2E、审计故障注入及跨介质提交异常恢复仍未执行。
 

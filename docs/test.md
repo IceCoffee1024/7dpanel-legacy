@@ -1,6 +1,6 @@
 ---
 state: Current
-last_updated: "2026-08-04"
+last_updated: "2026-08-18"
 ---
 
 # 7DPanel 测试策略
@@ -41,6 +41,8 @@ last_updated: "2026-08-04"
 
 2026-08-04 Wave 4 原始测量结果为：生产 C# 文件 `614`，生产手写文件 `>500/>800/>1000` 分别为 `49/15/6`；后端测试源文件 `205`；Admin 源文件 `497`、手写文件 `>400/>600` 为 `8/0`、Feature `27`；组合根 `1`、`PanelServiceProviderFactory.cs` `51` 行、Bootstrap registration `51` 行、registration/context 文件 `9`；公共接口 `143`、Feature 内部跨域导入 `75`、一级任务域 `6`、固定二级入口 `24`、文档活动记录 `0`、Hosting 对 Application 项目引用 `0`、未知 Capability `0`、新增公共接口 `0`。预算配置已切换至 `phase=Wave4` 并通过；`75/75` 个跨 Feature 导入命中已登记 allowlist，未匹配/未使用规则均为 `0`。八个显式生产热点例外调整后的 `>500` 有效趋势计数为 `42`，高于目标 `34`，脚本仅输出非阻塞 advisory；Wave 4 阻塞目标仍通过。
 
+`tests/docs/Test-SimplificationDocs.ps1` 是简化专项文档的确定性结构检查器：它验证 `docs/simplification/` 的必需文件、UTF-8 本地链接、详细 `SIM-###` 标题唯一性、候选/样本状态、六阶段路线图状态和三个 Golden Path 锚点。它不解析能力成熟度、不改变 `CAPABILITY_MATURITY` 台账，也不能把代码存在提升为 `Verified`。
+
 ## 候选 artifact 与证据 manifest
 
 `backend/scripts/Get-ReleaseArtifactIdentity.ps1` 为候选发布物提供唯一确定性 SHA-256；`backend/scripts/New-EvidenceManifest.ps1` 将证据绑定到 clean commit、artifact hash、版本字段、环境摘要和相对子证据。`summary.json` 记录步骤级退出码与状态，`manifest.json` 记录证据合同；开发 smoke 可以留存 `Skipped`，但不能提升成熟度。候选 artifact 必须由同一 identity 经过 validator，代码变更后旧 manifest 失效。
@@ -48,6 +50,18 @@ last_updated: "2026-08-04"
 ## J2/J3 旅程安全编排
 
 `tests/journeys/Test-PlayerJourney.ps1` 只接受显式稳定 `ExpectedCrossplatformId`、`EnvironmentId` 和 `EvidenceDirectory`；`-ConfirmKickTestPlayer` 不会绕过精确身份匹配。没有受控访问 Token、玩家不在线或身份不唯一时只写脱敏 `Skipped/Blocked` 证据，不执行踢出。`tests/journeys/Test-RestoreDrill.ps1` 要求隔离 `ServerRoot`/`EvidenceDirectory`、`IsolationRoot`、预期世界名、`BackupId` 或 `CreateBackup` 和 `-ConfirmDestructiveRestoreDrill`，拒绝盘符根、系统/用户根、仓库路径和 reparse point。当前脚本只完成安全预检；没有冻结候选、空间、备份、回滚目标和真实双平台进程时，J2/J3 不得提升成熟度。
+
+## 2026-08-18 简化阶段一基线
+
+本次基线先初始化当前 worktree 固定的 `7dtd-reference` 子模块，再执行本地可重复验证；未更新成熟度台账，也未把本地结果提升为真实环境或候选 artifact 证据。
+
+- 后端 `dotnet restore` 成功；Release build 成功，`0` errors、`108` warnings。warning 主要来自现有 nullable 与 xUnit analyzer 诊断，未在本次通过压制或修改 warning 隐藏。
+- 后端 Release 聚合测试为 `1924/1924` 通过、`0` 失败、`0` 跳过。此前“两个已知失败”的记录不再反映该次实际聚合结果。
+- 初次基线中，Admin `pnpm lint`、`pnpm test`、`pnpm build` 和 `pnpm api:check` 通过；Vitest 为 `145` 个文件、`1010/1010` 项通过，OpenAPI snapshot 与生成客户端无 tracked drift。
+- Admin `pnpm typecheck` 初次失败，五个 `.vue` 文件的 `open` 回调参数触发 `TS7006`：`access-lists/ui/AccessListsView.vue`、`backups/ui/BackupsView.vue`、`game-chat/ui/ColoredChatView.vue`、`schedules/ui/SchedulesView.vue`、`server-configuration/ui/ServerConfigurationView.vue`。五处改为显式 `(open: boolean)` 命名处理器后，typecheck 与 lint 复验通过；受影响的 `5` 个 Vitest 文件、`20/20` 项通过。`SIM-013` 删除两项孤立手工概览包装测试后，最终 Admin 全量 Vitest 为 `145` 个文件、`1008/1008` 项通过，production build 与 `api:check` 再次通过。
+- Capability maturity 检查通过，解析 `15` 行；前端 Feature 依赖检查通过，结果为 `featureFiles=409`、`crossFeatureImports=75`、`allowlistHits=75`、`allowlistUnmatched=0`、`unusedRules=0`、`fixedNavigationDomains=6`。
+- 复杂性预算初次失败：公共接口总数从基线 `143` 增至 `144`，但没有对应的 documented contract。调查确认新增的 `IPlayerPersistentIdentityLookup` 是 Steam OpenID Web 认证到 SevenDays `persistentPlayers` 和游戏线程的真实 Application 端口；[系统架构](architecture.md#系统边界)已记录其输入、窄投影、所有权和禁止依赖，预算据此更新为 `144` 后复验通过。后端测试分类初次因 `PlayerStoreXuiPatchTests` 缺少 class-level Trait 失败；补充 `Capability=Players` 与 `Boundary=SevenDays` 后，taxonomy 对 `207` 个源文件通过，相关 `11/11` 测试通过。
+- 本轮为文档与本地基线工作，未运行 publish、真实 OWIN、真实 7DTD、浏览器、外部服务、恢复或危险世界副作用。缺少受控环境的边界继续保持原有 blocker；本轮不产生候选 artifact 或成熟度提升证据。
 
 ## 2026-08-04 验证复验
 
@@ -144,7 +158,7 @@ Task 17 的 `Invoke-CandidateValidation.ps1` 及其夹具在 Windows PowerShell 
 
 | 边界 | 实际结果 | 说明 |
 |---|---:|---|
-| Admin 单元测试 | `145` 个文件，`1010/1010` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
+| Admin 单元测试 | `145` 个文件，`1008/1008` | 覆盖导航目录、角色投影、redirect、AppShell、面包屑、二级导航、局部页签、服务器运维组合页、上下文入口和既有 Feature 回归 |
 | Admin typecheck | 通过 | `vue-tsc -p ./tsconfig.app.json` 与 `tsc -p ./tsconfig.node.json` |
 | OpenAPI 漂移 | 通过 | `pnpm api:check` 重新生成 SDK 后无 `openapi/` 或生成客户端差异 |
 | Admin production build | 通过 | Vite `8.1.5` 生成包含规范任务域路由的静态产物 |
