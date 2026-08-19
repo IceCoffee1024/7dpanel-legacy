@@ -1,4 +1,4 @@
-import { requestJson } from '../../../shared/api/http'
+import { serverConfigurationGet, serverConfigurationPut } from '../../../shared/api/generated/sdk.gen'
 
 export type ServerConfigurationValueType = 'text' | 'integer' | 'decimal' | 'boolean' | 'enum'
 
@@ -113,25 +113,21 @@ function parseUpdateResult(value: unknown): ServerConfigurationUpdateResult {
   })
 }
 
-export async function fetchServerConfiguration(authorizationHeader: string, signal?: AbortSignal) {
-  const response = await requestJson<unknown>('/api/v1/server-configuration', {
-    headers: { Authorization: authorizationHeader },
-    signal,
-  })
+export async function fetchServerConfiguration(_authorizationHeader: string, signal?: AbortSignal) {
+  const response = await serverConfigurationGet({ signal })
   return parseServerConfigurationSnapshot(response)
 }
 
 export async function updateServerConfigurationField(
-  authorizationHeader: string,
+  _authorizationHeader: string,
   key: string,
   value: string,
   version: string,
   signal?: AbortSignal,
 ) {
-  const response = await requestJson<unknown>(`/api/v1/server-configuration/${encodeURIComponent(key)}`, {
-    method: 'PUT',
-    headers: { 'Authorization': authorizationHeader, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ value, version }),
+  const response = await serverConfigurationPut({
+    path: { key },
+    body: { value, version },
     signal,
   })
   return parseUpdateResult(response)

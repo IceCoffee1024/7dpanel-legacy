@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { parseServerConfigurationSnapshot } from './serverConfiguration'
+import { serverConfigurationGet, serverConfigurationPut } from '../../../shared/api/generated/sdk.gen'
+import {
+  fetchServerConfiguration,
+  parseServerConfigurationSnapshot,
+  updateServerConfigurationField,
+} from './serverConfiguration'
+
+vi.mock('../../../shared/api/generated/sdk.gen', () => ({
+  serverConfigurationGet: vi.fn(),
+  serverConfigurationPut: vi.fn(),
+}))
 
 const validSnapshot = {
   version: 'a'.repeat(64),
@@ -21,7 +31,42 @@ const validSnapshot = {
   }],
 }
 
+const validUpdateResult = {
+  version: 'b'.repeat(64),
+  savedAtUtc: '2026-07-26T08:01:00Z',
+  restartRequired: false,
+}
+
 describe('server configuration API parser', () => {
+  beforeEach(() => {
+    vi.mocked(serverConfigurationGet).mockReset()
+    vi.mocked(serverConfigurationPut).mockReset()
+  })
+
+  it('delegates snapshot fetches and their cancellation signal to the generated operation', async () => {
+    const signal = new AbortController().signal
+    vi.mocked(serverConfigurationGet).mockResolvedValue(validSnapshot)
+
+    await expect(fetchServerConfiguration('Bearer owner', signal)).resolves.toMatchObject({
+      version: validSnapshot.version,
+    })
+
+    expect(serverConfigurationGet).toHaveBeenCalledWith({ signal })
+  })
+
+  it('delegates key, update body, and cancellation signal to the generated operation', async () => {
+    const signal = new AbortController().signal
+    vi.mocked(serverConfigurationPut).mockResolvedValue(validUpdateResult)
+
+    await expect(updateServerConfigurationField('Bearer owner', 'Server Name', 'My server', 'a'.repeat(64), signal)).resolves.toEqual(validUpdateResult)
+
+    expect(serverConfigurationPut).toHaveBeenCalledWith({
+      path: { key: 'Server Name' },
+      body: { value: 'My server', version: 'a'.repeat(64) },
+      signal,
+    })
+  })
+
   it('accepts and freezes a complete snapshot', () => {
     const snapshot = parseServerConfigurationSnapshot(validSnapshot)
 
