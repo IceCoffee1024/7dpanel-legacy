@@ -98,7 +98,19 @@ For a non-trivial change, the review description must state:
 - `navigation task`: the user task and existing secondary/context location for
   any new page or route;
 - `verification/rollback`: the targeted and aggregate checks, required
-  real-boundary evidence, recoverable operator action, and failure handling.
+  real-boundary evidence, recoverable operator action, and failure handling;
+- `real-boundary evidence`: the concrete game, browser, external-service, or
+  release artifact evidence required before claiming verification;
+- `structural improvement`: at least one `User`, `Developer`, or `Recovery`
+  outcome, plus the concrete operational concern before the change and how it
+  is improved after the change;
+- `production evidence`: the affected `CAP-##` and/or `J#`, and the actual
+  browser, game, external-service, release-artifact, or recovery evidence. If
+  that evidence was not run, state `Blocked environment` and why.
+
+Local, static, unit, integration, and complexity checks are useful supporting
+checks, but must not be labeled production validation or substituted for the
+production evidence above.
 
 These review fields describe the proposed change; they do not establish
 capability maturity or verification status. `docs/test.md` is the sole
