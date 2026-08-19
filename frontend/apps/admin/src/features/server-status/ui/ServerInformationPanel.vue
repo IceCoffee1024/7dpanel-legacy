@@ -15,7 +15,7 @@ const rows = computed(() => [
   ['region', props.game.region],
   ['language', props.game.language],
   ['address', props.game.connectionAddress === null ? null : `${props.game.connectionAddress}${props.game.connectionPort === null ? '' : `:${props.game.connectionPort}`}`],
-  ['historicalPlayers', props.game.runtimeMetrics?.historicalPlayerCount.value ?? props.game.historicalPlayerCount ?? null],
+  ['historicalPlayers', props.game.runtimeMetrics?.historicalPlayerCount.value ?? null],
 ] as const)
 </script>
 

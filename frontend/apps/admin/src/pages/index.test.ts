@@ -1,4 +1,4 @@
-import type { OverviewSnapshot } from '../features/server-status/model/overview'
+import type { GameRuntimeMetrics, OverviewSnapshot } from '../features/server-status/model/overview'
 
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -44,6 +44,36 @@ vi.mock('../features/auth', () => ({
   useAuthStore: () => ({ get role() { return role.value } }),
 }))
 
+function runtimeMetric<T>(
+  value: T | null,
+  unit: string,
+  warning: 'readFailed' | 'unsupported' | null = null,
+) {
+  return {
+    value,
+    source: 'test fixture',
+    unit,
+    observedAtUtc: '2026-07-25T01:02:03Z',
+    warning,
+  }
+}
+
+function runtimeMetrics(): GameRuntimeMetrics {
+  return {
+    gameDayTime: runtimeMetric('Day 12, 18:30', 'game-clock'),
+    isBloodMoon: runtimeMetric(false, 'boolean'),
+    framesPerSecond: runtimeMetric(59.8, 'frames/second'),
+    onlinePlayerCount: runtimeMetric(3, 'count'),
+    historicalPlayerCount: runtimeMetric(27, 'count'),
+    animalCount: runtimeMetric(null, 'count', 'unsupported'),
+    hostileEntityCount: runtimeMetric(null, 'count', 'unsupported'),
+    activeEntityCount: runtimeMetric(null, 'count', 'unsupported'),
+    chunkCount: runtimeMetric(null, 'count', 'unsupported'),
+    droppedItemCount: runtimeMetric(null, 'count', 'unsupported'),
+    gameMemoryBytes: runtimeMetric(null, 'bytes', 'unsupported'),
+  }
+}
+
 function overview(): OverviewSnapshot {
   return {
     availability: 'available',
@@ -61,11 +91,8 @@ function overview(): OverviewSnapshot {
       language: 'English',
       connectionAddress: '10.0.0.8',
       connectionPort: 26900,
-      onlinePlayerCount: 3,
       maximumPlayerCount: 8,
-      historicalPlayerCount: 27,
-      framesPerSecond: 59.8,
-      gameTime: 'Day 12, 18:30',
+      runtimeMetrics: runtimeMetrics(),
     },
     host: {
       availability: 'available',

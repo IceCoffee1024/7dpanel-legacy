@@ -39,13 +39,7 @@ export interface GameOverview {
   connectionAddress: string | null
   connectionPort: number | null
   maximumPlayerCount: number | null
-  /** Runtime responses always include this field; optionality keeps legacy typed fixtures buildable. */
-  runtimeMetrics?: GameRuntimeMetrics | null
-  /** Compatibility-only fixture fields; the response parser rejects these wire aliases. */
-  onlinePlayerCount?: number | null
-  historicalPlayerCount?: number | null
-  framesPerSecond?: number | null
-  gameTime?: string | null
+  runtimeMetrics: GameRuntimeMetrics | null
 }
 
 export interface HostAdditionalMemory {
