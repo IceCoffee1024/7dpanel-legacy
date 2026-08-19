@@ -1,6 +1,6 @@
 ---
 status: Active
-last_updated: "2026-08-18"
+last_updated: "2026-08-19"
 ---
 
 # 复杂度盘点
@@ -170,13 +170,14 @@ last_updated: "2026-08-18"
 
 ##### SIM-014：摘要卡中的 fixture 兼容字段回退
 
-- 状态：`暂缓`
+- 状态：`已完成`
 - 类型：兼容字段 / UI 回退
 - 主要能力：Operations
 - 风险等级：C
-- 证据：`GameOverview.gameTime` 标记为 fixture compatibility-only，parser 拒绝 wire alias，但 `OverviewStatusSummary` 仍有 `runtimeMetrics.gameDayTime.value ?? game.gameTime` 回退。
-- 候选处置：暂缓；先确认所有 fixture、测试和开发预览是否已迁移到 `runtimeMetrics.gameDayTime`。
-- 结论：静态上像冗余，但可能承担测试夹具兼容责任，当前不足以安全删除。
+- 证据：parser 只接受现代 `runtimeMetrics` wire shape 并拒绝 legacy alias；四个回退读取只服务手写 frontend fixture，生产传输不生成这些字段。
+- 实际变更：将首页 fixture 迁移到完整 `runtimeMetrics`；删除 `GameOverview` 的四个 fixture-only 可选字段，以及 `OverviewStatusSummary`、`ServerInformationPanel` 的四个 legacy 回退读取；保留 parser 对 legacy `gameTime` 的负例测试。
+- 验证结果：server-status、首页和 ServerOperationsView 聚焦测试 `6` 文件/`55` 项通过，Admin typecheck 与聚焦 lint 通过；最终 Admin 全量门禁通过。
+- 结论：兼容责任已从生产模型/UI 移除，wire/parser 和 `useOverview` 生命周期语义不变。
 
 ### B 级样本：CAP-07 彩色聊天设置更新
 
@@ -201,21 +202,23 @@ last_updated: "2026-08-18"
 
 ##### SIM-015：彩色设置规范化在 Application 与 SQLite Adapter 重复执行
 
-- 状态：`暂缓`
+- 状态：`保留`
 - 类型：重复校验
 - 主要能力：Community
 - 风险等级：B
-- 证据：`SaveColoredChatSettingsUseCase` 和 `SqliteColoredChatStore` 都调用颜色规范化。
-- 候选处置：暂缓；Store 可能被其他生产调用方使用，当前不能证明移除任一处不会让端口实现失去数据完整性防线。
+- 证据：characterization tests 证明 Application 在持久化前规范化，SQLite Adapter 对直接端口写入独立规范化，SevenDays runtime 对直接配置独立规范化；这些入口可被独立调用。
+- 候选处置：保留；规范化分别保护 Application 输入、持久化完整性和运行时 immutable snapshot，不是同一信任边界内的连续重复。
+- 验证结果：保存顺序、store authoritative result、失败时不更新 runtime/audit、SQLite 直接写入、runtime 直接配置和 CAS 并发更新均有直接测试；Chat 聚焦测试 `61/61` 和最终后端聚合测试通过。
 
 ##### SIM-016：彩色设置读取用例的纯转发
 
-- 状态：`暂缓`
+- 状态：`保留`
 - 类型：纯转发 Use Case
 - 主要能力：Community
 - 风险等级：B
-- 证据：`GetColoredChatSettingsUseCase.Execute()` 当前只调用 `IColoredChatStore.GetSettings()`。
-- 候选处置：暂缓；先补彩色设置保存顺序的直接 Application 测试，再决定读取用例是否承担稳定应用入口、授权组合或未来规则。
+- 证据：`GetColoredChatSettingsUseCase.Execute()` 只调用 `IColoredChatStore.GetSettings()`，直接测试证明它恰好执行一次 Application→port 委托且不重新规范化结果。
+- 候选处置：保留；该一跳入口维持 Web→Application→port 依赖方向，并与其他 chat query use case 保持一致，删除会让 Web 形成直接 persistence 例外而没有减少真实边界。
+- 验证结果：Application 委托、保存 ordering 和 authoritative response characterization 通过；未新增生产抽象或行为。
 
 ### A 级样本：CAP-03 备份恢复与回滚
 
@@ -242,26 +245,27 @@ last_updated: "2026-08-18"
 
 ##### SIM-017：Restore job 对通用 worker 可见但不应被 worker 消费
 
-- 状态：`已确认`
+- 状态：`已完成`
 - 类型：状态机/队列语义不一致
 - 主要能力：Operations
 - 风险等级：A
-- 证据：Controller 先创建 `Queued` Restore job，随后另一个调用才执行 stage；`SqliteJobStore.TryClaimNext` 对所有 `Queued` job 不按 kind 过滤并直接标为 `Running`；领域状态机却规定 Restore 首跳只能是 `Queued → PendingRestart`；worker 遇到 Restore 进入固定 `job_kind_not_wired` 失败分支。
-- 候选处置：不作为删除或合并候选，先作为正确性修复项处理。可选方向是让 Restore 创建时直接进入不可被通用 worker claim 的专用状态，或让 claim 明确排除 Restore；具体方案必须由 Operations owner 结合恢复语义决定。
-- 不允许退化的不变量：恢复不能被普通 worker 抢占；不能执行在线覆盖；`PendingRestart` 必须在启动阶段继续；无法确认回滚必须保持未知结果。
-- 所需验证：状态机、并发 claim、重启恢复、worker、SQLite migration 和真实恢复安全夹具。
-- 回滚方式：保留现有 job 状态和兼容读取路径，先通过 feature flag/受控状态迁移切换 claim 规则；不得删除恢复 marker、receipt 或 safety copy。
-- 结论：这是偶然复杂性与正确性缺陷交叉的 A 级问题，阶段三前必须单独修正或明确豁免，不能用“简化”掩盖。
+- 证据：`BackgroundWorkerJobStore.TryClaimNext` 原先用 `kind <> Restore` 负向排除；这能避开当前 Restore，却会让未来未知 JobKind 默认可被 generic worker claim，且能力边界没有显式表达。
+- 实际变更：建立七种 generic-worker-supported JobKind 正向 allowlist，并在候选 SELECT 与 row-version CAS UPDATE 使用相同参数化约束；Restore 和未知类型均不可 claim，Restore 在队首不阻塞后续支持类型。
+- 保留的不变量：`BEGIN IMMEDIATE`、FIFO、worker id、row-version CAS、rollback 和 consumer 的 Restore 防御分支不变；`StageRestore`、marker、receipt、safety copy、rollback、startup、migration 和 OpenAPI 均未修改。
+- 验证结果：supported/Restore/unknown/后续可执行 Job 回归覆盖通过；Restore/worker 聚焦测试 `78/78`，最终后端聚合测试通过。
+- 结论：A 级正确性边界已由负向例外改为显式能力 allowlist，没有通过删除恢复安全机制来简化。
 
-## 第一轮处置结论
+## 当前处置结论
 
-阶段二目前只批准以下处置方向，不批准批量结构重构：
+经过两轮证据驱动处理：
 
 1. `SIM-013`：已完成删除手工概览请求包装，生成 query 保持唯一生产请求入口；
-2. `SIM-014`、`SIM-015`、`SIM-016`：暂缓，补充 fixture/应用顺序证据后再判断；
-3. `SIM-017`：转入 A 级正确性修复，不计入“删除偶然复杂性”的简单候选；恢复安全边界全部保留。
+2. `SIM-014`：已迁移 fixture 并删除生产模型/UI 中的 legacy 回退；
+3. `SIM-015`：保留；Application、SQLite 与 runtime 规范化保护独立信任边界；
+4. `SIM-016`：保留；读取用例维持 Web→Application→port 依赖方向；
+5. `SIM-017`：已完成 generic worker 正向 JobKind allowlist 修复，恢复安全边界全部保留。
 
-阶段三本轮只实施 `SIM-013` 一个候选；其余候选不因本轮成功而自动获得删除授权。
+本轮不批准物理项目合并或批量接口删除；后续候选仍需按相同的生产调用链、characterization、独立审查和聚合门禁流程处理。
 
 ## 候选记录模板
 
