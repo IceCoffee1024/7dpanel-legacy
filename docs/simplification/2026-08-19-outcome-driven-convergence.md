@@ -1,5 +1,5 @@
 ---
-state: Active
+state: Complete
 document_role: Outcome-Driven Convergence Objective and Verification Record
 last_updated: "2026-08-19"
 owner: Coordinator
@@ -23,10 +23,10 @@ owner: Coordinator
 
 | Stream | 目标 | 样本 | 首要问题 | 状态 |
 |---|---|---|---|---|
-| User Journey | 用户任务 | 日常运维、玩家发现与处置、备份恢复核对 | 是否存在重复入口、模糊状态或缺少下一步 | investigating |
-| Developer Path | 开发者修改 | 简单查询、普通配置、危险异步操作 | 是否有同边界重复、事实源同步或难找测试 | investigating |
-| Failure Recovery | 失败判断与恢复 | 认证/超时、后台 Job、Restore unknown/rollback | 状态、原因、identity、下一步是否关联 | investigating |
-| Governance | 持续约束 | Review fields、复杂度和文档门禁 | 新设计能否证明改善至少一个目标 | investigating |
+| User Journey | 用户任务 | 日常运维、玩家发现与处置、备份恢复核对 | 是否存在重复入口、模糊状态或缺少下一步 | completed |
+| Developer Path | 开发者修改 | 简单查询、普通配置、危险异步操作 | 是否有同边界重复、事实源同步或难找测试 | completed |
+| Failure Recovery | 失败判断与恢复 | 认证/超时、后台 Job、Restore unknown/rollback | 状态、原因、identity、下一步是否关联 | completed |
+| Governance | 持续约束 | Review fields、复杂度和文档门禁 | 新设计能否证明改善至少一个目标 | completed |
 
 ## 候选准入模板
 
@@ -107,7 +107,19 @@ owner: Coordinator
 - Recovery：第一次勘察因上游服务过载失败，使用更窄范围重新调查；未取得证据前不修改 Restore/Job。
 - Governance：只扩展现有贡献 checklist，要求结构变更声明 User/Developer/Recovery 目标及生产证据或 Blocked；不扩展成熟度台账或增加纯度分数。
 
-## 决策日志
+## 最终验证与结果
+
+- 后端 Release build：`0` errors、`115` warnings；后端聚合测试：`1931/1931`。
+- Admin lint、typecheck、Vitest `145` 文件/`1011/1011`、production build、`api:check` 全部通过。
+- Complexity budget、backend taxonomy（`207` files）、frontend dependency（`409` feature files）和简化文档 checker 通过；`productionHandwrittenFilesOver500Count=42` 保持既有非阻塞 advisory。
+- User 聚焦测试和 operation receipt 页面测试：`30/30`；server-configuration generated transport：`2` files/`6` tests；最终全量 Admin 已覆盖。
+- User 实际改善：在线玩家现在可以在客户端按名称、entity ID、platform ID 筛选，桌面/移动列表共享同一 derived collection，不增加网络请求、不改变排序、kick 权限或刷新机制。
+- Recovery 实际改善：首页 restart/shutdown dialog 现在接收已有 operationId，accepted/running 阶段可以显示现有 receipt/追踪标识；未改变 polling、状态机、后端或 OpenAPI。
+- Developer 实际改善：server-configuration 不再手写 endpoint、method、Authorization、body JSON 和 path encoding；生成 SDK 成为唯一 transport contract，local parser 和 useServerConfiguration 状态契约保留。
+- Governance 实际改善：`CONTRIBUTING.md` 要求非平凡结构变更声明 `User`/`Developer`/`Recovery` 目标、before/after concern 和 CAP/J production evidence 或 `Blocked environment`；没有增加成熟度来源或纯度分数。
+- Recovery 状态机本身没有继续改动：Restore marker/receipt/safety/rollback/CAS 保护不变；恢复勘察首次因上游服务过载失败，窄范围 operation receipt 候选已安全完成，剩余深层 recovery 候选继续单独处理。
+- 未执行真实 7DTD、OWIN、Linux Mono、候选 artifact、恢复 drill 或外部服务验证；这些 blocker 仍保持诚实记录。
+- `git diff --check` 通过；所有提交只在本地 `main`，没有远程 Git 操作。
 
 | ID | Stream | 假设 | 证据 | 决策 | 回滚/复核触发 |
 |---|---|---|---|---|---|
