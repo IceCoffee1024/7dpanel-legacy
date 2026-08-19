@@ -57,6 +57,16 @@ namespace LSTY.SevenDPanel.DependencyInjection
     internal sealed class BackgroundWorkerJobStore : IJobStore
     {
         private const string InterruptedError = "worker_restart_interrupted";
+        private static readonly string[] GenericWorkerSupportedKinds =
+        {
+            JobKind.WorldBackup.ToString(),
+            JobKind.PanelDatabaseBackup.ToString(),
+            JobKind.ServerConfigurationBackup.ToString(),
+            JobKind.ScheduledConsoleCommand.ToString(),
+            JobKind.ScheduledRestart.ToString(),
+            JobKind.ScheduledAnnouncement.ToString(),
+            JobKind.WorldOperation.ToString()
+        };
         private const string SelectColumns = @"SELECT
             id AS Id, kind AS Kind, status AS Status, actor_subject AS ActorSubject,
             source_schedule_id AS SourceScheduleId, idempotency_key AS IdempotencyKey,
@@ -107,9 +117,9 @@ namespace LSTY.SevenDPanel.DependencyInjection
             {
                 var queued = connection.QueryFirstOrDefault<JobRow>(
                     SelectColumns +
-                    " WHERE status = 'Queued' AND kind <> @RestoreKind" +
+                    " WHERE status = 'Queued' AND kind IN @SupportedKinds" +
                     " ORDER BY created_at_utc ASC, id ASC LIMIT 1;",
-                    new { RestoreKind = JobKind.Restore.ToString() });
+                    new { SupportedKinds = GenericWorkerSupportedKinds });
                 if (queued == null)
                 {
                     connection.Execute("COMMIT;");
@@ -121,13 +131,13 @@ namespace LSTY.SevenDPanel.DependencyInjection
                       SET status = 'Running', started_at_utc = @StartedAtUtc,
                           worker_id = @WorkerId, row_version = row_version + 1
                       WHERE id = @Id AND status = 'Queued'
-                        AND kind <> @RestoreKind AND row_version = @RowVersion;",
+                        AND kind IN @SupportedKinds AND row_version = @RowVersion;",
                     new
                     {
                         queued.Id,
                         StartedAtUtc = now.ToUnixTimeMilliseconds(),
                         WorkerId = workerId,
-                        RestoreKind = JobKind.Restore.ToString(),
+                        SupportedKinds = GenericWorkerSupportedKinds,
                         queued.RowVersion
                     });
                 if (changed != 1)

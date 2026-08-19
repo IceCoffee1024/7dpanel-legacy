@@ -229,6 +229,94 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
         }
 
         [Fact]
+        public void Background_worker_store_claims_only_explicitly_supported_kinds()
+        {
+            using var database = new TemporaryWorkerDatabase();
+            var jobs = new SqliteJobStore(database.ConnectionFactory);
+            var workerJobs = new BackgroundWorkerJobStore(jobs, database.ConnectionFactory);
+            var now = new DateTimeOffset(2026, 7, 27, 0, 0, 0, TimeSpan.Zero);
+            var supportedKinds = new[]
+            {
+                JobKind.WorldBackup,
+                JobKind.PanelDatabaseBackup,
+                JobKind.ServerConfigurationBackup,
+                JobKind.ScheduledConsoleCommand,
+                JobKind.ScheduledRestart,
+                JobKind.ScheduledAnnouncement,
+                JobKind.WorldOperation
+            };
+            var scheduleIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+            InsertSchedule(
+                database.ConnectionFactory,
+                scheduleIds[0],
+                JobKind.ScheduledConsoleCommand);
+            InsertSchedule(
+                database.ConnectionFactory,
+                scheduleIds[1],
+                JobKind.ScheduledRestart);
+            InsertSchedule(
+                database.ConnectionFactory,
+                scheduleIds[2],
+                JobKind.ScheduledAnnouncement);
+            var supported = supportedKinds
+                .Select((kind, index) => jobs.Enqueue(new NewJob(
+                    kind,
+                    "owner",
+                    SourceScheduleId(kind, scheduleIds),
+                    "supported-" + index,
+                    null,
+                    now)))
+                .ToArray();
+            var restore = jobs.Enqueue(new NewJob(
+                JobKind.Restore,
+                "owner",
+                null,
+                "restore-staging",
+                null,
+                now));
+            var futureId = Guid.NewGuid();
+
+            using (var connection = database.ConnectionFactory.Open())
+            {
+                connection.Execute("PRAGMA ignore_check_constraints = ON;");
+                connection.Execute(
+                    @"INSERT INTO jobs (
+                          id, kind, status, actor_subject, idempotency_key,
+                          created_at_utc, row_version)
+                      VALUES (@Id, 'FutureJobKind', 'Queued', 'owner',
+                          'future-kind', @CreatedAtUtc, 0);",
+                    new
+                    {
+                        Id = futureId.ToString("D"),
+                        CreatedAtUtc = now.ToUnixTimeMilliseconds()
+                    });
+            }
+
+            var claimedIds = supported
+                .Select(_ => workerJobs.TryClaimNext("worker", now.AddSeconds(1)))
+                .Select(claimed =>
+                {
+                    Assert.NotNull(claimed);
+                    Assert.Equal(JobStatus.Running, claimed!.Status);
+                    return claimed.Id;
+                })
+                .ToArray();
+
+            Assert.Equal(supported.Length, claimedIds.Length);
+            Assert.All(supported, job => Assert.Contains(job.Id, claimedIds));
+            Assert.Null(workerJobs.TryClaimNext("worker", now.AddSeconds(1)));
+            Assert.Equal(JobStatus.Queued, jobs.Get(restore.Id).Status);
+            using (var connection = database.ConnectionFactory.Open())
+            {
+                Assert.Equal(
+                    "Queued",
+                    connection.ExecuteScalar<string>(
+                        "SELECT status FROM jobs WHERE id = @Id;",
+                        new { Id = futureId.ToString("D") }));
+            }
+        }
+
+        [Fact]
         public void Upgrade_from_009_to_010_preserves_restore_payloads_without_an_artifact_foreign_key()
         {
             var directory = Path.Combine(
@@ -299,6 +387,46 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
             }
         }
 
+        private static Guid? SourceScheduleId(JobKind kind, Guid[] scheduleIds)
+        {
+            switch (kind)
+            {
+                case JobKind.ScheduledConsoleCommand:
+                    return scheduleIds[0];
+                case JobKind.ScheduledRestart:
+                    return scheduleIds[1];
+                case JobKind.ScheduledAnnouncement:
+                    return scheduleIds[2];
+                default:
+                    return null;
+            }
+        }
+
+        private static void InsertSchedule(
+            SqliteConnectionFactory connectionFactory,
+            Guid id,
+            JobKind kind)
+        {
+            using var connection = connectionFactory.Open();
+            connection.Execute(
+                @"INSERT INTO schedules (
+                      id, kind, name, cron_expression, time_zone_id, enabled,
+                      concurrency_policy, command_text, countdown_seconds, message_text,
+                      next_occurrence_utc, row_version)
+                  VALUES (@Id, @Kind, @Name, '* * * * *', 'UTC', 1, 'QueueOne',
+                      @CommandText, @CountdownSeconds, @MessageText, @NextUtc, 0);",
+                new
+                {
+                    Id = id.ToString("D"),
+                    Kind = kind.ToString(),
+                    Name = kind.ToString(),
+                    CommandText = kind == JobKind.ScheduledConsoleCommand ? "say test" : null,
+                    CountdownSeconds = kind == JobKind.ScheduledRestart ? (int?)60 : null,
+                    MessageText = kind == JobKind.ScheduledAnnouncement ? "test announcement" : null,
+                    NextUtc = 0L
+                });
+        }
+
         private static void AssertPort<TPort, TImplementation>(IServiceProvider provider)
             where TPort : class
             where TImplementation : class, TPort
@@ -343,6 +471,35 @@ namespace LSTY.SevenDPanel.Tests.Bootstrap
                 .Build()
                 .PerformUpgrade();
             Assert.True(result.Successful, result.Error?.ToString());
+        }
+
+        [Trait("Capability", "Platform")]
+
+        [Trait("Boundary", "Bootstrap")]
+
+        private sealed class TemporaryWorkerDatabase : IDisposable
+        {
+            private readonly string directory = Path.Combine(
+                Path.GetTempPath(),
+                "7dpanel-worker-claim-tests",
+                Guid.NewGuid().ToString("N"));
+
+            public TemporaryWorkerDatabase()
+            {
+                Directory.CreateDirectory(directory);
+                ConnectionFactory = new SqliteConnectionFactory(
+                    Path.Combine(directory, "panel.db"));
+                new SqliteDatabaseBootstrapper(ConnectionFactory, _ => { }).Upgrade();
+            }
+
+            public SqliteConnectionFactory ConnectionFactory { get; }
+
+            public void Dispose()
+            {
+                ConnectionFactory.Dispose();
+                SqliteConnection.ClearAllPools();
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
         }
 
         [Trait("Capability", "Platform")]
