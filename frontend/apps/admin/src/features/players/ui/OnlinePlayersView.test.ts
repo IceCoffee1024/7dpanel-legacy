@@ -15,6 +15,7 @@ import { nextTick, readonly, shallowRef } from 'vue'
 
 import OnlinePlayersList from './OnlinePlayersList.vue'
 import OnlinePlayersTable from './OnlinePlayersTable.vue'
+import OnlinePlayersToolbar from './OnlinePlayersToolbar.vue'
 import OnlinePlayersView from './OnlinePlayersView.vue'
 
 const { authState, routerPushMock, routerReplaceMock, toastAddMock, useKickPlayerMock, useOnlinePlayersMock } = vi.hoisted(() => ({
@@ -192,6 +193,38 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+it('filters both desktop and mobile lists by name, entity id, and platform identity without refreshing', async () => {
+  const secondPlayer = {
+    ...player,
+    entityId: 42,
+    name: 'Another Player',
+    platformIdentity: { combinedId: 'Xbox_42', platform: 'Xbox' },
+  }
+  const { wrapper, refresh } = mountOnlinePlayersView({
+    state: 'fresh',
+    snapshot: { players: [player, secondPlayer] },
+  })
+  const toolbar = wrapper.getComponent(OnlinePlayersToolbar)
+
+  toolbar.vm.$emit('update:query', 'test player')
+  await nextTick()
+  expect(wrapper.getComponent(OnlinePlayersTable).props('players')).toHaveLength(1)
+  expect(wrapper.getComponent(OnlinePlayersList).props('players')).toHaveLength(1)
+  expect(wrapper.getComponent(OnlinePlayersTable).props('players')).toEqual([player])
+
+  toolbar.vm.$emit('update:query', '42')
+  await nextTick()
+  expect(wrapper.getComponent(OnlinePlayersTable).props('players')).toEqual([secondPlayer])
+
+  toolbar.vm.$emit('update:query', 'xbox_42')
+  await nextTick()
+  expect(wrapper.getComponent(OnlinePlayersList).props('players')).toEqual([secondPlayer])
+
+  toolbar.vm.$emit('update:query', '')
+  await nextTick()
+  expect(wrapper.getComponent(OnlinePlayersTable).props('players')).toEqual([player, secondPlayer])
+  expect(refresh).not.toHaveBeenCalled()
+})
 it('renders compact main list entries without complete identity or connection data', () => {
   const { wrapper } = mountOnlinePlayersView({ state: 'fresh', snapshot: onePlayerSnapshot() })
 

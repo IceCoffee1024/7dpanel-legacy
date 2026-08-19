@@ -623,6 +623,12 @@
     "navigation": "玩家",
     "refresh": "刷新在线玩家",
     "onlineCount": "在线 {count} 人",
+    "filter": {
+      "label": "筛选在线玩家",
+      "placeholder": "名称、实体 ID 或平台 ID",
+      "shownCount": "显示 {shown} / {total}",
+      "noMatches": "没有匹配此筛选条件的在线玩家。"
+    },
     "refreshStale": "刷新失败，显示上次结果",
     "state": {
       "emptyTitle": "当前没有在线玩家",

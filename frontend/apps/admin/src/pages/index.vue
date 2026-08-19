@@ -65,6 +65,7 @@ const isOwner = computed(() => auth.role === 'Owner')
           v-if="isOwner"
           :state="restart.state.value"
           :error-code="restart.error.value?.code ?? null"
+          :operation-id="restart.operationId.value"
           @cancel="restart.cancelConfirmation"
           @confirm="restart.confirm"
         />
@@ -72,6 +73,7 @@ const isOwner = computed(() => auth.role === 'Owner')
           v-if="isOwner"
           :state="shutdown.state.value"
           :error-code="shutdown.error.value?.code ?? null"
+          :operation-id="shutdown.operationId.value"
           @cancel="shutdown.cancelConfirmation"
           @confirm="shutdown.confirm"
         />

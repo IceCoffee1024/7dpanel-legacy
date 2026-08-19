@@ -5,11 +5,14 @@ import { useI18n } from 'vue-i18n'
 defineProps<{
   count: number
   isRefreshing: boolean
+  query: string
   state: OnlinePlayersState
+  visibleCount: number
 }>()
 
 defineEmits<{
-  refresh: []
+  'refresh': []
+  'update:query': [query: string]
 }>()
 
 const { t } = useI18n()
@@ -42,6 +45,15 @@ const { t } = useI18n()
     <template #left>
       <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <span class="font-medium text-highlighted">{{ t('players.onlineCount', { count }) }}</span>
+        <UInput
+          :model-value="query"
+          class="w-full sm:max-w-xs"
+          icon="i-lucide-search"
+          :placeholder="t('players.filter.placeholder')"
+          :aria-label="t('players.filter.label')"
+          @update:model-value="$emit('update:query', $event)"
+        />
+        <span class="text-muted">{{ t('players.filter.shownCount', { shown: visibleCount, total: count }) }}</span>
         <UBadge v-if="state === 'stale'" color="warning" variant="subtle">
           {{ t('players.refreshStale') }}
         </UBadge>

@@ -12,8 +12,10 @@ const overviewError = shallowRef<{ code: 'network' } | null>(null)
 const role = shallowRef<'Owner' | 'Admin' | 'Viewer' | null>('Owner')
 const restartState = shallowRef<'idle' | 'confirming' | 'submitting' | 'accepted' | 'failed'>('idle')
 const restartError = shallowRef<{ code: 'unknown' } | null>(null)
+const restartOperationId = shallowRef<string | null>(null)
 const shutdownState = shallowRef<'idle' | 'confirming' | 'submitting' | 'accepted' | 'failed'>('idle')
 const shutdownError = shallowRef<{ code: 'unknown' } | null>(null)
+const shutdownOperationId = shallowRef<string | null>(null)
 
 const refresh = vi.fn()
 const restartConfirm = vi.fn(() => Promise.resolve(null))
@@ -25,6 +27,7 @@ vi.mock('../features/server-status/model/useOverview', () => ({
 vi.mock('../features/server-operations/model/useRestartServer', () => ({
   useRestartServer: () => ({
     error: restartError,
+    operationId: restartOperationId,
     state: restartState,
     startConfirmation: () => { restartState.value = 'confirming' },
     cancelConfirmation: () => { restartState.value = 'idle' },
@@ -34,6 +37,7 @@ vi.mock('../features/server-operations/model/useRestartServer', () => ({
 vi.mock('../features/server-operations/model/useShutdownServer', () => ({
   useShutdownServer: () => ({
     error: shutdownError,
+    operationId: shutdownOperationId,
     state: shutdownState,
     startConfirmation: () => { shutdownState.value = 'confirming' },
     cancelConfirmation: () => { shutdownState.value = 'idle' },
@@ -184,8 +188,10 @@ beforeEach(() => {
   role.value = 'Owner'
   restartState.value = 'idle'
   restartError.value = null
+  restartOperationId.value = null
   shutdownState.value = 'idle'
   shutdownError.value = null
+  shutdownOperationId.value = null
 })
 
 describe('overview page', () => {
@@ -294,7 +300,11 @@ describe('overview page', () => {
     const wrapper = render()
     restartState.value = 'accepted'
     shutdownState.value = 'accepted'
+    restartOperationId.value = 'restart-operation-1'
+    shutdownOperationId.value = 'shutdown-operation-1'
     await nextTick()
+    expect(wrapper.text()).toContain('restart-operation-1')
+    expect(wrapper.text()).toContain('shutdown-operation-1')
     expect(wrapper.text()).toContain('重启脚本已启动')
     expect(wrapper.text()).toContain('关服请求已接受')
     expect(wrapper.text()).not.toContain('服务器重启成功')

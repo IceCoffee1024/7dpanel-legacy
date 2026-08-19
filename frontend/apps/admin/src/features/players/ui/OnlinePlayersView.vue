@@ -22,6 +22,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const toast = useToast()
 const { t } = useI18n()
+const playerQuery = shallowRef('')
 
 function redirectToLogin() {
   return router.replace({
@@ -83,6 +84,16 @@ const detailsCanKick = computed(() =>
 const detailsCanOpenProfile = computed(() =>
   auth.role === 'Owner'
   && !sessionExpired.value)
+const visiblePlayers = computed(() => {
+  const query = playerQuery.value.trim().toLocaleLowerCase()
+  if (query === '' || snapshot.value === null)
+    return snapshot.value?.players ?? []
+  return snapshot.value.players.filter(player => [
+    player.name,
+    String(player.entityId),
+    player.platformIdentity.combinedId,
+  ].some(value => value.toLocaleLowerCase().includes(query)))
+})
 const detailsOpen = computed({
   get: () => detailsPlayer.value !== null,
   set: (open: boolean) => {
@@ -191,8 +202,11 @@ async function confirmKick(reason: string) {
         <PlayersSectionNavigation /><OnlinePlayersToolbar
           :count="snapshot?.players.length ?? 0"
           :is-refreshing="isRefreshing"
+          :query="playerQuery"
           :state="state"
+          :visible-count="visiblePlayers.length"
           @refresh="refresh"
+          @update:query="playerQuery = $event"
         />
       </div>
     </template>
@@ -211,18 +225,27 @@ async function confirmKick(reason: string) {
       />
 
       <template v-else>
-        <OnlinePlayersTable
-          :players="snapshot.players"
-          :can-kick="authorizedToKick"
-          @view-details="openDetails"
-          @kick-player="openKickDialog"
-        />
-        <OnlinePlayersList
-          :players="snapshot.players"
-          :can-kick="authorizedToKick"
-          @view-details="openDetails"
-          @kick-player="openKickDialog"
-        />
+        <p
+          v-if="visiblePlayers.length === 0"
+          class="mx-auto max-w-md py-12 text-center text-sm text-muted"
+          data-testid="players-no-match"
+        >
+          {{ t('players.filter.noMatches') }}
+        </p>
+        <template v-else>
+          <OnlinePlayersTable
+            :players="visiblePlayers"
+            :can-kick="authorizedToKick"
+            @view-details="openDetails"
+            @kick-player="openKickDialog"
+          />
+          <OnlinePlayersList
+            :players="visiblePlayers"
+            :can-kick="authorizedToKick"
+            @view-details="openDetails"
+            @kick-player="openKickDialog"
+          />
+        </template>
         <p
           v-if="copyFeedback"
           data-testid="copy-feedback"

@@ -623,6 +623,12 @@
     "navigation": "Players",
     "refresh": "Refresh online players",
     "onlineCount": "{count} online",
+    "filter": {
+      "label": "Filter online players",
+      "placeholder": "Name, entity ID, or platform ID",
+      "shownCount": "Showing {shown} of {total}",
+      "noMatches": "No online players match this filter."
+    },
     "refreshStale": "Refresh failed; showing the last result",
     "state": {
       "emptyTitle": "No players are online",
