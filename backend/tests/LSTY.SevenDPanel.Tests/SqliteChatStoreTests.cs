@@ -179,6 +179,34 @@ namespace LSTY.SevenDPanel.Tests
             Assert.False(store.ResetSettings().IsEnabled);
         }
 
+        [Fact]
+        public void Direct_colored_settings_save_normalizes_values_without_application_use_case()
+        {
+            using var database = new TemporaryChatDatabase();
+            database.Upgrade();
+            var store = new SqliteColoredChatStore(database.ConnectionFactory);
+
+            var saved = store.SaveSettings(new ColoredChatSettings
+            {
+                IsEnabled = true,
+                GlobalDefaultColor = " aabbcc ",
+                WhisperDefaultColor = "  ",
+                FriendsDefaultColor = "112233 ",
+                PartyDefaultColor = " 445566",
+                AdminDefaultColor = "778899",
+                SystemDefaultColor = "abcdef",
+                PlayerColorTagPermission = PlayerColorTagPermission.AdminOnly
+            });
+
+            Assert.Equal("AABBCC", saved.GlobalDefaultColor);
+            Assert.Null(saved.WhisperDefaultColor);
+            Assert.Equal("112233", saved.FriendsDefaultColor);
+            Assert.Equal("445566", saved.PartyDefaultColor);
+            Assert.Equal("778899", saved.AdminDefaultColor);
+            Assert.Equal("ABCDEF", saved.SystemDefaultColor);
+            Assert.Equal(saved.GlobalDefaultColor, store.GetSettings().GlobalDefaultColor);
+        }
+
         private static ChatHistoryQuery Query(int pageSize, ChatHistoryKeyset? keyset = null) =>
             new ChatHistoryQuery(pageSize, null, null, null, null, null, null, keyset);
 

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using LSTY.SevenDPanel.Adapters.SevenDays.Runtime.Chat;
 using LSTY.SevenDPanel.Application.Chat;
 using LSTY.SevenDPanel.Hosting;
@@ -16,8 +18,15 @@ namespace LSTY.SevenDPanel.Tests
         public void Runtime_StartsWriterLoadsStateSubscribesThenStartsInner()
         {
             var calls = new List<string>();
-            var state = new ChatRuntimeState(new SettingsStore(calls), new ColoredStore(calls));
-            var writer = new ChatHistoryWriteService(new HistoryStore(), 4, TimeSpan.FromSeconds(1));
+            ChatHistoryWriteService? writer = null;
+            var state = new ChatRuntimeState(
+                new SettingsStore(calls, () =>
+                {
+                    Assert.True(writer!.TryRecord(Message(1)));
+                    calls.Add("writer-start");
+                }),
+                new ColoredStore(calls));
+            writer = new ChatHistoryWriteService(new HistoryStore(), 4, TimeSpan.FromSeconds(1));
             var inner = new RecordingRuntime(calls);
             var runtime = new SevenDaysChatRuntime(
                 state, writer, () => { calls.Add("subscribe"); return new CallbackDisposable(() => calls.Add("unsubscribe")); }, inner);
@@ -25,7 +34,7 @@ namespace LSTY.SevenDPanel.Tests
             runtime.Start();
             runtime.Stop();
 
-            Assert.Equal(new[] { "chat-settings", "colored-settings", "profiles", "subscribe", "inner-start", "unsubscribe", "inner-stop" }, calls);
+            Assert.Equal(new[] { "writer-start", "chat-settings", "colored-settings", "profiles", "subscribe", "inner-start", "unsubscribe", "inner-stop" }, calls);
         }
 
         [Fact]
@@ -40,18 +49,77 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Runtime_direct_colored_configuration_normalizes_values()
+        {
+            var state = new ChatRuntimeState(new SettingsStore(new List<string>()), new ColoredStore(new List<string>()));
+
+            state.ApplyColoredChatSettings(new ColoredChatSettings
+            {
+                IsEnabled = true,
+                GlobalDefaultColor = " aabbcc ",
+                WhisperDefaultColor = "  ",
+                PlayerColorTagPermission = PlayerColorTagPermission.AdminOnly
+            });
+
+            Assert.Equal("AABBCC", state.Current.ColoredSettings.GlobalDefaultColor);
+            Assert.Null(state.Current.ColoredSettings.WhisperDefaultColor);
+            Assert.Equal(PlayerColorTagPermission.AdminOnly, state.Current.ColoredSettings.PlayerColorTagPermission);
+        }
+
+        [Fact]
+        public void Runtime_concurrent_profile_updates_retry_a_stale_cas_read_deterministically()
+        {
+            var state = new ChatRuntimeState(new SettingsStore(new List<string>()), new ColoredStore(new List<string>()));
+            using var firstRead = new ManualResetEventSlim(false);
+            using var secondCommitted = new ManualResetEventSlim(false);
+            var firstDelegateCalls = 0;
+
+            var first = Task.Run(() => InvokeUpdate(state, current =>
+            {
+                if (Interlocked.Increment(ref firstDelegateCalls) == 1)
+                {
+                    firstRead.Set();
+                    if (!secondCommitted.Wait(TimeSpan.FromSeconds(5)))
+                        throw new TimeoutException("The controlled CAS interleaving did not complete.");
+                }
+
+                return AddProfile(current, Profile("EOS_1", "Alpha"));
+            }));
+
+            try
+            {
+                Assert.True(firstRead.Wait(TimeSpan.FromSeconds(5)), "The first CAS read was not reached.");
+                var second = Task.Run(() => InvokeUpdate(state, current =>
+                    AddProfile(current, Profile("EOS_2", "Beta"))));
+                Assert.True(second.Wait(TimeSpan.FromSeconds(5)), "The competing CAS update did not complete.");
+                second.GetAwaiter().GetResult();
+                secondCommitted.Set();
+                Assert.True(first.Wait(TimeSpan.FromSeconds(5)), "The first CAS update did not complete.");
+            }
+            finally
+            {
+                secondCommitted.Set();
+            }
+
+            Assert.Equal(2, firstDelegateCalls);
+            Assert.True(state.Current.Profiles.ContainsKey("EOS_1"));
+            Assert.True(state.Current.Profiles.ContainsKey("EOS_2"));
+            Assert.Equal("Alpha", state.Current.Profiles["EOS_1"].CustomName);
+            Assert.Equal("Beta", state.Current.Profiles["EOS_2"].CustomName);
+        }
+
+        [Fact]
         public void Writer_DoesNotBlockWhenQueueIsFull()
         {
             using var gate = new ManualResetEventSlim(false);
-            var writer = new ChatHistoryWriteService(new BlockingHistoryStore(gate), 1, TimeSpan.FromMilliseconds(100));
+            var store = new BlockingHistoryStore(gate);
+            var writer = new ChatHistoryWriteService(store, 1, TimeSpan.FromMilliseconds(100));
             writer.Start();
             Assert.True(writer.TryRecord(Message(1)));
-            SpinWait.SpinUntil(() => writer.QueueDepth == 0, TimeSpan.FromSeconds(1));
+            Assert.True(store.AppendStarted.Wait(TimeSpan.FromSeconds(5)), "The writer did not start appending.");
             Assert.True(writer.TryRecord(Message(2)));
 
-            var started = DateTime.UtcNow;
             Assert.False(writer.TryRecord(Message(3)));
-            Assert.True(DateTime.UtcNow - started < TimeSpan.FromMilliseconds(100));
             gate.Set();
             writer.Stop();
             Assert.True(writer.DroppedFullCount >= 1);
@@ -68,6 +136,35 @@ namespace LSTY.SevenDPanel.Tests
             Message = "hello"
         };
 
+        private static void InvokeUpdate(
+            ChatRuntimeState state,
+            Func<ChatRuntimeSnapshot, ChatRuntimeSnapshot> update)
+        {
+            var method = typeof(ChatRuntimeState).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(method);
+            method!.Invoke(state, new object[] { update });
+        }
+
+        private static ChatRuntimeSnapshot AddProfile(ChatRuntimeSnapshot current, ColoredChatProfile profile)
+        {
+            var profiles = new Dictionary<string, ColoredChatProfile>(StringComparer.Ordinal);
+            foreach (var pair in current.Profiles)
+                profiles.Add(pair.Key, pair.Value);
+            profiles[profile.CrossplatformId] = profile;
+            return new ChatRuntimeSnapshot(current.ChatSettings, current.ColoredSettings, profiles, current.Mutes);
+        }
+
+        private static ColoredChatProfile Profile(string crossplatformId, string customName) => new ColoredChatProfile
+        {
+            CrossplatformId = crossplatformId,
+            CustomName = customName,
+            NameColor = "aabbcc",
+            TextColor = null,
+            Description = "note",
+            CreatedAtUtc = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero),
+            UpdatedAtUtc = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero)
+        };
+
         [Trait("Capability", "Community")]
 
         [Trait("Boundary", "SevenDays")]
@@ -75,8 +172,20 @@ namespace LSTY.SevenDPanel.Tests
         private sealed class SettingsStore : IChatSettingsStore
         {
             private readonly List<string> calls;
-            public SettingsStore(List<string> calls) => this.calls = calls;
-            public ChatSettings Get() { calls.Add("chat-settings"); return new ChatSettings { IsEnabled = true, CommandPrefixes = new[] { "/" }, ExcludeCommandsFromHistory = true, HistoryRetentionDays = 30 }; }
+            private readonly Action? beforeGet;
+
+            public SettingsStore(List<string> calls, Action? beforeGet = null)
+            {
+                this.calls = calls;
+                this.beforeGet = beforeGet;
+            }
+
+            public ChatSettings Get()
+            {
+                beforeGet?.Invoke();
+                calls.Add("chat-settings");
+                return new ChatSettings { IsEnabled = true, CommandPrefixes = new[] { "/" }, ExcludeCommandsFromHistory = true, HistoryRetentionDays = 30 };
+            }
             public ChatSettings Save(ChatSettings settings) => settings;
             public ChatSettings Reset() => Get();
         }
@@ -134,7 +243,12 @@ namespace LSTY.SevenDPanel.Tests
         {
             private readonly ManualResetEventSlim gate;
             public BlockingHistoryStore(ManualResetEventSlim gate) => this.gate = gate;
-            public override void Append(ChatMessage message) => gate.Wait();
+            public ManualResetEventSlim AppendStarted { get; } = new ManualResetEventSlim(false);
+            public override void Append(ChatMessage message)
+            {
+                AppendStarted.Set();
+                gate.Wait();
+            }
         }
 
         [Trait("Capability", "Community")]

@@ -163,6 +163,57 @@ namespace LSTY.SevenDPanel.Tests
         }
 
         [Fact]
+        public void Get_colored_settings_is_a_single_port_hop()
+        {
+            var expected = CreateColoredChatSettings(globalDefaultColor: "AABBCC");
+            var store = new RecordingColoredChatStore { CurrentSettings = expected };
+            var useCase = new GetColoredChatSettingsUseCase(store);
+
+            var result = useCase.Execute();
+
+            Assert.Same(expected, result);
+            Assert.Equal(1, store.GetSettingsCallCount);
+            Assert.Equal(0, store.OtherCallCount);
+        }
+
+        [Fact]
+        public void Saving_colored_settings_uses_the_store_authoritative_object_after_persistence()
+        {
+            var order = new List<string>();
+            var request = CreateColoredChatSettings(globalDefaultColor: " aabbcc ");
+            var authoritative = CreateColoredChatSettings(globalDefaultColor: "FFEEDD");
+            var store = new RecordingColoredChatStore(order) { Saved = authoritative };
+            var runtime = new RecordingRuntimeConfiguration(order);
+            var audit = new RecordingAuditTrail(order);
+            var useCase = new SaveColoredChatSettingsUseCase(store, runtime, audit, () => Utc(1));
+
+            var result = useCase.Execute("owner", request);
+
+            Assert.Equal(new[] { "store:colored-settings", "runtime:colored-settings", "audit" }, order);
+            Assert.Same(authoritative, result);
+            Assert.Same(authoritative, runtime.ColoredSettings);
+            Assert.NotSame(request, store.SavedRequest);
+            Assert.Equal("AABBCC", store.SavedRequest!.GlobalDefaultColor);
+            var entry = Assert.Single(audit.Entries);
+            Assert.Equal(ChatOperationKind.SaveColoredSettings, entry.Operation);
+        }
+
+        [Fact]
+        public void Colored_settings_store_failure_does_not_update_runtime_or_audit()
+        {
+            var store = new RecordingColoredChatStore { Failure = new InvalidOperationException("unavailable") };
+            var runtime = new RecordingRuntimeConfiguration();
+            var audit = new RecordingAuditTrail();
+            var useCase = new SaveColoredChatSettingsUseCase(store, runtime, audit, () => Utc(1));
+
+            Assert.Throws<InvalidOperationException>(() =>
+                useCase.Execute("owner", CreateColoredChatSettings()));
+
+            Assert.Null(runtime.ColoredSettings);
+            Assert.Empty(audit.Entries);
+        }
+
+        [Fact]
         public void Profile_create_conflict_has_stable_application_exception_and_no_runtime_update()
         {
             var store = new RecordingColoredChatStore { CreateResult = false };
@@ -216,6 +267,17 @@ namespace LSTY.SevenDPanel.Tests
                 HistoryRetentionDays = historyRetentionDays
             };
 
+        private static ColoredChatSettings CreateColoredChatSettings(
+            bool isEnabled = true,
+            string? globalDefaultColor = null,
+            PlayerColorTagPermission playerColorTagPermission = PlayerColorTagPermission.AdminOnly) =>
+            new ColoredChatSettings
+            {
+                IsEnabled = isEnabled,
+                GlobalDefaultColor = globalDefaultColor,
+                PlayerColorTagPermission = playerColorTagPermission
+            };
+
         private static ColoredChatProfile CreateProfile(string id) =>
             new ColoredChatProfile
             {
@@ -263,8 +325,15 @@ namespace LSTY.SevenDPanel.Tests
 
         private sealed class RecordingAuditTrail : IChatOperationAuditTrail
         {
+            private readonly List<string>? order;
+
+            public RecordingAuditTrail(List<string>? order = null) => this.order = order;
             public List<ChatOperationAuditEntry> Entries { get; } = new List<ChatOperationAuditEntry>();
-            public void Record(ChatOperationAuditEntry entry) => Entries.Add(entry);
+            public void Record(ChatOperationAuditEntry entry)
+            {
+                order?.Add("audit");
+                Entries.Add(entry);
+            }
         }
 
         [Trait("Capability", "Community")]
@@ -298,15 +367,66 @@ namespace LSTY.SevenDPanel.Tests
 
         private sealed class RecordingColoredChatStore : IColoredChatStore
         {
+            private readonly List<string>? order;
+
+            public RecordingColoredChatStore(List<string>? order = null) => this.order = order;
             public bool CreateResult { get; set; } = true;
-            public ColoredChatSettings GetSettings() => throw new NotSupportedException();
-            public ColoredChatSettings SaveSettings(ColoredChatSettings settings) => settings;
-            public ColoredChatSettings ResetSettings() => throw new NotSupportedException();
-            public ColoredChatProfilePage GetProfiles(ColoredChatProfileQuery query) => throw new NotSupportedException();
-            public IReadOnlyList<ColoredChatProfile> GetAllProfiles() => Array.Empty<ColoredChatProfile>();
-            public bool TryCreateProfile(ColoredChatProfile profile) => CreateResult;
-            public bool TryUpdateProfile(ColoredChatProfile profile) => false;
-            public bool TryDeleteProfile(string crossplatformId) => false;
+            public Exception? Failure { get; set; }
+            public ColoredChatSettings? CurrentSettings { get; set; }
+            public ColoredChatSettings? Saved { get; set; }
+            public ColoredChatSettings? SavedRequest { get; private set; }
+            public int GetSettingsCallCount { get; private set; }
+            public int OtherCallCount { get; private set; }
+
+            public ColoredChatSettings GetSettings()
+            {
+                GetSettingsCallCount++;
+                return CurrentSettings ?? throw new NotSupportedException();
+            }
+
+            public ColoredChatSettings SaveSettings(ColoredChatSettings settings)
+            {
+                if (Failure != null) throw Failure;
+                order?.Add("store:colored-settings");
+                SavedRequest = settings;
+                return Saved ?? settings;
+            }
+
+            public ColoredChatSettings ResetSettings()
+            {
+                OtherCallCount++;
+                throw new NotSupportedException();
+            }
+
+            public ColoredChatProfilePage GetProfiles(ColoredChatProfileQuery query)
+            {
+                OtherCallCount++;
+                throw new NotSupportedException();
+            }
+
+            public IReadOnlyList<ColoredChatProfile> GetAllProfiles()
+            {
+                OtherCallCount++;
+                return Array.Empty<ColoredChatProfile>();
+            }
+
+            public bool TryCreateProfile(ColoredChatProfile profile)
+            {
+                OtherCallCount++;
+                return CreateResult;
+            }
+
+            public bool TryUpdateProfile(ColoredChatProfile profile)
+            {
+                OtherCallCount++;
+                return false;
+            }
+
+            public bool TryDeleteProfile(string crossplatformId)
+            {
+                OtherCallCount++;
+                return false;
+            }
         }
 
         [Trait("Capability", "Community")]
@@ -319,6 +439,7 @@ namespace LSTY.SevenDPanel.Tests
 
             public RecordingRuntimeConfiguration(List<string>? order = null) => this.order = order;
             public ChatSettings? ChatSettings { get; private set; }
+            public ColoredChatSettings? ColoredSettings { get; private set; }
             public ColoredChatProfile? Profile { get; private set; }
 
             public void ApplyChatSettings(ChatSettings settings)
@@ -327,7 +448,11 @@ namespace LSTY.SevenDPanel.Tests
                 ChatSettings = settings;
             }
 
-            public void ApplyColoredChatSettings(ColoredChatSettings settings) { }
+            public void ApplyColoredChatSettings(ColoredChatSettings settings)
+            {
+                order?.Add("runtime:colored-settings");
+                ColoredSettings = settings;
+            }
             public void UpsertProfile(ColoredChatProfile profile) => Profile = profile;
             public void RemoveProfile(string crossplatformId) { }
         }
