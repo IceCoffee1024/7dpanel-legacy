@@ -8,7 +8,9 @@
     "edit": "编辑",
     "save": "保存",
     "confirm": "确认",
-    "unknown": "未知"
+    "unknown": "未知",
+    "errorCode": "错误：{code}",
+    "jobId": "作业 ID"
   },
   "operationStatus": {
     "queued": "已排队",

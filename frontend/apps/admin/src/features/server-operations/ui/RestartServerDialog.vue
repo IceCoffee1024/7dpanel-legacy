@@ -82,4 +82,11 @@ function updateOpen(value: boolean) {
   >
     {{ t('overview.operationReceipt', { operationId }) }}
   </p>
+  <p
+    v-if="errorCode && state !== 'idle' && state !== 'confirming' && state !== 'submitting'"
+    class="mt-2 break-all text-xs text-muted"
+    data-testid="restart-error-code"
+  >
+    {{ t('common.errorCode', { code: errorCode }) }}
+  </p>
 </template>

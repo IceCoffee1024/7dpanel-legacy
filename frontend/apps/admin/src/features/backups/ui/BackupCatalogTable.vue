@@ -56,6 +56,9 @@ function isVerified(backup: BackupRecord): boolean {
           <p v-if="row.original.worldId" class="text-xs text-muted">
             {{ row.original.worldId }}
           </p>
+          <p v-if="row.original.sourceJobId" class="text-xs text-muted">
+            {{ t('common.jobId') }}: {{ row.original.sourceJobId }}
+          </p>
         </div>
       </template>
       <template #createdAtUtc-cell="{ row }">

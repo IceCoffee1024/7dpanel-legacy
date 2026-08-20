@@ -8,7 +8,9 @@
     "edit": "Edit",
     "save": "Save",
     "confirm": "Confirm",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "errorCode": "Error: {code}",
+    "jobId": "Job ID"
   },
   "operationStatus": {
     "queued": "Queued",

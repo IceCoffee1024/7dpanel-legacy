@@ -22,6 +22,7 @@ const { t } = useI18n()
 
 const columns = computed<TableColumn<WorldOperationRecord>[]>(() => [
   { accessorKey: 'kind', header: t('worldTools.history.table.operation') },
+  { accessorKey: 'jobId', header: t('common.jobId') },
   { accessorKey: 'status', header: t('worldTools.history.table.status') },
   { accessorKey: 'worldVersion', header: t('worldTools.history.table.worldVersion') },
   { accessorKey: 'createdAtUtc', header: t('worldTools.history.table.created') },
@@ -100,6 +101,9 @@ function progressLabel(operation: WorldOperationRecord): string {
 
     <div class="hidden md:block">
       <UTable :columns="columns" :data="rows">
+        <template #jobId-cell="{ row }">
+          <span class="break-all">{{ row.original.jobId }}</span>
+        </template>
         <template #status-cell="{ row }">
           <UBadge :color="operationStatus(row.original.status).tone" variant="subtle">
             {{ t(operationStatus(row.original.status).i18nKey) }}
@@ -129,6 +133,13 @@ function progressLabel(operation: WorldOperationRecord): string {
             {{ t('worldTools.history.operationId') }}
           </dt><dd class="break-all">
             {{ props.operation.operationId }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">
+            {{ t('common.jobId') }}
+          </dt><dd class="break-all">
+            {{ props.operation.jobId }}
           </dd>
         </div>
         <div>
