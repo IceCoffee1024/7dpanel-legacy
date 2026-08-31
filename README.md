@@ -1,3 +1,6 @@
+> This repository contains the archived legacy implementation.
+> Active development continues at https://github.com/IceCoffee1024/7dpanel.
+
 # 7DPanel
 
 ## What This Is
